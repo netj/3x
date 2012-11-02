@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# error -- Show error message
+#
+# Author: Jaeho Shin <netj@ropas.snu.ac.kr>
+# Created: 2010-07-28
+before= after=
+if [ -t 2 ]; then
+    # TODO check terminal's color support
+    before=a; a() { echo -ne '\033[31m'; }
+     after=b; b() { echo -ne '\033[0m'; }
+fi
+
+{
+$before
+for msg; do echo "$msg"; done
+$after
+} >&2
+false

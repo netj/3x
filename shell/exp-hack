@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# graphd-hack -- run graphd internal commands
+# Usage: graphd hack COMMAND [ARG]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-05-10
+set -eu
+
+[ $# -gt 0 ] || set -- "$SHELL" -i
+
+exec "$@"

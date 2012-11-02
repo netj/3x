@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# exp-findroot -- find the root of the current experiment repository
+# Usage: exp findroot
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-01
+set -eu
+
+OPWD=$PWD
+
+is-root() { [ -d .exp -a -d input -a -d program ]; }
+
+while ! is-root && [ "$PWD" != / ]; do
+    cd ..
+done
+
+if is-root; then
+    pwd
+else
+    error "$OPWD: Not inside an experiment repository"
+fi

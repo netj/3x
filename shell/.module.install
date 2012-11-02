@@ -1,0 +1,8 @@
+.build/exp.sh               $BINDIR/exp
+usage                       $TOOLSDIR/
+msg                         $TOOLSDIR/
+error                       $TOOLSDIR/
+customize                   $TOOLSDIR/
+
+exp-findroot                $TOOLSDIR/
+exp-hack                    $TOOLSDIR/

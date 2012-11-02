@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# exp-assemble -- assemble an experiment with given parameters
+# Usage: exp assemble OUTPUTDIR [NAME=VALUE]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-01
+set -eu
+
+[ $# -ge 1 ] || usage "$0" "At least OUTPUTDIR must be given"
+
+outputDir=$1; shift
+outputDir=$(readlink -f "$outputDir")
+
+: ${EXPROOT:=$(exp-findroot)}
+cd "$EXPROOT"
+
+EXPWD=${outputDir#$EXPROOT/}
+
+# process everything on the top-level
+assembleScript=assemble.sh
+pattdirs=(program input/*=*)
+if ! [ -s "$assembleScript" ] || find "${pattdirs[@]}" -newer "$assembleScript" | read; then
+    rm -f "$assembleScript"
+    EXPWD=$EXPWD \
+        generate-assembly-script "${pattdirs[@]}" >"$assembleScript"
+    screen -m -D vim -n "$assembleScript" +"set ft=sh" +"norm gg=G" +wq &>/dev/null || true
+fi
+
+# assemble the experiment
+msg "Assembling $EXPWD:"
+: >"$EXPWD"/assembly.order
+(
+    export "$@"
+    assemble-iteration() {
+        wc -l <"$EXPWD"/assembly.order >"$EXPWD"/assembly.in-progress
+        source "$assembleScript"
+        [ $(wc -l <"$EXPWD"/assembly.order) -eq $(cat "$EXPWD"/assembly.in-progress) ]
+    }
+    while ! assemble-iteration; do :; done
+    rm -f "$EXPWD"/assembly.in-progress
+)
+# populate some files
+ln -f "$assembleScript" "$EXPWD"/assemble.sh
+for f in args stdin; do
+    [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
+done
+if [ -x "$EXPWD"/run.sh ]; then
+    msg "Assembled $EXPWD."
+else
+    error "Assembly failed for $EXPWD: No executable run.sh."
+fi

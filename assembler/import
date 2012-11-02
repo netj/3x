@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# import -- import an input directory
+# Usage: EXPWD=OUTPUTDIR import INPUTDIR...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-01
+set -eu
+
+[ $# -gt 0 ]        || usage "$0" "At least one INPUTDIR must be given"
+[ -n "${EXPWD:-}" ] || usage "$0" "EXPWD must be defined"
+
+for path in "$@"; do
+    if ! grep -q "^$path$" "$EXPWD"/assembly.order; then
+        msg " importing $path:"
+        echo "$path" >>"$EXPWD"/assembly.order
+        if [ -d "$path" ]; then
+            # a directory containing files and nested patterns
+            # copy files
+            find "$path" ! \( -name '*=*' -prune -o -type d -o \
+                -name env -o -name args -o -name +args -o -name args+ \
+                \) |
+            xargs gcp --verbose --archive --link --target-directory="$EXPWD"/
+            # environment
+            if [ -r "$path"/env ]; then
+                cat "$path"/env >>"$EXPWD"/env
+            fi
+            # TODO apply args+ +args -args and more
+        else
+            # .env files
+            if [ -r "$path" ]; then
+                cat "$path" >>"$EXPWD"/env
+            fi
+        fi
+    fi
+done

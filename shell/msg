@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# msg -- Show an informational message
+#
+# Author: Jaeho Shin <netj@ropas.snu.ac.kr>
+# Created: 2012-11-01
+if [ -t 1 ]; then
+    # TODO provide option to suppress message
+    echo "$@"
+fi

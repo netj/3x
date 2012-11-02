@@ -1,0 +1,3 @@
+exp-assemble                    $TOOLSDIR/
+generate-assembly-script        $TOOLSDIR/
+import                          $TOOLSDIR/

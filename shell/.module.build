@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -eu
+
+./customize .build/ exp.sh <<PARAMS
+@BINDIR@=$BINDIR
+@TOOLSDIR@=$TOOLSDIR
+PARAMS
+chmod +x .build/exp.sh
+

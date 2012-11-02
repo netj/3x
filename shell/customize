@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# customize -- Substitute contents and names of given files
+# 
+# Usage:
+#   # when DEST is . and simply want everything customized under TEMPLATEDIR
+#   customize TEMPLATEDIR <<RULES
+#   Name=Foo
+#   Version=1.0
+#   RULES
+# 
+#   # or, you provide a DEST path with paths of template files relative to .
+#   customize DEST [TEMPLATEPATH...] <<RULES
+#   Name=Foo
+#   Version=1.0
+#   RULES
+# 
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2009-12-18
+set -e
+
+usage() { sed -n "2,/^#$/s/^# //p" <"$0"; exit; }
+if [ $# -eq 1 ]; then
+    Dest=`pwd -P`
+    cd "$1"
+    set -- .
+else
+    Dest=$1; shift || usage
+    [ $# -gt 0 ] || set -- *
+fi
+
+# prepare substitutions
+subst=`sed 's/:/\\\\:/g;  s/^/s:/; s/=/:/; s/$/:g/'`
+find "$@" -type f |
+while read -r f; do
+    [ -e "$f" ] || continue
+    # customize name
+    g=`sed "$subst" <<<"$f"`
+    h="$Dest/$g"
+    d=`dirname "$h"`
+    [ -d "$d" ] || mkdir -p "$d"
+    # customize contents
+    sed "$subst" <"$f" >"$h.$$~"
+    ! [ -x "$f" ] || chmod +x "$h.$$~"
+    mv -f "$h.$$~" "$h"
+done
