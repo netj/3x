@@ -20,6 +20,7 @@ EXPWD=${outputDir#$EXPROOT/}
 assembleScript=assemble.sh
 pattdirs=(program input/*=*)
 if ! [ -s "$assembleScript" ] || find "${pattdirs[@]}" -newer "$assembleScript" | read; then
+    msg "Updating $assembleScript"
     rm -f "$assembleScript"
     EXPWD=$EXPWD \
         generate-assembly-script "${pattdirs[@]}" >"$assembleScript"
@@ -27,10 +28,14 @@ if ! [ -s "$assembleScript" ] || find "${pattdirs[@]}" -newer "$assembleScript" 
 fi
 
 # assemble the experiment
-msg "Assembling $EXPWD:"
+msg "Assembling $EXPWD"
 : >"$EXPWD"/assembly.order
 (
+    be-quiet +2 || set -x
     export "$@"
+    for param in "$@"; do
+        echo "$param"
+    done >"$EXPWD"/env
     assemble-iteration() {
         wc -l <"$EXPWD"/assembly.order >"$EXPWD"/assembly.in-progress
         source "$assembleScript"
@@ -44,8 +49,6 @@ ln -f "$assembleScript" "$EXPWD"/assemble.sh
 for f in args stdin; do
     [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
 done
-if [ -x "$EXPWD"/run.sh ]; then
-    msg "Assembled $EXPWD."
-else
-    error "Assembly failed for $EXPWD: No executable run.sh."
+if ! [ -x "$EXPWD"/run.sh ]; then
+    error "Assembly failed for $EXPWD: No executable run.sh"
 fi

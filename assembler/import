@@ -9,9 +9,12 @@ set -eu
 [ $# -gt 0 ]        || usage "$0" "At least one INPUTDIR must be given"
 [ -n "${EXPWD:-}" ] || usage "$0" "EXPWD must be defined"
 
+cpopts=
+be-quiet || cpopts+=--verbose
+
 for path in "$@"; do
     if ! grep -q "^$path$" "$EXPWD"/assembly.order; then
-        msg " importing $path:"
+        msg " importing $path"
         echo "$path" >>"$EXPWD"/assembly.order
         if [ -d "$path" ]; then
             # a directory containing files and nested patterns
@@ -19,16 +22,41 @@ for path in "$@"; do
             find "$path" ! \( -name '*=*' -prune -o -type d -o \
                 -name env -o -name args -o -name +args -o -name args+ \
                 \) |
-            xargs gcp --verbose --archive --link --target-directory="$EXPWD"/
+            xargs cp $cpopts --archive --link --target-directory="$EXPWD"/ |
+            sed 's/^/ linking /'
             # environment
             if [ -r "$path"/env ]; then
+                msg " appending $path/env"
                 cat "$path"/env >>"$EXPWD"/env
             fi
-            # TODO apply args+ +args -args and more
+            # command-line arguments
+            for a in "$path"/{args,+args,args+}; do
+                if [ -r "$a" ]; then
+                    case ${a##*/} in
+                        args) # replace arguments
+                            cp $cpopts --no-clobber "$a" "$EXPWD"/args |
+                            sed 's/^/ linking /'
+                            ;;
+                        args+) # append arguments
+                            msg " appending $a"
+                            cat "$a" >>"$EXPWD"/args
+                            ;;
+                        +args) # prepend arguments
+                            msg " prepending $a"
+                            if [ -z "${tmp:-}" ]; then
+                                tmp=$(mktemp /tmp/expkit-import.XXXXXX)
+                                trap "rm -f $tmp" EXIT
+                            fi
+                            cat "$a" "$EXPWD"/args >$tmp
+                            cat $tmp >"$EXPWD"/args
+                            ;;
+                    esac
+                fi
+            done
         else
             # .env files
             if [ -r "$path" ]; then
-                cat "$path" >>"$EXPWD"/env
+                cat "$path" >>"$EXPWD"/"${path##*.}"
             fi
         fi
     fi

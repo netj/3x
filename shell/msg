@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 # msg -- Show an informational message
+# Usage: msg [+-VERBOSITY_LEVEL] MESSAGE...
+# 
+# Example:
+#   msg normal message
+#   msg +1 a bit verbose message
+#   msg -1 an important message
 #
-# Author: Jaeho Shin <netj@ropas.snu.ac.kr>
+# Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
 if [ -t 1 ]; then
-    # TODO provide option to suppress message
-    echo "$@"
+    case $1 in
+        [+-][0-9]*) level=$1 ;;
+        *)          level=0  ;;
+    esac
+    let level-- # adjust a level because of msg script itself
+    be-quiet $level || echo "$@"
 fi

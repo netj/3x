@@ -3,6 +3,7 @@ usage                       $TOOLSDIR/
 msg                         $TOOLSDIR/
 error                       $TOOLSDIR/
 customize                   $TOOLSDIR/
+be-quiet                    $TOOLSDIR/
 
 exp-findroot                $TOOLSDIR/
 exp-hack                    $TOOLSDIR/

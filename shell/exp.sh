@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # exp -- ExpKit Command-Line Interface
-# Usage: exp COMMAND [ARG]...
+# Usage: exp [-OPTION] COMMAND [ARG]...
+# 
+# COMMAND is one of the following forms:
 # 
 #   exp init
 # 
@@ -9,6 +11,9 @@
 # 
 #   exp history
 #   exp summary
+# 
+# Global OPTION is one of:
+#   -v      for increasing verbosity
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
@@ -40,7 +45,18 @@ if [ -z "${EXPKIT_HOME:-}" ]; then
 
     export PATH="$TOOLSDIR:$PATH"
     unset CDPATH
+    export SHLVL=0 EXPKIT_LOGLVL=${EXPKIT_LOGLVL:-1}
 fi
+
+
+while getopts "v" opt; do
+    case $opt in
+        v)
+            let EXPKIT_LOGLVL++
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
 
 
 # Process input arguments
