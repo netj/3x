@@ -20,28 +20,27 @@ mkdir -p "$EXPWD"
 # assemble it
 exp-assemble "$EXPWD" program="$program" "$@"
 
-# record all the input parameters
-for param in program="$program" "$@"; do
-    echo "$param"
-done >"$EXPWD"/input.params
-
 # run it
 msg "Running $EXPRUNID with $*"
 cd "$EXPWD"
-args=()
-eval "args=(
-$(cat args)
-)"
 (
     set +e
-    export program="$program" "$@"
+    # TODO sanitize environment
+    be-quiet +3 || set -x
+    source ./input.params
     source ./env
-    ./run.sh "${args[@]:-}" <stdin >stdout 2>stderr
+    eval "cmd=(
+    source ./run.sh
+    $(cat args)
+    )"
+    "${cmd[@]}" <stdin >stdout 2>stderr
     echo $? >exitcode
 ) &
 runpid=$!
 
-# watch output
-tail -qf stdout stderr --pid=$runpid
+# watch stdout and stderr
+tail -qF stdout --pid=$runpid 2>/dev/null &
+tail -qF stderr --pid=$runpid 1>&2 2>/dev/null
+wait
 
 # TODO trigger output extractors

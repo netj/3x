@@ -11,18 +11,22 @@ set -eu
 [ $# -gt 0 ] || usage "$0" "No PATTDIR given"
 
 codeForPatternDirs() {
+    local nestingLevel=$((${depth:--1} + 1))
+    local pattDir= patt= name=
     for pattDir; do
         [ -e "$pattDir" ] || continue
         echo "# $pattDir"
         patt=$(basename "$pattDir")
         case $patt in
             *=?*)
-                echo "if [ x\"\${${patt%%=*}:-}\" = x'${patt#*=}' ]; then"
+                name=${patt%%=*}
+                echo "if [ x\"\${$name:-}\" = x'${patt#*=}' ]; then"
                 codeForMatchedPatternFile "$pattDir"
                 echo "fi"
                 ;;
             *) # or *=)
-                echo "case \${${patt%=}:-} in"
+                name=${patt%%=}
+                echo "case \${$name:-} in"
                 for pattCaseFile in "$pattDir"/*/ "$pattDir"/*.env; do
                     [ -e "$pattCaseFile" ] || continue
                     pattCaseFile=${pattCaseFile%/}
@@ -31,6 +35,11 @@ codeForPatternDirs() {
                     codeForMatchedPatternFile "$pattCaseFile"
                     echo ";;"
                 done
+                if [[ $nestingLevel = 0 ]]; then
+                    echo "*)"
+                    echo "error \"No pattern for $name=\$$name\""
+                    echo ";;"
+                fi
                 echo "esac"
                 ;;
         esac

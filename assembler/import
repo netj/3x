@@ -9,8 +9,9 @@ set -eu
 [ $# -gt 0 ]        || usage "$0" "At least one INPUTDIR must be given"
 [ -n "${EXPWD:-}" ] || usage "$0" "EXPWD must be defined"
 
+# TODO check if cp is GNU coreutil's
 cpopts=
-be-quiet || cpopts+=--verbose
+be-quiet +1 || cpopts+=--verbose
 
 for path in "$@"; do
     if ! grep -q "^$path$" "$EXPWD"/assembly.order; then
@@ -23,10 +24,10 @@ for path in "$@"; do
                 -name env -o -name args -o -name +args -o -name args+ \
                 \) |
             xargs cp $cpopts --archive --link --target-directory="$EXPWD"/ |
-            sed 's/^/ linking /'
+            sed 's/^/  linking /'
             # environment
             if [ -r "$path"/env ]; then
-                msg " appending $path/env"
+                msg +1 "  appending $path/env"
                 cat "$path"/env >>"$EXPWD"/env
             fi
             # command-line arguments
@@ -35,14 +36,14 @@ for path in "$@"; do
                     case ${a##*/} in
                         args) # replace arguments
                             cp $cpopts --no-clobber "$a" "$EXPWD"/args |
-                            sed 's/^/ linking /'
+                            sed 's/^/  linking /'
                             ;;
                         args+) # append arguments
-                            msg " appending $a"
+                            msg +1 "  appending $a"
                             cat "$a" >>"$EXPWD"/args
                             ;;
                         +args) # prepend arguments
-                            msg " prepending $a"
+                            msg +1 "  prepending $a"
                             if [ -z "${tmp:-}" ]; then
                                 tmp=$(mktemp /tmp/expkit-import.XXXXXX)
                                 trap "rm -f $tmp" EXIT

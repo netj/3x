@@ -11,8 +11,8 @@
 # Created: 2012-11-01
 if [ -t 1 ]; then
     case $1 in
-        [+-][0-9]*) level=$1 ;;
-        *)          level=0  ;;
+        [+-][0-9]*) level=$1; shift ;;
+        *)          level=0 ;;
     esac
     let level-- # adjust a level because of msg script itself
     be-quiet $level || echo "$@"

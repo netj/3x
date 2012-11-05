@@ -19,7 +19,8 @@ EXPWD=${outputDir#$EXPROOT/}
 # process everything on the top-level
 assembleScript=assemble.sh
 pattdirs=(program input/*=*)
-if ! [ -s "$assembleScript" ] || find "${pattdirs[@]}" -newer "$assembleScript" | read; then
+if ! [ -s "$assembleScript" ] ||
+    find "$0" "${pattdirs[@]}" -newer "$assembleScript" | read; then
     msg "Updating $assembleScript"
     rm -f "$assembleScript"
     EXPWD=$EXPWD \
@@ -28,14 +29,15 @@ if ! [ -s "$assembleScript" ] || find "${pattdirs[@]}" -newer "$assembleScript" 
 fi
 
 # assemble the experiment
-msg "Assembling $EXPWD"
+msg "Assembling $EXPWD for $*"
 : >"$EXPWD"/assembly.order
 (
-    be-quiet +2 || set -x
+    be-quiet +3 || set -x
+    error() {
+        command error "$@"
+        touch "$EXPWD"/assembly.error
+    }
     export "$@"
-    for param in "$@"; do
-        echo "$param"
-    done >"$EXPWD"/env
     assemble-iteration() {
         wc -l <"$EXPWD"/assembly.order >"$EXPWD"/assembly.in-progress
         source "$assembleScript"
@@ -44,11 +46,20 @@ msg "Assembling $EXPWD"
     while ! assemble-iteration; do :; done
     rm -f "$EXPWD"/assembly.in-progress
 )
+
+# check if assembly went ok
+[ ! -e "$EXPWD"/assembly.error ]
+if ! [ -x "$EXPWD"/run.sh ]; then
+    error "Assembly failed for $EXPWD: No executable run.sh"
+fi
+
 # populate some files
 ln -f "$assembleScript" "$EXPWD"/assemble.sh
 for f in args stdin; do
     [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
 done
-if ! [ -x "$EXPWD"/run.sh ]; then
-    error "Assembly failed for $EXPWD: No executable run.sh"
-fi
+
+# record all the input parameters
+for param in "$@"; do
+    echo "$param"
+done >"$EXPWD"/input.params
