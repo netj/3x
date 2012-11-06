@@ -23,19 +23,13 @@ exp-assemble "$EXPWD" program="$program" "$@"
 # run it
 msg "Running $EXPRUNID with $*"
 cd "$EXPWD"
-(
-    set +e
-    # TODO sanitize environment
-    be-quiet +3 || set -x
-    source ./input.params
-    source ./env
-    eval "cmd=(
-    source ./run.sh
-    $(cat args)
-    )"
-    "${cmd[@]}" <stdin >stdout 2>stderr
-    echo $? >exitcode
-) &
+env - \
+    EXPKIT_HOME="$EXPKIT_HOME" \
+    EXPKIT_LOGLVL="$EXPKIT_LOGLVL" \
+    EXPWD="$EXPWD" \
+    EXPRUNID="$EXPRUNID" \
+    PATH="$TOOLSDIR:$(dirname $(type -p sed)):$(dirname "$SHELL")" \
+    record-run &
 runpid=$!
 
 # watch stdout and stderr

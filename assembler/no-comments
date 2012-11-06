@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# no-comments -- output file without comments
+# Usage: no-comments FILE...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-05
+cat "$@" 2>/dev/null | sed 's/ *#.*//; /^ *$/d'

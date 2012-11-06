@@ -4,6 +4,7 @@ set -eu
 ./customize .build/ exp.sh <<PARAMS
 @BINDIR@=$BINDIR
 @TOOLSDIR@=$TOOLSDIR
+@DATADIR@=$DATADIR
 PARAMS
 chmod +x .build/exp.sh
 

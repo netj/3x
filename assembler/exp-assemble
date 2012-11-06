@@ -16,11 +16,12 @@ cd "$EXPROOT"
 
 EXPWD=${outputDir#$EXPROOT/}
 
-# process everything on the top-level
-assembleScript=assemble.sh
-pattdirs=(program input/*=*)
+# prepare the assembly script
+assembleScript=exp.assemble.sh
+pattdirs=(program condition/*=*)
 if ! [ -s "$assembleScript" ] ||
-    find "$0" "${pattdirs[@]}" -newer "$assembleScript" | read; then
+    find "$0" "$TOOLSDIR"/generate-assembly-script \
+        "${pattdirs[@]}" -newer "$assembleScript" | read; then
     msg "Updating $assembleScript"
     rm -f "$assembleScript"
     EXPWD=$EXPWD \
@@ -28,38 +29,63 @@ if ! [ -s "$assembleScript" ] ||
     screen -m -D vim -n "$assembleScript" +"set ft=sh" +"norm gg=G" +wq &>/dev/null || true
 fi
 
+# capture environment
+(
+    envFiles=("$EXPROOT"/condition/env)
+    if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
+        envVarNames=$(list-var-names "${envFiles[@]}")
+        msg +1 "Recording environment variables defined in ${envFiles[*]}"
+        msg +2 " $envVarNames"
+        export -- $(no-comments "${envFiles[@]}")
+        for v in $envVarNames; do echo "$v=${!v}"; done >"$EXPWD"/env
+    fi
+) >/dev/null
+
 # assemble the experiment
 msg "Assembling $EXPWD for $*"
-: >"$EXPWD"/assembly.order
+: >"$EXPWD"/exp.assembly
 (
     be-quiet +3 || set -x
     error() {
         command error "$@"
-        touch "$EXPWD"/assembly.error
+        touch "$EXPWD"/exp.assembly.error
     }
-    export "$@"
+    source() {
+        # replace source with our function that avoids any evaluation in the definitions
+        local f=$1
+        local vars=$(list-var-names "$f")
+        case $vars in
+            "")
+                ;;
+            *)
+                eval "$(no-comments "$f"    | sed "s/'/'\\''/g; s/^/export '/; s/$/'/")"
+                declare -r -- $vars
+                ;;
+        esac
+    }
+    declare -r "$@"
     assemble-iteration() {
-        wc -l <"$EXPWD"/assembly.order >"$EXPWD"/assembly.in-progress
-        source "$assembleScript"
-        [ $(wc -l <"$EXPWD"/assembly.order) -eq $(cat "$EXPWD"/assembly.in-progress) ]
+        wc -l <"$EXPWD"/exp.assembly >"$EXPWD"/exp.assembly.in-progress
+        builtin source "$assembleScript"
+        [ $(wc -l <"$EXPWD"/exp.assembly) -eq $(cat "$EXPWD"/exp.assembly.in-progress) ]
     }
     while ! assemble-iteration; do :; done
-    rm -f "$EXPWD"/assembly.in-progress
+    rm -f "$EXPWD"/exp.assembly.in-progress
 )
 
 # check if assembly went ok
-[ ! -e "$EXPWD"/assembly.error ]
-if ! [ -x "$EXPWD"/run.sh ]; then
-    error "Assembly failed for $EXPWD: No executable run.sh"
+[ ! -e "$EXPWD"/exp.assembly.error ]
+if ! [ -r "$EXPWD"/run.sh ]; then
+    error "Assembly failed for $EXPWD: No run.sh exists"
 fi
 
-# populate some files
-ln -f "$assembleScript" "$EXPWD"/assemble.sh
-for f in args stdin; do
-    [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
-done
-
-# record all the input parameters
+# record all the condition parameters
 for param in "$@"; do
     echo "$param"
-done >"$EXPWD"/input.params
+done >"$EXPWD"/exp.condition
+
+# populate some files
+ln -f "$assembleScript" "$EXPWD"/exp.assemble.sh
+for f in env vars args stdin; do
+    [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
+done

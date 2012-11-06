@@ -14,22 +14,25 @@ cpopts=
 be-quiet +1 || cpopts+=--verbose
 
 for path in "$@"; do
-    if ! grep -q "^$path$" "$EXPWD"/assembly.order; then
+    if ! grep -q "^$path$" "$EXPWD"/exp.assembly; then
         msg " importing $path"
-        echo "$path" >>"$EXPWD"/assembly.order
+        echo "$path" >>"$EXPWD"/exp.assembly
         if [ -d "$path" ]; then
             # a directory containing files and nested patterns
             # copy files
-            find "$path" ! \( -name '*=*' -prune -o -type d -o \
-                -name env -o -name args -o -name +args -o -name args+ \
+            find "$path" -maxdepth 1 ! \( -name '*=*' -prune -o -path "$path" \
+                -o -name 'env' \
+                -o -name 'args' -o -name '+args' -o -name 'args+' \
                 \) |
             xargs cp $cpopts --archive --link --target-directory="$EXPWD"/ |
             sed 's/^/  linking /'
-            # environment
-            if [ -r "$path"/env ]; then
-                msg +1 "  appending $path/env"
-                cat "$path"/env >>"$EXPWD"/env
-            fi
+            # variables, environment
+            for f in env vars; do
+                if [ -r "$path"/$f ]; then
+                    msg +1 "  appending $path/$f"
+                    no-comments "$path"/$f >>"$EXPWD"/$f
+                fi
+            done
             # command-line arguments
             for a in "$path"/{args,+args,args+}; do
                 if [ -r "$a" ]; then
@@ -55,9 +58,10 @@ for path in "$@"; do
                 fi
             done
         else
-            # .env files
+            # .env or .vars files
             if [ -r "$path" ]; then
-                cat "$path" >>"$EXPWD"/"${path##*.}"
+                msg +1 "  appending $path"
+                no-comments "$path" >>"$EXPWD"/"${path##*.}"
             fi
         fi
     fi

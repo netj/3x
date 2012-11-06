@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# record-run -- run the run.sh script while recording its behavior
+# Usage: cd $EXPWD && record-run
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-05
+set -u
+
+eval "
+be-quiet +5 || set -x
+$(cat ./exp.condition ./vars | sed "s/'/'\\''/g; s/^/declare -r '/; s/$/'/")
+$(cat ./env                  | sed "s/'/'\\''/g; s/^/export     '/; s/$/'/")
+
+cmd=(
+source ./run.sh
+$(cat args)
+)"
+
+be-quiet +5 || set -x
+
+"${cmd[@]}" <stdin >stdout 2>stderr
+echo $? >exitcode

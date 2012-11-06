@@ -42,6 +42,7 @@ if [ -z "${EXPKIT_HOME:-}" ]; then
     export EXPKIT_HOME=${Here%/@BINDIR@}
     export BINDIR="$EXPKIT_HOME/@BINDIR@"
     export TOOLSDIR="$EXPKIT_HOME/@TOOLSDIR@"
+    export DATADIR="$EXPKIT_HOME/@DATADIR@"
 
     export PATH="$TOOLSDIR:$PATH"
     unset CDPATH

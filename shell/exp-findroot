@@ -8,7 +8,7 @@ set -eu
 
 OPWD=$PWD
 
-is-root() { [ -d .exp -a -d input -a -d program ]; }
+is-root() { [ -d .exp -a -d condition -a -d program ]; }
 
 while ! is-root && [ "$PWD" != / ]; do
     cd ..

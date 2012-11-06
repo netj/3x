@@ -10,6 +10,9 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" "No PATTDIR given"
 
+shopt -s extglob
+set -o braceexpand
+
 codeForPatternDirs() {
     local nestingLevel=$((${depth:--1} + 1))
     local pattDir= patt= name=
@@ -27,17 +30,17 @@ codeForPatternDirs() {
             *) # or *=)
                 name=${patt%%=}
                 echo "case \${$name:-} in"
-                for pattCaseFile in "$pattDir"/*/ "$pattDir"/*.env; do
+                for pattCaseFile in "$pattDir"/*/ "$pattDir"/*.{env,vars}; do
                     [ -e "$pattCaseFile" ] || continue
                     pattCaseFile=${pattCaseFile%/}
-                    pattCase=$(basename "$pattCaseFile" .env)
+                    pattCase=$(basename "${pattCaseFile%.@(env|vars)}")
                     echo "\"$pattCase\")"
                     codeForMatchedPatternFile "$pattCaseFile"
                     echo ";;"
                 done
                 if [[ $nestingLevel = 0 ]]; then
                     echo "*)"
-                    echo "error \"No pattern for $name=\$$name\""
+                    echo "error \"Undefined $name=\$$name\""
                     echo ";;"
                 fi
                 echo "esac"
