@@ -20,11 +20,12 @@ for path in "$@"; do
         if [ -d "$path" ]; then
             # a directory containing files and nested patterns
             # copy files
-            find "$path" -maxdepth 1 ! \( -name '*=*' -prune -o -path "$path" \
-                -o -name 'env' \
+            find "$path" -mindepth 1 -maxdepth 1 ! \( -name 'env' \
+                -o -type d -name '*=*' -prune \
                 -o -name 'args' -o -name '+args' -o -name 'args+' \
-                \) |
+                \) -print 2>/dev/null |
             xargs cp $cpopts --archive --link --target-directory="$EXPWD"/ |
+            # TODO check and emit error if any files get overwritten
             sed 's/^/  linking /'
             # environment variables
             for f in env; do
@@ -38,6 +39,7 @@ for path in "$@"; do
                 if [ -r "$a" ]; then
                     case ${a##*/} in
                         args) # replace arguments
+                            ! [ -e "$EXPWD"/args ] || error "$a cannot overwrite already existing args"
                             cp $cpopts --no-clobber "$a" "$EXPWD"/args |
                             sed 's/^/  linking /'
                             ;;

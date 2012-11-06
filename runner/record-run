@@ -16,7 +16,9 @@ eval "cmd=(
 $(cat args)
 )"
 
-be-quiet +5 || set -x
-
+(
+be-quiet +1 || set -x
+cd "$EXPWD"
 "${cmd[@]}" <stdin >stdout 2>stderr
+)
 echo $? >exitcode

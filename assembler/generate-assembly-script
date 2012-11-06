@@ -52,13 +52,13 @@ codeForPatternDirs() {
 codeForMatchedPatternFile() {
     local f=$1; shift
     if [ -d "$f" ]; then
-        echo import "$f"
         codeForSourcing "$f"/env
+        echo import "$f"
         # look for nested pattern directories and generate code for them too
         codeForPatternDirs "$f"/*=*
     else
-        echo import "$f"
         codeForSourcing "$f"
+        echo import "$f"
     fi
 }
 

@@ -13,7 +13,7 @@ program=$(basename "${program%+(/)}")
 export EXPROOT=$(exp-findroot)
 
 # create a working directory for this experiment ($EXPWD)
-export EXPRUNID=$(date +runs/%Y/%m/%d/%H%M%S."$program")
+export EXPRUNID=$(date +run/%Y/%m/%d/%H%M%S."$program")
 export EXPWD="$EXPROOT/$EXPRUNID"
 mkdir -p "$EXPWD"
 
@@ -24,17 +24,23 @@ exp-assemble "$EXPWD" program="$program" "$@"
 msg "Running $EXPRUNID with $*"
 cd "$EXPWD"
 env - \
+    PATH="$TOOLSDIR:$(dirname $(type -p sed)):$(dirname "$SHELL")" \
     EXPKIT_HOME="$EXPKIT_HOME" \
     EXPKIT_LOGLVL="$EXPKIT_LOGLVL" \
+    EXPROOT="$EXPROOT" \
     EXPWD="$EXPWD" \
     EXPRUNID="$EXPRUNID" \
-    PATH="$TOOLSDIR:$(dirname $(type -p sed)):$(dirname "$SHELL")" \
     record-run &
 runpid=$!
 
 # watch stdout and stderr
 tail -qF stdout --pid=$runpid 2>/dev/null &
-tail -qF stderr --pid=$runpid 1>&2 2>/dev/null
-wait
+tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &
+wait || true
+
+exitcode=$(cat exitcode 2>/dev/null || echo 127)
+msg "Finished $EXPRUNID with exitcode $exitcode"
 
 # TODO run measurement
+
+exit $exitcode

@@ -41,16 +41,17 @@ msg "Assembling $EXPWD for $*"
     source() {
         # replace source with our function that avoids any evaluation in the definitions
         local f=$1
-        local vars=$(list-var-names "$f")
-        case $vars in
-            "")
-                ;;
-            *)
-                eval "$(no-comments "$f"    | sed "s/'/'\\''/g; s/^/export '/; s/$/'/")"
-                # make sure no variable is altered
-                declare -r -- $vars
-                ;;
-        esac
+        ! grep -qF "${f%/env}" "$EXPWD"/exp.assembly || return 0
+        local decl= v= l=1
+        while read -r decl; do
+            decl=${decl%%*([ 	])#*}
+            [ -n "$decl" ] || continue
+            v=${decl%%=*}
+            ! declare -p $v &>/dev/null || error "$f: line $l: $v: duplicate variable"
+            export "$decl"
+            declare -r $v
+            let l++
+        done <"$f"
     }
 
     # record environment variables
@@ -58,10 +59,11 @@ msg "Assembling $EXPWD for $*"
     if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
         envVarNames=$(list-var-names "${envFiles[@]}")
         msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
-        (
+        {
             export -- $(no-comments "${envFiles[@]}")
             for v in $envVarNames; do echo "$v=${!v}"; done >"$EXPWD"/env
-        ) >/dev/null
+            declare -r $envVarNames
+        } >/dev/null
     fi
 
     # record condition variables, so they can populate the environment
