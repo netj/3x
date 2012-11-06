@@ -30,17 +30,17 @@ codeForPatternDirs() {
             *) # or *=)
                 name=${patt%%=}
                 echo "case \${$name:-} in"
-                for pattCaseFile in "$pattDir"/*/ "$pattDir"/*.{env,vars}; do
+                for pattCaseFile in "$pattDir"/*/ "$pattDir"/*.env; do
                     [ -e "$pattCaseFile" ] || continue
+                    pattCase=$(basename "$pattCaseFile" .env)
                     pattCaseFile=${pattCaseFile%/}
-                    pattCase=$(basename "${pattCaseFile%.@(env|vars)}")
                     echo "\"$pattCase\")"
                     codeForMatchedPatternFile "$pattCaseFile"
                     echo ";;"
                 done
                 if [[ $nestingLevel = 0 ]]; then
                     echo "*)"
-                    echo "error \"Undefined $name=\$$name\""
+                    echo "error \"$name=\$$name\" undefined"
                     echo ";;"
                 fi
                 echo "esac"

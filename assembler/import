@@ -26,8 +26,8 @@ for path in "$@"; do
                 \) |
             xargs cp $cpopts --archive --link --target-directory="$EXPWD"/ |
             sed 's/^/  linking /'
-            # variables, environment
-            for f in env vars; do
+            # environment variables
+            for f in env; do
                 if [ -r "$path"/$f ]; then
                     msg +1 "  appending $path/$f"
                     no-comments "$path"/$f >>"$EXPWD"/$f
@@ -58,7 +58,7 @@ for path in "$@"; do
                 fi
             done
         else
-            # .env or .vars files
+            # .env files
             if [ -r "$path" ]; then
                 msg +1 "  appending $path"
                 no-comments "$path" >>"$EXPWD"/"${path##*.}"

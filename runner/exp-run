@@ -37,4 +37,4 @@ tail -qF stdout --pid=$runpid 2>/dev/null &
 tail -qF stderr --pid=$runpid 1>&2 2>/dev/null
 wait
 
-# TODO trigger output extractors
+# TODO run measurement

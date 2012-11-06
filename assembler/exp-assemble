@@ -17,7 +17,7 @@ cd "$EXPROOT"
 EXPWD=${outputDir#$EXPROOT/}
 
 # prepare the assembly script
-assembleScript=exp.assemble.sh
+assembleScript=.exp/assemble.sh
 pattdirs=(program condition/*=*)
 if ! [ -s "$assembleScript" ] ||
     find "$0" "$TOOLSDIR"/generate-assembly-script \
@@ -29,23 +29,11 @@ if ! [ -s "$assembleScript" ] ||
     screen -m -D vim -n "$assembleScript" +"set ft=sh" +"norm gg=G" +wq &>/dev/null || true
 fi
 
-# capture environment
-(
-    envFiles=("$EXPROOT"/condition/env)
-    if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
-        envVarNames=$(list-var-names "${envFiles[@]}")
-        msg +1 "Recording environment variables defined in ${envFiles[*]}"
-        msg +2 " $envVarNames"
-        export -- $(no-comments "${envFiles[@]}")
-        for v in $envVarNames; do echo "$v=${!v}"; done >"$EXPWD"/env
-    fi
-) >/dev/null
-
 # assemble the experiment
 msg "Assembling $EXPWD for $*"
 : >"$EXPWD"/exp.assembly
 (
-    be-quiet +3 || set -x
+    # override some commands used in the assembly script
     error() {
         command error "$@"
         touch "$EXPWD"/exp.assembly.error
@@ -59,11 +47,29 @@ msg "Assembling $EXPWD for $*"
                 ;;
             *)
                 eval "$(no-comments "$f"    | sed "s/'/'\\''/g; s/^/export '/; s/$/'/")"
+                # make sure no variable is altered
                 declare -r -- $vars
                 ;;
         esac
     }
+
+    # record environment variables
+    envFiles=(condition/env.default) # "$DATADIR"/env.default
+    if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
+        envVarNames=$(list-var-names "${envFiles[@]}")
+        msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
+        (
+            export -- $(no-comments "${envFiles[@]}")
+            for v in $envVarNames; do echo "$v=${!v}"; done >"$EXPWD"/env
+        ) >/dev/null
+    fi
+
+    # record condition variables, so they can populate the environment
+    for param in "$@"; do echo "$param"; done >>"$EXPWD"/env
+    be-quiet +3 || set -x
     declare -r "$@"
+
+    # repeat iterations with assembly script until no change
     assemble-iteration() {
         wc -l <"$EXPWD"/exp.assembly >"$EXPWD"/exp.assembly.in-progress
         builtin source "$assembleScript"
@@ -75,17 +81,15 @@ msg "Assembling $EXPWD for $*"
 
 # check if assembly went ok
 [ ! -e "$EXPWD"/exp.assembly.error ]
-if ! [ -r "$EXPWD"/run.sh ]; then
-    error "Assembly failed for $EXPWD: No run.sh exists"
+if ! [ -x "$EXPWD"/run ]; then
+    error "Assembly failed for $EXPWD: No executable \`run' exists"
 fi
 
-# record all the condition parameters
-for param in "$@"; do
-    echo "$param"
-done >"$EXPWD"/exp.condition
+# record all condition parameters again in a separate file
+for param in "$@"; do echo "$param"; done >"$EXPWD"/exp.condition
 
-# populate some files
+# make sure some files exist
 ln -f "$assembleScript" "$EXPWD"/exp.assemble.sh
-for f in env vars args stdin; do
+for f in env args stdin; do
     [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
 done

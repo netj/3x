@@ -8,11 +8,11 @@ set -u
 
 eval "
 be-quiet +5 || set -x
-$(cat ./exp.condition ./vars | sed "s/'/'\\''/g; s/^/declare -r '/; s/$/'/")
-$(cat ./env                  | sed "s/'/'\\''/g; s/^/export     '/; s/$/'/")
+$(cat ./env | sed "s/'/'\\''/g; s/^/export '/; s/$/'/")
+"
 
-cmd=(
-source ./run.sh
+eval "cmd=(
+./run
 $(cat args)
 )"
 
