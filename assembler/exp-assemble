@@ -16,20 +16,22 @@ cd "$EXPROOT"
 
 EXPWD=${outputDir#$EXPROOT/}
 
-# prepare the assembly script
+# prepare the assemble script
+update-assemble-script() {
+    local scpt=$1; shift
+    if ! [ -s "$scpt" ] ||
+        find "$0" $(type -p generate-assembly-script) "$@" -newer "$scpt" | read; then
+        msg "Updating $scpt"
+        rm -f "$scpt"
+        EXPWD=$EXPWD \
+            generate-assembly-script "$@" >"$scpt"
+        screen -m -D vim -n "$scpt" +"set ft=sh" +"norm gg=G" +wq &>/dev/null || true
+    fi
+}
 assembleScript=.exp/assemble.sh
-pattdirs=(program condition/*=*)
-if ! [ -s "$assembleScript" ] ||
-    find "$0" "$TOOLSDIR"/generate-assembly-script \
-        "${pattdirs[@]}" -newer "$assembleScript" | read; then
-    msg "Updating $assembleScript"
-    rm -f "$assembleScript"
-    EXPWD=$EXPWD \
-        generate-assembly-script "${pattdirs[@]}" >"$assembleScript"
-    screen -m -D vim -n "$assembleScript" +"set ft=sh" +"norm gg=G" +wq &>/dev/null || true
-fi
+update-assemble-script $assembleScript program condition/*=* measure/*/*=*
 
-# assemble the experiment
+# assemble the conditions for experiment
 msg "Assembling $EXPWD for $*"
 : >"$EXPWD"/exp.assembly
 (

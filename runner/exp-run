@@ -17,7 +17,7 @@ export EXPRUNID=$(date +run/%Y/%m/%d/%H%M%S."$program")
 export EXPWD="$EXPROOT/$EXPRUNID"
 mkdir -p "$EXPWD"
 
-# assemble it
+# assemble it for running and measurement
 exp-assemble "$EXPWD" program="$program" "$@"
 
 # run it
@@ -44,6 +44,13 @@ wait || true
 exitcode=$(cat exitcode 2>/dev/null || echo 127)
 msg "Finished $EXPRUNID with exitcode $exitcode"
 
-# TODO run measurement
+# run measurements
+for mx in exp.measure/*/measure; do
+    m=$(basename "$(dirname "$mx")")
+    if [ -x "$mx" ]; then
+        # TODO under the same env
+        echo "$m=$("$mx")"
+    fi
+done >exp.outcome
 
 exit $exitcode
