@@ -6,11 +6,14 @@
 # 
 #   exp init
 # 
-#   exp run PROGRAM [NAME=VALUE]...
-#   exp plan [PROGRAM | NAME=VALUE]...
+#   exp plan [PROGRAM] [NAME[=VALUE[,VALUE]...]...
+#   exp start BATCH
+#   exp stop  BATCH
 # 
-#   exp history
-#   exp summary
+#   exp run PROGRAM [NAME=VALUE]...
+# 
+#   exp conditions [-v]
+#   exp results
 # 
 # Global OPTION is one of:
 #   -v      for increasing verbosity
@@ -55,6 +58,7 @@ while getopts "v" opt; do
         v)
             let EXPKIT_LOGLVL++
             ;;
+            # TODO quiet
     esac
 done
 shift $(($OPTIND - 1))

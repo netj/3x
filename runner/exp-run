@@ -9,7 +9,7 @@ set -eu
 [ $# -ge 1 ] || usage "$0" "At least the PROGRAM to run must be given"
 
 program=$1; shift
-program=$(basename "${program%+(/)}")
+program=$(basename "$program")
 export EXPROOT=$(exp-findroot)
 
 # create a working directory for this experiment ($EXPWD)

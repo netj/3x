@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# exp-plan -- plan experiments with given variables
+# Usage: exp plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+# 
+# Use `exp conditions -v` to list available condition variables.
+# 
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-07
+set -eu
+
+[ $# -ge 1 ] || {
+    usage "$0" "At least program or one condition variable must be given" || true
+    # show available variables
+    echo
+    echo "For full combination of conditions, run: "
+    echo "  exp plan "$(exp-conditions)
+    false
+}
+
+: ${EDITOR:=vim}
+: ${EXPROOT:=$(exp-findroot)}
+: ${EXPBATCHID:=$(date +run/batch/%Y%m%d.%H%M%S.%N)}
+export EXPROOT EXPBATCHID
+
+
+## normalize command-line arguments
+args=()
+for cond in "$@"; do
+    if [ -e "$cond" ]; then # infer condition name/value from path names
+        # e.g., program/f/ condition/x=/1 condition/x=/2.env condition/y=abcd condition/z=/
+        #    -> program=f x={1,2} y=abcd z
+        cond=$(readlink -f "$cond")
+        [ -d "$cond" ] || cond=${cond%.env}
+        cond=${cond#$EXPROOT/}
+        case $cond in
+            program/*)
+                args+=(program="$(basename "$cond")")
+                ;;
+            condition/*=*)
+                name=${cond#condition/}
+                name=${name%%=*}
+                value=${cond#condition/$name=}
+                value=$(basename "$value")
+                args+=("$name=$value")
+                ;;
+        esac
+    else # or, sanitize cond
+        # first check if it's a program name
+        case $cond in
+            *=*) ;;
+            *)
+                program=$cond
+                if [ -d "$EXPROOT"/program/"$program" ]; then
+                    args+=(program="$program")
+                    continue
+                fi
+                ;;
+        esac
+        # then see if it's a valid condition
+        name=${cond%%=*}
+        if [[ $name == "program" ]]; then
+            pattDir="$EXPROOT"/program
+        else
+            pattDir="$EXPROOT"/condition/$name=
+        fi
+        [ -d "$pattDir" ] || error "Undefined condition $cond"
+        valuePart=${cond#$name}
+        valuePart=${valuePart#=}
+        if [ -n "$valuePart" ]; then
+            values=
+            OIFS=$IFS
+            IFS=,
+            values=($valuePart)
+            IFS=$OIFS
+            for value in "${values[@]}"; do
+                [ -e "$pattDir/$value" -o -e "$pattDir/$value.env" ] ||
+                    error "Undefined condition: $name=$value"
+            done
+        fi
+        args+=("$name=$valuePart")
+    fi
+done
+set -- "${args[@]}"
+
+# group by var names
+#  e.g., program=f program=g x=1 x=2 y=abcd z=
+#     -> program=f,g x=1,2 y=abcd z
+set -- $(coffee -e '
+[_,_,_,_, args...] = process.argv
+ordering = []
+values = {}
+for arg in args
+    [name,vs] = arg.split "=", 2
+    ordering.push name unless name in ordering
+    (values[name] ?= []).push vs
+    values[name] = [] if not vs
+for name in ordering
+    console.log "#{name}=#{values[name]?.join "," ? ""}"
+' "$@")
+
+# program= must be there
+arg-has() {
+    local name=$1 arg=; shift
+    for arg; do
+        [[ $arg =~ $name ]] || continue
+        return 0
+    done
+    return 1
+}
+arg-has "program(=*)?" "$@" || set -- program= "$@"
+
+# fill possible values for names with empty ones
+args=()
+for cond in "$@"; do
+    name=${cond%%=*}
+    values=${cond#$name=}
+    [ -n "$values" ] || cond=$(exp-conditions -v "$name")
+    args+=("$cond")
+done
+set -- "${args[@]}"
+
+
+
+## finally, we're ready to permute the arguments and generate a batch plan
+cd "$EXPROOT"
+
+# create the batch directory
+trap 'rm -rf "$EXPBATCHID"' EXIT
+mkdir -p "$EXPBATCHID"
+
+# and permute arguments
+msg "Permuting conditions for ${@%%=*}..."
+permute() {
+    local prefix=$1; shift
+    if [[ $# == 0 ]]; then
+        echo "$prefix"
+    else
+        local varSpec=$1; shift
+        local name=${varSpec%%=*}
+        local OIFS=$IFS
+        IFS=,
+        local values=(${varSpec#$name=})
+        IFS=$OIFS
+        local value=
+        for value in "${values[@]}"; do
+            permute "$prefix $name=$value" "$@"
+        done
+    fi
+}
+permute "exp run" "$@" >"$EXPBATCHID"/plan
+
+progress="$EXPBATCHID"/exp.planning.in-progress
+touch -r "$EXPBATCHID"/plan "$progress"
+$EDITOR "$EXPBATCHID"/plan
+if [ "$EXPBATCHID"/plan -nt "$progress" ]; then
+    rm -f "$progress"
+    trap - EXIT
+else
+    error "Aborted planning"
+fi
+
+msg +0 -n "Batch created at "
+echo "$EXPBATCHID"
+msg "To start the batch, run:"
+msg "  exp start $EXPBATCHID"
