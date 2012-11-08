@@ -8,6 +8,7 @@ set -eu
 
 [ $# -gt 0 ]        || usage "$0" "At least one INPUTDIR must be given"
 [ -n "${EXPWD:-}" ] || usage "$0" "EXPWD must be defined"
+EXPWDabbrev=${EXPWD#$PWD/}
 
 shopt -s extglob
 
@@ -28,7 +29,7 @@ for path in "$@"; do
                         -o -type d -name '*=*' -prune \
                         -o -name 'args' -o -name '+args' -o -name 'args+' \
                         \) -print 2>/dev/null |
-                    xargs cp $cpopts --archive --link --target-directory="$EXPWD"/ |
+                    xargs cp $cpopts --archive --link --target-directory="$EXPWDabbrev"/ |
                     # TODO check and emit error if any files get overwritten
                     sed 's/^/  linking /'
                     # environment variables
@@ -44,7 +45,7 @@ for path in "$@"; do
                             case ${a##*/} in
                                 args) # replace arguments
                                     ! [ -e "$EXPWD"/args ] || error "$a cannot overwrite already existing args"
-                                    cp $cpopts --no-clobber "$a" "$EXPWD"/args |
+                                    cp $cpopts --no-clobber "$a" "$EXPWDabbrev"/args |
                                     sed 's/^/  linking /'
                                     ;;
                                 args+) # append arguments
