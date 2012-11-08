@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# exp-start -- start an experiment batch
+# Usage: exp start BATCH
+#        exp start [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-07
+set -eu
+
+[ $# -ge 1 ] || usage "$0" "At least the BATCH must be given"
+
+: ${EXPROOT:=$(exp-findroot)}
+
+batch=$1
+
+if [ $# -eq 1 -a -d "$batch" ]; then
+    batchpath=$(readlink -f "$batch")
+    [[ $batchpath == $EXPROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
+    shift
+    EXPBATCH=${batchpath#$EXPROOT/}
+else
+    EXPBATCH=$(new-batch-id)
+    EXPBATCH=$EXPBATCH \
+    EXPBATCH_STARTING=true \
+        exp-plan "$@"
+fi
+export EXPBATCH
+
+cd "$EXPROOT/$EXPBATCH"
+
+is-alive() {
+    local pid=$(cat "$1") || return 2
+    ps -p $pid && ! [[ $pid = $$ ]]
+    # TODO additional check for more robustness?
+} &>/dev/null
+synchronized() {
+    local lock=$1; shift
+    # TODO use a more reliable locking mechanism
+    while is-alive "$lock"; do sleep 0.$RANDOM; done
+    echo $$ >"$lock"
+    local c=0
+    "$@" || c=$?
+    rm -f "$lock"
+    return $c
+}
+pick-next() {
+    local src=$1; shift
+    local dest=$1; shift
+    head -n 1 "$src" >"$dest"/cmdln
+    { echo 1d; echo wq; } | ed "$src" >/dev/null
+}
+
+# prepare a remaining queue based on the plan
+if [ ! -s remaining ]; then
+    if [ -e done -a -e count ] && [[ $(wc -l <done) == $(cat count) ]]; then
+        msg "Nothing remaining for $EXPBATCH"
+        exit 2
+    else
+        msg "Initializing $EXPBATCH"
+        serialOnEachLine() {
+            local f=$1
+            local cols=$(awk <"$f" '{w=length($0);if(w>m){m=w}} END{print m}')
+            local rows=$(wc -l <"$f")
+            awk <"$f" '{printf "%-'$cols's #%0'${#rows}'d\n", $0, ++seq}'
+        }
+        serialOnEachLine plan >remaining
+        chmod a-w plan
+        wc -l <plan >count
+        mkdir -p runs
+    fi
+fi
+
+# repeat until all "remaining" runs are done
+msg "Starting $EXPBATCH"
+count=$(cat count)
+abort=false
+trap "abort=true" INT
+while [ -s remaining ] && ! $abort; do
+    # check if there's any running item which isn't alive
+    run=
+    for r in running.*; do
+        [ -d $r ] || continue
+        ! is-alive $r/lock || continue
+        echo $$ >$r/lock
+        msg +2 " resuming $r..."
+        run=$r; break
+    done
+    # otherwise, dequeue from remaining
+    if ! [ -d "$run" ]; then
+        run=$(mktemp -d running.XXX)
+        echo $$ >$run/lock
+        synchronized remaining.lock  pick-next remaining $run
+    fi
+    # run the one we picked for next
+    run1() {
+        local run=$1
+        local line=$(cat $run/cmdln)
+        local serial=${line##*"#"}
+        cmdln=${line%"#"*}
+        local EXPRUN=$(new-run-id)
+        msg "Batch #$serial/$count of $EXPBATCH as $EXPRUN"
+        EXPRUN=$EXPRUN $cmdln || true
+        ! $abort || return 0
+        # after it ends, record the run in the "done" queue
+        record() {
+            ln -sfn "../../../${EXPRUN#run/}" runs/$serial
+            echo "$line" >>"done"
+            rm -rf "$run"
+        }
+        synchronized done.lock record
+    }
+    synchronized $run/lock  run1 $run
+done
+if $abort; then
+    error "Aborted $EXPBATCH" || true
+    msg "To resume, run:"
+    msg "  exp start $EXPBATCH"
+    exit 2
+else
+    msg "Done $EXPBATCH"
+fi

@@ -20,8 +20,8 @@ set -eu
 
 : ${EDITOR:=vim}
 : ${EXPROOT:=$(exp-findroot)}
-: ${EXPBATCHID:=$(date +run/batch/%Y%m%d.%H%M%S.%N)}
-export EXPROOT EXPBATCHID
+: ${EXPBATCH:=$(new-batch-id)}
+export EXPROOT EXPBATCH
 
 
 ## normalize command-line arguments
@@ -99,7 +99,7 @@ for name in ordering
     console.log "#{name}=#{values[name]?.join "," ? ""}"
 ' "$@")
 
-# program= must be there
+# all the variables must be there, so prefix them
 arg-has() {
     local name=$1 arg=; shift
     for arg; do
@@ -108,7 +108,9 @@ arg-has() {
     done
     return 1
 }
-arg-has "program(=*)?" "$@" || set -- program= "$@"
+for name in $(exp-conditions); do
+    arg-has "$name(=*)?" "$@" || set -- "$name"= "$@"
+done
 
 # fill possible values for names with empty ones
 args=()
@@ -126,8 +128,8 @@ set -- "${args[@]}"
 cd "$EXPROOT"
 
 # create the batch directory
-trap 'rm -rf "$EXPBATCHID"' EXIT
-mkdir -p "$EXPBATCHID"
+trap 'rm -rf "$EXPBATCH"' EXIT
+mkdir -p "$EXPBATCH"
 
 # and permute arguments
 msg "Permuting conditions for ${@%%=*}..."
@@ -148,12 +150,12 @@ permute() {
         done
     fi
 }
-permute "exp run" "$@" >"$EXPBATCHID"/plan
+permute "exp run" "$@" >"$EXPBATCH"/plan
 
-progress="$EXPBATCHID"/exp.planning.in-progress
-touch -r "$EXPBATCHID"/plan "$progress"
-$EDITOR "$EXPBATCHID"/plan
-if [ "$EXPBATCHID"/plan -nt "$progress" ]; then
+progress="$EXPBATCH"/exp.planning.in-progress
+touch -r "$EXPBATCH"/plan "$progress"
+$EDITOR "$EXPBATCH"/plan
+if [ "$EXPBATCH"/plan -nt "$progress" ]; then
     rm -f "$progress"
     trap - EXIT
 else
@@ -161,6 +163,8 @@ else
 fi
 
 msg +0 -n "Batch created at "
-echo "$EXPBATCHID"
-msg "To start the batch, run:"
-msg "  exp start $EXPBATCHID"
+echo "$EXPBATCH"
+if ! ${EXPBATCH_STARTING:-false}; then
+    msg "To start the batch, run:"
+    msg "  exp start $EXPBATCH"
+fi

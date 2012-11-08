@@ -1,28 +1,25 @@
 #!/usr/bin/env bash
 # exp-run -- run an experiment with given parameters
-# Usage: exp run PROGRAM [NAME=VALUE]...
+# Usage: exp run NAME=VALUE [NAME=VALUE]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
 set -eu
 
-[ $# -ge 1 ] || usage "$0" "At least the PROGRAM to run must be given"
+[ $# -ge 1 ] || usage "$0" "At least one NAME=VALUE pairs must be given"
 
 : ${EXPROOT:=$(exp-findroot)}
-: ${EXPRUNID:=$(date +run/%Y/%m/%d/%H%M%S.%N."$program")}
-export EXPROOT EXPRUNID EXPWD="$EXPROOT/$EXPRUNID"
-
-program=$1; shift
-program=$(basename "$program")
+: ${EXPRUN:=$(new-run-id)}
+export EXPROOT EXPRUN EXPWD="$EXPROOT/$EXPRUN"
 
 # create a working directory for this experiment ($EXPWD)
 mkdir -p "$EXPWD"
 
 # assemble it for running and measurement
-exp-assemble "$EXPWD" program="$program" "$@"
+exp-assemble "$EXPWD" "$@"
 
 # run it
-msg "Running $EXPRUNID with $*"
+msg "Running $EXPRUN with $*"
 cd "$EXPWD"
 set -m
 env - \
@@ -31,7 +28,7 @@ env - \
     EXPKIT_LOGLVL="$EXPKIT_LOGLVL" \
     EXPROOT="$EXPROOT" \
     EXPWD="$EXPWD" \
-    EXPRUNID="$EXPRUNID" \
+    EXPRUN="$EXPRUN" \
     record-run &
 runpid=$!
 set +m
@@ -45,7 +42,7 @@ tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &
 wait || true
 
 exitcode=$(cat exitcode 2>/dev/null || echo 127)
-msg "Finished $EXPRUNID with exitcode $exitcode"
+msg "Finished $EXPRUN with exitcode $exitcode"
 
 # run measurements
 for mx in exp.measure/*/measure; do

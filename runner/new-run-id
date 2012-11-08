@@ -1,0 +1,3 @@
+#!/bin/sh
+# new-run-id -- generate a new id for EXPRUN
+date +run/%Y/%m/%d/%H%M%S.%N

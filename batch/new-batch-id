@@ -1,0 +1,3 @@
+#!/bin/sh
+# new-batch-id -- generate a new id for EXPBATCH
+date +run/batch/%Y%m%d.%H%M%S.%N

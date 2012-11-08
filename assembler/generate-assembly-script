@@ -40,7 +40,7 @@ codeForPatternDirs() {
                 done
                 if [[ $nestingLevel = 0 ]]; then
                     echo "*)"
-                    echo "error \"$name=\$$name undefined\""
+                    echo "error \"$name\${$name:+=\${$name:-}} undefined\""
                     echo ";;"
                 fi
                 echo "esac"

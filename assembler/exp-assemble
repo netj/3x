@@ -13,8 +13,8 @@ outputDir=$(readlink -f "$outputDir")
 
 : ${EXPROOT:=$(exp-findroot)}
 : ${EXPWD:=$outputDir}
-: ${EXPRUNID:=${EXPWD#$EXPROOT/}}
-export EXPROOT EXPRUNID EXPWD
+: ${EXPRUN:=${EXPWD#$EXPROOT/}}
+export EXPROOT EXPRUN EXPWD
 cd "$EXPROOT"
 
 # prepare the assemble script
@@ -33,7 +33,7 @@ assembleScript=.exp/assemble.sh
 update-assemble-script $assembleScript program condition/*=* measure/*/*=*
 
 # assemble the conditions for experiment
-msg "Assembling $EXPRUNID for $*"
+msg "Assembling $EXPRUN for $*"
 : >"$EXPWD"/exp.assembly
 (
     # override some commands used in the assembly script
@@ -87,7 +87,7 @@ msg "Assembling $EXPRUNID for $*"
 # check if assembly went ok
 [ ! -e "$EXPWD"/exp.assembly.error ]
 if ! [ -x "$EXPWD"/run ]; then
-    error "Assembly failed for $EXPRUNID: No executable \`run' exists"
+    error "Assembly failed for $EXPRUN: No executable \`run' exists"
 fi
 
 # record all condition parameters again in a separate file
