@@ -38,8 +38,10 @@ set +m
 
 # watch stdout and stderr
 trap "kill -TERM -$runpid; wait" INT
+be-quiet +1 || {
 tail -qF stdout --pid=$runpid      2>/dev/null &
 tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &
+}
 wait || true
 
 exitcode=$(cat exitcode 2>/dev/null || echo 127)
