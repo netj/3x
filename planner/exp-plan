@@ -34,6 +34,9 @@ for cond in "$@"; do
         [ -d "$cond" ] || cond=${cond%.env}
         cond=${cond#$EXPROOT/}
         case $cond in
+            program|condition)
+                args+=("$cond"=)
+                ;;
             program/*)
                 args+=(program="$(basename "$cond")")
                 ;;
@@ -108,9 +111,11 @@ arg-has() {
     done
     return 1
 }
+args=()
 for name in $(exp-conditions); do
-    arg-has "$name(=*)?" "$@" || set -- "$name"= "$@"
+    arg-has "$name(=*)?" "$@" || args+=("$name"=)
 done
+[ ${#args[@]} -eq 0 ] || set -- "${args[@]}" "$@"
 
 # fill possible values for names with empty ones
 args=()
