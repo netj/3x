@@ -7,6 +7,7 @@ export PATH := $(PWD)/node_modules/.bin:$(PATH)
 export BINDIR         := bin
 export TOOLSDIR       := tools
 export DATADIR        := data
+export GUIDIR         := gui
 
 PACKAGENAME := exp
 PACKAGEEXECUTES := bin/exp

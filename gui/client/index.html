@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>ExpKit — for organizing your computational experiments</title>
+    <link rel="stylesheet" type="text/css" href="resource/expkit.css">
+    <script type="text/javascript" src="resource/jquery.min.js"></script>
+    <script type="text/javascript" src="resource/bootstrap.min.js"></script>
+    <script type="text/javascript" src="resource/expkit.js"></script>
+  </head>
+
+  <body data-spy="scroll">
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+
+          <div class="pull-right">
+            <a class="brand" href="http://netj.github.com/expkit/">ExpKit</a>
+          </div>
+
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li><a href="#plan"><i class="icon-edit icon-white"></i> Plan</a></li>
+              <li><a href="#run"><i class="icon-pencil icon-white"></i> Run</a></li>
+              <li><a href="#results"><i class="icon-share-alt icon-white"></i> Results</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div id="results" class="row-fluid">
+        <div class="span3">
+          <h2>Conditions</h2>
+          ...
+        </div>
+        <div class="span9">
+          <h2>Results</h2>
+          ...
+        </div>
+      </div>
+
+      <div id="run" class="row-fluid">
+        <div class="span6">
+          <h2>Batches</h2>
+          ...
+        </div>
+        <div class="span6">
+          <h2>Runs</h2>
+          ...
+        </div>
+      </div>
+
+      <div id="plan" class="row-fluid">
+        <div class="span3">
+          <h2>Conditions</h2>
+          ...
+        </div>
+        <div class="span6">
+          <h2>Plan</h2>
+          ...
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
+<!--
+vim:sw=2:sts=2
+-->

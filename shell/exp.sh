@@ -14,6 +14,7 @@
 # 
 #   exp results [BATCH | RUN]... [NAME[=VALUE[,VALUE]...]]...
 # 
+#   exp gui
 # 
 #   exp conditions [-v] [NAME]...
 #   exp run [NAME=VALUE]...
@@ -49,6 +50,7 @@ if [ -z "${EXPKIT_HOME:-}" ]; then
     export BINDIR="$EXPKIT_HOME/@BINDIR@"
     export TOOLSDIR="$EXPKIT_HOME/@TOOLSDIR@"
     export DATADIR="$EXPKIT_HOME/@DATADIR@"
+    export GUIDIR="$EXPKIT_HOME/@GUIDIR@"
 
     export PATH="$TOOLSDIR:$PATH"
     unset CDPATH

@@ -5,6 +5,7 @@ set -eu
 @BINDIR@=$BINDIR
 @TOOLSDIR@=$TOOLSDIR
 @DATADIR@=$DATADIR
+@GUIDIR@=$GUIDIR
 PARAMS
 chmod +x .build/exp.sh
 

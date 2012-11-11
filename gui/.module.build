@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -eu
+
+# bootstrap .build
+mkdir -p .build/{server,client}
+cd .build
+ln -f ../package.json
+echo >README.md
+npm install
+for bin in "$PWD"/node_modules/*/bin; do
+    PATH=$bin:$PATH
+done
+
+# server
+cd server
+ln -f ../../server/package.json
+echo >README.md
+npm install
+coffee -c -o . ../../server/*.coffee
+
+# client
+cd ../client
+mkdir -p resource
+
+# compile client coffee scripts
+coffee -c -o resource ../../client/*.coffee
+
+# get jquery
+[ -s resource/jquery.min.js ] ||
+    curl -sRLo resource/jquery.min.js  http://code.jquery.com/jquery-1.8.2.min.js
+
+# compile bootstrap
+(
+cd ..
+echo "/bootstrap" >.gitignore.bootstrap
+cd ../bootstrap
+git config core.excludesfile ../.build/.gitignore.bootstrap || true
+npm install
+for bin in "$PWD"/node_modules/*/bin; do PATH=$bin:$PATH; done
+ln -sfn hint node_modules/jshint/bin/jshint
+make bootstrap
+)
+
+# compile less with bootstrap
+ln -sfn ../../bootstrap
+for less in ../../client/*.less; do
+    css=${less#../../client/}
+    css=resource/${css%less}css
+    mkdir -p ${css%/*}
+    lessc "$less" "$css"
+done
+unlink bootstrap

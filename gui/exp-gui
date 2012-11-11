@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# exp-gui -- start ExpKit GUI
+# Usage: exp gui [start [PORT]]
+#        exp gui stop
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-11
+set -eu
+
+defaultPort=38917
+host=$(hostname -f)
+
+: ${EXPROOT:=$(exp-findroot)}
+export EXPROOT
+
+cd "$EXPROOT"
+
+mkdir -p .exp/gui
+portfile=.exp/gui/port
+logfile=.exp/gui/log
+pidfile=.exp/gui/pid
+get-pid() { ps -o pid= -p $(cat $pidfile); } 2>/dev/null
+
+cmd=${1:-start}
+[ $# -eq 0 ] || shift
+case $cmd in
+    start)
+        # reuse the last port if available
+        port=$(cat $portfile 2>/dev/null || echo $defaultPort)
+        if ! pid=$(get-pid); then
+            if [ $# -eq 0 ]; then
+                # TODO determine port automatically if in use
+                true
+            else
+                port=$1; shift
+                # TODO fail if port already in use
+            fi
+            # launch server
+            node "$GUIDIR"/server/expkit-gui.js $port \
+                </dev/null >$logfile 2>&1 &
+            pid=$!
+            # record pid, port
+            echo $pid >$pidfile
+            echo $port >$portfile
+        fi
+        url="http://$host:$port/"
+        msg "ExpKit GUI running at $url"
+        # watch log if requested
+        be-quiet +1 || exp-gui watch &
+        # and launch web browser on known platforms
+        case $(uname) in
+            Darwin) # Mac
+                open "$url"
+                ;;
+        esac
+        wait
+        ;;
+
+    watch)
+        # watch log
+        pid=$(get-pid) || error "ExpKit GUI not running"
+        exec tail -qF $logfile --pid=$pid 2>/dev/null
+        ;;
+
+    stop)
+        pid=$(get-pid) || error "ExpKit GUI not running"
+        kill $pid
+        mv -f $logfile $logfile.0
+        rm -f $pidfile
+        msg "ExpKit GUI stopped"
+        ;;
+esac
