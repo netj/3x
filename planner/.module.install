@@ -1,2 +1,3 @@
 exp-plan                $TOOLSDIR/
 exp-conditions          $TOOLSDIR/
+normalize-conditions    $TOOLSDIR/
