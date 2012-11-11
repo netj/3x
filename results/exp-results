@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# exp-results -- enumerate experiment outcomes
+# Usage: exp results [BATCH | RUN]... [NAME[=VALUE[,VALUE]...]]...
+# 
+# You can specify from which BATCH or RUNs you want to enumerate the results.
+# Otherwise, results from all runs will be listed.
+# 
+# Furthermore, if you specify conditions after the BATCH and RUNs, only the
+# results satisfying them will be listed.  Use `exp conditions -v` to see
+# available condition variables and values.
+# 
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-07
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "At least a RUN/BATCH directory or condition variable must be given"
+
+: ${EDITOR:=vim}
+: ${EXPROOT:=$(exp-findroot)}
+export EXPROOT
+
+## from command-line, find the batches and runs
+runs=()
+while [ -d "$1" ]; do
+    p=$(readlink -f "$1")
+    p=${p#$EXPROOT/}
+    case $p in
+        run/batch/*)
+            runs+=("${1%/}"/runs/*/)
+            shift
+            ;;
+        run/*)
+            runs+=("$1")
+            shift
+            ;;
+        *) # neither a batch nor run dir
+            break
+            ;;
+    esac
+done
+# search from all runs if no scope was given
+[[ ${#runs[@]} > 0 ]] || runs+=("$EXPROOT"/run)
+
+## normalize rest of the command-line arguments
+args=($(normalize-conditions "$@"))
+[ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
+
+
+## find matching conditions to get outcomes
+find "${runs[@]}" -name exp.condition \
+    -exec check-condition {} "$@" \; -print 2>/dev/null |
+while read -r condition; do
+    run=${condition%/exp.condition}
+    run=$(cd "$run" && pwd -P)
+    run=${run#$EXPROOT/}
+    outcome=$run/exp.outcome
+    [ -r "$outcome" ] || continue
+    echo "$run $(tr '\n' ' ' <"$outcome") $((sort | tr '\n' ' ') <"$condition")"
+done |
+column -t

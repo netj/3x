@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# check-condition -- check whether given file satisfies condition
+# Usage: check-condition CONDITION [NAME[=VALUE[,VALUE]...]]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-10
+set -eu
+
+file=$1; shift
+
+# load the file
+eval "$(cat "$file")"
+
+# check each condition
+for cond in "$@"; do
+    name=${cond%%=*}
+    values=${cond#$name=}
+    v=${!name}
+    [[ $values = @(*,|)$v@(|,*) ]] || error "$name=$v not in $values"
+done
