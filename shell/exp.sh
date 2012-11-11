@@ -6,7 +6,7 @@
 # 
 #   exp init
 # 
-#   exp plan [PROGRAM] [NAME[=VALUE[,VALUE]...]...
+#   exp plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
 #   exp start BATCH
 #   exp stop  BATCH
 # 

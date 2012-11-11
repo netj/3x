@@ -150,19 +150,13 @@ permute() {
         local values=(${varSpec#$name=})
         IFS=$OIFS
         local value=
-        local len=0
-        for value in "${values[@]}"; do
-            [[ $len -gt ${#value} ]] || len=${#value}
-        done
-        local fmt="%-${len}s"
         prefix+=" $name="
         for value in "${values[@]}"; do
-            printf -v value "$fmt" "$value"
             permute "$prefix$value" "$@"
         done
     fi
 }
-permute "exp run" "$@" >"$EXPBATCH"/plan
+permute "exp run" "$@" | column -t >"$EXPBATCH"/plan
 
 progress="$EXPBATCH"/exp.planning.in-progress
 touch -r "$EXPBATCH"/plan "$progress"
