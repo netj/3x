@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="resource/expkit.css">
     <script type="text/javascript" src="resource/jquery.min.js"></script>
     <script type="text/javascript" src="resource/bootstrap.min.js"></script>
+    <script type="text/javascript" src="resource/d3.v2.min.js"></script>
     <script type="text/javascript" src="resource/expkit.js"></script>
   </head>
 
@@ -26,9 +27,9 @@
 
           <div class="nav-collapse">
             <ul class="nav">
-              <li><a href="#plan"><i class="icon-edit icon-white"></i> Plan</a></li>
-              <li><a href="#run"><i class="icon-pencil icon-white"></i> Run</a></li>
-              <li><a href="#results"><i class="icon-share-alt icon-white"></i> Results</a></li>
+              <li><a href="#plan"><i class="icon-edit icon"></i> Plan</a></li>
+              <li><a href="#run"><i class="icon-pencil icon"></i> Run</a></li>
+              <li><a href="#results"><i class="icon-share-alt icon"></i> Results</a></li>
             </ul>
           </div>
         </div>
@@ -36,12 +37,24 @@
     </div>
 
     <div class="container">
-      <div id="results" class="row-fluid">
-        <div class="span3">
+      <div class="row">
+        <div class="span12">
           <h2>Conditions</h2>
-          ...
+          <ul id="conditions" class="nav nav-pills well">
+            <li id="variable-skel" class="dropdown skeleton">
+              <a class="dropdown-toggle" role="button" href="#"
+                data-toggle="dropdown" data-target="#variable-skel"
+                >variable <span class="caret"></span></a>
+              <ul class="dropdown-menu" role="menu">
+                <li><a href="#">value 1</a></li>
+              </ul>
+            </li>
+          </ul>
         </div>
-        <div class="span9">
+      </div>
+
+      <div id="results" class="row-fluid">
+        <div class="span12">
           <h2>Results</h2>
           ...
         </div>
