@@ -50,6 +50,7 @@ case $cmd in
         # and launch web browser on known platforms
         case $(uname) in
             Darwin) # Mac
+                until nc -z $host $port; do sleep 0.1; done
                 open "$url"
                 ;;
         esac
