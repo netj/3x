@@ -6,6 +6,9 @@
 
 log = (args...) -> console.log args...
 
+
+
+
 conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
 
 persistActiveConditions = ->
@@ -31,7 +34,7 @@ handleConditionMenuAction = (handle) -> (e) ->
 
 conditionsUISkeleton = null
 initConditions = ->
-    $.getJSON "/api/v1/conditions", (conditions) ->
+    $.getJSON "/api/conditions", (conditions) ->
         conditionsUI = $("#conditions")
         conditionsUISkeleton ?= conditionsUI.find(".condition.skeleton").remove()
         for name,values of conditions
@@ -76,5 +79,24 @@ initConditions = ->
             log "initCondition #{name}=#{values.join ","}"
 
 
+
+
+showResults = (e) ->
+    $.get "/api/results", {
+        runs: []
+        batches: []
+        conditions: JSON.stringify conditionsActive
+    }, (results) ->
+        log "got results:", results
+        $("#results-raw").text(JSON.stringify results, null, 2)
+    e.preventDefault()
+
+
+
+
+
+# initialize UI
 $ ->
     initConditions()
+    $("#show-results").click(showResults)
+

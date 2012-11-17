@@ -33,13 +33,14 @@ app.configure "production", ->
 
 
 cli = (cmd, args, onOut, onEnd=null, onErr=null) ->
+    console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
     p = child_process.spawn cmd, args
     p.stdout.on "data", onOut
     p.on "exit", onEnd if onEnd?
     p.stderr.on "data", onErr if onErr?
 
 
-app.get "/api/v1/conditions", (req, res) ->
+app.get "/api/conditions", (req, res) ->
     buf = ""
     cli "exp-conditions", ["-v"]
         , (data) ->
@@ -50,6 +51,29 @@ app.get "/api/v1/conditions", (req, res) ->
                 [name, value] = line.split "=", 2
                 conditions[name] = value?.split "," if name?
             res.json(conditions)
+
+app.get "/api/results", (req, res) ->
+    args = []
+    # TODO runs/batches
+    for name,values of JSON.parse req.param("conditions")
+        if values?.length > 0
+            args.push "#{name}=#{values.join ","}"
+    buf = ""
+    cli "exp-results", args
+        , (data) ->
+            buf += data
+        , (code) ->
+            results =
+                data: []
+            for line in buf.split /\n/
+                [run, columns...] = line.split /\s+/
+                row =
+                    "": run
+                for column in columns
+                    [name, value] = column.split "=", 2
+                    row[name] = value if name?
+                results.data.push row
+            res.json(results)
 
 
 app.listen expKitPort, ->

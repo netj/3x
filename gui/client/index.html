@@ -10,7 +10,7 @@
     <script type="text/javascript" src="resource/expkit.js"></script>
   </head>
 
-  <body data-spy="scroll">
+  <body data-spy="scroll" data-target=".navbar">
 
     <div class="navbar navbar-fixed-top">
       <div class="navbar-inner">
@@ -59,7 +59,10 @@
       <div id="results" class="row-fluid">
         <div class="span12">
           <h2>Results</h2>
-          ...
+          <a id="show-results" href="#results-raw" class="btn" role="button">Show</a>
+          <pre id="results-raw">
+            ...
+          </pre>
         </div>
       </div>
 
