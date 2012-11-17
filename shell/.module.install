@@ -7,3 +7,6 @@ be-quiet                    $TOOLSDIR/
 
 exp-findroot                $TOOLSDIR/
 exp-hack                    $TOOLSDIR/
+
+.build/node_modules         $LIBDIR/
+.build/node_modules/.bin    $LIBDIR/node_modules/

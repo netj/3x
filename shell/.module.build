@@ -4,8 +4,13 @@ set -eu
 ./customize .build/ exp.sh <<PARAMS
 @BINDIR@=$BINDIR
 @TOOLSDIR@=$TOOLSDIR
+@LIBDIR@=$LIBDIR
 @DATADIR@=$DATADIR
 @GUIDIR@=$GUIDIR
 PARAMS
 chmod +x .build/exp.sh
 
+cd .build
+ln -f ../package.json .
+date >README.md
+npm install

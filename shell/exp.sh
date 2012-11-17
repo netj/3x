@@ -51,8 +51,9 @@ if [ -z "${EXPKIT_HOME:-}" ]; then
     export TOOLSDIR="$EXPKIT_HOME/@TOOLSDIR@"
     export DATADIR="$EXPKIT_HOME/@DATADIR@"
     export GUIDIR="$EXPKIT_HOME/@GUIDIR@"
-
-    export PATH="$TOOLSDIR:$PATH"
+    export LIBDIR="$EXPKIT_HOME/@LIBDIR@"
+    export NODE_PATH="$LIBDIR/node_modules${NODE_PATH:+:$NODE_PATH}"
+    export PATH="$TOOLSDIR:$LIBDIR/node_modules/.bin:$PATH"
     unset CDPATH
     export SHLVL=0 EXPKIT_LOGLVL=${EXPKIT_LOGLVL:-1}
 fi
