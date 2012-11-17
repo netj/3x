@@ -4,70 +4,77 @@
 # Created: 2012-11-11
 ###
 
+log = (args...) -> console.log args...
+
 conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
 
 persistActiveConditions = ->
     localStorage.conditionsActive = JSON.stringify conditionsActive
 
-updateConditionDisplay = (cond) ->
-    name = cond.find(".condition-name")?.text()
-    values = conditionsActive[name]
+updateConditionDisplay = (condUI) ->
+    name = condUI.find(".condition-name")?.text()
+    values = condUI.find(".condition-value.active").map( -> $(this).text()).get()
+    conditionsActive[name] = values
     hasValues = values?.length > 0
-    cond.find(".condition-values")?.text(if hasValues then "=#{values.join ","}" else "")
-    cond.toggleClass("active", hasValues)
-    localStorage.conditionsActive
+    condUI.find(".condition-values")?.text(if hasValues then "=#{values.join ","}" else "")
+    condUI.toggleClass("active", hasValues)
 
-toggleConditionValue = (event) ->
+handleConditionMenuAction = (handle) -> (e) ->
     $this = $(this)
-    cond = $this.closest(".condition")
-    conditionName = cond.attr("id").replace("condition-", "")
-    conditionValue = $this.text()
-    conditionsActive[conditionName] ?= []
-    wasActive = conditionValue in conditionsActive[conditionName]
-    if wasActive
-        conditionsActive[conditionName] = conditionsActive[conditionName]?.filter (v) -> v isnt conditionValue
-    else
-        (conditionsActive[conditionName] ?= []).push conditionValue
-        try
-            conditionsActive[conditionName].sort((a,b) -> (a - b))
-        catch err
-            conditionsActive[conditionName].sort()
+    condUI = $this.closest(".condition")
+    ret = handle($this, condUI, e)
+    updateConditionDisplay condUI
     persistActiveConditions()
-    updateConditionDisplay cond
-    $this.toggleClass("active", not wasActive)
-    console.log(conditionName, conditionValue, event)
-    event.preventDefault()
+    e.stopPropagation()
+    e.preventDefault()
+    ret
 
 conditionsUISkeleton = null
-updateConditions = ->
+initConditions = ->
     $.getJSON "/api/v1/conditions", (conditions) ->
         conditionsUI = $("#conditions")
-        conditionsUISkeleton ?= conditionsUI.find(".skeleton").remove()
-        for cond,values of conditions
-            variableId = "condition-#{cond}"
+        conditionsUISkeleton ?= conditionsUI.find(".condition.skeleton").remove()
+        for name,values of conditions
+            variableId = "condition-#{name}"
+            # construct a dropdown button for each variable
             condUI = conditionsUISkeleton.clone()
                 .attr(id: variableId)
                 .removeClass("skeleton")
+                .toggleClass("numeric", values.every (v) -> not isNaN parseFloat v)
+            # and a dropdown menu
             condUI.find(".dropdown-toggle")
                 .attr("data-target": "#"+variableId)
-                .find(".condition-name").text(cond)
-            valueSkeleton = condUI.find(".dropdown-menu .condition-value").remove()
-            condUI.find(".dropdown-menu")
-                .append(
-                    for value in values
-                        valueUI = valueSkeleton.first().clone()
-                        valueUI.find("a").text(value)
-                            .click(toggleConditionValue)
-                        valueUI
+                .find(".condition-name").text(name)
+            # with menu items for each value
+            menu = condUI.find(".dropdown-menu")
+            valueSkeleton = menu.find("li.skeleton").remove()
+                .first().removeClass("skeleton")
+            isAllActive = do (menu) -> () ->
+                menu.find(".condition-value")
+                    .toArray().every (a) -> $(a).hasClass("active")
+            menu.find(".divider").before(
+                for value in values
+                    valueUI = valueSkeleton.clone()
+                    valueUI.find("a").text(value)
+                        .toggleClass("active", value in conditionsActive[name] ? [])
+                        .click(do (isAllActive) -> handleConditionMenuAction ($this, condUI) ->
+                            $this.toggleClass("active")
+                            condUI.find(".condition-values-toggle")
+                                .toggleClass("active", isAllActive())
+                        )
+                    valueUI
+                )
+            menu.find(".condition-values-toggle")
+                .toggleClass("active", isAllActive())
+                .click(handleConditionMenuAction ($this, condUI) ->
+                    $this.toggleClass("active")
+                    condUI.find(".condition-value")
+                        .toggleClass("active", $this.hasClass("active"))
                 )
             conditionsUI.append(condUI)
-        #conditionsUI.find(".dropdown-toggle").dropdown()
-        for name,values of conditionsActive
-            cond = conditionsUI.find("#condition-#{name}")
-            cond.find(".dropdown-menu .condition-value").each ->
-                # TODO avoid clicking twice when initializing
-                $("a", this).click().click() if $(this).text() in values
+            updateConditionDisplay(condUI)
+            log "initCondition #{name}=#{values.join ","}"
 
 
 $ ->
-    updateConditions()
+    initConditions()
