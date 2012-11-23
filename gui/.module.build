@@ -7,9 +7,8 @@ cd .build
 ln -f ../package.json
 echo >README.md
 npm install
-for bin in "$PWD"/node_modules/*/bin; do
-    PATH=$bin:$PATH
-done
+PATH="$PWD:$PWD/node_modules/.bin:$PATH"
+ln -sfn /usr/bin/true jshint
 
 # server
 cd server
@@ -29,6 +28,18 @@ coffee -c -o resource ../../client/*.coffee
 [ -s resource/jquery.min.js ] ||
     curl -sRLo resource/jquery.min.js  http://code.jquery.com/jquery-1.8.2.min.js
 
+# get DataTables
+if ! [ -e ../DataTables ]; then
+    (
+    cd ..
+    [ -e DataTables.zip ] || curl -sRLo DataTables.zip  http://datatables.net/releases/DataTables-1.9.4.zip
+    if ! [ -d DataTables ]; then
+        unzip -o DataTables.zip
+        ln -sfn DataTables-1.9.4 DataTables
+    fi
+    )
+fi
+
 # compile bootstrap
 (
 cd ..
@@ -41,7 +52,7 @@ ln -sfn hint node_modules/jshint/bin/jshint
 make bootstrap
 )
 
-# compile less with bootstrap
+# compile less with bootstrap, DataTables
 ln -sfn ../../bootstrap
 for less in ../../client/*.less; do
     css=${less#../../client/}

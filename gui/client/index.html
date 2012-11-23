@@ -7,6 +7,8 @@
     <script type="text/javascript" src="resource/jquery.min.js"></script>
     <script type="text/javascript" src="resource/bootstrap.min.js"></script>
     <script type="text/javascript" src="resource/jsrender.js"></script>
+    <script type="text/javascript" src="resource/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="resource/jquery.dataTables.bootstrap.js"></script>
     <script type="text/javascript" src="resource/d3.v2.min.js"></script>
     <script type="text/javascript" src="resource/expkit.js"></script>
   </head>
@@ -65,9 +67,23 @@
         <div class="span12">
           <h2>Results</h2>
           <a id="show-results" href="#results-raw" class="btn" role="button">Show</a>
-          <pre id="results-raw">
-            ...
-          </pre>
+          <table id="results-table" class="table table-striped table-bordered"
+            cellpadding="0" cellspacing="0" border="0">
+            <thead>
+              <tr id="results-table-head"></tr>
+              <script id="results-table-head-skeleton" type="text/x-jsrender">
+                <td>{{>name}}</td>
+              </script>
+            </thead>
+            <tbody></tbody>
+            <script id="results-table-row-skeleton" type="text/x-jsrender">
+              <tr class="result">
+                {{for columns}}
+                  <td>{{>value}}</td>
+                {{/for}}
+              </tr>
+            </script>
+          </table>
         </div>
       </div>
 

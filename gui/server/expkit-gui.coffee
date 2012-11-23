@@ -63,17 +63,29 @@ app.get "/api/results", (req, res) ->
         , (data) ->
             buf += data
         , (code) ->
-            results =
-                data: []
+            runs = []
+            columnIndex = {"#": 0}
+            columnData = [runs]
+            colno = 1
+            recno = 0
             for line in buf.split /\n/
                 [run, columns...] = line.split /\s+/
-                row =
-                    "": run
+                continue unless run
+                runs[recno] = run
                 for column in columns
                     [name, value] = column.split "=", 2
-                    row[name] = value if name?
-                results.data.push row
-            res.json(results)
+                    continue unless name
+                    col = columnIndex[name]
+                    unless col?
+                        col = colno++
+                        columnIndex[name] = col
+                        columnData[col] = []
+                    columnData[col][recno] = value
+                recno++
+            res.json(
+                index: columnIndex
+                data: columnData
+            )
 
 
 app.listen expKitPort, ->

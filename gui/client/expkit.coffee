@@ -76,7 +76,23 @@ showResults = (e) ->
         conditions: JSON.stringify conditionsActive
     }, (results) ->
         log "got results:", results
-        $("#results-raw").text(JSON.stringify results, null, 2)
+        #$("#results-raw").text(JSON.stringify results, null, 2)
+        table = $("#results-table")
+        # populate table head
+        headSkeleton = $("#results-table-head-skeleton")
+        thead = table.find("thead tr").first()
+        thead.find("td").remove()
+        thead.append(headSkeleton.render(name: col) for col of results.index)
+        # and table body
+        tbody = table.find("tbody").first()
+        tbody.find("tr").remove()
+        rowSkeleton = $("#results-table-row-skeleton")
+        recno = 0
+        for run in results.data[0]
+            row = columns: (value: results.data[idx][recno] for col,idx of results.index)
+            tbody.append(rowSkeleton.render(row))
+            recno++
+        table.dataTable()
     e.preventDefault()
 
 
