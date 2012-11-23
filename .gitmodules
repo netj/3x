@@ -7,3 +7,6 @@
 [submodule "gui/d3"]
 	path = gui/d3
 	url = git://github.com/mbostock/d3.git
+[submodule "gui/jsrender"]
+	path = gui/jsrender
+	url = https://github.com/BorisMoore/jsrender.git

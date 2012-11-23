@@ -10,3 +10,4 @@ bootstrap/bootstrap/js/bootstrap.min.js     $GUIDIR/client/resource/
 bootstrap/bootstrap/img/glyphicons-halflings.png        $GUIDIR/client/resource/
 bootstrap/bootstrap/img/glyphicons-halflings-white.png  $GUIDIR/client/resource/
 d3/d3.v2.min.js                             $GUIDIR/client/resource/
+jsrender/jsrender.js                        $GUIDIR/client/resource/

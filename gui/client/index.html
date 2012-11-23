@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="resource/expkit.css">
     <script type="text/javascript" src="resource/jquery.min.js"></script>
     <script type="text/javascript" src="resource/bootstrap.min.js"></script>
+    <script type="text/javascript" src="resource/jsrender.js"></script>
     <script type="text/javascript" src="resource/d3.v2.min.js"></script>
     <script type="text/javascript" src="resource/expkit.js"></script>
   </head>
@@ -41,18 +42,22 @@
         <div class="span12">
           <h2>Conditions</h2>
           <ul id="conditions" class="nav nav-pills well">
-            <li id="condition-skel" class="condition skeleton dropdown">
+          </ul>
+          <script id="condition-skeleton" type="text/x-jsrender">
+            <li id="condition-{{>name}}" class="condition dropdown">
               <a class="dropdown-toggle" role="button" href="#"
-                data-toggle="dropdown" data-target="#condition-skel"
-                ><span class="condition-name">variable</span><span
+                data-toggle="dropdown" data-target="#condition-{{>name}}"
+                ><span class="condition-name">{{>name}}</span><span
                   class="condition-values"></span> <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
-                <li class="skeleton"><a href="#" class="condition-value">value 1</a></li>
+                {{for values}}
+                  <li class="skeleton"><a href="#" class="condition-value">{{>#data}}</a></li>
+                {{/for}}
                 <li class="divider"></li>
                 <li><a href="#" class="condition-values-toggle">All</a></li>
               </ul>
             </li>
-          </ul>
+          </script>
         </div>
       </div>
 

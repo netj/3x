@@ -32,41 +32,30 @@ handleConditionMenuAction = (handle) -> (e) ->
     e.preventDefault()
     ret
 
-conditionsUISkeleton = null
 initConditions = ->
     $.getJSON "/api/conditions", (conditions) ->
         conditionsUI = $("#conditions")
-        conditionsUISkeleton ?= conditionsUI.find(".condition.skeleton").remove()
+        skeleton = $("#condition-skeleton")
         for name,values of conditions
-            variableId = "condition-#{name}"
-            # construct a dropdown button for each variable
-            condUI = conditionsUISkeleton.clone()
-                .attr(id: variableId)
-                .removeClass("skeleton")
+            # add each variable by filling the skeleton
+            conditionsUI.append(skeleton.render({name, values}))
+            condUI = conditionsUI.find("#condition-#{name}")
                 .toggleClass("numeric", values.every (v) -> not isNaN parseFloat v)
-            # and a dropdown menu
-            condUI.find(".dropdown-toggle")
-                .attr("data-target": "#"+variableId)
-                .find(".condition-name").text(name)
             # with menu items for each value
             menu = condUI.find(".dropdown-menu")
-            valueSkeleton = menu.find("li.skeleton").remove()
-                .first().removeClass("skeleton")
             isAllActive = do (menu) -> () ->
                 menu.find(".condition-value")
                     .toArray().every (a) -> $(a).hasClass("active")
-            menu.find(".divider").before(
-                for value in values
-                    valueUI = valueSkeleton.clone()
-                    valueUI.find("a").text(value)
-                        .toggleClass("active", value in conditionsActive[name] ? [])
-                        .click(do (isAllActive) -> handleConditionMenuAction ($this, condUI) ->
-                            $this.toggleClass("active")
-                            condUI.find(".condition-values-toggle")
-                                .toggleClass("active", isAllActive())
-                        )
-                    valueUI
+            menu.find(".condition-value")
+                .click(do (isAllActive) -> handleConditionMenuAction ($this, condUI) ->
+                    $this.toggleClass("active")
+                    condUI.find(".condition-values-toggle")
+                        .toggleClass("active", isAllActive())
                 )
+                .each ->
+                    $this = $(this)
+                    value = $this.text()
+                    $this.toggleClass("active", value in conditionsActive[name] ? [])
             menu.find(".condition-values-toggle")
                 .toggleClass("active", isAllActive())
                 .click(handleConditionMenuAction ($this, condUI) ->
@@ -74,7 +63,6 @@ initConditions = ->
                     condUI.find(".condition-value")
                         .toggleClass("active", $this.hasClass("active"))
                 )
-            conditionsUI.append(condUI)
             updateConditionDisplay(condUI)
             log "initCondition #{name}=#{values.join ","}"
 
