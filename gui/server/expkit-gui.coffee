@@ -63,30 +63,27 @@ app.get "/api/results", (req, res) ->
         , (data) ->
             buf += data
         , (code) ->
-            runs = []
+            # TODO error checking with code
             columnIndex = {"#": 0}
-            columnData = [runs]
-            colno = 1
-            recno = 0
+            columnNames = ["#"]
+            rows = []
             for line in buf.split /\n/
                 [run, columns...] = line.split /\s+/
                 continue unless run
-                runs[recno] = run
+                row = [run]
                 for column in columns
                     [name, value] = column.split "=", 2
                     continue unless name
-                    col = columnIndex[name]
-                    unless col?
-                        col = colno++
-                        columnIndex[name] = col
-                        columnData[col] = []
-                    columnData[col][recno] = value
-                recno++
-            columnIndexArray = []
-            columnIndexArray[col] = name for name,col of columnIndex
+                    idx = columnIndex[name]
+                    unless idx?
+                        idx = columnNames.length
+                        columnIndex[name] = idx
+                        columnNames.push name
+                    row[idx] = value
+                rows.push row
             res.json(
-                index: columnIndexArray
-                data: columnData
+                names: columnNames
+                rows: rows
             )
 
 
