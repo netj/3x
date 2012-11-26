@@ -76,23 +76,26 @@ showResults = (e) ->
         conditions: JSON.stringify conditionsActive
     }, (results) ->
         log "got results:", results
-        #$("#results-raw").text(JSON.stringify results, null, 2)
-        table = $("#results-table")
-        # populate table head
-        headSkeleton = $("#results-table-head-skeleton")
-        thead = table.find("thead tr").first()
-        thead.find("td").remove()
-        thead.append(headSkeleton.render(name: col) for col of results.index)
-        # and table body
-        tbody = table.find("tbody").first()
-        tbody.find("tr").remove()
-        rowSkeleton = $("#results-table-row-skeleton")
-        recno = 0
+        # convert columns to rows
+        rows = []
+        i = 0
         for run in results.data[0]
-            row = columns: (value: results.data[idx][recno] for col,idx of results.index)
-            tbody.append(rowSkeleton.render(row))
-            recno++
-        table.dataTable()
+            j = 0
+            rows.push (results.data[j++][i] for col in results.index)
+            i++
+        $("#results-table").dataTable(
+            bDestroy: true
+            bLengthChange: false
+            bPaginate: false
+            bProcessing: true
+            bScrollInfinite: true
+            bScrollCollapse: true
+            bDeferRender: true
+            #sScrollY: "400px"
+            aaData: rows
+            aoColumns: ({ sTitle: col } for col in results.index)
+            sDom: '<"H"fir>t<"F"lp>'
+        )
     e.preventDefault()
 
 

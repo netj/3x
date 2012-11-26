@@ -82,8 +82,10 @@ app.get "/api/results", (req, res) ->
                         columnData[col] = []
                     columnData[col][recno] = value
                 recno++
+            columnIndexArray = []
+            columnIndexArray[col] = name for name,col of columnIndex
             res.json(
-                index: columnIndex
+                index: columnIndexArray
                 data: columnData
             )
 
