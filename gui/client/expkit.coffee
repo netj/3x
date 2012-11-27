@@ -33,8 +33,8 @@ handleConditionMenuAction = (handle) -> (e) ->
     persistActiveConditions()
     e.stopPropagation()
     e.preventDefault()
-    # TODO skip showResults if another menu has been open
-    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, showResults)
+    # TODO skip updateResults if another menu has been open
+    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
     ret
 
 initConditions = ->
@@ -97,98 +97,107 @@ enumerateAll = (name) ->
     else
         (vs) -> vs.joinTextsWithShy ","
 
+
+emptyResults =
+    names: []
+    rows: []
+updateResults = (e) ->
+    if _.values(conditionsActive).some((vs) -> vs?.length > 0)
+        $.get("/api/results",
+            runs: []
+            batches: []
+            conditions: JSON.stringify conditionsActive
+        ).success(displayResults)
+    else
+        displayResults(emptyResults)
+    e?.preventDefault?()
+
 results = null
-showResults = (e) ->
-    $.get "/api/results", {
-        runs: []
-        batches: []
-        conditions: JSON.stringify conditionsActive
-    }, (newResults) ->
-        log "got results:", newResults
-        results = newResults
-        #$("#results-raw").text(JSON.stringify results, null, 2)
+displayResults = (newResults) ->
+    log "got results:", newResults
+    results = newResults
+    #$("#results-raw").text(JSON.stringify results, null, 2)
 
-        # prepare the column ordering
-        columnNamesActive   = (name for name of conditions when conditionsActive[name]?.length > 0)
-        columnNamesMeasured = (name for name in results.names when not conditions[name])
-        columnNames = (name for name of conditions).concat columnNamesMeasured
-        columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
+    # prepare the column ordering
+    columnNamesActive   = (name for name of conditions when conditionsActive[name]?.length > 0)
+    columnNamesMeasured = (name for name in results.names when not conditions[name])
+    columnNames = (name for name of conditions).concat columnNamesMeasured
+    columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
 
-        # aggregate data
-        columnAggregation = # TODO for measurements, allow choosing different aggregation functions
-            "#": _.size
-        for name in columnNamesMeasured
-            columnAggregation[name] ?= aggregateFunctions.mean
-        for name of conditions
-            columnAggregation[name] ?= enumerateAll name
-        groupRowsByColumns = (columns) -> (rows) ->
-            map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
-            red = (key, rows) ->
-                for name in columnNames
-                    idx = columnIndex[name]
-                    if name in columns
-                        rows[0][idx]
-                    else
-                        values = _.uniq(row[idx] for row in rows)
-                        value: columnAggregation[name](values)
-                        values: values
-            _.values(mapReduce(map, red)(rows))
-        aggregatedRows = groupRowsByColumns(columnNamesActive)(results.rows)
-        console.log aggregatedRows
-        # TODO pad aggregatedRows with missing combination of condition values
+    # aggregate data
+    columnAggregation = # TODO for measurements, allow choosing different aggregation functions
+        "#": _.size
+    for name in columnNamesMeasured
+        columnAggregation[name] ?= aggregateFunctions.mean
+    for name of conditions
+        columnAggregation[name] ?= enumerateAll name
+    groupRowsByColumns = (columns) -> (rows) ->
+        map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
+        red = (key, rows) ->
+            for name in columnNames
+                idx = columnIndex[name]
+                if name in columns
+                    rows[0][idx]
+                else
+                    values = _.uniq(row[idx] for row in rows)
+                    value: columnAggregation[name](values)
+                    values: values
+        _.values(mapReduce(map, red)(rows))
+    aggregatedRows = groupRowsByColumns(columnNamesActive)(results.rows)
+    log "aggregated results:", aggregatedRows
+    # TODO pad aggregatedRows with missing combination of condition values
 
-        table = $("#results-table")
-        # populate table head
-        headSkeleton = $("#results-table-head-skeleton")
-        thead = table.find("thead")
-        thead.find("tr").remove()
-        columnMetadata = {}
-        thead.append(headSkeleton.render(
+    table = $("#results-table")
+    # populate table head
+    headSkeleton = $("#results-table-head-skeleton")
+    thead = table.find("thead")
+    thead.find("tr").remove()
+    columnMetadata = {}
+    thead.append(headSkeleton.render(
+        columns: (
+            for name in columnNames
+                columnMetadata[name] =
+                    name: name
+                    className: (
+                            if name in columnNamesActive then "condition"
+                            else if name in columnNamesMeasured then "measurement"
+                            else "muted"
+                        )
+                    isForGrouping: name in columnNamesActive
+                    isMeasured: name in columnNamesMeasured
+                    isntImportant: conditions[name]? and name not in columnNamesActive
+        )
+    ))
+
+    # populate table body
+    table.find("tbody").remove()
+    tbody = $("<tbody>").appendTo(table)
+    rowSkeleton = $("#results-table-row-skeleton")
+    for row in aggregatedRows
+        tbody.append(rowSkeleton.render(
             columns: (
+                idx = 0
                 for name in columnNames
-                    columnMetadata[name] =
-                        name: name
-                        className: (
-                                if name in columnNamesActive then "condition"
-                                else if name in columnNamesMeasured then "measurement"
-                                else "muted"
-                            )
-                        isForGrouping: name in columnNamesActive
-                        isMeasured: name in columnNamesMeasured
-                        isntImportant: conditions[name]? and name not in columnNamesActive
+                    values = null
+                    value = row[idx++]
+                    if value?.values?.length
+                        values = ({name, value:v} for v in value.values)
+                        value = value.value
+                    $.extend(columnMetadata[name], {values, value})
+
             )
         ))
 
-        # populate table body
-        table.find("tbody").remove()
-        tbody = $("<tbody>").appendTo(table)
-        rowSkeleton = $("#results-table-row-skeleton")
-        for row in aggregatedRows
-            tbody.append(rowSkeleton.render(
-                columns: (
-                    idx = 0
-                    for name in columnNames
-                        values = null
-                        value = row[idx++]
-                        if value?.values?.length
-                            values = ({name, value:v} for v in value.values)
-                            value = value.value
-                        $.extend(columnMetadata[name], {values, value})
-
-                )
-            ))
-
-        # finally, make the table interactive with DataTable
-        table.dataTable(
-            bDestroy: true
-            bLengthChange: false
-            bPaginate: false
-            bAutoWidth: false
-            sDom: '<"H"fir>t<"F"lp>'
-            bStateSave: true
-            bProcessing: true
-        )
-    e.preventDefault?()
+    # finally, make the table interactive with DataTable
+    table.dataTable(
+        bDestroy: true
+        bLengthChange: false
+        bPaginate: false
+        bAutoWidth: false
+        sDom: '<"H"fir>t<"F"lp>'
+        bStateSave: true
+        bProcessing: true
+    )
 
 
 
@@ -197,6 +206,5 @@ showResults = (e) ->
 # initialize UI
 $ ->
     initConditions()
-        .success(showResults)
-    
+        .success(updateResults)
 
