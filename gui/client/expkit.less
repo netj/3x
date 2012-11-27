@@ -19,11 +19,19 @@
   }
 }
 
-#conditions .dropdown-menu a {
-  padding-left: 4ex;
-  &.active:before {
-    margin-left: -2ex;
-    content: "✓ ";
+.dropdown-menu a {
+  #conditions &, #measurements & {
+    padding-left: 4ex;
+    &.active:before {
+      margin-left: -2ex;
+      content: "✓ ";
+    }
+  }
+}
+
+#measurements .active > a {
+  &, &:hover {
+    background-color: @errorText;
   }
 }
 

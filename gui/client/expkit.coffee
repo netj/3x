@@ -9,6 +9,38 @@ log = (args...) -> console.log args...
 Array::joinTextsWithShy = (delim) ->
     ($("<div/>").text(v).html() for v in @).join "&shy;#{delim}"
 
+safeId = (str) -> str.replace(/[#-]/g, "-")
+
+
+RUN_COLUMN_NAME = "#run"
+
+
+mapReduce = (map, red) -> (rows) ->
+    mapped = {}
+    for row in rows
+        (mapped[map(row)] ?= []).push row
+    reduced = {}
+    for key,rowGroup of mapped
+        reduced[key] = red(key, rowGroup)
+
+aggregateFunctions =
+    count: _.size
+    mean: (vs) ->
+        if vs.length
+            sum = 0; sum += v for v in vs.map parseFloat when not isNaN v
+            sum / vs.length
+        else
+            null
+    # TODO more agg fns: median, mode, max, min, ...
+
+enumerateAll = (name) ->
+    if (values = conditions[name])?
+        (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
+    else
+        (vs) -> vs.joinTextsWithShy ","
+
+
+
 
 conditions = null
 conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
@@ -74,28 +106,67 @@ initConditions = ->
 
 
 
-mapReduce = (map, red) -> (rows) ->
-    mapped = {}
-    for row in rows
-        (mapped[map(row)] ?= []).push row
-    reduced = {}
-    for key,rowGroup of mapped
-        reduced[key] = red(key, rowGroup)
 
-aggregateFunctions =
-    mean: (vs) ->
-        if vs.length
-            sum = 0; sum += v for v in vs.map parseFloat when not isNaN v
-            sum / vs.length
-        else
-            null
-    # TODO more agg fns: median, mode, max, min, ...
 
-enumerateAll = (name) ->
-    if (values = conditions[name])?
-        (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
-    else
-        (vs) -> vs.joinTextsWithShy ","
+measurementsAggregation = JSON.parse (localStorage.measurementsAggregation ?= "{}")
+
+persistActiveMeasurements = ->
+    localStorage.measurementsAggregation = JSON.stringify measurementsAggregation
+
+updateMeasurementDisplay = (measUI) ->
+    name = measUI.find(".measurement-name")?.text()
+    aggregationActive = measUI.find(".measurement-aggregation.active")
+    isActive = aggregationActive.length > 0
+    aggregation = if isActive then aggregationActive.first().text() else null
+    measurementsAggregation[name] = aggregation
+    measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
+    measUI.toggleClass("active", isActive)
+
+handleMeasurementMenuAction = (handle) -> (e) ->
+    $this = $(this)
+    measUI = $this.closest(".measurement")
+    ret = handle($this, measUI, e)
+    updateMeasurementDisplay measUI
+    persistActiveMeasurements()
+    e.preventDefault()
+    # TODO skip updateResults if another menu has been open
+    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
+    ret
+
+initMeasurements = ->
+    displayMeasurements = (newMeasurements) ->
+        measurements = newMeasurements
+        measurementsUI = $("#measurements")
+        skeleton = $("#measurement-skeleton")
+        # TODO different aggregateFunctions depending on type: string, numbers, ...
+        aggNames = ({name: aggName} for aggName of aggregateFunctions)
+        for name,type of measurements
+            id = safeId(name)
+            # add each measurement by filling the skeleton
+            measurementsUI.append(skeleton.render({name, id, aggregateFunctions:aggNames}))
+            measUI = measurementsUI.find("#measurement-#{id}")
+            # with menu items for aggregateFunctions
+            menu = measUI.find(".dropdown-menu")
+            menu.find(".measurement-aggregation")
+                .click(handleMeasurementMenuAction ($this, measUI) ->
+                    $this.toggleClass("active")
+                )
+                .each ->
+                    $this = $(this)
+                    aggregation = $this.text()
+                    $this.toggleClass("active", aggregation == measurementsAggregation[name])
+            updateMeasurementDisplay measUI
+            log "initMeasurement #{name}:#{type}.#{measurementsAggregation[name]}"
+
+    displayMeasurements(
+        "#run": "string"
+    )
+    return # TODO get from server
+    $.getJSON("/api/measurements")
+        .success(displayMeasurements)
+
+
+
 
 
 emptyResults =
@@ -125,12 +196,15 @@ displayResults = (newResults) ->
     columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
 
     # aggregate data
-    columnAggregation = # TODO for measurements, allow choosing different aggregation functions
-        "#": _.size
+    columnAggregation = {}
+    # for measurements, allow choosing different aggregation functions
     for name in columnNamesMeasured
+        columnAggregation[name] = aggregateFunctions[measurementsAggregation[name]]
         columnAggregation[name] ?= aggregateFunctions.mean
+    columnAggregation[RUN_COLUMN_NAME] ?= aggregateFunctions.count
     for name of conditions
         columnAggregation[name] ?= enumerateAll name
+    log "aggregation:", columnAggregation
     groupRowsByColumns = (columns) -> (rows) ->
         map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
         red = (key, rows) ->
@@ -140,7 +214,7 @@ displayResults = (newResults) ->
                     rows[0][idx]
                 else
                     values = _.uniq(row[idx] for row in rows)
-                    value: columnAggregation[name](values)
+                    value: (columnAggregation[name] ? enumerateAll name)(values)
                     values: values
         _.values(mapReduce(map, red)(rows))
     aggregatedRows = groupRowsByColumns(columnNamesActive)(results.rows)
@@ -166,6 +240,7 @@ displayResults = (newResults) ->
                     isForGrouping: name in columnNamesActive
                     isMeasured: name in columnNamesMeasured
                     isntImportant: conditions[name]? and name not in columnNamesActive
+                    isRunIdColumn: name == RUN_COLUMN_NAME
         )
     ))
 
@@ -206,5 +281,6 @@ displayResults = (newResults) ->
 # initialize UI
 $ ->
     initConditions()
+        .success(initMeasurements)
         .success(updateResults)
 

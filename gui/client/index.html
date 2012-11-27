@@ -54,7 +54,7 @@
                   class="condition-values"></span> <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
                 {{for values}}
-                  <li class="skeleton"><a href="#" class="condition-value">{{>#data}}</a></li>
+                  <li><a href="#" class="condition-value">{{>#data}}</a></li>
                 {{/for}}
                 <li class="divider"></li>
                 <li><a href="#" class="condition-values-toggle">All</a></li>
@@ -62,10 +62,28 @@
             </li>
           </script>
         </div>
-        <div class="span5" id="measurements">
+        <div class="span5">
           <h2>Measurements</h2>
           <ul id="measurements" class="nav nav-pills well">
           </ul>
+          <script id="measurement-skeleton" type="text/x-jsrender">
+            <li id="measurement-{{>id}}" class="measurement dropdown">
+              <a class="dropdown-toggle" role="button" href="#"
+                data-toggle="dropdown" data-target="#measurement-{{>id}}"
+                ><span class="measurement-name">{{>name}}</span><span
+                  class="measurement-aggregation"></span> <span class="caret"></span></a>
+              <ul class="dropdown-menu" role="menu">
+                {{for aggregateFunctions}}
+                <li><a href="#" class="measurement-aggregation">{{>name}}</a></li>
+                {{/for}}
+                <!--
+                <li class="divider"></li>
+                TODO precision slider
+                <li><a href="#" class="measurement-aggregation-toggle">All</a></li>
+                -->
+              </ul>
+            </li>
+          </script>
         </div>
       </div>
 
@@ -106,7 +124,7 @@
             </tr>
           </script>
           <script id="results-table-cell-skeleton" type="text/x-jsrender">
-            {{if name == "#"}}
+            {{if isRunIdColumn}}
               <a href="{{>value}}">{{>value}}</a>
             {{else}}
               {{>value}}

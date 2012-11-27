@@ -53,6 +53,7 @@ app.get "/api/conditions", (req, res) ->
             res.json(conditions)
 
 app.get "/api/results", (req, res) ->
+    RUN_COLUMN_NAME = "#run"
     args = []
     # TODO runs/batches
     for name,values of JSON.parse req.param("conditions")
@@ -64,8 +65,8 @@ app.get "/api/results", (req, res) ->
             buf += data
         , (code) ->
             # TODO error checking with code
-            columnIndex = {"#": 0}
-            columnNames = ["#"]
+            columnIndex = {}
+            columnNames = [RUN_COLUMN_NAME]
             rows = []
             for line in buf.split /\n/
                 [run, columns...] = line.split /\s+/
