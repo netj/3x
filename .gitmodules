@@ -10,3 +10,6 @@
 [submodule "gui/jsrender"]
 	path = gui/jsrender
 	url = https://github.com/BorisMoore/jsrender.git
+[submodule "gui/underscore"]
+	path = gui/underscore
+	url = https://github.com/documentcloud/underscore.git

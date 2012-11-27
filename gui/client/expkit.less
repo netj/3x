@@ -27,9 +27,20 @@
   }
 }
 
-#conditions .condition-values {
+#conditions .condition-values, #results-table tbody .aggregated {
   word-wrap: break-word;
   display: inline-block;
+}
+
+#results-table {
+  thead {
+    .condition {
+      color: darken(@linkColor, 5%);
+    }
+    .measurement {
+      color: darken(@errorText, 5%);
+    }
+  }
 }
 
 // vim:sw=2:sts=2

@@ -12,6 +12,8 @@ bootstrap/bootstrap/js/bootstrap.min.js                 $GUIDIR/client/resource/
 bootstrap/bootstrap/img/glyphicons-halflings.png        $GUIDIR/client/resource/
 bootstrap/bootstrap/img/glyphicons-halflings-white.png  $GUIDIR/client/resource/
 
+underscore/underscore-min.js                            $GUIDIR/client/resource/
+
 jsrender/jsrender.js                                    $GUIDIR/client/resource/
 
 .build/DataTables/media/js/jquery.dataTables.min.js     $GUIDIR/client/resource/

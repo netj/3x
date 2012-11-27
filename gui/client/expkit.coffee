@@ -6,7 +6,8 @@
 
 log = (args...) -> console.log args...
 
-
+Array::joinTextsWithShy = (delim) ->
+    ($("<div/>").text(v).html() for v in @).join "&shy;#{delim}"
 
 
 conditions = null
@@ -21,9 +22,7 @@ updateConditionDisplay = (condUI) ->
     conditionsActive[name] = values
     hasValues = values?.length > 0
     condUI.find(".condition-values")
-        ?.html(if hasValues then "=#{
-                ($("<div/>").text(v).html() for v in values).join "&shy;,"
-            }" else "")
+        ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
     condUI.toggleClass("active", hasValues)
 
 handleConditionMenuAction = (handle) -> (e) ->
@@ -34,6 +33,8 @@ handleConditionMenuAction = (handle) -> (e) ->
     persistActiveConditions()
     e.stopPropagation()
     e.preventDefault()
+    # TODO skip showResults if another menu has been open
+    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, showResults)
     ret
 
 initConditions = ->
@@ -73,50 +74,121 @@ initConditions = ->
 
 
 
+mapReduce = (map, red) -> (rows) ->
+    mapped = {}
+    for row in rows
+        (mapped[map(row)] ?= []).push row
+    reduced = {}
+    for key,rowGroup of mapped
+        reduced[key] = red(key, rowGroup)
 
+aggregateFunctions =
+    mean: (vs) ->
+        if vs.length
+            sum = 0; sum += v for v in vs.map parseFloat when not isNaN v
+            sum / vs.length
+        else
+            null
+    # TODO more agg fns: median, mode, max, min, ...
+
+enumerateAll = (name) ->
+    if (values = conditions[name])?
+        (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
+    else
+        (vs) -> vs.joinTextsWithShy ","
+
+results = null
 showResults = (e) ->
     $.get "/api/results", {
         runs: []
         batches: []
         conditions: JSON.stringify conditionsActive
-    }, (results) ->
-        log "got results:", results
+    }, (newResults) ->
+        log "got results:", newResults
+        results = newResults
         #$("#results-raw").text(JSON.stringify results, null, 2)
 
         # prepare the column ordering
-        columnNames = (conditionName for conditionName of conditions)
-        columnNames = columnNames.concat (name for name in results.names when name not in columnNames)
+        columnNamesActive   = (name for name of conditions when conditionsActive[name]?.length > 0)
+        columnNamesMeasured = (name for name in results.names when not conditions[name])
+        columnNames = (name for name of conditions).concat columnNamesMeasured
         columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
+
+        # aggregate data
+        columnAggregation = # TODO for measurements, allow choosing different aggregation functions
+            "#": _.size
+        for name in columnNamesMeasured
+            columnAggregation[name] ?= aggregateFunctions.mean
+        for name of conditions
+            columnAggregation[name] ?= enumerateAll name
+        groupRowsByColumns = (columns) -> (rows) ->
+            map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
+            red = (key, rows) ->
+                for name in columnNames
+                    idx = columnIndex[name]
+                    if name in columns
+                        rows[0][idx]
+                    else
+                        values = _.uniq(row[idx] for row in rows)
+                        value: columnAggregation[name](values)
+                        values: values
+            _.values(mapReduce(map, red)(rows))
+        aggregatedRows = groupRowsByColumns(columnNamesActive)(results.rows)
+        console.log aggregatedRows
+        # TODO pad aggregatedRows with missing combination of condition values
 
         table = $("#results-table")
         # populate table head
-        headSkeleton = table.find("#results-table-head-skeleton")
-        thead = table.find("thead tr").first()
-        thead.find("td").remove()
-        thead.append(headSkeleton.render(name: name) for name in columnNames)
-        # and table body
+        headSkeleton = $("#results-table-head-skeleton")
+        thead = table.find("thead")
+        thead.find("tr").remove()
+        columnMetadata = {}
+        thead.append(headSkeleton.render(
+            columns: (
+                for name in columnNames
+                    columnMetadata[name] =
+                        name: name
+                        className: (
+                                if name in columnNamesActive then "condition"
+                                else if name in columnNamesMeasured then "measurement"
+                                else "muted"
+                            )
+                        isForGrouping: name in columnNamesActive
+                        isMeasured: name in columnNamesMeasured
+                        isntImportant: conditions[name]? and name not in columnNamesActive
+            )
+        ))
+
+        # populate table body
         table.find("tbody").remove()
         tbody = $("<tbody>").appendTo(table)
-        rowSkeleton = table.find("#results-table-row-skeleton")
-        for dataRow in results.rows
-            row = columns: (name: name, value: dataRow[columnIndex[name]] for name in columnNames)
-            tbody.append(rowSkeleton.render(row))
-        unless $.fn.DataTable.fnIsDataTable(table.get())
-            table.dataTable(
-                #bRetreive: true
-                bDestroy: true
-                bLengthChange: false
-                bPaginate: false
-                bAutoWidth: false
-                sDom: '<"H"fir>t<"F"lp>'
-                bStateSave: true
-                #bProcessing: true
-                #bScrollInfinite: true
-                #bScrollCollapse: true
-                #bDeferRender: true
-                #sScrollY: "400px"
-            )
-    e.preventDefault()
+        rowSkeleton = $("#results-table-row-skeleton")
+        for row in aggregatedRows
+            tbody.append(rowSkeleton.render(
+                columns: (
+                    idx = 0
+                    for name in columnNames
+                        values = null
+                        value = row[idx++]
+                        if value?.values?.length
+                            values = ({name, value:v} for v in value.values)
+                            value = value.value
+                        $.extend(columnMetadata[name], {values, value})
+
+                )
+            ))
+
+        # finally, make the table interactive with DataTable
+        table.dataTable(
+            bDestroy: true
+            bLengthChange: false
+            bPaginate: false
+            bAutoWidth: false
+            sDom: '<"H"fir>t<"F"lp>'
+            bStateSave: true
+            bProcessing: true
+        )
+    e.preventDefault?()
 
 
 
@@ -125,5 +197,6 @@ showResults = (e) ->
 # initialize UI
 $ ->
     initConditions()
-    $("#show-results").click(showResults)
+        .success(showResults)
+    
 
