@@ -107,26 +107,18 @@
               {{for columns}}
               <td class="{{>className}} {{>type}}-type">
                 {{if values}}
-                  <span class="aggregated {{>aggregation}}">{{:value}}</span>
-                  <!-- TODO popup these when clicked or hovered -->
-                  <ul class="more">
-                    {{for values}}
-                      <li>{{for #data tmpl="#results-table-cell-skeleton"/}}</li>
-                    {{/for}}
-                  </ul>
+                  <div class="aggregated {{>aggregation}}"
+                    data-placement="bottom" data-trigger="click"
+                    data-html="true" data-content='<ul>{{for values}}<li>{{for #data tmpl="#results-table-cell-skeleton" ~column=#parent.parent.data/}}</li>{{/for}}</ul>'>{{:value}}</div>
                 {{else}}
-                  {{for #data tmpl="#results-table-cell-skeleton"/}}
+                  {{for #data tmpl="#results-table-cell-skeleton" ~column=#data/}}
                 {{/if}}
               </td>
               {{/for}}
             </tr>
           </script>
           <script id="results-table-cell-skeleton" type="text/x-jsrender">
-            {{if isRunIdColumn}}
-              <a href="{{>value}}">{{>value}}</a>
-            {{else}}
-              {{>value}}
-            {{/if}}
+            {{if ~column.isRunIdColumn}}<a href="{{>value}}">{{>value}}</a>{{else}}{{>value}}{{/if}}
           </script>
         </div>
       </div>

@@ -33,7 +33,7 @@ $.views.tags({
 `
 jQuery.extend( jQuery.fn.dataTableExt.oSort, {
     "num-html-pre": function ( a ) {
-        var x = a.replace( /<ul[\s\S]*<\/ul>/, "" ).replace( /<.*?>/g, "" );
+        var x = a.replace( /<[\s\S]*?>/g, "" );
         return parseFloat( x );
     },
  
@@ -48,9 +48,8 @@ jQuery.extend( jQuery.fn.dataTableExt.oSort, {
 jQuery.fn.dataTableExt.aTypes.unshift( function ( sData )
 {
     sData = typeof sData.replace == 'function' ?
-        sData.replace( /<ul[\s\S]*<\/ul>/, "" ).replace( /<.*?>/g, "" ) : sData;
+        sData.replace( /<[\s\S]*?>/g, "" ) : sData;
     sData = $.trim(sData);
-    log( sData );
       
     var sValidFirstChars = "0123456789-";
     var sValidChars = "0123456789.";
@@ -123,7 +122,7 @@ aggregationsForType = do ->
             hist[v] += 1
         maxc = _.max(hist)
         for v,c of hist when c == maxc
-            return numFormatted v
+            return v
     median = (vs) ->
         ordered = _.clone(vs).sort()
         ordered[Math.floor(vs.length / 2)]
@@ -376,9 +375,19 @@ displayResults = () ->
                         values = ({name, value:v} for v in value.values)
                         value = value.value
                     $.extend(columnMetadata[name], {values, value})
-
             )
         ))
+    tbody.find(".aggregated")
+        .popover(animation:false, trigger: "manual")
+        .click((e) ->
+            tbody.find(".aggregated").popover("hide")
+            $(this).popover("show")
+            e.stopPropagation()
+            e.preventDefault()
+        )
+    do _.once ->
+        $('html').on 'click.popover.data-api touchstart.popover.data-api', null, (e) ->
+            $("#results-table .aggregated").popover("hide")
 
     # finally, make the table interactive with DataTable
     table.dataTable(
