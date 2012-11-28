@@ -232,7 +232,7 @@ updateMeasurementDisplay = (measUI) ->
     aggregation = if isActive then aggregationActive.first().text()
     measurementsAggregation[name] = aggregation
     measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
-    measUI.toggleClass("active", isActive)
+    measUI.toggleClass("active", isActive or name == RUN_COLUMN_NAME)
 
 handleMeasurementMenuAction = (handle) -> (e) ->
     $this = $(this)
@@ -304,37 +304,45 @@ displayNewResults = (newResults) ->
 
 displayResults = () ->
     # prepare the column ordering
+    columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
     columnNamesGrouping = (name for name of conditions when conditionsActive[name]?.length > 0)
     columnNamesMeasured = (name for name in results.names when measurementsAggregation[name])
+    if RUN_COLUMN_NAME not in columnNamesMeasured
+        columnNamesGrouping.push RUN_COLUMN_NAME
+        columnNamesMeasured.unshift RUN_COLUMN_NAME
     columnNames = (name for name of conditions).concat columnNamesMeasured
-    columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
-
-    # aggregate data
     columnAggregation = {}
-    # for measurements, allow choosing different aggregation functions
-    for name in columnNamesMeasured
-        aggs = aggregationsForType[measurements[name].type]
-        aggName = measurementsAggregation[name]
-        aggName = _.keys(aggs)[0] unless aggs[aggName]
-        columnAggregation[name] = {name:aggName, func:aggs[aggName]}
-    for name of conditions
-        columnAggregation[name] ?= {name:"enumerate", func:enumerateAll name}
-    log "aggregation:", columnAggregation
-    groupRowsByColumns = (columns) -> (rows) ->
-        map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
-        red = (key, rows) ->
-            for name in columnNames
-                idx = columnIndex[name]
-                if name in columns
-                    rows[0][idx]
-                else
-                    values = _.uniq(row[idx] for row in rows)
-                    value: columnAggregation[name].func(values)
-                    values: values
-        _.values(mapReduce(map, red)(rows))
-    aggregatedRows = groupRowsByColumns(columnNamesGrouping)(results.rows)
-    log "aggregated results:", aggregatedRows
-    # TODO pad aggregatedRows with missing combination of condition values
+
+    if RUN_COLUMN_NAME in columnNamesGrouping
+        # present results without aggregation
+        aggregatedRows =
+            for row in results.rows
+                row[columnIndex[name]] for name in columnNames
+    else
+        # aggregate data
+        for name in columnNamesMeasured
+            aggs = aggregationsForType[measurements[name].type]
+            aggName = measurementsAggregation[name]
+            aggName = _.keys(aggs)[0] unless aggs[aggName]
+            columnAggregation[name] = {name:aggName, func:aggs[aggName]}
+        for name of conditions
+            columnAggregation[name] ?= {name:"enumerate", func:enumerateAll name}
+        log "aggregation:", columnAggregation
+        groupRowsByColumns = (columns) -> (rows) ->
+            map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
+            red = (key, rows) ->
+                for name in columnNames
+                    idx = columnIndex[name]
+                    if name in columns
+                        rows[0][idx]
+                    else
+                        values = _.uniq(row[idx] for row in rows)
+                        value: columnAggregation[name].func(values)
+                        values: values
+            _.values(mapReduce(map, red)(rows))
+        aggregatedRows = groupRowsByColumns(columnNamesGrouping)(results.rows)
+        log "aggregated results:", aggregatedRows
+        # TODO pad aggregatedRows with missing combination of condition values
 
     table = $("#results-table")
     # populate table head
@@ -356,7 +364,7 @@ displayResults = () ->
                     isMeasured: name in columnNamesMeasured
                     isntImportant: conditions[name]? and name not in columnNamesGrouping
                     isRunIdColumn: name == RUN_COLUMN_NAME
-                    aggregation: columnAggregation[name].name unless name in columnNamesGrouping
+                    aggregation: columnAggregation[name]?.name unless name in columnNamesGrouping
         )
     ))
 
