@@ -17,7 +17,7 @@ underscore/underscore-min.js                            $GUIDIR/client/resource/
 jsrender/jsrender.js                                    $GUIDIR/client/resource/
 
 .build/DataTables/media/js/jquery.dataTables.min.js     $GUIDIR/client/resource/
-.build/DataTables/media/images/sort_*.png               $GUIDIR/client/resource/
+.build/DataTables/media/images/sort_{asc,desc,both}.png $GUIDIR/client/resource/
 client/jquery.dataTables.bootstrap.js                   $GUIDIR/client/resource/
 
 d3/d3.v2.min.js                                         $GUIDIR/client/resource/
