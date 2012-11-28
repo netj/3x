@@ -9,6 +9,85 @@ log = (args...) -> console.log args...
 Array::joinTextsWithShy = (delim) ->
     ($("<div/>").text(v).html() for v in @).join "&shy;#{delim}"
 
+# JSRender "fields" tag for handy object presentation
+# See: http://borismoore.github.com/jsrender/demos/scenarios/03_iterating-through-fields-scenario.html
+`
+$.views.tags({
+	fields: function( object ) {
+		var key,
+			ret = "";
+		for ( key in object ) {
+			if ( object.hasOwnProperty( key )) {
+				// For each property/field, render the content of the {{fields object}} tag, with "~key" as template parameter
+				ret += this.renderContent( object[ key ], { key: key });
+			}
+		}
+		return ret;
+	}
+});
+`
+
+# DataTables Numbers with HTML sorting
+# See: http://datatables.net/plug-ins/sorting#numbers_html
+# See: http://datatables.net/plug-ins/type-detection#numbers_html
+`
+jQuery.extend( jQuery.fn.dataTableExt.oSort, {
+    "num-html-pre": function ( a ) {
+        var x = a.replace( /<ul[\s\S]*<\/ul>/, "" ).replace( /<.*?>/g, "" );
+        return parseFloat( x );
+    },
+ 
+    "num-html-asc": function ( a, b ) {
+        return ((a < b) ? -1 : ((a > b) ? 1 : 0));
+    },
+ 
+    "num-html-desc": function ( a, b ) {
+        return ((a < b) ? 1 : ((a > b) ? -1 : 0));
+    }
+} );
+jQuery.fn.dataTableExt.aTypes.unshift( function ( sData )
+{
+    sData = typeof sData.replace == 'function' ?
+        sData.replace( /<ul[\s\S]*<\/ul>/, "" ).replace( /<.*?>/g, "" ) : sData;
+    sData = $.trim(sData);
+    log( sData );
+      
+    var sValidFirstChars = "0123456789-";
+    var sValidChars = "0123456789.";
+    var Char;
+    var bDecimal = false;
+      
+    /* Check for a valid first char (no period and allow negatives) */
+    Char = sData.charAt(0);
+    if (sValidFirstChars.indexOf(Char) == -1)
+    {
+        return null;
+    }
+      
+    /* Check all the other characters are valid */
+    for ( var i=1 ; i<sData.length ; i++ )
+    {
+        Char = sData.charAt(i);
+        if (sValidChars.indexOf(Char) == -1)
+        {
+            return null;
+        }
+          
+        /* Only allowed one decimal place... */
+        if ( Char == "." )
+        {
+            if ( bDecimal )
+            {
+                return null;
+            }
+            bDecimal = true;
+        }
+    }
+      
+    return 'num-html';
+} );
+`
+
 safeId = (str) -> str.replace(/[#-]/g, "-")
 
 
@@ -23,22 +102,52 @@ mapReduce = (map, red) -> (rows) ->
     for key,rowGroup of mapped
         reduced[key] = red(key, rowGroup)
 
-aggregateFunctions =
-    count: _.size
-    mean: (vs) ->
-        if vs.length
-            sum = 0; sum += v for v in vs.map parseFloat when not isNaN v
-            sum / vs.length
-        else
-            null
-    # TODO more agg fns: median, mode, max, min, ...
+
+enumerate = (vs) -> vs.joinTextsWithShy ","
 
 enumerateAll = (name) ->
     if ({values} = conditions[name])?
         (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
     else
-        (vs) -> vs.joinTextsWithShy ","
+        enumerate
 
+# different aggregation methods depending on data type or level of measurement
+aggregationsForType = do ->
+    withNumbersIn = (vs) -> v for v in vs.map parseFloat when not isNaN v
+    numFormatted = (v) -> v.toFixed(4) # FIXME
+    count = (vs) -> vs?.length
+    mode = (vs) ->
+        hist = {}
+        for v in vs
+            hist[v] ?= 0
+            hist[v] += 1
+        maxc = _.max(hist)
+        for v,c of hist when c == maxc
+            return numFormatted v
+    median = (vs) ->
+        ordered = _.clone(vs).sort()
+        ordered[Math.floor(vs.length / 2)]
+    min = (vs) -> numFormatted Math.min (withNumbersIn vs)...
+    max = (vs) -> numFormatted Math.max (withNumbersIn vs)...
+    mean = (vs) ->
+        if vs.length
+            sum = null
+            for v in withNumbersIn vs
+                sum ?= 0
+                sum += v
+            if sum? then numFormatted (sum / vs.length)
+    stdev = (vs) ->
+        vsn = withNumbersIn vs
+        dsqsum = 0
+        m = mean vsn
+        for v in vsn
+            d = (v - m)
+            dsqsum += d*d
+        numFormatted (Math.sqrt(dsqsum) / m)
+    nominal  : { count  , mode  , enumerate }
+    ordinal  : { median , mode  , min       , max  , count , enumerate }
+    interval : { mean   , stdev , median    , mode , min   , max       , enumerate }
+    ratio    : { mean   , stdev , median    , mode , min   , max       , enumerate }
 
 
 
@@ -66,7 +175,7 @@ handleConditionMenuAction = (handle) -> (e) ->
     e.stopPropagation()
     e.preventDefault()
     # TODO skip updateResults if another menu has been open
-    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, displayResults)
+    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
     ret
 
 initConditions = ->
@@ -111,6 +220,7 @@ initConditions = ->
 
 
 
+measurements = null
 measurementsAggregation = JSON.parse (localStorage.measurementsAggregation ?= "{}")
 
 persistActiveMeasurements = ->
@@ -120,7 +230,7 @@ updateMeasurementDisplay = (measUI) ->
     name = measUI.find(".measurement-name")?.text()
     aggregationActive = measUI.find(".measurement-aggregation.active")
     isActive = aggregationActive.length > 0
-    aggregation = if isActive then aggregationActive.first().text() else null
+    aggregation = if isActive then aggregationActive.first().text()
     measurementsAggregation[name] = aggregation
     measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
     measUI.toggleClass("active", isActive)
@@ -141,14 +251,13 @@ initMeasurements = ->
         measurements = newMeasurements
         measurementsUI = $("#measurements")
         skeleton = $("#measurement-skeleton")
-        # TODO different aggregateFunctions depending on type: string, numbers, ...
-        aggNames = ({name: aggName} for aggName of aggregateFunctions)
         for name,{type} of measurements
             id = safeId(name)
+            aggregations = aggregationsForType[type]
             # add each measurement by filling the skeleton
-            measurementsUI.append(skeleton.render({name, id, type, aggregateFunctions:aggNames}))
+            measurementsUI.append(skeleton.render({name, id, type, aggregations}))
             measUI = measurementsUI.find("#measurement-#{id}")
-            # with menu items for aggregateFunctions
+            # with menu items for aggregation
             menu = measUI.find(".dropdown-menu")
             menu.find(".measurement-aggregation")
                 .click(handleMeasurementMenuAction ($this, measUI) ->
@@ -196,8 +305,8 @@ displayNewResults = (newResults) ->
 
 displayResults = () ->
     # prepare the column ordering
-    columnNamesActive   = (name for name of conditions when conditionsActive[name]?.length > 0)
-    columnNamesMeasured = (name for name in results.names when not conditions[name])
+    columnNamesGrouping = (name for name of conditions when conditionsActive[name]?.length > 0)
+    columnNamesMeasured = (name for name in results.names when measurementsAggregation[name])
     columnNames = (name for name of conditions).concat columnNamesMeasured
     columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
 
@@ -205,11 +314,12 @@ displayResults = () ->
     columnAggregation = {}
     # for measurements, allow choosing different aggregation functions
     for name in columnNamesMeasured
-        columnAggregation[name] = aggregateFunctions[measurementsAggregation[name]]
-        columnAggregation[name] ?= aggregateFunctions.mean
-    columnAggregation[RUN_COLUMN_NAME] ?= aggregateFunctions.count
+        aggs = aggregationsForType[measurements[name].type]
+        aggName = measurementsAggregation[name]
+        aggName = _.keys(aggs)[0] unless aggs[aggName]
+        columnAggregation[name] = {name:aggName, func:aggs[aggName]}
     for name of conditions
-        columnAggregation[name] ?= enumerateAll name
+        columnAggregation[name] ?= {name:"enumerate", func:enumerateAll name}
     log "aggregation:", columnAggregation
     groupRowsByColumns = (columns) -> (rows) ->
         map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
@@ -220,10 +330,10 @@ displayResults = () ->
                     rows[0][idx]
                 else
                     values = _.uniq(row[idx] for row in rows)
-                    value: (columnAggregation[name] ? enumerateAll name)(values)
+                    value: columnAggregation[name].func(values)
                     values: values
         _.values(mapReduce(map, red)(rows))
-    aggregatedRows = groupRowsByColumns(columnNamesActive)(results.rows)
+    aggregatedRows = groupRowsByColumns(columnNamesGrouping)(results.rows)
     log "aggregated results:", aggregatedRows
     # TODO pad aggregatedRows with missing combination of condition values
 
@@ -238,15 +348,16 @@ displayResults = () ->
             for name in columnNames
                 columnMetadata[name] =
                     name: name
-                    className: (
-                            if name in columnNamesActive then "condition"
-                            else if name in columnNamesMeasured then "measurement"
-                            else "muted"
-                        )
-                    isForGrouping: name in columnNamesActive
+                    type: conditions[name]?.type ? measurements[name]?.type
+                    className:
+                        if name in columnNamesMeasured then "measurement"
+                        else if name in columnNamesGrouping then "condition"
+                        else "muted"
+                    isForGrouping: name in columnNamesGrouping
                     isMeasured: name in columnNamesMeasured
-                    isntImportant: conditions[name]? and name not in columnNamesActive
+                    isntImportant: conditions[name]? and name not in columnNamesGrouping
                     isRunIdColumn: name == RUN_COLUMN_NAME
+                    aggregation: columnAggregation[name].name unless name in columnNamesGrouping
         )
     ))
 

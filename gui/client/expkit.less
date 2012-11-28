@@ -49,6 +49,17 @@
       color: darken(@errorText, 5%);
     }
   }
+
+  tbody {
+    .aggregated           { font-weight: bold; }
+    .aggregated.enumerate { font-weight: lighter; }
+    .aggregated.count     { font-style: italic; }
+    .ordinal-type,
+    .interval-type,
+    .ratio-type           { text-align: right; }
+    .nominal-type         { text-align: inherit; }
+    .more                 { display: none; }
+  }
 }
 
 // vim:sw=2:sts=2

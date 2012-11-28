@@ -73,9 +73,9 @@
                 ><span class="measurement-name">{{>name}}</span><span
                   class="measurement-aggregation"></span> <span class="caret"></span></a>
               <ul class="dropdown-menu" role="menu">
-                {{for aggregateFunctions}}
-                <li><a href="#" class="measurement-aggregation">{{>name}}</a></li>
-                {{/for}}
+                {{fields aggregations}}
+                <li><a href="#" class="measurement-aggregation">{{>~key}}</a></li>
+                {{/fields}}
                 <!--
                 <li class="divider"></li>
                 TODO precision slider
@@ -105,17 +105,15 @@
           <script id="results-table-row-skeleton" type="text/x-jsrender">
             <tr class="result">
               {{for columns}}
-              <td class="{{>className}}">
+              <td class="{{>className}} {{>type}}-type">
                 {{if values}}
-                  <span class="aggregated">{{:value}}</span>
-                  <!--
-                  # TODO popup these when clicked or hovered
+                  <span class="aggregated {{>aggregation}}">{{:value}}</span>
+                  <!-- TODO popup these when clicked or hovered -->
                   <ul class="more">
                     {{for values}}
                       <li>{{for #data tmpl="#results-table-cell-skeleton"/}}</li>
                     {{/for}}
                   </ul>
-                  -->
                 {{else}}
                   {{for #data tmpl="#results-table-cell-skeleton"/}}
                 {{/if}}
