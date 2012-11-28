@@ -12,7 +12,7 @@ Array::joinTextsWithShy = (delim) ->
 safeId = (str) -> str.replace(/[#-]/g, "-")
 
 
-RUN_COLUMN_NAME = "#run"
+RUN_COLUMN_NAME = "run#"
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -70,7 +70,7 @@ handleConditionMenuAction = (handle) -> (e) ->
     ret
 
 initConditions = ->
-    $.getJSON "/api/conditions", (newConditions) ->
+    displayConditions = (newConditions) ->
         conditions = newConditions
         conditionsUI = $("#conditions")
         skeleton = $("#condition-skeleton")
@@ -104,6 +104,8 @@ initConditions = ->
             updateConditionDisplay(condUI)
             log "initCondition #{name}=#{values.join ","}"
 
+    $.getJSON("/api/conditions")
+        .success(displayConditions)
 
 
 
@@ -158,10 +160,6 @@ initMeasurements = ->
             updateMeasurementDisplay measUI
             log "initMeasurement #{name}:#{type}.#{measurementsAggregation[name]}"
 
-    displayMeasurements(
-        "#run": "string"
-    )
-    return # TODO get from server
     $.getJSON("/api/measurements")
         .success(displayMeasurements)
 

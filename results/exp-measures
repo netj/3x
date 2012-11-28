@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# exp-measures -- enumerate experiment measurements
+# Usage: exp measures
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-07
+set -eu
+
+: ${EXPROOT:=$(exp-findroot)}
+export EXPROOT
+
+cd "$EXPROOT"
+cd measure
+for name in */; do
+    name=${name%/}
+    typefile="$name/datatype"
+    type=$(cat "$typefile" 2>/dev/null || echo)
+    case $type in
+        nominal|ordinal|interval|ratio)
+            # Stanley Stevens' theory of scale types
+            # http://en.wikipedia.org/wiki/Level_of_measurement
+            ;;
+        *)
+            type=ratio
+            ;;
+    esac
+    echo "$name:$type"
+done

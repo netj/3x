@@ -10,6 +10,8 @@ child_process = require "child_process"
 expKitPort = parseInt process.argv[2] ? 0
 
 
+RUN_COLUMN_NAME = "run#"
+
 
 ###
 # Express.js server
@@ -32,43 +34,67 @@ app.configure "production", ->
     app.use express.errorHandler()
 
 
-cli = (cmd, args, onOut, onEnd=null, onErr=null) ->
+cliIO = (cmd, args, onOut, onEnd=null, onErr=null) ->
     console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
     p = child_process.spawn cmd, args
     p.stdout.on "data", onOut
     p.on "exit", onEnd if onEnd?
     p.stderr.on "data", onErr if onErr?
 
+cli = (cmd, args, onEnd) ->
+    stdoutBuf = ""
+    stderrBuf = ""
+    cliIO cmd, args
+        , (data) ->
+            stdoutBuf += data
+        , (code) ->
+            onEnd code, stdoutBuf, stderrBuf
+        , (data) ->
+            stderrBuf += data
+
+handleCLIError = (res, next) -> (code, stdout, stderr) ->
+    if code == 0
+        next code, stdout, stderr
+    else
+        res.send 500, stderr
+
 
 app.get "/api/conditions", (req, res) ->
-    buf = ""
     cli "exp-conditions", ["-v"]
-        , (data) ->
-            buf += data
-        , (code) ->
+        , handleCLIError res, (code, stdout, stderr) ->
             conditions = {}
-            for line in buf.split "\n"
+            for line in stdout.split "\n"
                 [name, value] = line.split "=", 2
                 conditions[name] = value?.split "," if name?
             res.json(conditions)
 
+app.get "/api/measurements", (req, res) ->
+    cli "exp-measures", []
+        , handleCLIError res, (code, stdout, stderr) ->
+            measurements = {}
+            measurements[RUN_COLUMN_NAME] = "nominal"
+            for line in stdout.split "\n"
+                [name, type] = line.split ":", 2
+                measurements[name] = type if name?
+            res.json(measurements)
+
 app.get "/api/results", (req, res) ->
-    RUN_COLUMN_NAME = "#run"
     args = []
     # TODO runs/batches
-    for name,values of JSON.parse req.param("conditions")
+    conditions =
+        try
+            JSON.parse req.param("conditions")
+        catch err
+            {}
+    for name,values of conditions
         if values?.length > 0
             args.push "#{name}=#{values.join ","}"
-    buf = ""
     cli "exp-results", args
-        , (data) ->
-            buf += data
-        , (code) ->
-            # TODO error checking with code
+        , handleCLIError res, (code, stdout, stderr) ->
             columnIndex = {}
             columnNames = [RUN_COLUMN_NAME]
             rows = []
-            for line in buf.split /\n/
+            for line in stdout.split /\n/
                 [run, columns...] = line.split /\s+/
                 continue unless run
                 row = [run]

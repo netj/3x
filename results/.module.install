@@ -1,2 +1,4 @@
 exp-results             $TOOLSDIR/
 check-condition         $TOOLSDIR/
+
+exp-measures            $TOOLSDIR/
