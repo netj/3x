@@ -34,7 +34,7 @@ aggregateFunctions =
     # TODO more agg fns: median, mode, max, min, ...
 
 enumerateAll = (name) ->
-    if (values = conditions[name])?
+    if ({values} = conditions[name])?
         (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
     else
         (vs) -> vs.joinTextsWithShy ","
@@ -66,7 +66,7 @@ handleConditionMenuAction = (handle) -> (e) ->
     e.stopPropagation()
     e.preventDefault()
     # TODO skip updateResults if another menu has been open
-    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
+    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, displayResults)
     ret
 
 initConditions = ->
@@ -74,10 +74,11 @@ initConditions = ->
         conditions = newConditions
         conditionsUI = $("#conditions")
         skeleton = $("#condition-skeleton")
-        for name,values of conditions
+        for name,{type,values} of conditions
+            id = safeId(name)
             # add each variable by filling the skeleton
-            conditionsUI.append(skeleton.render({name, values}))
-            condUI = conditionsUI.find("#condition-#{name}")
+            conditionsUI.append(skeleton.render({name, id, type, values}))
+            condUI = conditionsUI.find("#condition-#{id}")
                 .toggleClass("numeric", values.every (v) -> not isNaN parseFloat v)
             # with menu items for each value
             menu = condUI.find(".dropdown-menu")
@@ -102,7 +103,7 @@ initConditions = ->
                         .toggleClass("active", $this.hasClass("active"))
                 )
             updateConditionDisplay(condUI)
-            log "initCondition #{name}=#{values.join ","}"
+            log "initCondition #{name}:#{type}=#{values.join ","}"
 
     $.getJSON("/api/conditions")
         .success(displayConditions)
@@ -132,7 +133,7 @@ handleMeasurementMenuAction = (handle) -> (e) ->
     persistActiveMeasurements()
     e.preventDefault()
     # TODO skip updateResults if another menu has been open
-    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
+    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, displayResults)
     ret
 
 initMeasurements = ->
@@ -142,16 +143,21 @@ initMeasurements = ->
         skeleton = $("#measurement-skeleton")
         # TODO different aggregateFunctions depending on type: string, numbers, ...
         aggNames = ({name: aggName} for aggName of aggregateFunctions)
-        for name,type of measurements
+        for name,{type} of measurements
             id = safeId(name)
             # add each measurement by filling the skeleton
-            measurementsUI.append(skeleton.render({name, id, aggregateFunctions:aggNames}))
+            measurementsUI.append(skeleton.render({name, id, type, aggregateFunctions:aggNames}))
             measUI = measurementsUI.find("#measurement-#{id}")
             # with menu items for aggregateFunctions
             menu = measUI.find(".dropdown-menu")
             menu.find(".measurement-aggregation")
                 .click(handleMeasurementMenuAction ($this, measUI) ->
-                    $this.toggleClass("active")
+                    # activate or toggle the newly chosen one
+                    wasActive = $this.hasClass("active")
+                    measUI.find(".dropdown-menu .measurement-aggregation").removeClass("active")
+                    $this.toggleClass("active") unless wasActive
+                    # Or we could always use at least one
+                    # $this.addClass("active")
                 )
                 .each ->
                     $this = $(this)
@@ -176,17 +182,19 @@ updateResults = (e) ->
             runs: []
             batches: []
             conditions: JSON.stringify conditionsActive
-        ).success(displayResults)
+        ).success(displayNewResults)
     else
-        displayResults(emptyResults)
+        displayNewResults(emptyResults)
     e?.preventDefault?()
 
 results = null
-displayResults = (newResults) ->
+displayNewResults = (newResults) ->
     log "got results:", newResults
     results = newResults
     #$("#results-raw").text(JSON.stringify results, null, 2)
+    displayResults()
 
+displayResults = () ->
     # prepare the column ordering
     columnNamesActive   = (name for name of conditions when conditionsActive[name]?.length > 0)
     columnNamesMeasured = (name for name in results.names when not conditions[name])

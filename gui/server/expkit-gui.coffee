@@ -63,19 +63,25 @@ app.get "/api/conditions", (req, res) ->
     cli "exp-conditions", ["-v"]
         , handleCLIError res, (code, stdout, stderr) ->
             conditions = {}
-            for line in stdout.split "\n"
+            for line in stdout.split "\n" when line.length > 0
                 [name, value] = line.split "=", 2
-                conditions[name] = value?.split "," if name?
+                if name and value
+                    conditions[name] =
+                        values: value?.split ","
+                        type: "nominal" # FIXME extend exp-conditions to output datatype as well (-t?)
             res.json(conditions)
 
 app.get "/api/measurements", (req, res) ->
     cli "exp-measures", []
         , handleCLIError res, (code, stdout, stderr) ->
             measurements = {}
-            measurements[RUN_COLUMN_NAME] = "nominal"
-            for line in stdout.split "\n"
+            measurements[RUN_COLUMN_NAME] =
+                type: "nominal"
+            for line in stdout.split "\n" when line.length > 0
                 [name, type] = line.split ":", 2
-                measurements[name] = type if name?
+                if name?
+                    measurements[name] =
+                        type: type
             res.json(measurements)
 
 app.get "/api/results", (req, res) ->
