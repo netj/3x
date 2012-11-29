@@ -225,7 +225,7 @@ initConditions = ->
                 .each ->
                     $this = $(this)
                     value = $this.text()
-                    $this.toggleClass("active", value in conditionsActive[name] ? [])
+                    $this.toggleClass("active", value in (conditionsActive[name] ? []))
             menu.find(".condition-values-toggle")
                 .toggleClass("active", isAllActive())
                 .click(handleConditionMenuAction ($this, condUI) ->
@@ -317,16 +317,17 @@ emptyResults =
     names: []
     rows: []
 updateResults = (e) ->
-    if _.values(conditionsActive).some((vs) -> vs?.length > 0)
-        $("#results").addClass("loading")
-        $.get("/api/results",
-            runs: []
-            batches: []
-            conditions: JSON.stringify conditionsActive
-        ).success(displayNewResults)
-            .success(-> $("#results").removeClass("loading"))
-    else
-        displayNewResults(emptyResults)
+    (
+        if _.values(conditionsActive).some((vs) -> vs?.length > 0)
+            $("#results").addClass("loading")
+            $.get("/api/results",
+                runs: []
+                batches: []
+                conditions: JSON.stringify conditionsActive
+            ).success(displayNewResults)
+        else
+            $.when displayNewResults(emptyResults)
+    ).done(-> $("#results").removeClass("loading"))
     e?.preventDefault?()
 
 results = emptyResults
