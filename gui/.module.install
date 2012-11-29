@@ -8,9 +8,8 @@ client/index.html                                       $GUIDIR/client/
 
 .build/client/resource/jquery.js                        $GUIDIR/client/resource/
 
-bootstrap/bootstrap/js/bootstrap.js                     $GUIDIR/client/resource/
-bootstrap/bootstrap/img/glyphicons-halflings.png        $GUIDIR/client/resource/
-bootstrap/bootstrap/img/glyphicons-halflings-white.png  $GUIDIR/client/resource/
+.build/client/resource/bootstrap.js                         $GUIDIR/client/resource/
+Font-Awesome/font/fontawesome-webfont.{eot,svg,ttf,woff}    $GUIDIR/client/resource/font/
 
 underscore/underscore.js                                $GUIDIR/client/resource/
 

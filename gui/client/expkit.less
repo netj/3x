@@ -1,16 +1,21 @@
-/*
+/*!
  * LESS for ExpKit GUI
  * Author: Jaeho Shin <netj@cs.stanford.edu>
  * Created: 2012-11-11
  */
 
-
+// Bootstrap
 @import "bootstrap/less/bootstrap.less";
 @import "bootstrap/less/responsive.less";
+//@iconSpritePath:          "glyphicons-halflings.png";
+//@iconWhiteSpritePath:     "glyphicons-halflings-white.png";
 
-@iconSpritePath:          "glyphicons-halflings.png";
-@iconWhiteSpritePath:     "glyphicons-halflings-white.png";
+// Using Font-Awesome instead of bootstrap's default glyphicons
+// See: http://fortawesome.github.com/Font-Awesome/#integration
+@import "Font-Awesome/less/font-awesome.less";
+@fontAwesomePath: 'font';
 
+// DataTables CSS imports to remain after LESS compilation
 @import "DataTables/dataTables.bootstrap.css";
 @import "DataTables/css/ColReorder.css";
 
