@@ -151,13 +151,17 @@ aggregationsForType = do ->
             if count > 0 then numFormatted (sum / count) else null
         else null
     stdev = (vs) ->
-        vsn = withNumbersIn vs
-        dsqsum = 0
-        m = mean vsn
-        for v in vsn
-            d = (v - m)
-            dsqsum += d*d
-        numFormatted (Math.sqrt(dsqsum) / m)
+        ns = withNumbersIn vs
+        if ns.length > 0
+            dsqsum = 0
+            n = 0
+            m = mean ns
+            for v in ns
+                d = (v - m)
+                dsqsum += d*d
+                n++
+            numFormatted (Math.sqrt(dsqsum / n))
+        else null
     nominal  : { count  , mode  , enumerate }
     ordinal  : { median , mode  , min       , max  , count , enumerate }
     interval : { mean   , stdev , median    , mode , min   , max       , enumerate }
