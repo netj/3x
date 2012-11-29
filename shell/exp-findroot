@@ -15,7 +15,7 @@ while ! is-root && [ "$PWD" != / ]; do
 done
 
 if is-root; then
-    pwd
+    pwd -P
 else
     error "$OPWD: Not inside an experiment repository"
 fi
