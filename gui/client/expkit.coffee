@@ -316,7 +316,7 @@ updateResults = (e) ->
         displayNewResults(emptyResults)
     e?.preventDefault?()
 
-results = null
+results = emptyResults
 displayNewResults = (newResults) ->
     log "got results:", newResults
     results = newResults
@@ -471,5 +471,6 @@ $ ->
                     else
                         runAggregations.first().click()
                 )
+            do displayResults
             do updateResults
 
