@@ -25,11 +25,12 @@ for path in "$@"; do
             case $path in
                 @(condition|program)/*)
                     # copy files
-                    find "$path" -mindepth 1 -maxdepth 1 ! \( -name 'env' \
-                        -o -type d -name '*=*' -prune \
+                    find "$path"/{,.}*  -maxdepth 0 ! \( -name 'env' \
+                        -o -name '.' -o -name '..' -o -name '*=*' \
                         -o -name 'args' -o -name '+args' -o -name 'args+' \
-                        \) -print 2>/dev/null |
-                    xargs cp $cpopts --archive --link --target-directory="$EXPWDabbrev"/ |
+                        \) -print0 2>/dev/null |
+                    xargs -0  cp $cpopts --archive --link \
+                        --target-directory="$EXPWDabbrev"/ 2>/dev/null |
                     # TODO check and emit error if any files get overwritten
                     sed 's/^/  linking /'
                     # environment variables
