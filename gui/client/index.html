@@ -9,6 +9,7 @@
     <script type="text/javascript" src="resource/jsrender.js"></script>
     <script type="text/javascript" src="resource/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="resource/jquery.dataTables.bootstrap.js"></script>
+    <script type="text/javascript" src="resource/jquery.dataTables.ColReorder.min.js"></script>
     <script type="text/javascript" src="resource/underscore-min.js"></script>
     <script type="text/javascript" src="resource/d3.v2.min.js"></script>
     <script type="text/javascript" src="resource/expkit.js"></script>
@@ -88,7 +89,7 @@
       </div>
 
       <div class="row-fluid">
-        <div id="results" class="span12">
+        <div id="results" class="span12 loading">
           <h2>Results</h2>
 
           <form class="form-inline">
@@ -104,6 +105,8 @@
               <input type="checkbox" id="results-without-aggregation">
               Show individual runs without aggregation
             </label>
+            <a href="#" class="btn btn-small disabled pull-right"
+              id="results-reset-column-order">Reset column order</a>
           </form>
 
           <div id="results-table-progress" class="alert alert-block alert-info">

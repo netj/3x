@@ -306,6 +306,8 @@ columnNamesGrouping = null
 columnNamesMeasured = null
 columnAggregation = null
 
+dataTable = null
+
 emptyResults =
     names: []
     rows: []
@@ -451,28 +453,34 @@ displayResults = () ->
         bPaginate: false
         bAutoWidth: false
         # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
-        fnStateSave: (oSettings, oData) ->
-            localStorage.setItem( 'DataTables_'+window.location.pathname, JSON.stringify(oData) )
-        fnStateLoad: (oSettings) ->
-            try JSON.parse localStorage.getItem('DataTables_'+window.location.pathname)
-    updateColumnVisibility dataTable
+        fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
+        fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.resultsDataTablesState
+        oColReorder:
+            fnReorderCallback: -> $("#results-reset-column-order").toggleClass("disabled", isColumnReordered())
+    updateColumnVisibility
 
-updateColumnVisibility = (dataTable = $("#results-table").dataTable()) ->
+isColumnReordered = ->
+    colOrder = getColumnOrdering()
+    (JSON.stringify colOrder) == (JSON.stringify (_.range colOrder?.length))
+getColumnOrdering = ->
+    if dataTable?.fnSettings?
+        # XXX below is a hack into ColReorder's internals. This should be exposed via ColReorder's API.
+        col._ColReorder_iOrigCol for col in dataTable.fnSettings().aoColumns
+    else try (JSON.parse localStorage.resultsDataTablesState).ColReorder
+
+updateColumnVisibility = ->
     # Hide some columns if necessary
     isVisible =
         if $("#results-hide-inactive-conditions").is(":checked")
         then (name) -> (name in columnNamesMeasured or name in columnNamesGrouping)
         else (name) -> true
+    colOrder = getColumnOrdering()
     idx = 0
     for name in columnNames
-        dataTable.fnSetColumnVis idx++, (isVisible name), false
+        dataTable.fnSetColumnVis (colOrder.indexOf idx++), (isVisible name), false
     do dataTable.fnDraw
 
-
-
-
-# initialize UI
-$ ->
+initResultsUI = ->
     $("#results-include-empty")
         .prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
         .change((e) ->
@@ -485,19 +493,31 @@ $ ->
             localStorage.resultsHideInactiveConditions = JSON.stringify this.checked
             do updateColumnVisibility
         )
+    $("#results-reset-column-order")
+        .toggleClass("disabled", isColumnReordered())
+        .click((e) ->
+            ColReorder.fnReset dataTable
+            $(this).addClass("disabled")
+            e.preventDefault()
+        )
+    runAggregations = RUN_MEASUREMENT.find(".dropdown-menu .measurement-aggregation")
+    $("#results-without-aggregation")
+        .prop("checked", runAggregations.filter(".active").length == 0)
+        .change((e) ->
+            if this.checked
+                runAggregations.filter(".active").click()
+            else
+                runAggregations.first().click()
+        )
 
 
+
+# initialize UI
+$ ->
     initConditions().success ->
         initMeasurements().success ->
-            runAggregations = RUN_MEASUREMENT.find(".dropdown-menu .measurement-aggregation")
-            $("#results-without-aggregation")
-                .prop("checked", runAggregations.filter(".active").length == 0)
-                .change((e) ->
-                    if this.checked
-                        runAggregations.filter(".active").click()
-                    else
-                        runAggregations.first().click()
-                )
-            do displayResults # initializing results table with empty data first
+            do initResultsUI
+            # XXX below has conflict with ColReorder
+            # do displayResults # initializing results table with empty data first
             do updateResults
 

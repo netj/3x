@@ -19,5 +19,6 @@ jsrender/jsrender.js                                    $GUIDIR/client/resource/
 .build/DataTables/media/js/jquery.dataTables.min.js     $GUIDIR/client/resource/
 .build/DataTables/media/images/sort_{asc,desc,both}.png $GUIDIR/client/resource/
 client/jquery.dataTables.bootstrap.js                   $GUIDIR/client/resource/
+.build/DataTables/extras/ColReorder/media/js/ColReorder.min.js $GUIDIR/client/resource/jquery.dataTables.ColReorder.min.js
 
 d3/d3.v2.min.js                                         $GUIDIR/client/resource/
