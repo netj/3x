@@ -91,6 +91,7 @@ safeId = (str) -> str.replace(/[#-]/g, "-")
 
 
 RUN_COLUMN_NAME = "run#"
+RUN_MEASUREMENT = null
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -275,6 +276,7 @@ initMeasurements = ->
             # add each measurement by filling the skeleton
             measurementsUI.append(skeleton.render({name, id, type, aggregations}))
             measUI = measurementsUI.find("#measurement-#{id}")
+            RUN_MEASUREMENT = measUI if name == RUN_COLUMN_NAME
             # with menu items for aggregation
             menu = measUI.find(".dropdown-menu")
             menu.find(".measurement-aggregation")
@@ -452,16 +454,15 @@ displayResults = () ->
 # initialize UI
 $ ->
     $("#results-include-empty")
-        .prop("checked", localStorage.resultsIncludeEmpty)
+        .prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
         .change((e) ->
-            localStorage.resultsIncludeEmpty = this.checked
+            localStorage.resultsIncludeEmpty = JSON.stringify this.checked
             do displayResults
         )
 
     initConditions().success ->
         initMeasurements().success ->
-            runAggregations = $("#measurement-#{safeId(RUN_COLUMN_NAME)}")
-                .find(".dropdown-menu .measurement-aggregation")
+            runAggregations = RUN_MEASUREMENT.find(".dropdown-menu .measurement-aggregation")
             $("#results-without-aggregation")
                 .prop("checked", runAggregations.filter(".active").length == 0)
                 .change((e) ->
