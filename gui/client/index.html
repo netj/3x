@@ -90,6 +90,18 @@
       <div class="row-fluid">
         <div id="results" class="span12">
           <h2>Results</h2>
+
+          <form class="form-inline">
+            <label class="checkbox inline">
+              <input type="checkbox" id="results-include-empty">
+              Show empty conditions
+            </label>
+            <label class="checkbox inline">
+              <input type="checkbox" id="results-without-aggregation">
+              Show individual runs without aggregation
+            </label>
+          </form>
+
           <table id="results-table" class="table table-striped table-bordered"
             cellpadding="0" cellspacing="0" border="0">
             <thead></thead>
@@ -106,19 +118,26 @@
             <tr class="result">
               {{for columns}}
               <td class="{{>className}} {{>type}}-type">
-                {{if values}}
+                {{if aggregation}}
                   <div class="aggregated {{>aggregation}}"
+                    {{if values}}
                     data-placement="bottom" data-trigger="click"
-                    data-html="true" data-content='<ul>{{for values}}<li>{{for #data tmpl="#results-table-cell-skeleton" ~column=#parent.parent.data/}}</li>{{/for}}</ul>'>{{:value}}</div>
+                    data-html="true" data-content='<ul>
+                      {{for values}}
+                      <li>{{for #data tmpl="#results-table-cell-skeleton" ~column=#parent.parent.data ~value=#data/}}</li>
+                      {{/for}}
+                    </ul>'
+                    {{/if}}
+                    >{{:value}}</div>
                 {{else}}
-                  {{for #data tmpl="#results-table-cell-skeleton" ~column=#data/}}
+                  {{for #data tmpl="#results-table-cell-skeleton" ~column=#data ~value=value/}}
                 {{/if}}
               </td>
               {{/for}}
             </tr>
           </script>
           <script id="results-table-cell-skeleton" type="text/x-jsrender">
-            {{if ~column.isRunIdColumn}}<a href="{{>value}}">{{>value}}</a>{{else}}{{>value}}{{/if}}
+            {{if ~column.isRunIdColumn}}<a href="{{>~value}}">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
           </script>
         </div>
       </div>

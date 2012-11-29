@@ -100,7 +100,19 @@ mapReduce = (map, red) -> (rows) ->
     reduced = {}
     for key,rowGroup of mapped
         reduced[key] = red(key, rowGroup)
+    reduced
 
+forEachCombination = (nestedList, f, acc = []) ->
+    if nestedList?.length > 0
+        [xs, rest...] = nestedList
+        for x in xs
+            forEachCombination rest, f, (acc.concat [x])
+    else
+        f acc
+mapCombination = (nestedList, f) ->
+    mapped = []
+    forEachCombination nestedList, (combination) -> mapped.push (f combination)
+    mapped
 
 enumerate = (vs) -> vs.joinTextsWithShy ","
 
@@ -113,7 +125,7 @@ enumerateAll = (name) ->
 # different aggregation methods depending on data type or level of measurement
 aggregationsForType = do ->
     withNumbersIn = (vs) -> v for v in vs.map parseFloat when not isNaN v
-    numFormatted = (v) -> v.toFixed(4) # FIXME
+    numFormatted = (v) -> v?.toFixed(4) # FIXME
     count = (vs) -> vs?.length
     mode = (vs) ->
         hist = {}
@@ -126,15 +138,18 @@ aggregationsForType = do ->
     median = (vs) ->
         ordered = _.clone(vs).sort()
         ordered[Math.floor(vs.length / 2)]
-    min = (vs) -> numFormatted Math.min (withNumbersIn vs)...
-    max = (vs) -> numFormatted Math.max (withNumbersIn vs)...
+    min = (vs) -> ns = withNumbersIn vs; if ns.length then numFormatted Math.min ns... else null
+    max = (vs) -> ns = withNumbersIn vs; if ns.length then numFormatted Math.max ns... else null
     mean = (vs) ->
-        if vs.length
-            sum = null
-            for v in withNumbersIn vs
-                sum ?= 0
+        ns = withNumbersIn vs
+        if ns.length > 0
+            sum = 0
+            count = 0
+            for v in ns
                 sum += v
-            if sum? then numFormatted (sum / vs.length)
+                count++
+            if count > 0 then numFormatted (sum / count) else null
+        else null
     stdev = (vs) ->
         vsn = withNumbersIn vs
         dsqsum = 0
@@ -315,9 +330,11 @@ displayResults = () ->
 
     if RUN_COLUMN_NAME in columnNamesGrouping
         # present results without aggregation
-        aggregatedRows =
+        log "no aggregation"
+        resultsForRendering =
             for row in results.rows
-                row[columnIndex[name]] for name in columnNames
+                for name in columnNames
+                    value: row[columnIndex[name]]
     else
         # aggregate data
         for name in columnNamesMeasured
@@ -327,22 +344,42 @@ displayResults = () ->
             columnAggregation[name] = {name:aggName, func:aggs[aggName]}
         for name of conditions
             columnAggregation[name] ?= {name:"enumerate", func:enumerateAll name}
-        log "aggregation:", columnAggregation
-        groupRowsByColumns = (columns) -> (rows) ->
-            map = (row) -> JSON.stringify (row[columnIndex[name]] for name in columns)
-            red = (key, rows) ->
+        log "aggregation:", JSON.stringify columnAggregation
+        groupRowsByColumns = (rows) ->
+            map = (row) -> JSON.stringify (columnNamesGrouping.map (name) -> row[columnIndex[name]])
+            red = (key, groupedRows) ->
                 for name in columnNames
                     idx = columnIndex[name]
-                    if name in columns
-                        rows[0][idx]
+                    if name in columnNamesGrouping
+                        value: groupedRows[0][idx]
                     else
-                        values = _.uniq(row[idx] for row in rows)
+                        values = _.uniq (row[idx] for row in groupedRows)
                         value: columnAggregation[name].func(values)
                         values: values
-            _.values(mapReduce(map, red)(rows))
-        aggregatedRows = groupRowsByColumns(columnNamesGrouping)(results.rows)
-        log "aggregated results:", aggregatedRows
-        # TODO pad aggregatedRows with missing combination of condition values
+            grouped = mapReduce(map, red)(rows)
+            [_.values(grouped), _.keys(grouped)]
+        [aggregatedRows, aggregatedGroups] = groupRowsByColumns(results.rows)
+        #log "aggregated results:", aggregatedRows
+        #log "aggregated groups:", aggregatedGroups
+
+        # pad aggregatedRows with missing combination of condition values
+        emptyRows = []
+        if $("#results-include-empty").is(":checked")
+            emptyValues = []
+            forEachCombination (conditionsActive[name] for name in columnNamesGrouping), (group) ->
+                key = JSON.stringify group
+                unless key in aggregatedGroups
+                    #log "padding empty row for #{key}"
+                    emptyRows.push columnNames.map (name) ->
+                        if name in columnNamesGrouping
+                            value: group[columnNamesGrouping.indexOf(name)]
+                        else
+                            value: columnAggregation[name].func(emptyValues) ? ""
+                            values: emptyValues
+            #log "padded empty groups:", emptyRows
+        resultsForRendering = aggregatedRows.concat emptyRows
+
+    log "rendering results:", JSON.stringify resultsForRendering
 
     table = $("#results-table")
     # populate table head
@@ -355,6 +392,7 @@ displayResults = () ->
             for name in columnNames
                 columnMetadata[name] =
                     name: name
+                    # TODO use aggregation type instead of the original data type
                     type: conditions[name]?.type ? measurements[name]?.type
                     className:
                         if name in columnNamesMeasured then "measurement"
@@ -372,23 +410,18 @@ displayResults = () ->
     table.find("tbody").remove()
     tbody = $("<tbody>").appendTo(table)
     rowSkeleton = $("#results-table-row-skeleton")
-    for row in aggregatedRows
+    for row in resultsForRendering
         tbody.append(rowSkeleton.render(
             columns: (
                 idx = 0
                 for name in columnNames
-                    values = null
-                    value = row[idx++]
-                    if value?.values?.length
-                        values = ({name, value:v} for v in value.values)
-                        value = value.value
-                    $.extend(columnMetadata[name], {values, value})
+                    $.extend columnMetadata[name], row[idx++]
             )
         ))
     tbody.find(".aggregated")
-        .popover(animation:false, trigger: "manual")
+        .popover(trigger: "manual")
         .click((e) ->
-            tbody.find(".aggregated").popover("hide")
+            tbody.find(".aggregated").not(this).popover("hide")
             $(this).popover("show")
             e.stopPropagation()
             e.preventDefault()
@@ -414,7 +447,24 @@ displayResults = () ->
 
 # initialize UI
 $ ->
-    initConditions()
-        .success(initMeasurements)
-        .success(updateResults)
+    $("#results-include-empty")
+        .prop("checked", localStorage.resultsIncludeEmpty)
+        .change((e) ->
+            localStorage.resultsIncludeEmpty = this.checked
+            do displayResults
+        )
+
+    initConditions().success ->
+        initMeasurements().success ->
+            runAggregations = $("#measurement-#{safeId(RUN_COLUMN_NAME)}")
+                .find(".dropdown-menu .measurement-aggregation")
+            $("#results-without-aggregation")
+                .prop("checked", runAggregations.filter(".active").length == 0)
+                .change((e) ->
+                    if this.checked
+                        runAggregations.filter(".active").click()
+                    else
+                        runAggregations.first().click()
+                )
+            do updateResults
 
