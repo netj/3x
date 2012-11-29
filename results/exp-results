@@ -22,7 +22,7 @@ export EXPROOT
 
 ## from command-line, find the batches and runs
 runs=()
-while [ -d "$1" ]; do
+while [ -d "${1:-}" ]; do
     p=$(readlink -f "$1")
     p=${p#$EXPROOT/}
     case $p in
@@ -43,7 +43,7 @@ done
 [[ ${#runs[@]} > 0 ]] || runs+=("$EXPROOT"/run)
 
 ## normalize rest of the command-line arguments
-args=($(normalize-conditions "$@"))
+args=($(normalize-conditions -v "$@"))
 [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
 
