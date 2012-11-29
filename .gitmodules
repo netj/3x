@@ -13,3 +13,12 @@
 [submodule "gui/underscore"]
 	path = gui/underscore
 	url = https://github.com/documentcloud/underscore.git
+[submodule "gui/DataTables"]
+	path = gui/DataTables
+	url = https://github.com/DataTables/DataTables.git
+[submodule "gui/DataTables.Plugins"]
+	path = gui/DataTables.Plugins
+	url = https://github.com/DataTables/Plugins.git
+[submodule "gui/DataTables.ColReorder"]
+	path = gui/DataTables.ColReorder
+	url = https://github.com/DataTables/ColReorder.git

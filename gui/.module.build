@@ -25,32 +25,8 @@ mkdir -p resource
 coffee -c -o resource ../../client/*.coffee
 
 # get jquery
-[ -s resource/jquery.min.js ] ||
-    curl -sRLo resource/jquery.min.js  http://code.jquery.com/jquery-1.8.2.min.js
-
-# get DataTables
-if ! [ -e ../DataTables ]; then
-    (
-    cd ..
-    [ -e DataTables.zip ] || curl -sRLo DataTables.zip  http://datatables.net/releases/DataTables-1.9.4.zip
-    if ! [ -d DataTables ]; then
-        unzip -o DataTables.zip
-        ln -sfn DataTables-1.9.4 DataTables
-    fi
-    )
-fi
-
-# compile bootstrap
-(
-cd ..
-echo "/bootstrap" >.gitignore.bootstrap
-cd ../bootstrap
-git config core.excludesfile ../.build/.gitignore.bootstrap || true
-npm install
-for bin in "$PWD"/node_modules/*/bin; do PATH=$bin:$PATH; done
-ln -sfn hint node_modules/jshint/bin/jshint
-make bootstrap
-)
+[ -s resource/jquery.js ] ||
+    curl -sRLo resource/jquery.js  http://code.jquery.com/jquery-1.8.2.js
 
 # compile less with bootstrap, DataTables
 ln -sfn ../../bootstrap

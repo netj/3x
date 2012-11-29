@@ -240,7 +240,7 @@ initConditions = ->
 
 
 measurements = null
-measurementsAggregation = JSON.parse (localStorage.measurementsAggregation ?= "{}")
+measurementsAggregation = try JSON.parse (localStorage.measurementsAggregation ?= "{}")
 
 persistActiveMeasurements = ->
     localStorage.measurementsAggregation = JSON.stringify measurementsAggregation
@@ -329,13 +329,13 @@ displayNewResults = (newResults) ->
     log "got results:", newResults
     results = newResults
     #$("#results-raw").text(JSON.stringify results, null, 2)
-    displayResults()
+    do displayResults
 
-displayResults = () ->
+displayResults = ->
     # prepare the column ordering
     columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
     columnNamesGrouping = (name for name of conditions when conditionsActive[name]?.length > 0)
-    columnNamesMeasured = (name for name in results.names when measurementsAggregation[name])
+    columnNamesMeasured = (name for name of measurements when measurementsAggregation[name]?)
     if RUN_COLUMN_NAME not in columnNamesMeasured
         columnNamesGrouping.push RUN_COLUMN_NAME
         columnNamesMeasured.unshift RUN_COLUMN_NAME
@@ -352,7 +352,7 @@ displayResults = () ->
     else
         # aggregate data
         for name in columnNamesMeasured
-            aggs = aggregationsForType[measurements[name].type]
+            aggs = aggregationsForType[measurements[name].type] ? _.values(aggregationsForType)[0]
             aggName = measurementsAggregation[name]
             aggName = _.keys(aggs)[0] unless aggs[aggName]
             columnAggregation[name] = {name:aggName, func:aggs[aggName]}
@@ -393,7 +393,7 @@ displayResults = () ->
             #log "padded empty groups:", emptyRows
         resultsForRendering = aggregatedRows.concat emptyRows
 
-    log "rendering results:", JSON.stringify resultsForRendering
+    log "rendering results:", resultsForRendering
 
     table = $("#results-table")
     # populate table head
@@ -440,9 +440,6 @@ displayResults = () ->
             e.stopPropagation()
             e.preventDefault()
         )
-    do _.once ->
-        $('html').on 'click.popover.data-api touchstart.popover.data-api', null, (e) ->
-            $("#results-table .aggregated").popover("hide")
 
     # finally, make the table interactive with DataTable
     dataTable = table.dataTable
@@ -457,7 +454,7 @@ displayResults = () ->
         fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.resultsDataTablesState
         oColReorder:
             fnReorderCallback: -> $("#results-reset-column-order").toggleClass("disabled", isColumnReordered())
-    updateColumnVisibility
+    do updateColumnVisibility
 
 isColumnReordered = ->
     colOrder = getColumnOrdering()
@@ -469,18 +466,22 @@ getColumnOrdering = ->
     else try (JSON.parse localStorage.resultsDataTablesState).ColReorder
 
 updateColumnVisibility = ->
+    return unless dataTable?
     # Hide some columns if necessary
     isVisible =
         if $("#results-hide-inactive-conditions").is(":checked")
         then (name) -> (name in columnNamesMeasured or name in columnNamesGrouping)
         else (name) -> true
     colOrder = getColumnOrdering()
+    return unless colOrder?.length == columnNames.length
     idx = 0
     for name in columnNames
         dataTable.fnSetColumnVis (colOrder.indexOf idx++), (isVisible name), false
     do dataTable.fnDraw
 
 initResultsUI = ->
+    $('html').on 'click.popover.data-api touchstart.popover.data-api', null, (e) ->
+        $("#results-table .aggregated").popover("hide")
     $("#results-include-empty")
         .prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
         .change((e) ->
@@ -517,7 +518,6 @@ $ ->
     initConditions().success ->
         initMeasurements().success ->
             do initResultsUI
-            # XXX below has conflict with ColReorder
-            # do displayResults # initializing results table with empty data first
+            #do displayResults # initializing results table with empty data first
             do updateResults
 

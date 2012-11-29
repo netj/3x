@@ -6,19 +6,22 @@ client/index.html                                       $GUIDIR/client/
 .build/client/resource/expkit.js                        $GUIDIR/client/resource/
 .build/client/resource/expkit.css                       $GUIDIR/client/resource/
 
-.build/client/resource/jquery.min.js                    $GUIDIR/client/resource/
+.build/client/resource/jquery.js                        $GUIDIR/client/resource/
 
-bootstrap/bootstrap/js/bootstrap.min.js                 $GUIDIR/client/resource/
+bootstrap/bootstrap/js/bootstrap.js                     $GUIDIR/client/resource/
 bootstrap/bootstrap/img/glyphicons-halflings.png        $GUIDIR/client/resource/
 bootstrap/bootstrap/img/glyphicons-halflings-white.png  $GUIDIR/client/resource/
 
-underscore/underscore-min.js                            $GUIDIR/client/resource/
+underscore/underscore.js                                $GUIDIR/client/resource/
 
 jsrender/jsrender.js                                    $GUIDIR/client/resource/
 
-.build/DataTables/media/js/jquery.dataTables.min.js     $GUIDIR/client/resource/
-.build/DataTables/media/images/sort_{asc,desc,both}.png $GUIDIR/client/resource/
-client/jquery.dataTables.bootstrap.js                   $GUIDIR/client/resource/
-.build/DataTables/extras/ColReorder/media/js/ColReorder.min.js $GUIDIR/client/resource/jquery.dataTables.ColReorder.min.js
+DataTables/media/js/jquery.dataTables.js                                                $GUIDIR/client/resource/jquery.dataTables.js
+DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js                        $GUIDIR/client/resource/jquery.dataTables.bootstrap.js
+DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css                       $GUIDIR/client/resource/DataTables/
+DataTables.Plugins/integration/bootstrap/images/sort_{{asc,desc}{,_disabled},both}.png  $GUIDIR/client/resource/DataTables/images/
+DataTables.ColReorder/media/js/ColReorder.js                                            $GUIDIR/client/resource/jquery.dataTables.ColReorder.js
+DataTables.ColReorder/media/css/ColReorder.css                                          $GUIDIR/client/resource/DataTables/css/
+DataTables.ColReorder/media/images/insert.png                                           $GUIDIR/client/resource/DataTables/images/
 
-d3/d3.v2.min.js                                         $GUIDIR/client/resource/
+d3/d3.v2.js                                             $GUIDIR/client/resource/
