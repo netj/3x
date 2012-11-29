@@ -4,7 +4,7 @@
 # Created: 2012-11-11
 ###
 
-log = (args...) -> console.log args...
+log = (args...) -> console.log args...; args[0]
 
 Array::joinTextsWithShy = (delim) ->
     ($("<div/>").text(v).html() for v in @).join "&shy;#{delim}"
@@ -301,6 +301,10 @@ initMeasurements = ->
 
 
 
+columnNames = null
+columnNamesGrouping = null
+columnNamesMeasured = null
+columnAggregation = null
 
 emptyResults =
     names: []
@@ -439,16 +443,30 @@ displayResults = () ->
             $("#results-table .aggregated").popover("hide")
 
     # finally, make the table interactive with DataTable
-    table.dataTable(
+    dataTable = table.dataTable
+        sDom: 'R<"H"fir>t<"F"lp>'
+        bStateSave: true
         bDestroy: true
         bLengthChange: false
         bPaginate: false
         bAutoWidth: false
-        sDom: '<"H"fir>t<"F"lp>'
-        bStateSave: true
-        bProcessing: true
-    )
+        # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
+        fnStateSave: (oSettings, oData) ->
+            localStorage.setItem( 'DataTables_'+window.location.pathname, JSON.stringify(oData) )
+        fnStateLoad: (oSettings) ->
+            try JSON.parse localStorage.getItem('DataTables_'+window.location.pathname)
+    updateColumnVisibility dataTable
 
+updateColumnVisibility = (dataTable = $("#results-table").dataTable()) ->
+    # Hide some columns if necessary
+    isVisible =
+        if $("#results-hide-inactive-conditions").is(":checked")
+        then (name) -> (name in columnNamesMeasured or name in columnNamesGrouping)
+        else (name) -> true
+    idx = 0
+    for name in columnNames
+        dataTable.fnSetColumnVis idx++, (isVisible name), false
+    do dataTable.fnDraw
 
 
 
@@ -461,6 +479,13 @@ $ ->
             localStorage.resultsIncludeEmpty = JSON.stringify this.checked
             do displayResults
         )
+    $("#results-hide-inactive-conditions")
+        .prop("checked", (try JSON.parse localStorage.resultsHideInactiveConditions) ? false)
+        .change((e) ->
+            localStorage.resultsHideInactiveConditions = JSON.stringify this.checked
+            do updateColumnVisibility
+        )
+
 
     initConditions().success ->
         initMeasurements().success ->
@@ -473,6 +498,6 @@ $ ->
                     else
                         runAggregations.first().click()
                 )
-            do displayResults
+            do displayResults # initializing results table with empty data first
             do updateResults
 
