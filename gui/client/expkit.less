@@ -76,4 +76,23 @@
   }
 }
 
+#results-table-progress {
+  display: none;
+}
+#results.loading {
+  #results-table-progress {
+    display: block;
+    position: absolute;
+    left: 50%;
+    @width: @gridRowWidth * (1-.618);
+    // TODO also define these with @gridRowWidth1200 and @gridRowWidth768
+    width: @width;
+    margin-left: -@width/2;
+    z-index: 1000;
+  }
+  #results-table {
+    opacity: 0.5;
+  }
+}
+
 // vim:sw=2:sts=2

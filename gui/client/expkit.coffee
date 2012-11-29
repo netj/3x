@@ -307,11 +307,13 @@ emptyResults =
     rows: []
 updateResults = (e) ->
     if _.values(conditionsActive).some((vs) -> vs?.length > 0)
+        $("#results").addClass("loading")
         $.get("/api/results",
             runs: []
             batches: []
             conditions: JSON.stringify conditionsActive
         ).success(displayNewResults)
+            .success(-> $("#results").removeClass("loading"))
     else
         displayNewResults(emptyResults)
     e?.preventDefault?()
