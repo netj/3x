@@ -32,18 +32,23 @@
 
           <div class="nav-collapse">
             <ul class="nav">
+              <li><a href="#setup"
+                  class="active"><i class="icon-tasks icon"></i> Conditions
+                  <i class="icon-search icon"></i> Measurements</a></li>
+              <li><a href="#results"><i class="icon-list icon"></i> Results</a></li>
+              <li><a href="#chart"><i class="icon-eye-open icon"></i> Chart</a></li>
               <li><a href="#plan"><i class="icon-edit icon"></i> Plan</a></li>
-              <li><a href="#run"><i class="icon-pencil icon"></i> Run</a></li>
-              <li><a href="#results"><i class="icon-share-alt icon"></i> Results</a></li>
+              <li><a href="#runs"><i class="icon-play icon"></i> Runs</a></li>
             </ul>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="container">
-      <div class="row">
-        <div class="span7">
+    <div class="container-fluid">
+
+      <div class="row-fluid" id="setup">
+        <div class="span8">
           <h2>Conditions</h2>
           <ul id="conditions" class="nav nav-pills well">
           </ul>
@@ -63,7 +68,7 @@
             </li>
           </script>
         </div>
-        <div class="span5">
+        <div class="span4">
           <h2>Measurements</h2>
           <ul id="measurements" class="nav nav-pills well">
           </ul>
@@ -88,14 +93,14 @@
         </div>
       </div>
 
-      <div class="row-fluid">
-        <div id="results" class="span12 loading">
+      <div class="row-fluid loading" id="results">
+        <div class="span12">
           <h2>Results</h2>
 
           <form class="form-inline">
             <label class="checkbox inline">
               <input type="checkbox" id="results-include-empty">
-              Show conditions without any results
+              Show conditions with no results
             </label>
             <label class="checkbox inline">
               <input type="checkbox" id="results-hide-inactive-conditions">
@@ -156,10 +161,26 @@
         </div>
       </div>
 
-      <div id="run" class="row-fluid">
+      <div class="row-fluid" id="chart">
+        <div class="span12">
+          <h2>Chart</h2>
+          <div style="height: 500px;"></div>
+        </div>
+      </div>
+
+      <div class="row-fluid" id="plan">
+        <div class="span12">
+          <h2>Plan</h2>
+          ...
+          <div style="height: 500px;"></div>
+        </div>
+      </div>
+
+      <div class="row-fluid" id="runs">
         <div class="span6">
           <h2>Batches</h2>
           ...
+          <div style="height: 500px;"></div>
         </div>
         <div class="span6">
           <h2>Runs</h2>
@@ -167,16 +188,6 @@
         </div>
       </div>
 
-      <div id="plan" class="row-fluid">
-        <div class="span3">
-          <h2>Conditions</h2>
-          ...
-        </div>
-        <div class="span6">
-          <h2>Plan</h2>
-          ...
-        </div>
-      </div>
     </div>
 
   </body>

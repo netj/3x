@@ -18,6 +18,10 @@
   body {
     padding-top : 60px;
     padding-bottom: 40px;
+    margin-top: -60px;
+  }
+  body > .container-fluid > .row-fluid {
+    padding-top: 40px;
   }
 }
 
@@ -86,11 +90,12 @@
     display: block;
     position: absolute;
     left: 50%;
-    @width: @gridRowWidth * (1-.618);
+    @width: 100% * (1-.618);
     // TODO also define these with @gridRowWidth1200 and @gridRowWidth768
     width: @width;
     margin-left: -@width/2;
-    z-index: 1000;
+    z-index: 10;
+    .box-shadow(0 5px 10px rgba(0,0,0,.2));
   }
   #results-table {
     opacity: 0.5;

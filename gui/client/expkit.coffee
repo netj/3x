@@ -169,6 +169,9 @@ aggregationsForType = do ->
     ratio    : { mean   , stdev , median    , mode , min   , max       , enumerate }
 
 
+updateScrollSpy = ->
+    $('[data-spy="scroll"]').each(-> $(this).scrollspy('refresh'))
+
 
 conditions = null
 conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
@@ -232,6 +235,7 @@ initConditions = ->
                 )
             updateConditionDisplay(condUI)
             log "initCondition #{name}:#{type}=#{values.join ","}"
+        do updateScrollSpy
 
     $.getJSON("/api/conditions")
         .success(displayConditions)
@@ -294,6 +298,7 @@ initMeasurements = ->
                     $this.toggleClass("active", aggregation == measurementsAggregation[name])
             updateMeasurementDisplay measUI
             log "initMeasurement #{name}:#{type}.#{measurementsAggregation[name]}"
+        do updateScrollSpy
 
     $.getJSON("/api/measurements")
         .success(displayMeasurements)
@@ -455,6 +460,7 @@ displayResults = ->
         oColReorder:
             fnReorderCallback: -> $("#results-reset-column-order").toggleClass("disabled", isColumnReordered())
     do updateColumnVisibility
+    do updateScrollSpy
 
 isColumnReordered = ->
     colOrder = getColumnOrdering()
@@ -510,6 +516,12 @@ initResultsUI = ->
         )
 
 
+initNavBar = ->
+    $("body > .navbar-fixed-top .nav a").click((e) ->
+        [target] = $($(this).attr("href")).get()
+        do target.scrollIntoView
+        e.preventDefault()
+    )
 
 # initialize UI
 $ ->
@@ -518,4 +530,5 @@ $ ->
             do initResultsUI
             do displayResults # initializing results table with empty data first
             do updateResults
+    do initNavBar
 
