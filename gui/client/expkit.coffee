@@ -460,10 +460,8 @@ isColumnReordered = ->
     colOrder = getColumnOrdering()
     (JSON.stringify colOrder) == (JSON.stringify (_.range colOrder?.length))
 getColumnOrdering = ->
-    if dataTable?.fnSettings?
-        # XXX below is a hack into ColReorder's internals. This should be exposed via ColReorder's API.
-        col._ColReorder_iOrigCol for col in dataTable.fnSettings().aoColumns
-    else try (JSON.parse localStorage.resultsDataTablesState).ColReorder
+    dataTable?._oPluginColReorder?.fnGetCurrentOrder?() ?
+    try (JSON.parse localStorage.resultsDataTablesState).ColReorder
 
 updateColumnVisibility = ->
     return unless dataTable?
@@ -497,7 +495,7 @@ initResultsUI = ->
     $("#results-reset-column-order")
         .toggleClass("disabled", isColumnReordered())
         .click((e) ->
-            ColReorder.fnReset dataTable
+            do dataTable?._oPluginColReorder?.fnReset
             $(this).addClass("disabled")
             e.preventDefault()
         )
@@ -518,6 +516,6 @@ $ ->
     initConditions().success ->
         initMeasurements().success ->
             do initResultsUI
-            #do displayResults # initializing results table with empty data first
+            do displayResults # initializing results table with empty data first
             do updateResults
 

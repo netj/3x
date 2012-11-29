@@ -21,4 +21,4 @@
 	url = https://github.com/DataTables/Plugins.git
 [submodule "gui/DataTables.ColReorder"]
 	path = gui/DataTables.ColReorder
-	url = https://github.com/DataTables/ColReorder.git
+	url = https://github.com/netj/DataTables.ColReorder.git
