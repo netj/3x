@@ -21,13 +21,20 @@
 
 @media screen and (min-width: 980px) {
   body {
-    padding-top : 60px;
+    margin-top: -50px;
+    padding-top : 50px;
     padding-bottom: 40px;
-    margin-top: -60px;
   }
-  body > .container-fluid > .row-fluid {
-    padding-top: 40px;
+  .container-fluid {
+    padding: 0 @fluidGridGutterWidth;
+    body > & > .row-fluid {
+      padding-top: 50px;
+    }
   }
+}
+
+body > .navbar .brand .icon {
+  height: 20px;
 }
 
 #conditions, #measurements {
