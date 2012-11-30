@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# compile-filter -- compile given expressions into a shell script
+# Usage: compile-filter [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]... >filter
+#        chmod +x filter
+#        ./filter $EXPRUNID/exp.outcome
+#        find ... -exec ./filter {} \; -print
+#
+#
+# You can test/debug this with the hack command like this:
+#    exp hack compile-filter exectime\<200000 workers=2,4 graph=v25e4 |
+#      sh -xs -- run/2012/11/30/012900.970453277/exp.outcome
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-30
+set -eu
+shopt -s extglob
+
+cat <<HEAD
+#!/bin/sh -eu
+for f; do node -e '
+var v = {};
+for (var i=1; i<process.argv.length; i++) {
+    var nv = process.argv[i].split("=",2);
+    var n = parseFloat(nv[1]);
+    v[nv[0]] = isNaN(n) ? nv[1] : n;
+}
+
+HEAD
+# for debugging: console.log(JSON.stringify(v));
+
+toJSArray() {
+    local first=true v=
+    echo -n "["
+    for v; do
+        $first || echo -n ,
+        echo -n "$(toJS "$v")"
+        first=false
+    done
+    echo    "]"
+}
+
+toJS() {
+    case $# in
+        0)
+            echo null
+            ;;
+        1)
+            case $1 in
+                @(|-)@(+([0-9])?(.+([0-9]))|.+([0-9]))?([eE]@(|+|-)+([0-9])))
+                    echo -n "$1" # number
+                    ;;
+                *) # string
+                    echo -n '"'"${1//'"'/'\"'}"'"'
+                    ;;
+            esac
+            ;;
+        *)
+            toJSArray "$@"
+            ;;
+    esac
+}
+
+for cond; do
+    case $cond in
+        # exclusion; not equal to
+        *@(<>|!=)*)
+            name=${cond%%@(<>|!=)*}
+            values=${cond##$name@(<>|!=)}
+            echo "$(IFS=,; set -- $values; toJSArray "$@").indexOf(v[$(toJS "$name")]) < 0 || process.exit(1);"
+            ;;
+
+        # inequalities
+        *@(<=|>=|<|>)*)
+            name=${cond%%@(<=|>=|<|>)*}
+            value=${cond##$name@(<=|>=|<|>)}
+            o=${cond%$value}; o=${o#$name}
+            #case $o in
+            #    "<") O=-lt ;; "<=") O=-le ;;
+            #    ">") O=-gt ;; ">=") O=-ge ;;
+            #esac
+            echo "v[$(toJS "$name")] $o $(toJS "$value") || process.exit(1);"
+            ;;
+
+        # membership; equals
+        *=*)
+            name=${cond%%=*}; values=${cond#$name=}
+            echo "$(IFS=,; set -- $values; toJSArray "$@").indexOf(v[$(toJS "$name")]) >= 0 || process.exit(1);"
+            ;;
+    esac
+done
+
+cat <<TAIL
+
+process.exit(0);
+' -- \`cat "\${f%.outcome}.condition" "\$f"\`
+done
+TAIL

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # exp-results -- enumerate experiment outcomes
-# Usage: exp results [BATCH | RUN]... [NAME[=VALUE[,VALUE]...]]...
+# Usage: exp results [BATCH | RUN]... [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]...
 # 
 # You can specify from which BATCH or RUNs you want to enumerate the results.
 # Otherwise, results from all runs will be filtered and listed.
@@ -10,7 +10,8 @@
 # 
 # Furthermore, if you specify conditions after the BATCH and RUNs, only the
 # results satisfying them will be listed.  Use `exp conditions -v` to see
-# available condition variables and values.
+# available condition variables and values.  For the defined measurements,
+# use `exp measures` to see their names and types.
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
@@ -23,12 +24,12 @@ set -eu
 : ${EXPROOT:=$(exp-findroot)}
 export EXPROOT
 
-verboseCheck=
+verboseFiltering=
 if ! be-quiet +3; then
     if be-quiet +4 || ! be-quiet +5; then
         set -x
     else
-        verboseCheck="bash -x"
+        verboseFiltering="sh -x"
     fi
 fi
 
@@ -61,20 +62,25 @@ msg +2 "Normalizing filter $*"
 args=($(normalize-conditions -p "$@" | grep -v '=$' || true))
 [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
+msg +2 "Compiling filter $*"
+filter=$(mktemp ${TMPDIR:-/tmp}/exp-results-filter.XXXXXX)
+trap "rm -f $filter" EXIT
+compile-filter "$@" >"$filter"
+chmod +x "$filter"
 if [ $# -gt 0 ]; then
-    findPredicate=(-exec $verboseCheck check-condition {} "$@" \;)
+    findPredicate=(-exec $verboseFiltering "$filter" {} \;)
 else
     findPredicate=(-true)
 fi
 
 ## find matching conditions to get outcomes
 msg +1 "Filtering results with $*"
-find "${runs[@]}" -name exp.condition \
+find "${runs[@]}" -name exp.outcome \
     "${findPredicate[@]}" -print |
-while read -r condition; do
-    run=${condition%/exp.condition}
+while read -r outcome; do
+    run=${outcome%/exp.outcome}
     run=$(cd "$run" && pwd -P); run=${run#$EXPROOT/}
-    outcome=$run/exp.outcome
+    condition=$run/exp.condition
     [ -r "$outcome" ] || continue
     echo "$run"$'\t'"$(tr '\n' '\t' <"$outcome")$((sort | tr '\n' '\t') <"$condition")"
 done |
