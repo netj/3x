@@ -6,4 +6,4 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
 (( EXPKIT_LOGLVL += 1 - ${1:-0} ))
-[[ $SHLVL > $EXPKIT_LOGLVL ]]
+[[ $SHLVL -gt $EXPKIT_LOGLVL ]]

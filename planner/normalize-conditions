@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # normalize-conditions -- normalize condition specification
-# Usage: normalize-conditions [-n | -v] [NAME[=VALUE[,VALUE]...]]...
-#        normalize-conditions [-n | -v] DIR...
+# Usage: normalize-conditions -[nvp] [NAME[=VALUE[,VALUE]...]]...
+#        normalize-conditions -[nvp] DIR...
 # 
 # In addition to the obvious NAME=VALUE pairs, this also understands paths both
 # relative and absolute to either condition variables or values of condition
 # variables under the $EXPROOT, so you can rely on shell's file path completion.
 # 
-# You can specify -n option to prepend any missing NAME.
+# Specify -n option to prepend any missing NAME.
 # Specify -v to attach possible values for each NAME without any VALUE as well.
+# Specify -p to pass thru any unrecognized argument. Otherwise, it will cause an error.
 # 
 # For processing arguments to a script, use as follows:
 #   args=($(normalize-conditions "$@"))
@@ -22,13 +23,17 @@ set -eu
 # process options
 fillNames=false
 fillValues=false
-while getopts "nv" opt; do
+passUnrecognized=false
+while getopts "nvp" opt; do
     case $opt in
         n)
-        fillNames=true
+            fillNames=true
             ;;
         v)
             fillValues=true
+            ;;
+        p)
+            passUnrecognized=true
             ;;
     esac
 done
@@ -40,6 +45,7 @@ shift $(($OPTIND - 1))
 
 ## normalize command-line arguments
 args=()
+restArgs=()
 for cond in "$@"; do
     if [ -e "$cond" ]; then # infer condition name/value from path names
         # e.g., program/f/ condition/x=/1 condition/x=/2.env condition/y=abcd condition/z=/
@@ -67,10 +73,8 @@ for cond in "$@"; do
         case $cond in
             *=*) ;;
             *)
-                program=$cond
-                if [ -d "$EXPROOT"/program/"$program" ]; then
-                    args+=(program="$program")
-                    continue
+                if [ -d "$EXPROOT"/program/"$cond" ]; then
+                    cond="program=$cond"
                 fi
                 ;;
         esac
@@ -81,7 +85,15 @@ for cond in "$@"; do
         else
             pattDir="$EXPROOT"/condition/$name=
         fi
-        [ -d "$pattDir" ] || error "Undefined condition $cond"
+        if ! [ -d "$pattDir" ]; then
+            if $passUnrecognized; then
+                # hold unrecognized arguments for output
+                restArgs+=("$cond")
+                continue
+            else
+                error "Undefined condition $cond"
+            fi
+        fi
         valuePart=${cond#$name}
         valuePart=${valuePart#=}
         if [ -n "$valuePart" ]; then
@@ -98,8 +110,8 @@ for cond in "$@"; do
         args+=("$name=$valuePart")
     fi
 done
-[ ${#args[@]} -gt 0 ] || exit 0
-set -- "${args[@]}"
+[ ${#args[@]} -gt 0 -o ${#restArgs[0]} -gt 0 ] || exit 0
+[ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
 # group by var names
 #  e.g., program=f program=g x=1 x=2 y=abcd z=
@@ -146,10 +158,12 @@ if $fillValues; then
         [ -n "$values" ] || cond=$(exp-conditions -v "$name")
         args+=("$cond")
     done
-    [ ${#args[@]} -gt 0 ] || exit 0
-    set -- "${args[@]}"
+    [ ${#args[@]} -gt 0 -o ${#restArgs[0]} -gt 0 ] || exit 0
+    [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 fi
 
+# append any unrecognized arguments
+! $passUnrecognized || [ ${#restArgs[@]} -eq 0 ] || set -- "$@" "" "${restArgs[@]}"
 
 # output the normalized arguments, so it can be used in the following manner:
 #   set -- $(normalize-conditions "$@")

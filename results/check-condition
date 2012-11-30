@@ -6,18 +6,21 @@
 # Created: 2012-11-10
 set -eu
 
-file=$1; shift
+conditionFile=$1; shift
 
 # empty condition is true
 [ $# -gt 0 ] || exit 0
 
-# load the file
-eval "$(cat "$file")"
+outcomeFile=${conditionFile%.condition}.outcome
+
+# load the files
+source "$conditionFile"
+source "$outcomeFile"
 
 # check each condition
 for cond in "$@"; do
     name=${cond%%=*}
     values=${cond#$name=}
     v=${!name}
-    [[ $values = @(*,|)$v@(|,*) ]] || error "$name=$v not in $values"
+    [[ $values = @(*,|)$v@(|,*) ]] || false error "$name=$v not in $values"
 done

@@ -3,7 +3,10 @@
 # Usage: exp results [BATCH | RUN]... [NAME[=VALUE[,VALUE]...]]...
 # 
 # You can specify from which BATCH or RUNs you want to enumerate the results.
-# Otherwise, results from all runs will be listed.
+# Otherwise, results from all runs will be filtered and listed.
+# To list all results from the entire set of runs, use:
+# 
+#     exp results run
 # 
 # Furthermore, if you specify conditions after the BATCH and RUNs, only the
 # results satisfying them will be listed.  Use `exp conditions -v` to see
@@ -20,40 +23,57 @@ set -eu
 : ${EXPROOT:=$(exp-findroot)}
 export EXPROOT
 
+verboseCheck=
+if ! be-quiet +3; then
+    if be-quiet +4 || ! be-quiet +5; then
+        set -x
+    else
+        verboseCheck="bash -x"
+    fi
+fi
+
+
 ## from command-line, find the batches and runs
 runs=()
-while [ -d "${1:-}" ]; do
-    p=$(readlink -f "$1")
+args=()
+for a; do
+    p=$(readlink -f "$a")
     p=${p#$EXPROOT/}
     case $p in
         run/batch/*)
-            runs+=("${1%/}"/runs/*/)
-            shift
+            runs+=("${a%/}"/runs/*/)
             ;;
         run/*)
-            runs+=("$1")
-            shift
+            runs+=("$a")
             ;;
         *) # neither a batch nor run dir
-            break
+            args+=("$a")
             ;;
     esac
 done
 # search from all runs if no scope was given
-[[ ${#runs[@]} > 0 ]] || runs+=("$EXPROOT"/run)
+[[ ${#runs[@]} -gt 0 ]] || runs+=("$EXPROOT"/run)
+[[ ${#args[@]} -eq 0 ]] && set -- || set -- "${args[@]}"
+msg +1 "Considering runs under ${runs[*]}"
 
 ## normalize rest of the command-line arguments
-args=($(normalize-conditions -v "$@"))
+msg +2 "Normalizing filter $*"
+args=($(normalize-conditions -p "$@" | grep -v '=$' || true))
 [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
+if [ $# -gt 0 ]; then
+    findPredicate=(-exec $verboseCheck check-condition {} "$@" \;)
+else
+    findPredicate=(-true)
+fi
 
 ## find matching conditions to get outcomes
+msg +1 "Filtering results with $*"
 find "${runs[@]}" -name exp.condition \
-    -exec check-condition {} "$@" \; -print 2>/dev/null |
+    "${findPredicate[@]}" -print |
 while read -r condition; do
     run=${condition%/exp.condition}
-    run=$(cd "$run" && pwd -P)
-    run=${run#$EXPROOT/}
+    run=$(cd "$run" && pwd -P); run=${run#$EXPROOT/}
     outcome=$run/exp.outcome
     [ -r "$outcome" ] || continue
     echo "$run $(tr '\n' ' ' <"$outcome") $((sort | tr '\n' ' ') <"$condition")"

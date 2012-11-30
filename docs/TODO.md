@@ -11,6 +11,7 @@
 * exp-rerun for re-running past runs: do a copy --archive --link from the run dir and simply run it again?
 * better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
 * keep links to currently running batch and/or run
+* let exp.sh dup terminal fds, so all msg can still reach the term
 
 ## GUI
 * DONE chasis with express.js + node + bootstrap + coffee-script
