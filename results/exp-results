@@ -76,6 +76,6 @@ while read -r condition; do
     run=$(cd "$run" && pwd -P); run=${run#$EXPROOT/}
     outcome=$run/exp.outcome
     [ -r "$outcome" ] || continue
-    echo "$run $(tr '\n' ' ' <"$outcome") $((sort | tr '\n' ' ') <"$condition")"
+    echo "$run"$'\t'"$(tr '\n' '\t' <"$outcome")$((sort | tr '\n' '\t') <"$condition")"
 done |
-column -t
+if [ -t 1 ]; then column -t; else cat; fi
