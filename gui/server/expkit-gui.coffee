@@ -13,6 +13,15 @@ expKitPort = parseInt process.argv[2] ? 0
 RUN_COLUMN_NAME = "run#"
 
 
+# use text/plain MIME type for ExpKit artifacts in run/
+express.static.mime.define
+    "text/plain": """
+        sh env args stdin stdout stderr exitcode
+        run measure
+        condition assembly outcome
+        plan remaining done count cmdln
+    """.split /\s+/
+
 ###
 # Express.js server
 ###
@@ -25,7 +34,9 @@ app.configure ->
     #app.use express.bodyParser()
     #app.use express.methodOverride()
     app.use app.router
-    app.use express.static(__dirname + "/../client")
+    app.use "/run", express.static    "#{process.env.EXPROOT}/run"
+    app.use "/run", express.directory "#{process.env.EXPROOT}/run"
+    app.use         express.static    "#{__dirname}/../client"
 
 app.configure "development", ->
     app.use express.errorHandler({ dumpExceptions: true, showStack: true })

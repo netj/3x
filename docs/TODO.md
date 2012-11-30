@@ -28,6 +28,7 @@
         * from the popup, let user easily add exp plans
     * show multiple aggregation for each measurements
 * DONE clean up navbar with scrollspy
+* run summary page
 * Encapsulate with CoffeeScript classes
 * d3 plots of results
     * bar chart
