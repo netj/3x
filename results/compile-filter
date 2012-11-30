@@ -17,13 +17,15 @@ shopt -s extglob
 
 cat <<HEAD
 #!/bin/sh -eu
-for f; do node -e '
-var v = {};
-for (var i=1; i<process.argv.length; i++) {
-    var nv = process.argv[i].split("=",2);
-    var n = parseFloat(nv[1]);
-    v[nv[0]] = isNaN(n) ? nv[1] : n;
-}
+for f; do python - \`cat "\${f%.outcome}.condition" "\$f"\` <<EOF
+import sys
+v={}
+for s in sys.argv[1:]:
+    n,str = s.split("=",2)
+    try:
+        v[n] = float(str)
+    except:
+        v[n] = str
 
 HEAD
 # for debugging: console.log(JSON.stringify(v));
@@ -66,7 +68,7 @@ for cond; do
         *@(<>|!=)*)
             name=${cond%%@(<>|!=)*}
             values=${cond##$name@(<>|!=)}
-            echo "$(IFS=,; set -- $values; toJSArray "$@").indexOf(v[$(toJS "$name")]) < 0 || process.exit(1);"
+            echo "v[$(toJS "$name")] not in $(IFS=,; set -- $values; toJSArray "$@") or sys.exit(1)"
             ;;
 
         # inequalities
@@ -78,20 +80,20 @@ for cond; do
             #    "<") O=-lt ;; "<=") O=-le ;;
             #    ">") O=-gt ;; ">=") O=-ge ;;
             #esac
-            echo "v[$(toJS "$name")] $o $(toJS "$value") || process.exit(1);"
+            echo "v[$(toJS "$name")] $o $(toJS "$value") or sys.exit(1)"
             ;;
 
         # membership; equals
         *=*)
             name=${cond%%=*}; values=${cond#$name=}
-            echo "$(IFS=,; set -- $values; toJSArray "$@").indexOf(v[$(toJS "$name")]) >= 0 || process.exit(1);"
+            echo "v[$(toJS "$name")] in $(IFS=,; set -- $values; toJSArray "$@") or sys.exit(1)"
             ;;
     esac
 done
 
 cat <<TAIL
 
-process.exit(0);
-' -- \`cat "\${f%.outcome}.condition" "\$f"\`
+sys.exit(0)
+EOF
 done
 TAIL
