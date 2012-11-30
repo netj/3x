@@ -46,6 +46,7 @@
     * monitoring logs
 
 * Title with .exp/description
+* add right margin to icons in h2 instead of space
 
 <!--
 vim:undofile
