@@ -16,19 +16,23 @@ set -eu
 shopt -s extglob
 
 cat <<HEAD
-#!/bin/sh -eu
-for f; do python - \`cat "\${f%.outcome}.condition" "\$f"\` <<EOF
+#!/usr/bin/env python
 import sys
 v={}
-for s in sys.argv[1:]:
-    n,str = s.split("=",2)
-    try:
-        v[n] = float(str)
-    except:
-        v[n] = str
+def load(f):
+    global v
+    for s in open(f):
+        n,str = s.strip().split("=",2)
+        try:
+            v[n] = float(str)
+        except:
+            v[n] = str
+for f in sys.argv[1:]:
+    load(f.replace(".outcome",".condition"))
+    load(f)
 
 HEAD
-# for debugging: console.log(JSON.stringify(v));
+# for debugging: print >>stderr, v
 
 toJSArray() {
     local first=true v=
@@ -94,6 +98,4 @@ done
 cat <<TAIL
 
 sys.exit(0)
-EOF
-done
 TAIL
