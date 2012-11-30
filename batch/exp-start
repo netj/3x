@@ -47,7 +47,7 @@ pick-next() {
     local src=$1; shift
     local dest=$1; shift
     head -n 1 "$src" >"$dest"/cmdln
-    { echo 1d; echo wq; } | ed "$src" >/dev/null
+    { echo 1d; echo wq; } | ed "$src" &>/dev/null
 }
 
 # prepare a remaining queue based on the plan
