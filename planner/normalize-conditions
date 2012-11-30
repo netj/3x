@@ -123,13 +123,12 @@ values = {}
 for arg in args
     [name,vs] = arg.split "=", 2
     ordering.push name unless name in ordering
-    values[name] ?= {}
+    values[name] ?= []
     if vs?
         for v in vs.split ","
-            values[name][v] ?= 0
-            values[name][v]++
+            values[name].push v unless v in values[name]
 for name in ordering
-    console.log "#{name}=#{(v for v,freq of values[name]).join ","}"
+    console.log "#{name}=#{values[name].join ","}"
 ' "$@")
 
 # all the variables must be there, so prefix them
