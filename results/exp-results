@@ -29,7 +29,7 @@ if ! be-quiet +3; then
     if be-quiet +4 || ! be-quiet +5; then
         set -x
     else
-        verboseFiltering="sh -x"
+        verboseFiltering="bash -x"
     fi
 fi
 

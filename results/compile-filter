@@ -16,52 +16,21 @@ set -eu
 shopt -s extglob
 
 cat <<HEAD
-#!/usr/bin/env python
-import sys
-v={}
-def load(f):
-    global v
-    for s in open(f):
-        n,str = s.strip().split("=",2)
-        try:
-            v[n] = float(str)
-        except:
-            v[n] = str
-for f in sys.argv[1:]:
-    load(f.replace(".outcome",".condition"))
-    load(f)
+#!/usr/bin/env bash
+set -eu; shopt -s extglob
+source "\${1%.outcome}.condition"
+source "\$1"
 
 HEAD
 # for debugging: print >>stderr, v
 
-toJSArray() {
-    local first=true v=
-    echo -n "["
-    for v; do
-        $first || echo -n ,
-        echo -n "$(toJS "$v")"
-        first=false
-    done
-    echo    "]"
-}
-
-toJS() {
-    case $# in
-        0)
-            echo null
+numOrStr() {
+    case $1 in
+        @(|-)@(+([0-9])?(.+([0-9]))|.+([0-9]))?([eE]@(|+|-)+([0-9])))
+            echo -n "$1" # number
             ;;
-        1)
-            case $1 in
-                @(|-)@(+([0-9])?(.+([0-9]))|.+([0-9]))?([eE]@(|+|-)+([0-9])))
-                    echo -n "$1" # number
-                    ;;
-                *) # string
-                    echo -n '"'"${1//'"'/'\"'}"'"'
-                    ;;
-            esac
-            ;;
-        *)
-            toJSArray "$@"
+        *) # string
+            echo -n '"'"${1//'"'/'\"'}"'"'
             ;;
     esac
 }
@@ -70,32 +39,39 @@ for cond; do
     case $cond in
         # exclusion; not equal to
         *@(<>|!=)*)
-            name=${cond%%@(<>|!=)*}
-            values=${cond##$name@(<>|!=)}
-            echo "v[$(toJS "$name")] not in $(IFS=,; set -- $values; toJSArray "$@") or sys.exit(1)"
+            name=${cond%%@(<>|!=)*}; values=${cond##$name@(<>|!=)}
+            patt=$values; patt=${patt//'|'/'\|'}; patt=${patt//','/'|'}
+            echo "[[ \$$name = !($patt) ]]"
             ;;
 
         # inequalities
         *@(<=|>=|<|>)*)
-            name=${cond%%@(<=|>=|<|>)*}
-            value=${cond##$name@(<=|>=|<|>)}
+            name=${cond%%@(<=|>=|<|>)*}; value=${cond##$name@(<=|>=|<|>)}
             o=${cond%$value}; o=${o#$name}
-            #case $o in
-            #    "<") O=-lt ;; "<=") O=-le ;;
-            #    ">") O=-gt ;; ">=") O=-ge ;;
-            #esac
-            echo "v[$(toJS "$name")] $o $(toJS "$value") or sys.exit(1)"
+            v=$(numOrStr "$value")
+            case $v in 
+                '"'*'"')
+                    echo "[[ \$$name $o $v ]]"
+                    ;;
+                *)
+                    echo "[[ \$(bc <<<\"\$$name $o $v\") = 1 ]]"
+                    # XXX bc is much more powerful (arbitrary precision) but
+                    # not that slower than shell's builtin [[ comparisons,
+                    # which can only do int arithmetics.
+                    #case $o in
+                    #    "<") O=-lt ;; "<=") O=-le ;;
+                    #    ">") O=-gt ;; ">=") O=-ge ;;
+                    #esac
+                    #echo "[[ \$$name $O $(numOrStr "$value") ]]"
+                    ;;
+            esac
             ;;
 
         # membership; equals
         *=*)
             name=${cond%%=*}; values=${cond#$name=}
-            echo "v[$(toJS "$name")] in $(IFS=,; set -- $values; toJSArray "$@") or sys.exit(1)"
+            patt=$values; patt=${patt//'|'/'\|'}; patt=${patt//','/'|'}
+            echo "[[ \$$name = @($patt) ]]"
             ;;
     esac
 done
-
-cat <<TAIL
-
-sys.exit(0)
-TAIL
