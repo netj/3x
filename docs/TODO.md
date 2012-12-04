@@ -5,13 +5,13 @@
     * condition restrcition
     * Consider using sqlite or relying on some relational store w/ SQL, i.e., don't be too fancy with the selection
 * DONE exp-results bug fix for empty args
-* exp-results query on measurements (=/</>/<=/>=)
-* exp-plan with the output of exp-results query (e.g., when you want to rerun exps for certain conditions with failures/anomalies/etc.)
+* DONE exp-results query on measurements (=/</>/<=/>=)
+* DONE exp-plan with the output of exp-results query (e.g., when you want to rerun exps for certain conditions with failures/anomalies/etc.)
 * `exp measure` for running newly added measures: requires partial assembly for exp.measure, and separating the running part from exp-run.
 * exp-rerun for re-running past runs: do a copy --archive --link from the run dir and simply run it again?
 * better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
 * keep links to currently running batch and/or run
-* let exp.sh dup terminal fds, so all msg can still reach the term
+* better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
 
 ## GUI
 * DONE chasis with express.js + node + bootstrap + coffee-script
@@ -31,8 +31,9 @@
         * from the popup, let user easily add exp plans
     * show multiple aggregation for each measurements
 * DONE clean up navbar with scrollspy
-* run summary page
+* better looking run summary page
 * Encapsulate with CoffeeScript classes
+* easy creating/removing of condition values
 * d3 plots of results
     * bar chart
     * scatter plot
