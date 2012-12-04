@@ -124,11 +124,42 @@ enumerateAll = (name) ->
         enumerate
 
 # different aggregation methods depending on data type or level of measurement
-aggregationsForType = do ->
+class Aggregation
+    constructor: (@name, @type, @func) ->
+        Aggregation.FOR_NAME[@name] = @
+    @FOR_NAME: {}
+    @FOR_TYPE: {}
+    @DATA_FORMATTER_FOR_TYPE: (type, rows, colIdx) ->
+        switch type
+            when "string", "nominal"
+                _.identity
+            when "number", "ordinal", "interval", "ratio"
+                # go through all the values of rows at colIdx and determine precision
+                sumIntegral   = 0; maxIntegral   = 0; minIntegral   = 0
+                sumFractional = 0; maxFractional = 0; minFractional = 0
+                count = 0
+                for row in rows
+                    v = "#{row[colIdx].value}."
+                    f = v.length - 1 - v.indexOf(".")
+                    #i = v.length - 1 - f
+                    #minIntegral    = Math.min minIntegral, i
+                    #maxIntegral    = Math.max maxIntegral, i
+                    #sumIntegral   += i
+                    #maxFractional  = Math.max maxFractional, f
+                    #minFractional  = Math.min maxFractional, f
+                    sumFractional += f
+                    count++
+                prec = Math.ceil(sumFractional / count)
+                do (prec) ->
+                    (v) ->
+                        parseFloat(v).toFixed(prec) if v? and v != ""
+            else
+                _.identity
+            
+Aggregation.FOR_TYPE = do ->
     withNumbersIn = (vs) -> v for v in vs.map parseFloat when not isNaN v
-    numFormatted = (v) -> v?.toFixed(4) # FIXME
-    count = (vs) -> vs?.length
-    mode = (vs) ->
+    new Aggregation "count",    "number", (vs) -> vs?.length
+    new Aggregation "mode",     "string", (vs) ->
         hist = {}
         for v in vs
             hist[v] ?= 0
@@ -136,12 +167,12 @@ aggregationsForType = do ->
         maxc = _.max(hist)
         for v,c of hist when c == maxc
             return v
-    median = (vs) ->
+    new Aggregation "median",   "number", (vs) ->
         ordered = _.clone(vs).sort()
         ordered[Math.floor(vs.length / 2)]
-    min = (vs) -> ns = withNumbersIn vs; if ns.length then numFormatted Math.min ns... else null
-    max = (vs) -> ns = withNumbersIn vs; if ns.length then numFormatted Math.max ns... else null
-    mean = (vs) ->
+    new Aggregation "min",      "number", (vs) -> ns = withNumbersIn vs; if ns.length then Math.min ns... else null
+    new Aggregation "max",      "number", (vs) -> ns = withNumbersIn vs; if ns.length then Math.max ns... else null
+    new Aggregation "mean",     "number", (vs) ->
         ns = withNumbersIn vs
         if ns.length > 0
             sum = 0
@@ -149,24 +180,25 @@ aggregationsForType = do ->
             for v in ns
                 sum += v
                 count++
-            if count > 0 then numFormatted (sum / count) else null
+            if count > 0 then (sum / count) else null
         else null
-    stdev = (vs) ->
+     new Aggregation "stdev",   "number", (vs) ->
         ns = withNumbersIn vs
         if ns.length > 0
             dsqsum = 0
             n = 0
-            m = mean ns
+            m = Aggregation.FOR_NAME.mean.func ns
             for v in ns
                 d = (v - m)
                 dsqsum += d*d
                 n++
-            numFormatted (Math.sqrt(dsqsum / n))
+            (Math.sqrt(dsqsum / n))
         else null
-    nominal  : { count  , mode  , enumerate }
-    ordinal  : { median , mode  , min       , max  , count , enumerate }
-    interval : { mean   , stdev , median    , mode , min   , max       , enumerate }
-    ratio    : { mean   , stdev , median    , mode , min   , max       , enumerate }
+    aggs = (names...) -> _.pick Aggregation.FOR_NAME, names...
+    nominal  : aggs "count"  , "mode"  , "enumerate"
+    ordinal  : aggs "median" , "mode"  , "min"       , "max"  , "count" , "enumerate"
+    interval : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
+    ratio    : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
 
 
 updateScrollSpy = ->
@@ -281,7 +313,7 @@ initMeasurements = ->
         skeleton = $("#measurement-skeleton")
         for name,{type} of measurements
             id = safeId(name)
-            aggregations = aggregationsForType[type]
+            aggregations = Aggregation.FOR_TYPE[type]
             # add each measurement by filling the skeleton
             measurementsUI.append(skeleton.render({name, id, type, aggregations}))
             measUI = measurementsUI.find("#measurement-#{id}")
@@ -363,12 +395,12 @@ displayResults = ->
     else
         # aggregate data
         for name in columnNamesMeasured
-            aggs = aggregationsForType[measurements[name].type] ? _.values(aggregationsForType)[0]
+            aggs = Aggregation.FOR_TYPE[measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
             aggName = measurementsAggregation[name]
             aggName = _.keys(aggs)[0] unless aggs[aggName]
-            columnAggregation[name] = {name:aggName, func:aggs[aggName]}
+            columnAggregation[name] = aggs[aggName]
         for name of conditions
-            columnAggregation[name] ?= {name:"enumerate", func:enumerateAll name}
+            columnAggregation[name] ?= {name:"enumerate", type:"string", func:enumerateAll name}
         log "aggregation:", JSON.stringify columnAggregation
         groupRowsByColumns = (rows) ->
             map = (row) -> JSON.stringify (columnNamesGrouping.map (name) -> row[columnIndex[name]])
@@ -414,20 +446,26 @@ displayResults = ->
     columnMetadata = {}
     thead.append(headSkeleton.render(
         columns: (
+            idx = -1
             for name in columnNames
+                idx++
+                isForGrouping = name in columnNamesGrouping
+                # use aggregation type or the type of original data
+                type = (columnAggregation[name]?.type unless isForGrouping) ?
+                    conditions[name]?.type ? measurements[name]?.type
                 columnMetadata[name] =
                     name: name
-                    # TODO use aggregation type instead of the original data type
-                    type: conditions[name]?.type ? measurements[name]?.type
+                    type: type
                     className:
                         if name in columnNamesMeasured then "measurement"
                         else if name in columnNamesGrouping then "condition"
                         else "muted"
-                    isForGrouping: name in columnNamesGrouping
+                    isForGrouping: isForGrouping
                     isMeasured: name in columnNamesMeasured
-                    isntImportant: conditions[name]? and name not in columnNamesGrouping
+                    isntImportant: conditions[name]? and not isForGrouping
                     isRunIdColumn: name == RUN_COLUMN_NAME
-                    aggregation: columnAggregation[name]?.name unless name in columnNamesGrouping
+                    aggregation: columnAggregation[name]?.name unless isForGrouping
+                    formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, resultsForRendering, idx)
         )
     ))
 
@@ -440,7 +478,9 @@ displayResults = ->
             columns: (
                 idx = 0
                 for name in columnNames
-                    $.extend columnMetadata[name], row[idx++]
+                    c = $.extend columnMetadata[name], row[idx++]
+                    c.formattedValue = c.formatter c.value
+                    c
             )
         ))
     tbody.find(".aggregated")

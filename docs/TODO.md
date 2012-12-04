@@ -31,7 +31,6 @@
         * from the popup, let user easily add exp plans
     * show multiple aggregation for each measurements
 * DONE clean up navbar with scrollspy
-* better looking run summary page
 * Encapsulate with CoffeeScript classes
 * easy creating/removing of condition values
 * d3 plots of results
@@ -45,9 +44,17 @@
     * start/stop/resume
 * run page
     * monitoring logs
+    * better looking run summary page
 
 * Title with .exp/description
 * add right margin to icons in h2 instead of space
+
+## Wild ideas
+* temporal trends in runs
+* approximation/prediction of measurements, i.e., measures without actual runs
+* estimating time for a plan based on other runs: will need to keep track of
+  wallclock time etc.
+* concise way to specify parallel execution order in the plan
 
 <!--
 vim:undofile
