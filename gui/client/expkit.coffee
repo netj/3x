@@ -186,7 +186,9 @@ updateConditionDisplay = (condUI) ->
     hasValues = values?.length > 0
     condUI.find(".condition-values")
         ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
+    wasActive = condUI.hasClass("active")
     condUI.toggleClass("active", hasValues)
+    condUI.trigger("changed", hasValues) if wasActive != hasValues
 
 handleConditionMenuAction = (handle) -> (e) ->
     $this = $(this)
@@ -256,7 +258,10 @@ updateMeasurementDisplay = (measUI) ->
     aggregation = if isActive then aggregationActive.first().text()
     measurementsAggregation[name] = aggregation
     measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
-    measUI.toggleClass("active", isActive or name == RUN_COLUMN_NAME)
+    wasActive = measUI.hasClass("active")
+    isActive = true if name == RUN_COLUMN_NAME
+    measUI.toggleClass("active", isActive)
+    measUI.trigger("changed", isActive) if wasActive != isActive or name == RUN_COLUMN_NAME
 
 handleMeasurementMenuAction = (handle) -> (e) ->
     $this = $(this)
@@ -507,14 +512,18 @@ initResultsUI = ->
             e.preventDefault()
         )
     runAggregations = RUN_MEASUREMENT.find(".dropdown-menu .measurement-aggregation")
-    $("#results-without-aggregation")
-        .prop("checked", runAggregations.filter(".active").length == 0)
+    updateResultsWithoutAgg = ->
+        $("#results-without-aggregation")
+            .prop("checked", runAggregations.filter(".active").length == 0)
+    updateResultsWithoutAgg()
         .change((e) ->
             if this.checked
                 runAggregations.filter(".active").click()
             else
                 runAggregations.first().click()
         )
+    RUN_MEASUREMENT
+        .bind("changed", (e, isActive) -> do updateResultsWithoutAgg)
 
 
 initNavBar = ->
