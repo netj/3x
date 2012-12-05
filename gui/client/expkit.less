@@ -20,15 +20,48 @@
 @import "DataTables/css/ColReorder.css";
 
 @media screen and (min-width: 980px) {
+  @navbarHeight: 40px;
   body {
-    margin-top: -50px;
-    padding-top : 50px;
-    padding-bottom: 40px;
+    padding-top: @navbarHeight;
+    padding-bottom: @navbarHeight;
   }
   .container-fluid {
     padding: 0 @fluidGridGutterWidth;
-    body > & > .row-fluid {
-      padding-top: 50px;
+  }
+  @mainTopSpacing: 10px;
+  #main {
+    margin-top: -@navbarHeight;
+    & > .row-fluid { padding-top: (@mainTopSpacing + @navbarHeight); }
+  }
+  #setup {
+    padding-top: 2*@mainTopSpacing;
+    &.affix {
+      width: 2*@fluidGridColumnWidth + @fluidGridGutterWidth;
+      padding: 1px;
+      &.overflow {
+        // TODO with more stuffs on the side bar, the overflow problem will become important
+        width: 2*(@fluidGridColumnWidth + @fluidGridGutterWidth);
+        padding-left: @fluidGridGutterWidth;
+        top: 40px;
+        left: 0px;
+        bottom: 0px;
+        overflow: auto;
+      }
+    }
+    h4 {
+      margin-bottom: 4px;
+    }
+    .condition, .measurement {
+      .dropdown-toggle {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        .caret { float: right; }
+        .condition-values {
+          word-wrap: initial;
+          display: inline;
+        }
+      }
     }
   }
 }
@@ -37,8 +70,10 @@ body > .navbar .brand .icon {
   height: 20px;
 }
 
-.navbar .icon, h2 .icon {
-  margin-right: .3em;
+.icon {
+  h1 &, h2 &, h3 &, h4 &, h5 &, h6 &, .navbar & {
+    margin-right: .3em;
+  }
 }
 
 #conditions, #measurements {
@@ -50,8 +85,7 @@ body > .navbar .brand .icon {
     }
   }
 }
-
-#conditions .condition-values {
+.condition-values {
   word-wrap: break-word;
   display: inline-block;
 }
@@ -87,6 +121,7 @@ body > .navbar .brand .icon {
   }
 
   tbody {
+    word-wrap: break-word;
     .aggregated           { font-weight: bold; cursor: pointer; }
     .aggregated.enumerate { font-weight: lighter; word-wrap: break-word; }
     .aggregated.count     { font-style: italic; }
