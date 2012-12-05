@@ -47,7 +47,7 @@
     * better looking run summary page
 
 * Title with .exp/description
-* add right margin to icons in h2 instead of space
+* DONE add right margin to icons in h2 instead of space
 
 ## Wild ideas
 * temporal trends in runs
