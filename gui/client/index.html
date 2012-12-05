@@ -141,14 +141,16 @@
                 {{if aggregation}}
                   <div class="aggregated {{>aggregation}}"
                     {{if values}}
+                    data-value="{{:value}}"
                     data-placement="bottom" data-trigger="click"
+                    title="{{>aggregation}}{{if aggregation != 'enumerate'}} = {{:value}}{{/if}}"
                     data-html="true" data-content='<ul>
                       {{for values}}
                       <li>{{for #data tmpl="#results-table-cell-skeleton" ~column=#parent.parent.data ~value=#data/}}</li>
                       {{/for}}
                     </ul>'
                     {{/if}}
-                    title="{:value}">{{:formattedValue}}</div>
+                    >{{:formattedValue}}</div>
                 {{else}}
                   {{for #data tmpl="#results-table-cell-skeleton" ~column=#data ~value=value/}}
                 {{/if}}

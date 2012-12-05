@@ -26,7 +26,7 @@
     * DONE show all records if aggregation for run# is turned off
     * DONE number formatting
     * DONE numeric type cell align right
-    * different number precision for diff measurements
+    * DONE different number precision for diff measurements (using mean of |fractional|s of the actual values)
     * DONE fill empty results for selected conditions
         * from the popup, let user easily add exp plans
     * show multiple aggregation for each measurements
