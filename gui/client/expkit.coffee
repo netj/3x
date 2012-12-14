@@ -4,6 +4,8 @@
 # Created: 2012-11-11
 ###
 
+ExpKitServiceBaseURL = "http://iln29.stanford.edu:38917"
+
 log = (args...) -> console.log args...; args[0]
 
 Array::joinTextsWithShy = (delim) ->
@@ -242,7 +244,7 @@ initConditions = ->
         for name,{type,values} of conditions
             id = safeId(name)
             # add each variable by filling the skeleton
-            conditionsUI.append(skeleton.render({name, id, type, values}))
+            conditionsUI.append(skeleton.render({name, id, type, values}, {ExpKitServiceBaseURL}))
             condUI = conditionsUI.find("#condition-#{id}")
                 .toggleClass("numeric", values.every (v) -> not isNaN parseFloat v)
             # with menu items for each value
@@ -271,7 +273,7 @@ initConditions = ->
             log "initCondition #{name}:#{type}=#{values.join ","}"
         do updateScrollSpy
 
-    $.getJSON("/api/conditions")
+    $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
         .success(displayConditions)
 
 
@@ -315,7 +317,7 @@ initMeasurements = ->
             id = safeId(name)
             aggregations = Aggregation.FOR_TYPE[type]
             # add each measurement by filling the skeleton
-            measurementsUI.append(skeleton.render({name, id, type, aggregations}))
+            measurementsUI.append(skeleton.render({name, id, type, aggregations}, {ExpKitServiceBaseURL}))
             measUI = measurementsUI.find("#measurement-#{id}")
             RUN_MEASUREMENT = measUI if name == RUN_COLUMN_NAME
             # with menu items for aggregation
@@ -337,7 +339,7 @@ initMeasurements = ->
             log "initMeasurement #{name}:#{type}.#{measurementsAggregation[name]}"
         do updateScrollSpy
 
-    $.getJSON("/api/measurements")
+    $.getJSON("#{ExpKitServiceBaseURL}/api/measurements")
         .success(displayMeasurements)
 
 
@@ -357,7 +359,7 @@ updateResults = (e) ->
     (
         if _.values(conditionsActive).some((vs) -> vs?.length > 0)
             $("#results").addClass("loading")
-            $.get("/api/results",
+            $.get("#{ExpKitServiceBaseURL}/api/results",
                 runs: []
                 batches: []
                 conditions: JSON.stringify conditionsActive
@@ -368,6 +370,7 @@ updateResults = (e) ->
     e?.preventDefault?()
 
 results = emptyResults
+resultsForRendering = null
 displayNewResults = (newResults) ->
     log "got results:", newResults
     results = newResults
@@ -467,6 +470,7 @@ displayResults = ->
                     aggregation: columnAggregation[name]?.name unless isForGrouping
                     formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, resultsForRendering, idx)
         )
+    , {ExpKitServiceBaseURL}
     ))
 
     # populate table body
@@ -482,6 +486,7 @@ displayResults = ->
                     c.formattedValue = c.formatter c.value
                     c
             )
+        , {ExpKitServiceBaseURL}
         ))
     tbody.find(".aggregated")
         .popover(trigger: "manual")
@@ -507,6 +512,10 @@ displayResults = ->
             fnReorderCallback: -> $("#results-reset-column-order").toggleClass("disabled", isColumnReordered())
     do updateColumnVisibility
     do updateScrollSpy
+
+    # trigger event for others
+    try
+        table.trigger("changed", resultsForRendering)
 
 isColumnReordered = ->
     colOrder = getColumnOrdering()
@@ -566,12 +575,129 @@ initResultsUI = ->
         .bind("changed", (e, isActive) -> do updateResultsWithoutAgg)
 
 
+
+
 initNavBar = ->
     $("body > .navbar-fixed-top .nav a").click((e) ->
         [target] = $($(this).attr("href")).get()
         do target.scrollIntoView
         e.preventDefault()
     )
+
+
+
+
+displayChart = ->
+    chartBody = d3.select("#chart-body")
+    margin = {top: 20, right: 20, bottom: 50, left: 100}
+    width = 960 - margin.left - margin.right
+    height = 500 - margin.top - margin.bottom
+
+    xAxisLabel = columnNamesGrouping[1]
+    yAxisLabel = columnNamesMeasured[1]
+    xIndex = columnNames.indexOf(xAxisLabel)
+    yIndex = columnNames.indexOf(yAxisLabel)
+
+    log "drawing chart for", xAxisLabel, yAxisLabel
+
+    # collect column data from table
+    data = []
+    series = 0
+    resultsTableRows = $("#results-table tbody tr")
+    # TODO find(".aggregated")
+    data[series++] = resultsTableRows.find("td:nth(#{xIndex})").toArray()
+    data[series++] = resultsTableRows.find("td:nth(#{yIndex})").toArray()
+
+    valueOf = (cell) -> +$(cell).attr("data-value")
+    xData = (rowIdx) -> valueOf data[0][rowIdx]
+    yData = (rowIdx) -> valueOf data[1][rowIdx]
+    # TODO multi series to come
+    dataForCharting = [0 .. data[0].length-1]
+
+
+    log "data for charting", data, dataForCharting.map(xData)
+
+    chartBody.select("svg").remove()
+    svg = chartBody.append("svg")
+        .attr("width",  width  + margin.left + margin.right )
+        .attr("height", height + margin.top  + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(#{margin.left},#{margin.top})")
+
+    x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1)
+    # TODO see the type for x-axis, and decide
+    #x = d3.scale.linear()
+    #    .range([0, width])
+    y = d3.scale.linear()
+        .range([height, 0])
+    xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+    yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+
+    console.log "ydomain", d3.extent(dataForCharting, yData)
+
+    #x.domain(d3.extent(dataForCharting, xData))
+    x.domain(dataForCharting.map(xData))
+    extent = d3.extent(dataForCharting, yData)
+    extent = d3.extent(extent.concat([0])) # TODO if ratio type only
+    y.domain(extent)
+
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0,#{height})")
+        .call(xAxis)
+      .append("text")
+        .attr("y", -3)
+        .attr("x", width)
+        .attr("dy", "-.71em")
+        .style("text-anchor", "end")
+        .text(xAxisLabel)
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+      .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text(yAxisLabel)
+
+        
+    svg.selectAll(".dot")
+        .data(dataForCharting)
+      .enter().append("circle")
+        .attr("class", "dot")
+        .attr("r", 3.5)
+        .attr("cx",    (d) -> x(xData(d)))
+        .attr("cy",    (d) -> y(yData(d)))
+        .style("fill", "red")
+
+    line = d3.svg.line()
+        .x((d) -> x(xData(d)))
+        .y((d) -> y(yData(d)))
+    svg.append("path")
+        .datum(dataForCharting)
+        .attr("class", "line")
+        .attr("d", line)
+
+initChartUI = ->
+    # TODO listen to table changes?
+    $("#chart .btn-primary").click((e) ->
+        e.preventDefault()
+        e.stopPropagation()
+        do displayChart
+    )
+    $("#results-table").bind("changed", (e) ->
+        do displayChart
+    )
+
+
+
 
 # initialize UI
 $ ->
@@ -581,4 +707,5 @@ $ ->
             do displayResults # initializing results table with empty data first
             do updateResults
     do initNavBar
+    do initChartUI
 

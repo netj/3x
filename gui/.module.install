@@ -23,4 +23,4 @@ DataTables.ColReorder/media/js/ColReorder.js                                    
 DataTables.ColReorder/media/css/ColReorder.css                                          $GUIDIR/client/resource/DataTables/css/
 DataTables.ColReorder/media/images/insert.png                                           $GUIDIR/client/resource/DataTables/images/
 
-d3/d3.v2.js                                             $GUIDIR/client/resource/
+d3/d3.js                                                $GUIDIR/client/resource/
