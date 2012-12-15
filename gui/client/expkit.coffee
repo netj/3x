@@ -222,14 +222,31 @@ class ConditionsUI
         $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
             .success(@initialize)
 
+    @SKELETON: $("""
+        <script id="condition-skeleton" type="text/x-jsrender">
+          <li id="condition-{{>id}}" class="condition dropdown">
+            <a class="dropdown-toggle" role="button" href="#"
+              data-toggle="dropdown" data-target="#condition-{{>id}}"
+              ><span class="caret"></span><span class="condition-name">{{>name}}</span><span
+                class="condition-values"></span></a>
+            <ul class="dropdown-menu" role="menu">
+              {{for values}}
+              <li><a href="#" class="condition-value">{{>#data}}</a></li>
+              {{/for}}
+              <li class="divider"></li>
+              <li><a href="#" class="condition-values-toggle">All</a></li>
+            </ul>
+          </li>
+        </script>
+    """)
+
     initialize: (newConditions) =>
         @conditions = newConditions
         @baseElement.find("*").remove()
-        skeleton = $("#condition-skeleton") # TODO @skeleton should be included in this class/code: use r.js text?
         for name,{type,values} of @conditions
             id = safeId(name)
             # add each variable by filling the skeleton
-            @baseElement.append(skeleton.render({name, id, type, values}, {ExpKitServiceBaseURL}))
+            @baseElement.append(ConditionsUI.SKELETON.render({name, id, type, values}, {ExpKitServiceBaseURL}))
             condUI = @baseElement.find("#condition-#{id}")
                 .toggleClass("numeric", values.every (v) -> not isNaN parseFloat v)
             # with menu items for each value

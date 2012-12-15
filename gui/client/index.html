@@ -50,21 +50,6 @@
             <h4><i class="icon-tasks icon"></i>Conditions</h4>
             <ul id="conditions" class="nav nav-pills nav-stacked">
             </ul>
-            <script id="condition-skeleton" type="text/x-jsrender">
-              <li id="condition-{{>id}}" class="condition dropdown">
-                <a class="dropdown-toggle" role="button" href="#"
-                  data-toggle="dropdown" data-target="#condition-{{>id}}"
-                  ><span class="caret"></span><span class="condition-name">{{>name}}</span><span
-                    class="condition-values"></span></a>
-                <ul class="dropdown-menu" role="menu">
-                  {{for values}}
-                  <li><a href="#" class="condition-value">{{>#data}}</a></li>
-                  {{/for}}
-                  <li class="divider"></li>
-                  <li><a href="#" class="condition-values-toggle">All</a></li>
-                </ul>
-              </li>
-            </script>
 
             <h4><i class="icon-dashboard icon"></i>Measurements</h4>
             <ul id="measurements" class="nav nav-pills nav-stacked">
