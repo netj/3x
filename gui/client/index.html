@@ -54,24 +54,6 @@
             <h4><i class="icon-dashboard icon"></i>Measurements</h4>
             <ul id="measurements" class="nav nav-pills nav-stacked">
             </ul>
-            <script id="measurement-skeleton" type="text/x-jsrender">
-              <li id="measurement-{{>id}}" class="measurement dropdown">
-                <a class="dropdown-toggle" role="button" href="#"
-                  data-toggle="dropdown" data-target="#measurement-{{>id}}"
-                  ><span class="caret"></span><span class="measurement-name">{{>name}}</span><span
-                    class="measurement-aggregation"></span></a>
-                <ul class="dropdown-menu" role="menu">
-                  {{fields aggregations}}
-                  <li><a href="#" class="measurement-aggregation">{{>~key}}</a></li>
-                  {{/fields}}
-                  <!--
-                  <li class="divider"></li>
-                  TODO precision slider
-                  <li><a href="#" class="measurement-aggregation-toggle">All</a></li>
-                  -->
-                </ul>
-              </li>
-            </script>
 
           </div>
         </div>

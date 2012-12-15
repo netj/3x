@@ -97,6 +97,7 @@ RUN_MEASUREMENT = null
 
 # user interface building blocks
 UI_CONDITIONS = null
+UI_MEASUREMENTS = null
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -302,52 +303,53 @@ class ConditionsUI
 
 
 
+class MeasurementsUI
+    constructor: (@baseElement) ->
+        @measurements = {}
+        @measurementsAggregation = try JSON.parse (localStorage.measurementsAggregation ?= "{}")
 
-measurements = null
-measurementsAggregation = try JSON.parse (localStorage.measurementsAggregation ?= "{}")
+    persist: =>
+        localStorage.measurementsAggregation = JSON.stringify @measurementsAggregation
 
-persistActiveMeasurements = ->
-    localStorage.measurementsAggregation = JSON.stringify measurementsAggregation
+    load: =>
+        $.getJSON("#{ExpKitServiceBaseURL}/api/measurements")
+            .success(@initialize)
 
-updateMeasurementDisplay = (measUI) ->
-    name = measUI.find(".measurement-name")?.text()
-    aggregationActive = measUI.find(".measurement-aggregation.active")
-    isActive = aggregationActive.length > 0
-    aggregation = if isActive then aggregationActive.first().text()
-    measurementsAggregation[name] = aggregation
-    measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
-    wasActive = measUI.hasClass("active")
-    isActive = true if name == RUN_COLUMN_NAME
-    measUI.toggleClass("active", isActive)
-    measUI.trigger("changed", isActive) if wasActive != isActive or name == RUN_COLUMN_NAME
+    @SKELETON: $("""
+        <script id="measurement-skeleton" type="text/x-jsrender">
+          <li id="measurement-{{>id}}" class="measurement dropdown">
+            <a class="dropdown-toggle" role="button" href="#"
+              data-toggle="dropdown" data-target="#measurement-{{>id}}"
+              ><span class="caret"></span><span class="measurement-name">{{>name}}</span><span
+                class="measurement-aggregation"></span></a>
+            <ul class="dropdown-menu" role="menu">
+              {{fields aggregations}}
+              <li><a href="#" class="measurement-aggregation">{{>~key}}</a></li>
+              {{/fields}}
+              <!--
+              <li class="divider"></li>
+              TODO precision slider
+              <li><a href="#" class="measurement-aggregation-toggle">All</a></li>
+              -->
+            </ul>
+          </li>
+        </script>
+    """)
 
-handleMeasurementMenuAction = (handle) -> (e) ->
-    $this = $(this)
-    measUI = $this.closest(".measurement")
-    ret = handle($this, measUI, e)
-    updateMeasurementDisplay measUI
-    persistActiveMeasurements()
-    e.preventDefault()
-    # TODO skip updateResults if another menu has been open
-    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, displayResults)
-    ret
-
-initMeasurements = ->
-    displayMeasurements = (newMeasurements) ->
-        measurements = newMeasurements
-        measurementsUI = $("#measurements")
-        skeleton = $("#measurement-skeleton")
-        for name,{type} of measurements
+    initialize: (newMeasurements) =>
+        @measurements = newMeasurements
+        @baseElement.find("*").remove()
+        for name,{type} of @measurements
             id = safeId(name)
             aggregations = Aggregation.FOR_TYPE[type]
             # add each measurement by filling the skeleton
-            measurementsUI.append(skeleton.render({name, id, type, aggregations}, {ExpKitServiceBaseURL}))
-            measUI = measurementsUI.find("#measurement-#{id}")
+            @baseElement.append(MeasurementsUI.SKELETON.render({name, id, type, aggregations}, {ExpKitServiceBaseURL}))
+            measUI = @baseElement.find("#measurement-#{id}")
             RUN_MEASUREMENT = measUI if name == RUN_COLUMN_NAME
             # with menu items for aggregation
             menu = measUI.find(".dropdown-menu")
             menu.find(".measurement-aggregation")
-                .click(handleMeasurementMenuAction ($this, measUI) ->
+                .click(@menuActionHandler ($this, measUI) ->
                     # activate or toggle the newly chosen one
                     wasActive = $this.hasClass("active")
                     measUI.find(".dropdown-menu .measurement-aggregation").removeClass("active")
@@ -355,16 +357,38 @@ initMeasurements = ->
                     # Or we could always use at least one
                     # $this.addClass("active")
                 )
-                .each ->
-                    $this = $(this)
+                .each (i,menuitem) =>
+                    $this = $(menuitem)
                     aggregation = $this.text()
-                    $this.toggleClass("active", aggregation == measurementsAggregation[name])
-            updateMeasurementDisplay measUI
-            log "initMeasurement #{name}:#{type}.#{measurementsAggregation[name]}"
+                    $this.toggleClass("active", aggregation == @measurementsAggregation[name])
+            @updateDisplay measUI
+            log "initMeasurement #{name}:#{type}.#{@measurementsAggregation[name]}"
         do updateScrollSpy
 
-    $.getJSON("#{ExpKitServiceBaseURL}/api/measurements")
-        .success(displayMeasurements)
+    updateDisplay: (measUI) =>
+        name = measUI.find(".measurement-name")?.text()
+        aggregationActive = measUI.find(".measurement-aggregation.active")
+        isActive = aggregationActive.length > 0
+        aggregation = if isActive then aggregationActive.first().text()
+        @measurementsAggregation[name] = aggregation
+        measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
+        wasActive = measUI.hasClass("active")
+        isActive = true if name == RUN_COLUMN_NAME
+        measUI.toggleClass("active", isActive)
+        measUI.trigger("changed", isActive) if wasActive != isActive or name == RUN_COLUMN_NAME
+
+    menuActionHandler: (handle) ->
+        m = @
+        (e) ->
+            $this = $(this)
+            measUI = $this.closest(".measurement")
+            ret = handle($this, measUI, e)
+            m.updateDisplay measUI
+            do m.persist
+            e.preventDefault()
+            # TODO skip updateResults if another menu has been open
+            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, displayResults)
+            ret
 
 
 
@@ -405,7 +429,7 @@ displayResults = ->
     # prepare the column ordering
     columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
     columnNamesGrouping = (name for name of UI_CONDITIONS.conditions when UI_CONDITIONS.conditionsActive[name]?.length > 0)
-    columnNamesMeasured = (name for name of measurements when measurementsAggregation[name]?)
+    columnNamesMeasured = (name for name of UI_MEASUREMENTS.measurements when UI_MEASUREMENTS.measurementsAggregation[name]?)
     if RUN_COLUMN_NAME not in columnNamesMeasured
         columnNamesGrouping.push RUN_COLUMN_NAME
         columnNamesMeasured.unshift RUN_COLUMN_NAME
@@ -422,8 +446,8 @@ displayResults = ->
     else
         # aggregate data
         for name in columnNamesMeasured
-            aggs = Aggregation.FOR_TYPE[measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
-            aggName = measurementsAggregation[name]
+            aggs = Aggregation.FOR_TYPE[UI_MEASUREMENTS.measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
+            aggName = UI_MEASUREMENTS.measurementsAggregation[name]
             aggName = _.keys(aggs)[0] unless aggs[aggName]
             columnAggregation[name] = aggs[aggName]
         for name of UI_CONDITIONS.conditions
@@ -479,7 +503,7 @@ displayResults = ->
                 isForGrouping = name in columnNamesGrouping
                 # use aggregation type or the type of original data
                 type = (columnAggregation[name]?.type unless isForGrouping) ?
-                    UI_CONDITIONS.conditions[name]?.type ? measurements[name]?.type
+                    UI_CONDITIONS.conditions[name]?.type ? UI_MEASUREMENTS.measurements[name]?.type
                 columnMetadata[name] =
                     name: name
                     type: type
@@ -726,8 +750,9 @@ initChartUI = ->
 # initialize UI
 $ ->
     UI_CONDITIONS = new ConditionsUI $("#conditions")
+    UI_MEASUREMENTS = new MeasurementsUI $("#measurements")
     UI_CONDITIONS.load().success ->
-        initMeasurements().success ->
+        UI_MEASUREMENTS.load().success ->
             do initResultsUI
             do displayResults # initializing results table with empty data first
             do updateResults
@@ -737,4 +762,5 @@ $ ->
     # make things visible to the outside world
     window.UI = exports =
         conditions: UI_CONDITIONS
+        measurements: UI_MEASUREMENTS
 
