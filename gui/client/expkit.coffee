@@ -95,6 +95,9 @@ safeId = (str) -> str.replace(/[#-]/g, "-")
 RUN_COLUMN_NAME = "run#"
 RUN_MEASUREMENT = null
 
+# user interface building blocks
+UI_CONDITIONS = null
+
 
 mapReduce = (map, red) -> (rows) ->
     mapped = {}
@@ -120,7 +123,7 @@ mapCombination = (nestedList, f) ->
 enumerate = (vs) -> vs.joinTextsWithShy ","
 
 enumerateAll = (name) ->
-    if ({values} = conditions[name])?
+    if ({values} = UI_CONDITIONS.conditions[name])?
         (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
     else
         enumerate
@@ -207,45 +210,47 @@ updateScrollSpy = ->
     $('[data-spy="scroll"]').each(-> $(this).scrollspy('refresh'))
 
 
-conditions = null
-conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
+class ConditionsUI
+    constructor: (@baseElement) ->
+        @conditions = {}
+        @conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
 
-persistActiveConditions = ->
-    localStorage.conditionsActive = JSON.stringify conditionsActive
+    persistActiveConditions: =>
+        localStorage.conditionsActive = JSON.stringify @conditionsActive
 
-updateConditionDisplay = (condUI) ->
-    name = condUI.find(".condition-name")?.text()
-    values = condUI.find(".condition-value.active").map( -> $(this).text()).get()
-    conditionsActive[name] = values
-    hasValues = values?.length > 0
-    condUI.find(".condition-values")
-        ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
-    wasActive = condUI.hasClass("active")
-    condUI.toggleClass("active", hasValues)
-    condUI.trigger("changed", hasValues) if wasActive != hasValues
+    updateConditionDisplay: (condUI) =>
+        name = condUI.find(".condition-name")?.text()
+        values = condUI.find(".condition-value.active").map( -> $(this).text()).get()
+        @conditionsActive[name] = values
+        hasValues = values?.length > 0
+        condUI.find(".condition-values")
+            ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
+        wasActive = condUI.hasClass("active")
+        condUI.toggleClass("active", hasValues)
+        condUI.trigger("changed", hasValues) if wasActive != hasValues
 
-handleConditionMenuAction = (handle) -> (e) ->
-    $this = $(this)
-    condUI = $this.closest(".condition")
-    ret = handle($this, condUI, e)
-    updateConditionDisplay condUI
-    persistActiveConditions()
-    e.stopPropagation()
-    e.preventDefault()
-    # TODO skip updateResults if another menu has been open
-    $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
-    ret
+    handleConditionMenuAction: (handle) ->
+        c = @
+        (e) ->
+            $this = $(this)
+            condUI = $this.closest(".condition")
+            ret = handle($this, condUI, e)
+            c.updateConditionDisplay condUI
+            c.persistActiveConditions()
+            e.stopPropagation()
+            e.preventDefault()
+            # TODO skip updateResults if another menu has been open
+            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
+            ret
 
-initConditions = ->
-    displayConditions = (newConditions) ->
-        conditions = newConditions
-        conditionsUI = $("#conditions")
+    displayConditions: (newConditions) =>
+        @conditions = newConditions
         skeleton = $("#condition-skeleton")
-        for name,{type,values} of conditions
+        for name,{type,values} of @conditions
             id = safeId(name)
             # add each variable by filling the skeleton
-            conditionsUI.append(skeleton.render({name, id, type, values}, {ExpKitServiceBaseURL}))
-            condUI = conditionsUI.find("#condition-#{id}")
+            @baseElement.append(skeleton.render({name, id, type, values}, {ExpKitServiceBaseURL}))
+            condUI = @baseElement.find("#condition-#{id}")
                 .toggleClass("numeric", values.every (v) -> not isNaN parseFloat v)
             # with menu items for each value
             menu = condUI.find(".dropdown-menu")
@@ -253,28 +258,29 @@ initConditions = ->
                 menu.find(".condition-value")
                     .toArray().every (a) -> $(a).hasClass("active")
             menu.find(".condition-value")
-                .click(do (isAllActive) -> handleConditionMenuAction ($this, condUI) ->
+                .click(@handleConditionMenuAction do (isAllActive) -> ($this, condUI) ->
                     $this.toggleClass("active")
                     condUI.find(".condition-values-toggle")
                         .toggleClass("active", isAllActive())
                 )
-                .each ->
-                    $this = $(this)
+                .each (i,menuitem) =>
+                    $this = $(menuitem)
                     value = $this.text()
-                    $this.toggleClass("active", value in (conditionsActive[name] ? []))
+                    $this.toggleClass("active", value in (@conditionsActive[name] ? []))
             menu.find(".condition-values-toggle")
                 .toggleClass("active", isAllActive())
-                .click(handleConditionMenuAction ($this, condUI) ->
+                .click(@handleConditionMenuAction ($this, condUI) ->
                     $this.toggleClass("active")
                     condUI.find(".condition-value")
                         .toggleClass("active", $this.hasClass("active"))
                 )
-            updateConditionDisplay(condUI)
+            @updateConditionDisplay condUI
             log "initCondition #{name}:#{type}=#{values.join ","}"
         do updateScrollSpy
 
-    $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
-        .success(displayConditions)
+    load: =>
+        $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
+            .success(@displayConditions)
 
 
 
@@ -357,12 +363,12 @@ emptyResults =
     rows: []
 updateResults = (e) ->
     (
-        if _.values(conditionsActive).some((vs) -> vs?.length > 0)
+        if _.values(UI_CONDITIONS.conditionsActive).some((vs) -> vs?.length > 0)
             $("#results").addClass("loading")
             $.get("#{ExpKitServiceBaseURL}/api/results",
                 runs: []
                 batches: []
-                conditions: JSON.stringify conditionsActive
+                conditions: JSON.stringify UI_CONDITIONS.conditionsActive
             ).success(displayNewResults)
         else
             $.when displayNewResults(emptyResults)
@@ -380,12 +386,12 @@ displayNewResults = (newResults) ->
 displayResults = ->
     # prepare the column ordering
     columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
-    columnNamesGrouping = (name for name of conditions when conditionsActive[name]?.length > 0)
+    columnNamesGrouping = (name for name of UI_CONDITIONS.conditions when UI_CONDITIONS.conditionsActive[name]?.length > 0)
     columnNamesMeasured = (name for name of measurements when measurementsAggregation[name]?)
     if RUN_COLUMN_NAME not in columnNamesMeasured
         columnNamesGrouping.push RUN_COLUMN_NAME
         columnNamesMeasured.unshift RUN_COLUMN_NAME
-    columnNames = (name for name of conditions).concat columnNamesMeasured
+    columnNames = (name for name of UI_CONDITIONS.conditions).concat columnNamesMeasured
     columnAggregation = {}
 
     if RUN_COLUMN_NAME in columnNamesGrouping
@@ -402,7 +408,7 @@ displayResults = ->
             aggName = measurementsAggregation[name]
             aggName = _.keys(aggs)[0] unless aggs[aggName]
             columnAggregation[name] = aggs[aggName]
-        for name of conditions
+        for name of UI_CONDITIONS.conditions
             columnAggregation[name] ?= {name:"enumerate", type:"string", func:enumerateAll name}
         log "aggregation:", JSON.stringify columnAggregation
         groupRowsByColumns = (rows) ->
@@ -426,7 +432,7 @@ displayResults = ->
         emptyRows = []
         if $("#results-include-empty").is(":checked")
             emptyValues = []
-            forEachCombination (conditionsActive[name] for name in columnNamesGrouping), (group) ->
+            forEachCombination (UI_CONDITIONS.conditionsActive[name] for name in columnNamesGrouping), (group) ->
                 key = JSON.stringify group
                 unless key in aggregatedGroups
                     #log "padding empty row for #{key}"
@@ -455,7 +461,7 @@ displayResults = ->
                 isForGrouping = name in columnNamesGrouping
                 # use aggregation type or the type of original data
                 type = (columnAggregation[name]?.type unless isForGrouping) ?
-                    conditions[name]?.type ? measurements[name]?.type
+                    UI_CONDITIONS.conditions[name]?.type ? measurements[name]?.type
                 columnMetadata[name] =
                     name: name
                     type: type
@@ -465,7 +471,7 @@ displayResults = ->
                         else "muted"
                     isForGrouping: isForGrouping
                     isMeasured: name in columnNamesMeasured
-                    isntImportant: conditions[name]? and not isForGrouping
+                    isntImportant: UI_CONDITIONS.conditions[name]? and not isForGrouping
                     isRunIdColumn: name == RUN_COLUMN_NAME
                     aggregation: columnAggregation[name]?.name unless isForGrouping
                     formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, resultsForRendering, idx)
@@ -701,11 +707,16 @@ initChartUI = ->
 
 # initialize UI
 $ ->
-    initConditions().success ->
+    UI_CONDITIONS = new ConditionsUI $("#conditions")
+    UI_CONDITIONS.load().success ->
         initMeasurements().success ->
             do initResultsUI
             do displayResults # initializing results table with empty data first
             do updateResults
     do initNavBar
     do initChartUI
+
+    # make things visible to the outside world
+    window.UI = exports =
+        conditions: UI_CONDITIONS
 
