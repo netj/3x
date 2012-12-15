@@ -215,37 +215,17 @@ class ConditionsUI
         @conditions = {}
         @conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
 
-    persistActiveConditions: =>
+    persist: =>
         localStorage.conditionsActive = JSON.stringify @conditionsActive
 
-    updateConditionDisplay: (condUI) =>
-        name = condUI.find(".condition-name")?.text()
-        values = condUI.find(".condition-value.active").map( -> $(this).text()).get()
-        @conditionsActive[name] = values
-        hasValues = values?.length > 0
-        condUI.find(".condition-values")
-            ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
-        wasActive = condUI.hasClass("active")
-        condUI.toggleClass("active", hasValues)
-        condUI.trigger("changed", hasValues) if wasActive != hasValues
+    load: =>
+        $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
+            .success(@initialize)
 
-    handleConditionMenuAction: (handle) ->
-        c = @
-        (e) ->
-            $this = $(this)
-            condUI = $this.closest(".condition")
-            ret = handle($this, condUI, e)
-            c.updateConditionDisplay condUI
-            c.persistActiveConditions()
-            e.stopPropagation()
-            e.preventDefault()
-            # TODO skip updateResults if another menu has been open
-            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
-            ret
-
-    displayConditions: (newConditions) =>
+    initialize: (newConditions) =>
         @conditions = newConditions
-        skeleton = $("#condition-skeleton")
+        @baseElement.find("*").remove()
+        skeleton = $("#condition-skeleton") # TODO @skeleton should be included in this class/code: use r.js text?
         for name,{type,values} of @conditions
             id = safeId(name)
             # add each variable by filling the skeleton
@@ -258,7 +238,7 @@ class ConditionsUI
                 menu.find(".condition-value")
                     .toArray().every (a) -> $(a).hasClass("active")
             menu.find(".condition-value")
-                .click(@handleConditionMenuAction do (isAllActive) -> ($this, condUI) ->
+                .click(@menuActionHandler do (isAllActive) -> ($this, condUI) ->
                     $this.toggleClass("active")
                     condUI.find(".condition-values-toggle")
                         .toggleClass("active", isAllActive())
@@ -269,18 +249,39 @@ class ConditionsUI
                     $this.toggleClass("active", value in (@conditionsActive[name] ? []))
             menu.find(".condition-values-toggle")
                 .toggleClass("active", isAllActive())
-                .click(@handleConditionMenuAction ($this, condUI) ->
+                .click(@menuActionHandler ($this, condUI) ->
                     $this.toggleClass("active")
                     condUI.find(".condition-value")
                         .toggleClass("active", $this.hasClass("active"))
                 )
-            @updateConditionDisplay condUI
+            @updateDisplay condUI
             log "initCondition #{name}:#{type}=#{values.join ","}"
         do updateScrollSpy
 
-    load: =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
-            .success(@displayConditions)
+    updateDisplay: (condUI) =>
+        name = condUI.find(".condition-name")?.text()
+        values = condUI.find(".condition-value.active").map( -> $(this).text()).get()
+        @conditionsActive[name] = values
+        hasValues = values?.length > 0
+        condUI.find(".condition-values")
+            ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
+        wasActive = condUI.hasClass("active")
+        condUI.toggleClass("active", hasValues)
+        condUI.trigger("changed", hasValues) if wasActive != hasValues
+
+    menuActionHandler: (handle) =>
+        c = @
+        (e) ->
+            $this = $(this)
+            condUI = $this.closest(".condition")
+            ret = handle($this, condUI, e)
+            c.updateDisplay condUI
+            do c.persist
+            e.stopPropagation()
+            e.preventDefault()
+            # TODO skip updateResults if another menu has been open
+            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
+            ret
 
 
 
