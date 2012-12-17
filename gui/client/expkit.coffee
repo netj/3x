@@ -94,10 +94,6 @@ safeId = (str) -> str.replace(/[#-]/g, "-")
 
 RUN_COLUMN_NAME = "run#"
 
-# user interface building blocks
-UI_CONDITIONS = null
-UI_MEASUREMENTS = null
-UI_RESULTS = null
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -123,11 +119,7 @@ mapCombination = (nestedList, f) ->
 
 enumerate = (vs) -> vs.joinTextsWithShy ","
 
-enumerateAll = (name) ->
-    if ({values} = UI_CONDITIONS.conditions[name])?
-        (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
-    else
-        enumerate
+
 
 # different aggregation methods depending on data type or level of measurement
 class Aggregation
@@ -219,12 +211,21 @@ initNavBar = ->
     )
 
 
-
-
-class ConditionsUI
+# TODO find a cleaner way to do this, i.e., leveraging jQuery
+class CompositeElement
     constructor: (@baseElement) ->
+        @on      = $.proxy @baseElement.on,      @baseElement
+        @one     = $.proxy @baseElement.one,     @baseElement
+        @trigger = $.proxy @baseElement.trigger, @baseElement
+
+
+
+class ConditionsUI extends CompositeElement
+    constructor: (@baseElement) ->
+        super @baseElement
         @conditions = {}
-        @conditionsActive = JSON.parse (localStorage.conditionsActive ?= "{}")
+        @lastConditionsActive = (localStorage.conditionsActive ?= "{}")
+        @conditionsActive = JSON.parse @lastConditionsActive
 
     persist: =>
         localStorage.conditionsActive = JSON.stringify @conditionsActive
@@ -249,7 +250,7 @@ class ConditionsUI
             </ul>
           </li>
         </script>
-    """)
+        """)
 
     initialize: (newConditions) =>
         @conditions = newConditions
@@ -259,14 +260,13 @@ class ConditionsUI
             # add each variable by filling the skeleton
             @baseElement.append(ConditionsUI.SKELETON.render({name, id, type, values}, {ExpKitServiceBaseURL}))
             condUI = @baseElement.find("#condition-#{id}")
-                .toggleClass("numeric", values.every (v) -> not isNaN parseFloat v)
             # with menu items for each value
             menu = condUI.find(".dropdown-menu")
             isAllActive = do (menu) -> () ->
                 menu.find(".condition-value")
                     .toArray().every (a) -> $(a).hasClass("active")
             menu.find(".condition-value")
-                .click(@menuActionHandler do (isAllActive) -> ($this, condUI) ->
+                .click(@menuItemActionHandler do (isAllActive) -> ($this, condUI) ->
                     $this.toggleClass("active")
                     condUI.find(".condition-values-toggle")
                         .toggleClass("active", isAllActive())
@@ -277,7 +277,7 @@ class ConditionsUI
                     $this.toggleClass("active", value in (@conditionsActive[name] ? []))
             menu.find(".condition-values-toggle")
                 .toggleClass("active", isAllActive())
-                .click(@menuActionHandler ($this, condUI) ->
+                .click(@menuItemActionHandler ($this, condUI) ->
                     $this.toggleClass("active")
                     condUI.find(".condition-value")
                         .toggleClass("active", $this.hasClass("active"))
@@ -297,7 +297,7 @@ class ConditionsUI
         condUI.toggleClass("active", hasValues)
         condUI.trigger("changed", hasValues) if wasActive != hasValues
 
-    menuActionHandler: (handle) =>
+    menuItemActionHandler: (handle) =>
         c = @
         (e) ->
             $this = $(this)
@@ -305,19 +305,32 @@ class ConditionsUI
             ret = handle($this, condUI, e)
             c.updateDisplay condUI
             do c.persist
+            do c.triggerChangedAfterMenuBlurs
             e.stopPropagation()
             e.preventDefault()
-            # TODO skip load if another menu has been open
-            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, (e) ->
-                    e.preventDefault?()
-                    do UI_RESULTS.load
-                )
             ret
 
+    ifChangedDo: (job) =>
+        thisConditionsActive = JSON.stringify @conditionsActive
+        if @lastConditionsActive != thisConditionsActive
+            @lastConditionsActive = thisConditionsActive
+            do job
+
+    triggerChangedAfterMenuBlurs: =>
+        ($html = $("html"))
+            .off(".conditions")
+            .on("click.conditions touchstart.conditions", ":not(##{@baseElement.id} *)", (e) =>
+                    _.delay =>
+                        return if @baseElement.find(".dropdown.open").length > 0
+                        @ifChangedDo => @trigger "changed"
+                        $html.off(e)
+                    , 100
+                )
 
 
-class MeasurementsUI
+class MeasurementsUI extends CompositeElement
     constructor: (@baseElement) ->
+        super @baseElement
         @measurements = {}
         @measurementsAggregation = try JSON.parse (localStorage.measurementsAggregation ?= "{}")
 
@@ -347,7 +360,7 @@ class MeasurementsUI
             </ul>
           </li>
         </script>
-    """)
+        """)
 
     initialize: (newMeasurements) =>
         @measurements = newMeasurements
@@ -398,22 +411,39 @@ class MeasurementsUI
             ret = handle($this, measUI, e)
             m.updateDisplay measUI
             do m.persist
+            do m.triggerChangedAfterMenuBlurs
+            e.stopPropagation()
             e.preventDefault()
-            # TODO skip display if another menu has been open
-            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, (e) ->
-                    e.preventDefault()
-                    do UI_RESULTS.display
-                )
             ret
 
+    ifChangedDo: (job) =>
+        thisMeasurementsAggregation = JSON.stringify @measurementsAggregation
+        if @lastMeasurementsAggregation != thisMeasurementsAggregation
+            @lastMeasurementsAggregation = thisMeasurementsAggregation
+            do job
+
+    triggerChangedAfterMenuBlurs: =>
+        ($html = $("html"))
+            .off(".measurements")
+            .on("click.measurements touchstart.measurements", ":not(##{@baseElement.id} *)", (e) =>
+                    _.delay =>
+                        return if @baseElement.find(".dropdown.open").length > 0
+                        @ifChangedDo => @trigger "changed"
+                        $html.off(e)
+                    , 100
+                )
 
 
-class ResultsTable
+
+
+
+class ResultsTable extends CompositeElement
     @EMPTY_RESULTS:
         names: []
         rows: []
 
     constructor: (@baseElement, @conditions, @measurements, @optionElements = {}) ->
+        super @baseElement
         @columnNames = null
         @columnNamesGrouping = null
         @columnNamesMeasured = null
@@ -459,6 +489,8 @@ class ResultsTable
         @measurements.run
            ?.bind("changed", (e, isActive) -> do updateResultsWithoutAgg)
         do @display # initializing results table with empty data first
+        @conditions.on "changed", @load
+        @measurements.on "changed", @display
 
     load: =>
         displayNewResults = (newResults) =>
@@ -515,6 +547,12 @@ class ResultsTable
         {{if ~column.isRunIdColumn}}<a href="{{>~ExpKitServiceBaseURL}}/{{>~value}}">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
         """
 
+    _enumerateAll: (name) =>
+        if ({values} = @conditions.conditions[name])?
+            (vs) -> (v for v in values when v in vs).joinTextsWithShy ","
+        else
+            enumerate
+
     display: =>
         columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in @results.names
         @columnNamesGrouping = (name for name of @conditions.conditions when @conditions.conditionsActive[name]?.length > 0)
@@ -541,7 +579,7 @@ class ResultsTable
                 aggName = _.keys(aggs)[0] unless aggs[aggName]
                 @columnAggregation[name] = aggs[aggName]
             for name of @conditions.conditions
-                @columnAggregation[name] ?= {name:"enumerate", type:"string", func:enumerateAll name}
+                @columnAggregation[name] ?= {name:"enumerate", type:"string", func:@_enumerateAll name}
             log "aggregation:", JSON.stringify @columnAggregation
             groupRowsByColumns = (rows) =>
                 map = (row) => JSON.stringify (@columnNamesGrouping.map (name) -> row[columnIndex[name]])
@@ -653,7 +691,7 @@ class ResultsTable
 
         # trigger event for others
         try
-            @baseElement.trigger("changed", @resultsForRendering)
+            @trigger("changed", @resultsForRendering)
 
     isColumnReordered: =>
         colOrder = @getColumnOrdering()
@@ -679,17 +717,16 @@ class ResultsTable
 
 
 
-
 displayChart = ->
     chartBody = d3.select("#chart-body")
     margin = {top: 20, right: 20, bottom: 50, left: 100}
     width = 960 - margin.left - margin.right
     height = 500 - margin.top - margin.bottom
 
-    xAxisLabel = UI_RESULTS.columnNamesGrouping[1]
-    yAxisLabel = UI_RESULTS.columnNamesMeasured[1]
-    xIndex = UI_RESULTS.columnNames.indexOf(xAxisLabel)
-    yIndex = UI_RESULTS.columnNames.indexOf(yAxisLabel)
+    xAxisLabel = ExpKit.results.columnNamesGrouping[1]
+    yAxisLabel = ExpKit.results.columnNamesMeasured[1]
+    xIndex = ExpKit.results.columnNames.indexOf(xAxisLabel)
+    yIndex = ExpKit.results.columnNames.indexOf(yAxisLabel)
 
     log "drawing chart for", xAxisLabel, yAxisLabel
 
@@ -794,22 +831,21 @@ initChartUI = ->
 
 # initialize UI
 $ ->
-    UI_CONDITIONS = new ConditionsUI $("#conditions")
-    UI_MEASUREMENTS = new MeasurementsUI $("#measurements")
-    UI_CONDITIONS.load().success -> UI_MEASUREMENTS.load().success ->
-        UI_RESULTS = new ResultsTable $("#results-table"), UI_CONDITIONS, UI_MEASUREMENTS,
+    # make things visible to the outside world
+    window.ExpKit = exports =
+        conditions: new ConditionsUI $("#conditions")
+        measurements: new MeasurementsUI $("#measurements")
+    # load conditions, measurements
+    ExpKit.conditions.load().success -> ExpKit.measurements.load().success ->
+        # and the results
+        ExpKit.results = new ResultsTable $("#results-table"),
+            ExpKit.conditions, ExpKit.measurements,
             toggleIncludeEmpty          : $("#results-include-empty")
             toggleHideInactiveConditions: $("#results-hide-inactive-conditions")
             toggleWithoutAggregation    : $("#results-without-aggregation")
             buttonResetColumnOrder      : $("#results-reset-column-order")
             containerForStateDisplay    : $("#results")
-        UI_RESULTS.load()
+        ExpKit.results.load()
     do initNavBar
     do initChartUI
-
-    # make things visible to the outside world
-    window.UI = exports =
-        conditions: UI_CONDITIONS
-        measurements: UI_MEASUREMENTS
-        results: UI_RESULTS
 
