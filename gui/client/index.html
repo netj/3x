@@ -92,39 +92,6 @@
               <thead></thead>
               <tbody></tbody>
             </table>
-            <script id="results-table-head-skeleton" type="text/x-jsrender">
-              <tr>
-                {{for columns}}
-                <th><span class="{{>className}}">{{>name}}</span></th>
-                {{/for}}
-              </tr>
-            </script>
-            <script id="results-table-row-skeleton" type="text/x-jsrender">
-              <tr class="result">
-                {{for columns}}
-                <td class="{{>className}} {{>type}}-type" data-value="{{:value}}">
-                  {{if aggregation}}
-                  <div class="aggregated {{>aggregation}}"
-                    {{if values}}
-                    data-placement="bottom" data-trigger="click"
-                    title="{{>aggregation}}{{if aggregation != 'enumerate'}} = {{:value}}{{/if}}"
-                    data-html="true" data-content='<ul>
-                      {{for values}}
-                      <li>{{for #data tmpl="#results-table-cell-skeleton" ~column=#parent.parent.data ~value=#data/}}</li>
-                      {{/for}}
-                    </ul>'
-                    {{/if}}
-                    >{{:formattedValue}}</div>
-                  {{else}}
-                  {{for #data tmpl="#results-table-cell-skeleton" ~column=#data ~value=value/}}
-                  {{/if}}
-                </td>
-                {{/for}}
-              </tr>
-            </script>
-            <script id="results-table-cell-skeleton" type="text/x-jsrender">
-              {{if ~column.isRunIdColumn}}<a href="{{>~ExpKitServiceBaseURL}}/{{>~value}}">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
-            </script>
           </div>
 
           <div class="row-fluid" id="chart">

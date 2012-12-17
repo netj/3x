@@ -93,11 +93,11 @@ safeId = (str) -> str.replace(/[#-]/g, "-")
 
 
 RUN_COLUMN_NAME = "run#"
-RUN_MEASUREMENT = null
 
 # user interface building blocks
 UI_CONDITIONS = null
 UI_MEASUREMENTS = null
+UI_RESULTS = null
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -211,6 +211,15 @@ class Aggregation
 updateScrollSpy = ->
     $('[data-spy="scroll"]').each(-> $(this).scrollspy('refresh'))
 
+initNavBar = ->
+    $("body > .navbar-fixed-top .nav a").click((e) ->
+        [target] = $($(this).attr("href")).get()
+        do target.scrollIntoView
+        e.preventDefault()
+    )
+
+
+
 
 class ConditionsUI
     constructor: (@baseElement) ->
@@ -298,8 +307,11 @@ class ConditionsUI
             do c.persist
             e.stopPropagation()
             e.preventDefault()
-            # TODO skip updateResults if another menu has been open
-            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, updateResults)
+            # TODO skip load if another menu has been open
+            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, (e) ->
+                    e.preventDefault?()
+                    do UI_RESULTS.load
+                )
             ret
 
 
@@ -346,7 +358,7 @@ class MeasurementsUI
             # add each measurement by filling the skeleton
             @baseElement.append(MeasurementsUI.SKELETON.render({name, id, type, aggregations}, {ExpKitServiceBaseURL}))
             measUI = @baseElement.find("#measurement-#{id}")
-            RUN_MEASUREMENT = measUI if name == RUN_COLUMN_NAME
+            @run = measUI if name == RUN_COLUMN_NAME
             # with menu items for aggregation
             menu = measUI.find(".dropdown-menu")
             menu.find(".measurement-aggregation")
@@ -387,251 +399,283 @@ class MeasurementsUI
             m.updateDisplay measUI
             do m.persist
             e.preventDefault()
-            # TODO skip updateResults if another menu has been open
-            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, displayResults)
+            # TODO skip display if another menu has been open
+            $('html').one('click.dropdown.data-api touchstart.dropdown.data-api', e, (e) ->
+                    e.preventDefault()
+                    do UI_RESULTS.display
+                )
             ret
 
 
 
+class ResultsTable
+    @EMPTY_RESULTS:
+        names: []
+        rows: []
 
-columnNames = null
-columnNamesGrouping = null
-columnNamesMeasured = null
-columnAggregation = null
-
-dataTable = null
-
-emptyResults =
-    names: []
-    rows: []
-updateResults = (e) ->
-    (
-        if _.values(UI_CONDITIONS.conditionsActive).some((vs) -> vs?.length > 0)
-            $("#results").addClass("loading")
-            $.get("#{ExpKitServiceBaseURL}/api/results",
-                runs: []
-                batches: []
-                conditions: JSON.stringify UI_CONDITIONS.conditionsActive
-            ).success(displayNewResults)
-        else
-            $.when displayNewResults(emptyResults)
-    ).done(-> $("#results").removeClass("loading"))
-    e?.preventDefault?()
-
-results = emptyResults
-resultsForRendering = null
-displayNewResults = (newResults) ->
-    log "got results:", newResults
-    results = newResults
-    #$("#results-raw").text(JSON.stringify results, null, 2)
-    do displayResults
-
-displayResults = ->
-    # prepare the column ordering
-    columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in results.names
-    columnNamesGrouping = (name for name of UI_CONDITIONS.conditions when UI_CONDITIONS.conditionsActive[name]?.length > 0)
-    columnNamesMeasured = (name for name of UI_MEASUREMENTS.measurements when UI_MEASUREMENTS.measurementsAggregation[name]?)
-    if RUN_COLUMN_NAME not in columnNamesMeasured
-        columnNamesGrouping.push RUN_COLUMN_NAME
-        columnNamesMeasured.unshift RUN_COLUMN_NAME
-    columnNames = (name for name of UI_CONDITIONS.conditions).concat columnNamesMeasured
-    columnAggregation = {}
-
-    if RUN_COLUMN_NAME in columnNamesGrouping
-        # present results without aggregation
-        log "no aggregation"
-        resultsForRendering =
-            for row in results.rows
-                for name in columnNames
-                    value: row[columnIndex[name]]
-    else
-        # aggregate data
-        for name in columnNamesMeasured
-            aggs = Aggregation.FOR_TYPE[UI_MEASUREMENTS.measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
-            aggName = UI_MEASUREMENTS.measurementsAggregation[name]
-            aggName = _.keys(aggs)[0] unless aggs[aggName]
-            columnAggregation[name] = aggs[aggName]
-        for name of UI_CONDITIONS.conditions
-            columnAggregation[name] ?= {name:"enumerate", type:"string", func:enumerateAll name}
-        log "aggregation:", JSON.stringify columnAggregation
-        groupRowsByColumns = (rows) ->
-            map = (row) -> JSON.stringify (columnNamesGrouping.map (name) -> row[columnIndex[name]])
-            red = (key, groupedRows) ->
-                for name in columnNames
-                    idx = columnIndex[name]
-                    if name in columnNamesGrouping
-                        value: groupedRows[0][idx]
-                    else
-                        values = _.uniq (row[idx] for row in groupedRows)
-                        value: columnAggregation[name].func(values)
-                        values: values
-            grouped = mapReduce(map, red)(rows)
-            [_.values(grouped), _.keys(grouped)]
-        [aggregatedRows, aggregatedGroups] = groupRowsByColumns(results.rows)
-        #log "aggregated results:", aggregatedRows
-        #log "aggregated groups:", aggregatedGroups
-
-        # pad aggregatedRows with missing combination of condition values
-        emptyRows = []
-        if $("#results-include-empty").is(":checked")
-            emptyValues = []
-            forEachCombination (UI_CONDITIONS.conditionsActive[name] for name in columnNamesGrouping), (group) ->
-                key = JSON.stringify group
-                unless key in aggregatedGroups
-                    #log "padding empty row for #{key}"
-                    emptyRows.push columnNames.map (name) ->
-                        if name in columnNamesGrouping
-                            value: group[columnNamesGrouping.indexOf(name)]
-                        else
-                            value: columnAggregation[name].func(emptyValues) ? ""
-                            values: emptyValues
-            #log "padded empty groups:", emptyRows
-        resultsForRendering = aggregatedRows.concat emptyRows
-
-    log "rendering results:", resultsForRendering
-
-    table = $("#results-table")
-    # populate table head
-    headSkeleton = $("#results-table-head-skeleton")
-    thead = table.find("thead")
-    thead.find("tr").remove()
-    columnMetadata = {}
-    thead.append(headSkeleton.render(
-        columns: (
-            idx = -1
-            for name in columnNames
-                idx++
-                isForGrouping = name in columnNamesGrouping
-                # use aggregation type or the type of original data
-                type = (columnAggregation[name]?.type unless isForGrouping) ?
-                    UI_CONDITIONS.conditions[name]?.type ? UI_MEASUREMENTS.measurements[name]?.type
-                columnMetadata[name] =
-                    name: name
-                    type: type
-                    className:
-                        if name in columnNamesMeasured then "measurement"
-                        else if name in columnNamesGrouping then "condition"
-                        else "muted"
-                    isForGrouping: isForGrouping
-                    isMeasured: name in columnNamesMeasured
-                    isntImportant: UI_CONDITIONS.conditions[name]? and not isForGrouping
-                    isRunIdColumn: name == RUN_COLUMN_NAME
-                    aggregation: columnAggregation[name]?.name unless isForGrouping
-                    formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, resultsForRendering, idx)
-        )
-    , {ExpKitServiceBaseURL}
-    ))
-
-    # populate table body
-    table.find("tbody").remove()
-    tbody = $("<tbody>").appendTo(table)
-    rowSkeleton = $("#results-table-row-skeleton")
-    for row in resultsForRendering
-        tbody.append(rowSkeleton.render(
-            columns: (
-                idx = 0
-                for name in columnNames
-                    c = $.extend columnMetadata[name], row[idx++]
-                    c.formattedValue = c.formatter c.value
-                    c
+    constructor: (@baseElement, @conditions, @measurements, @optionElements = {}) ->
+        @columnNames = null
+        @columnNamesGrouping = null
+        @columnNamesMeasured = null
+        @columnAggregation = null
+        @dataTable = null
+        @results = ResultsTable.EMPTY_RESULTS
+        @resultsForRendering = null
+        t = @
+        $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
+                @baseElement.find(".aggregated").popover("hide")
             )
-        , {ExpKitServiceBaseURL}
-        ))
-    tbody.find(".aggregated")
-        .popover(trigger: "manual")
-        .click((e) ->
-            tbody.find(".aggregated").not(this).popover("hide")
-            $(this).popover("show")
-            e.stopPropagation()
-            e.preventDefault()
-        )
+        @optionElements.toggleIncludeEmpty
+           ?.prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
+            .change((e) ->
+                localStorage.resultsIncludeEmpty = JSON.stringify this.checked
+                do t.display
+            )
+        @optionElements.toggleHideInactiveConditions
+           ?.prop("checked", (try JSON.parse localStorage.resultsHideInactiveConditions) ? false)
+            .change((e) ->
+                localStorage.resultsHideInactiveConditions = JSON.stringify this.checked
+                do t.updateColumnVisibility
+            )
+        @optionElements.buttonResetColumnOrder
+           ?.toggleClass("disabled", @isColumnReordered())
+            .click((e) ->
+                do t.dataTable?._oPluginColReorder?.fnReset
+                $(this).addClass("disabled")
+                e.preventDefault()
+            )
+        # TODO encaps this detail with MeasurementsUI
+        runAggregations = @measurements.run?.find(".dropdown-menu .measurement-aggregation")
+        updateResultsWithoutAgg = =>
+            @optionElements.toggleWithoutAggregation
+               ?.prop("checked", runAggregations.filter(".active").length == 0)
+        updateResultsWithoutAgg()
+            .change((e) ->
+                if this.checked
+                    runAggregations.filter(".active").click()
+                else
+                    runAggregations.first().click()
+            )
+        @measurements.run
+           ?.bind("changed", (e, isActive) -> do updateResultsWithoutAgg)
+        do @display # initializing results table with empty data first
 
-    # finally, make the table interactive with DataTable
-    dataTable = table.dataTable
-        sDom: 'R<"H"fir>t<"F"lp>'
-        bStateSave: true
-        bDestroy: true
-        bLengthChange: false
-        bPaginate: false
-        bAutoWidth: false
-        # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
-        fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
-        fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.resultsDataTablesState
-        oColReorder:
-            fnReorderCallback: -> $("#results-reset-column-order").toggleClass("disabled", isColumnReordered())
-    do updateColumnVisibility
-    do updateScrollSpy
-
-    # trigger event for others
-    try
-        table.trigger("changed", resultsForRendering)
-
-isColumnReordered = ->
-    colOrder = getColumnOrdering()
-    (JSON.stringify colOrder) == (JSON.stringify (_.range colOrder?.length))
-getColumnOrdering = ->
-    dataTable?._oPluginColReorder?.fnGetCurrentOrder?() ?
-    try (JSON.parse localStorage.resultsDataTablesState).ColReorder
-
-updateColumnVisibility = ->
-    return unless dataTable?
-    # Hide some columns if necessary
-    isVisible =
-        if $("#results-hide-inactive-conditions").is(":checked")
-        then (name) -> (name in columnNamesMeasured or name in columnNamesGrouping)
-        else (name) -> true
-    colOrder = getColumnOrdering()
-    return unless colOrder?.length == columnNames.length
-    idx = 0
-    for name in columnNames
-        dataTable.fnSetColumnVis (colOrder.indexOf idx++), (isVisible name), false
-    do dataTable.fnDraw
-
-initResultsUI = ->
-    $('html').on 'click.popover.data-api touchstart.popover.data-api', null, (e) ->
-        $("#results-table .aggregated").popover("hide")
-    $("#results-include-empty")
-        .prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
-        .change((e) ->
-            localStorage.resultsIncludeEmpty = JSON.stringify this.checked
-            do displayResults
-        )
-    $("#results-hide-inactive-conditions")
-        .prop("checked", (try JSON.parse localStorage.resultsHideInactiveConditions) ? false)
-        .change((e) ->
-            localStorage.resultsHideInactiveConditions = JSON.stringify this.checked
-            do updateColumnVisibility
-        )
-    $("#results-reset-column-order")
-        .toggleClass("disabled", isColumnReordered())
-        .click((e) ->
-            do dataTable?._oPluginColReorder?.fnReset
-            $(this).addClass("disabled")
-            e.preventDefault()
-        )
-    runAggregations = RUN_MEASUREMENT.find(".dropdown-menu .measurement-aggregation")
-    updateResultsWithoutAgg = ->
-        $("#results-without-aggregation")
-            .prop("checked", runAggregations.filter(".active").length == 0)
-    updateResultsWithoutAgg()
-        .change((e) ->
-            if this.checked
-                runAggregations.filter(".active").click()
+    load: =>
+        displayNewResults = (newResults) =>
+            log "got results:", newResults
+            @results = newResults
+            do @display
+        (
+            if _.values(@conditions.conditionsActive).some((vs) -> vs?.length > 0)
+                @optionElements.containerForStateDisplay?.addClass("loading")
+                $.get("#{ExpKitServiceBaseURL}/api/results",
+                    runs: []
+                    batches: []
+                    conditions: JSON.stringify @conditions.conditionsActive
+                ).success(displayNewResults)
             else
-                runAggregations.first().click()
-        )
-    RUN_MEASUREMENT
-        .bind("changed", (e, isActive) -> do updateResultsWithoutAgg)
+                $.when displayNewResults(ResultsTable.EMPTY_RESULTS)
+        ).done(=> @optionElements.containerForStateDisplay?.removeClass("loading"))
 
+    @HEAD_SKELETON: $("""
+        <script id="results-table-head-skeleton" type="text/x-jsrender">
+          <tr>
+            {{for columns}}
+            <th><span class="{{>className}}">{{>name}}</span></th>
+            {{/for}}
+          </tr>
+        </script>
+        """)
+    @ROW_SKELETON: $("""
+        <script id="results-table-row-skeleton" type="text/x-jsrender">
+          <tr class="result">
+            {{for columns}}
+            <td class="{{>className}} {{>type}}-type" data-value="{{:value}}">
+              {{if aggregation}}
+              <div class="aggregated {{>aggregation}}"
+                {{if values}}
+                data-placement="bottom" data-trigger="click"
+                title="{{>aggregation}}{{if aggregation != 'enumerate'}} = {{:value}}{{/if}}"
+                data-html="true" data-content='<ul>
+                  {{for values}}
+                  <li>{{for #data tmpl=~CELL_SKELETON ~column=#parent.parent.data ~value=#data/}}</li>
+                  {{/for}}
+                </ul>'
+                {{/if}}
+                >{{:formattedValue}}</div>
+              {{else}}
+              {{for #data tmpl=~CELL_SKELETON ~column=#data ~value=value/}}
+              {{/if}}
+            </td>
+            {{/for}}
+          </tr>
+        </script>
+        """)
+    @CELL_SKELETON: """
+        {{if ~column.isRunIdColumn}}<a href="{{>~ExpKitServiceBaseURL}}/{{>~value}}">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
+        """
 
+    display: =>
+        columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in @results.names
+        @columnNamesGrouping = (name for name of @conditions.conditions when @conditions.conditionsActive[name]?.length > 0)
+        @columnNamesMeasured = (name for name of @measurements.measurements when @measurements.measurementsAggregation[name]?)
+        if @optionElements.toggleWithoutAggregation?.is(":checked")
+            # or equivalently: RUN_COLUMN_NAME not in @columnNamesMeasured
+            @columnNamesGrouping.push RUN_COLUMN_NAME
+            @columnNamesMeasured.unshift RUN_COLUMN_NAME
+        @columnNames = (name for name of @conditions.conditions).concat @columnNamesMeasured
+        @columnAggregation = {}
 
+        if RUN_COLUMN_NAME in @columnNamesGrouping
+            # present results without aggregation
+            log "no aggregation"
+            @resultsForRendering =
+                for row in @results.rows
+                    for name in @columnNames
+                        value: row[columnIndex[name]]
+        else
+            # aggregate data
+            for name in @columnNamesMeasured
+                aggs = Aggregation.FOR_TYPE[@measurements.measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
+                aggName = @measurements.measurementsAggregation[name]
+                aggName = _.keys(aggs)[0] unless aggs[aggName]
+                @columnAggregation[name] = aggs[aggName]
+            for name of @conditions.conditions
+                @columnAggregation[name] ?= {name:"enumerate", type:"string", func:enumerateAll name}
+            log "aggregation:", JSON.stringify @columnAggregation
+            groupRowsByColumns = (rows) =>
+                map = (row) => JSON.stringify (@columnNamesGrouping.map (name) -> row[columnIndex[name]])
+                red = (key, groupedRows) =>
+                    for name in @columnNames
+                        idx = columnIndex[name]
+                        if name in @columnNamesGrouping
+                            value: groupedRows[0][idx]
+                        else
+                            values = _.uniq (row[idx] for row in groupedRows)
+                            value: @columnAggregation[name].func(values)
+                            values: values
+                grouped = mapReduce(map, red)(rows)
+                [_.values(grouped), _.keys(grouped)]
+            [aggregatedRows, aggregatedGroups] = groupRowsByColumns(@results.rows)
+            #log "aggregated results:", aggregatedRows
+            #log "aggregated groups:", aggregatedGroups
 
-initNavBar = ->
-    $("body > .navbar-fixed-top .nav a").click((e) ->
-        [target] = $($(this).attr("href")).get()
-        do target.scrollIntoView
-        e.preventDefault()
-    )
+            # pad aggregatedRows with missing combination of condition values
+            emptyRows = []
+            if @optionElements.toggleIncludeEmpty?.is(":checked")
+                emptyValues = []
+                forEachCombination (@conditions.conditionsActive[name] for name in @columnNamesGrouping), (group) =>
+                    key = JSON.stringify group
+                    unless key in aggregatedGroups
+                        #log "padding empty row for #{key}"
+                        emptyRows.push @columnNames.map (name) =>
+                            if name in @columnNamesGrouping
+                                value: group[@columnNamesGrouping.indexOf(name)]
+                            else
+                                value: @columnAggregation[name].func(emptyValues) ? ""
+                                values: emptyValues
+                #log "padded empty groups:", emptyRows
+            @resultsForRendering = aggregatedRows.concat emptyRows
+
+        log "rendering results:", @resultsForRendering
+
+        # populate table head
+        thead = @baseElement.find("thead")
+        thead.find("tr").remove()
+        columnMetadata = {}
+        thead.append(ResultsTable.HEAD_SKELETON.render(
+            columns: (
+                idx = -1
+                for name in @columnNames
+                    idx++
+                    isForGrouping = name in @columnNamesGrouping
+                    # use aggregation type or the type of original data
+                    type = (@columnAggregation[name]?.type unless isForGrouping) ?
+                        @conditions.conditions[name]?.type ? @measurements.measurements[name]?.type
+                    columnMetadata[name] =
+                        name: name
+                        type: type
+                        className:
+                            if name in @columnNamesMeasured then "measurement"
+                            else if name in @columnNamesGrouping then "condition"
+                            else "muted"
+                        isForGrouping: isForGrouping
+                        isMeasured: name in @columnNamesMeasured
+                        isntImportant: @conditions.conditions[name]? and not isForGrouping
+                        isRunIdColumn: name == RUN_COLUMN_NAME
+                        aggregation: @columnAggregation[name]?.name unless isForGrouping
+                        formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, @resultsForRendering, idx)
+            )
+            , {ExpKitServiceBaseURL}
+            ))
+
+        # populate table body
+        @baseElement.find("tbody").remove()
+        tbody = $("<tbody>").appendTo(@baseElement)
+        for row in @resultsForRendering
+            tbody.append(ResultsTable.ROW_SKELETON.render(
+                columns: (
+                    idx = 0
+                    for name in @columnNames
+                        c = $.extend columnMetadata[name], row[idx++]
+                        c.formattedValue = c.formatter c.value
+                        c
+                )
+                , {ExpKitServiceBaseURL, CELL_SKELETON:ResultsTable.CELL_SKELETON}
+                ))
+        tbody.find(".aggregated")
+            .popover(trigger: "manual")
+            .click((e) ->
+                tbody.find(".aggregated").not(this).popover("hide")
+                $(this).popover("show")
+                e.stopPropagation()
+                e.preventDefault()
+            )
+
+        # finally, make the table interactive with DataTable
+        @dataTable = $(@baseElement).dataTable
+            # XXX @baseElement must be enclosed by a $() before .dataTable(),
+            # because otherwise @baseElement gets polluted by DataTables, and that
+            # previous state will make it behave very weirdly.
+            sDom: 'R<"H"fir>t<"F"lp>'
+            bStateSave: true
+            bDestroy: true
+            bLengthChange: false
+            bPaginate: false
+            bAutoWidth: false
+            # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
+            fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
+            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.resultsDataTablesState
+            oColReorder:
+                fnReorderCallback: => @optionElements.buttonResetColumnOrder?.toggleClass("disabled", @isColumnReordered())
+        do @updateColumnVisibility
+        do updateScrollSpy
+
+        # trigger event for others
+        try
+            @baseElement.trigger("changed", @resultsForRendering)
+
+    isColumnReordered: =>
+        colOrder = @getColumnOrdering()
+        (JSON.stringify colOrder) == (JSON.stringify (_.range colOrder?.length))
+    getColumnOrdering: =>
+        @dataTable?._oPluginColReorder?.fnGetCurrentOrder?() ?
+        try (JSON.parse localStorage.resultsDataTablesState).ColReorder
+
+    updateColumnVisibility: =>
+        return unless @dataTable?
+        # Hide some columns if necessary
+        colOrder = @getColumnOrdering()
+        return unless colOrder?.length == @columnNames.length
+        isVisible =
+            if @optionElements.toggleHideInactiveConditions?.is(":checked")
+            then (name) => (name in @columnNamesMeasured or name in @columnNamesGrouping)
+            else (name) => true
+        idx = 0
+        for name in @columnNames
+            @dataTable.fnSetColumnVis (colOrder.indexOf idx++), (isVisible name), false
+        do @dataTable.fnDraw
+
 
 
 
@@ -642,10 +686,10 @@ displayChart = ->
     width = 960 - margin.left - margin.right
     height = 500 - margin.top - margin.bottom
 
-    xAxisLabel = columnNamesGrouping[1]
-    yAxisLabel = columnNamesMeasured[1]
-    xIndex = columnNames.indexOf(xAxisLabel)
-    yIndex = columnNames.indexOf(yAxisLabel)
+    xAxisLabel = UI_RESULTS.columnNamesGrouping[1]
+    yAxisLabel = UI_RESULTS.columnNamesMeasured[1]
+    xIndex = UI_RESULTS.columnNames.indexOf(xAxisLabel)
+    yIndex = UI_RESULTS.columnNames.indexOf(yAxisLabel)
 
     log "drawing chart for", xAxisLabel, yAxisLabel
 
@@ -752,11 +796,14 @@ initChartUI = ->
 $ ->
     UI_CONDITIONS = new ConditionsUI $("#conditions")
     UI_MEASUREMENTS = new MeasurementsUI $("#measurements")
-    UI_CONDITIONS.load().success ->
-        UI_MEASUREMENTS.load().success ->
-            do initResultsUI
-            do displayResults # initializing results table with empty data first
-            do updateResults
+    UI_CONDITIONS.load().success -> UI_MEASUREMENTS.load().success ->
+        UI_RESULTS = new ResultsTable $("#results-table"), UI_CONDITIONS, UI_MEASUREMENTS,
+            toggleIncludeEmpty          : $("#results-include-empty")
+            toggleHideInactiveConditions: $("#results-hide-inactive-conditions")
+            toggleWithoutAggregation    : $("#results-without-aggregation")
+            buttonResetColumnOrder      : $("#results-reset-column-order")
+            containerForStateDisplay    : $("#results")
+        UI_RESULTS.load()
     do initNavBar
     do initChartUI
 
@@ -764,4 +811,5 @@ $ ->
     window.UI = exports =
         conditions: UI_CONDITIONS
         measurements: UI_MEASUREMENTS
+        results: UI_RESULTS
 
