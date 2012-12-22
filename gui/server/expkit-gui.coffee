@@ -69,6 +69,16 @@ handleCLIError = (res, next) -> (code, stdout, stderr) ->
     else
         res.send 500, stderr
 
+# Allow Cross Origin AJAX Requests
+app.options "/api/*", (req, res) ->
+    res.set
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+        "Access-Control-Allow-Headers": req.get("access-control-request-headers")
+    res.send(200)
+app.get "/api/*", (req, res, next) ->
+    res.set
+        "Access-Control-Allow-Origin": "*"
+    next()
 
 app.get "/api/conditions", (req, res) ->
     cli "exp-conditions", ["-v"]
