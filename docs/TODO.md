@@ -7,11 +7,21 @@
 * DONE exp-results bug fix for empty args
 * DONE exp-results query on measurements (=/</>/<=/>=)
 * DONE exp-plan with the output of exp-results query (e.g., when you want to rerun exps for certain conditions with failures/anomalies/etc.)
+
+* Options for declaring new ones for `exp conditions` and `exp measurements`
+* a simple way to bootstrap an exp repository
+
+        exp setup  VAR1=V1,V2  VAR2=V3,V4..V5 ...  'COMMAND'  MEASURE1='PATT1_FROM_OUTPUT'  MEASURE2='PATT2_FROM_OUTPUT' ...
+
+* exp stop for stopping a running batch or run
+* keep links to currently running batch and/or run
+
+* better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
+
 * `exp measure` for running newly added measures: requires partial assembly for exp.measure, and separating the running part from exp-run.
 * exp-rerun for re-running past runs: do a copy --archive --link from the run dir and simply run it again?
+
 * better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
-* keep links to currently running batch and/or run
-* better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
 
 ## GUI
 * DONE chasis with express.js + node + bootstrap + coffee-script
@@ -31,12 +41,14 @@
         * from the popup, let user easily add exp plans
     * show multiple aggregation for each measurements
 * DONE clean up navbar with scrollspy
-* Encapsulate with CoffeeScript classes
-* easy creating/removing of condition values
+* DONE Encapsulate with CoffeeScript classes
 * d3 plots of results
     * bar chart
     * scatter plot
     * small multiple
+
+* easy creating/removing of condition values
+
 * list of runs and batches
     * planning/altering a batch (mostly just ordering)
 * batch page
@@ -45,6 +57,8 @@
 * run page
     * monitoring logs
     * better looking run summary page
+
+* Use hash for representing GUI state as URL and using the browser history and back/forward
 
 * Title with .exp/description
 * DONE add right margin to icons in h2 instead of space
