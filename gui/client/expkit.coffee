@@ -4,7 +4,7 @@
 # Created: 2012-11-11
 ###
 
-ExpKitServiceBaseURL = "http://iln29.stanford.edu:38917"
+ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL ? ""
 
 log = (args...) -> console.log args...; args[0]
 
