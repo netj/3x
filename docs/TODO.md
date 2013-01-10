@@ -69,6 +69,8 @@
 * estimating time for a plan based on other runs: will need to keep track of
   wallclock time etc.
 * concise way to specify parallel execution order in the plan
+* automatic suggestion of representative condition values given a range, based
+  on how each varies output (Ashish)
 
 <!--
 vim:undofile
