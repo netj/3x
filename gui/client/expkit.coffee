@@ -295,7 +295,6 @@ class ConditionsUI extends CompositeElement
             ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
         wasActive = condUI.hasClass("active")
         condUI.toggleClass("active", hasValues)
-        condUI.trigger("changed", hasValues) if wasActive != hasValues
 
     menuItemActionHandler: (handle) =>
         c = @
@@ -323,7 +322,7 @@ class ConditionsUI extends CompositeElement
                     _.delay =>
                         return if @baseElement.find(".dropdown.open").length > 0
                         @ifChangedDo => @trigger "changed"
-                        $html.off(e)
+                        $html.off(".conditions")
                     , 100
                 )
 
@@ -401,7 +400,6 @@ class MeasurementsUI extends CompositeElement
         wasActive = measUI.hasClass("active")
         isActive = true if name == RUN_COLUMN_NAME
         measUI.toggleClass("active", isActive)
-        measUI.trigger("changed", isActive) if wasActive != isActive or name == RUN_COLUMN_NAME
 
     menuActionHandler: (handle) ->
         m = @
@@ -419,8 +417,12 @@ class MeasurementsUI extends CompositeElement
     ifChangedDo: (job) =>
         thisMeasurementsAggregation = JSON.stringify @measurementsAggregation
         if @lastMeasurementsAggregation != thisMeasurementsAggregation
+            last = try JSON.parse @lastMeasurementsAggregation
+            runActiveHasChangedTo =
+                if @measurementsAggregation[RUN_COLUMN_NAME] != last?[RUN_COLUMN_NAME]
+                    @measurementsAggregation[RUN_COLUMN_NAME]?.length > 0
             @lastMeasurementsAggregation = thisMeasurementsAggregation
-            do job
+            job runActiveHasChangedTo
 
     triggerChangedAfterMenuBlurs: =>
         ($html = $("html"))
@@ -428,8 +430,10 @@ class MeasurementsUI extends CompositeElement
             .on("click.measurements touchstart.measurements", ":not(##{@baseElement.id} *)", (e) =>
                     _.delay =>
                         return if @baseElement.find(".dropdown.open").length > 0
-                        @ifChangedDo => @trigger "changed"
-                        $html.off(e)
+                        @ifChangedDo (runActiveHasChangedTo) =>
+                            @trigger "changed"
+                            @run.trigger "changed", runActiveHasChangedTo if runActiveHasChangedTo?
+                        $html.off(".measurements")
                     , 100
                 )
 
@@ -487,7 +491,7 @@ class ResultsTable extends CompositeElement
                     runAggregations.first().click()
             )
         @measurements.run
-           ?.bind("changed", (e, isActive) -> do updateResultsWithoutAgg)
+           ?.on("changed", (e, isActive) -> do updateResultsWithoutAgg)
         do @display # initializing results table with empty data first
         @conditions.on "changed", @load
         @measurements.on "changed", @display
@@ -513,7 +517,8 @@ class ResultsTable extends CompositeElement
         <script id="results-table-head-skeleton" type="text/x-jsrender">
           <tr>
             {{for columns}}
-            <th><span class="{{>className}}">{{>name}}</span></th>
+            <th><i class="icon-folder-{{if isForGrouping}}open{{else}}close{{/if}}-alt"></i>
+                <span class="{{>className}}">{{>name}}</span></th>
             {{/for}}
           </tr>
         </script>
