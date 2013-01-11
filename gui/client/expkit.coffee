@@ -580,6 +580,12 @@ class ResultsTable extends CompositeElement
             enumerate
 
     display: =>
+        @optionElements.containerForStateDisplay?.addClass("displaying")
+        deferred = $.Deferred()
+            .done(=> @optionElements.containerForStateDisplay?.removeClass("displaying"))
+        _.delay (=> do @_display; deferred.resolve()), 10
+        deferred
+    _display: =>
         columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in @results.names
         @columnNamesGrouping =
             if @optionElements.toggleShowHiddenConditions?.is(":checked")

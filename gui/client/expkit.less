@@ -156,7 +156,8 @@ body > .navbar .brand .icon {
 #results-table-progress {
   display: none;
 }
-#results.loading {
+#results {
+&.loading, &.displaying {
   #results-table-progress {
     display: block;
     position: absolute;
@@ -171,6 +172,10 @@ body > .navbar .brand .icon {
   #results-table {
     opacity: 0.5;
   }
+}
+                 h4            { display: none; }
+  &.loading    { h4.loading    { display: block; } }
+  &.displaying { h4.displaying { display: block; } }
 }
 
 // vim:sw=2:sts=2

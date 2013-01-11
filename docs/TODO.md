@@ -44,7 +44,7 @@
         * aggregate/or not menuitem on conditions
         * aggregate/or not icon on table column header
         * enabled/or not menuitem on conditions
-    * show progress while doing ResultsTable.display
+    * DONE show progress while doing ResultsTable.display
 * DONE clean up navbar with scrollspy
 * DONE Encapsulate with CoffeeScript classes
 * d3 plots of results
