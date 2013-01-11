@@ -245,9 +245,8 @@ class ConditionsUI extends CompositeElement
           <li id="condition-{{>id}}" class="condition dropdown">
             <a class="dropdown-toggle" role="button" href="#"
               data-toggle="dropdown" data-target="#condition-{{>id}}"
-              ><span class="caret"></span><i
-              class="icon condition-hide-toggle"></i><span
-                  class="condition-name">{{>name}}</span><span class="condition-values"></span></a>
+              ><span class="caret"></span><i class="icon condition-hide-toggle"></i><span
+                  class="condition-name">{{>name}}</span><span class="condition-values"></span>&nbsp;</a>
             <ul class="dropdown-menu" role="menu">
               {{for values}}
               <li><a href="#" class="condition-value">{{>#data}}</a></li>

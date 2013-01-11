@@ -40,10 +40,11 @@
     * DONE fill empty results for selected conditions
         * from the popup, let user easily add exp plans
     * show multiple aggregation for each measurements
-    * clear separation of split aggregation control and selection/filtering/projection of columns
+    * DONE clear separation of split aggregation control and selection/filtering/projection of columns
         * aggregate/or not menuitem on conditions
         * aggregate/or not icon on table column header
         * enabled/or not menuitem on conditions
+    * show progress while doing ResultsTable.display
 * DONE clean up navbar with scrollspy
 * DONE Encapsulate with CoffeeScript classes
 * d3 plots of results
