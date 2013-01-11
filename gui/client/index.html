@@ -65,18 +65,18 @@
             <form class="form-inline">
               <label class="checkbox inline">
                 <input type="checkbox" id="results-include-empty">
+                <i class="icon icon-th"></i>
                 Show conditions with no results
               </label>
               <label class="checkbox inline">
-                <input type="checkbox" id="results-hide-inactive-conditions">
-                Show selected conditions only
+                <input type="checkbox" id="results-show-hidden-conditions">
+                <i class="icon icon-eye-open"></i>
+                Show hidden conditions
               </label>
-              <label class="checkbox inline">
-                <input type="checkbox" id="results-without-aggregation">
-                Show individual runs without aggregation
-              </label>
-              <a href="#" class="btn btn-small disabled pull-right"
-                id="results-reset-column-order">Reset column order</a>
+              <a href="#" class="btn btn-small disabled pull-right" id="results-reset-column-order">
+                <i class="icon icon-exchange"></i>
+                Reset column order
+              </a>
             </form>
 
             <div id="results-table-progress" class="alert alert-block alert-info">
