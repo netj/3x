@@ -688,6 +688,7 @@ class ResultsTable extends CompositeElement
         # allow the column header to toggle aggregation
         t = @
         thead.find(".aggregation-toggler").click((e) ->
+            return if e.shiftKey # to reduce interference with DataTables' sorting
             $this = $(this)
             th = $this.closest("th")
             th.toggleClass("expanded")
