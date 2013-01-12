@@ -62,6 +62,9 @@ cli = (cmd, args, onEnd) ->
             onEnd code, stdoutBuf, stderrBuf
         , (data) ->
             stderrBuf += data
+cliEnv = (env, cmd, args, onEnd) ->
+    envArgs = ("#{name}=#{value}" for name,value of env)
+    cli "env", [envArgs..., cmd, args...], onEnd
 
 handleCLIError = (res, next) -> (code, stdout, stderr) ->
     if code == 0
@@ -139,6 +142,29 @@ app.get "/api/results", (req, res) ->
                 names: columnNames
                 rows: rows
             )
+
+app.get "/api/batches.DataTables", (req, res) ->
+    query = req.param("sSearch") ? ""
+    # TODO don't nest these, try to do them in parallel
+    cliEnv {
+        LIMIT:  req.param("iDisplayLength")
+        OFFSET: req.param("iDisplayStart")
+    }, "exp-batches", ["-l", query]
+        , handleCLIError res, (code, stdout, stderr) ->
+            table =
+                for line in stdout.trim().split(/\n/) when line != ""
+                    col for col in line.split(/\t/)
+            cli "exp-batches", ["-c", query]
+                , handleCLIError res, (code, stdout, stderr) ->
+                    filteredCount = +stdout.trim()
+                    cli "exp-batches", ["-c"]
+                        , handleCLIError res, (code, stdout, stderr) ->
+                            totalCount = +stdout.trim()
+                            res.json
+                                sEcho: req.param("sEcho")
+                                iTotalRecords: totalCount
+                                iTotalDisplayRecords: filteredCount
+                                aaData: table
 
 
 app.listen expKitPort, ->

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# limitOffset -- limit/offset output lines
+# Usage: LIMIT=N OFFSET=M  limitOffset  [COMMAND [ARG]...]
+# 
+# Limits the output of given COMMAND to N lines, starting from the Mth line.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-12
+set -eu
+
+: ${LIMIT:=-1} ${OFFSET:=0}
+
+[ $# -gt 0 ] || usage "$0" "COMMAND must be given"
+
+if [[ $LIMIT -gt 0 ]]; then
+    if [[ $OFFSET -gt 0 ]]; then
+        "$@" |
+        tail -n +$(($OFFSET + 1)) |
+        head -n $LIMIT
+    else
+        "$@" |
+        head -n $LIMIT
+    fi
+else
+    if [[ $OFFSET -gt 0 ]]; then
+        "$@" |
+        tail -n +$(($OFFSET + 1))
+    else
+        "$@"
+    fi
+fi

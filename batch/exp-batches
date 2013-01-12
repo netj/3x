@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# exp-batches -- list experiment batches
+# Usage: exp batches [BATCH_FILTER]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-12
+set -eu
+TAB=$'\t'
+
+ListDetails=false
+ShowCount=false
+while getopts "cl" o; do
+    case $o in
+        c) ShowCount=true ListDetails=false ;;
+        l) ListDetails=true ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+Query=$*
+
+: ${EXPROOT:=$(exp-findroot)}
+cd "$EXPROOT/run/batch"
+
+limitOffset ls -td *"$Query"*/ 2>/dev/null |
+if $ListDetails; then
+    while read -r batch; do
+        batch=${batch%/}
+        count=$(echo $(cat <$batch/count || wc -l <$batch/plan))
+        progress=$(wc -l <$batch/done || echo 0)
+        echo "$batch$TAB$count$TAB$progress$TAB?"
+    done 2>/dev/null |
+    if [ -t 1 ]; then column -t; else cat; fi
+elif $ShowCount; then
+    wc -l
+else
+    sed 's:/$::'
+fi
