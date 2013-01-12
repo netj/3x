@@ -880,6 +880,29 @@ initChartUI = ->
 
 
 
+class BatchesTable extends CompositeElement
+    constructor: (@baseElement, @planner) ->
+        super @baseElement
+
+    load: =>
+        @dataTable = $(@baseElement).dataTable
+            sDom: '<"H"fir>t<"F"lp>'
+            bDestroy: true
+            bLengthChange: false
+            bPaginate: false
+            bAutoWidth: true
+            bProcessing: true
+            bServerSide: true
+            sAjaxSource: "#{ExpKitServiceBaseURL}/api/batches.DataTables"
+            bScrollInfinite: true
+            bScrollCollapse: true
+            sScrollY: "200px"
+            bSort: false
+            bStateSave: true
+            # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
+            fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
+            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
+
 # initialize UI
 $ ->
     # make things visible to the outside world
@@ -896,6 +919,8 @@ $ ->
             buttonResetColumnOrder      : $("#results-reset-column-order")
             containerForStateDisplay    : $("#results")
         ExpKit.results.load()
+    ExpKit.batches = new BatchesTable $("#batches-table"), null
+    ExpKit.batches.load()
     do initNavBar
     do initChartUI
 
