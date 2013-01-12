@@ -108,8 +108,11 @@ mapReduce = (map, red) -> (rows) ->
 forEachCombination = (nestedList, f, acc = []) ->
     if nestedList?.length > 0
         [xs, rest...] = nestedList
-        for x in xs
-            forEachCombination rest, f, (acc.concat [x])
+        if xs?
+            for x in xs
+                forEachCombination rest, f, (acc.concat [x])
+        else
+            forEachCombination rest, f, acc
     else
         f acc
 mapCombination = (nestedList, f) ->
@@ -224,11 +227,14 @@ class ConditionsUI extends CompositeElement
     constructor: (@baseElement) ->
         super @baseElement
         @conditions = {}
-        @lastConditionsActive = (localStorage.conditionsActive ?= "{}")
-        @conditionsActive = JSON.parse @lastConditionsActive
+        @lastConditionValues = (localStorage.conditionValues ?= "{}")
+        @conditionValues = JSON.parse @lastConditionValues
+        @lastConditionsHidden = (localStorage.conditionsHidden ?= "{}")
+        @conditionsHidden = JSON.parse @lastConditionsHidden
 
     persist: =>
-        localStorage.conditionsActive = JSON.stringify @conditionsActive
+        localStorage.conditionValues = JSON.stringify @conditionValues
+        localStorage.conditionsHidden = JSON.stringify @conditionsHidden
 
     load: =>
         $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
@@ -239,8 +245,8 @@ class ConditionsUI extends CompositeElement
           <li id="condition-{{>id}}" class="condition dropdown">
             <a class="dropdown-toggle" role="button" href="#"
               data-toggle="dropdown" data-target="#condition-{{>id}}"
-              ><span class="caret"></span><span class="condition-name">{{>name}}</span><span
-                class="condition-values"></span></a>
+              ><span class="caret"></span><i class="icon condition-hide-toggle"></i><span
+                  class="condition-name">{{>name}}</span><span class="condition-values"></span>&nbsp;</a>
             <ul class="dropdown-menu" role="menu">
               {{for values}}
               <li><a href="#" class="condition-value">{{>#data}}</a></li>
@@ -254,6 +260,7 @@ class ConditionsUI extends CompositeElement
 
     initialize: (newConditions) =>
         @conditions = newConditions
+        @condUI = {}
         @baseElement.find("*").remove()
         for name,{type,values} of @conditions
             id = safeId(name)
@@ -274,7 +281,7 @@ class ConditionsUI extends CompositeElement
                 .each (i,menuitem) =>
                     $this = $(menuitem)
                     value = $this.text()
-                    $this.toggleClass("active", value in (@conditionsActive[name] ? []))
+                    $this.toggleClass("active", value in (@conditionValues[name] ? []))
             menu.find(".condition-values-toggle")
                 .toggleClass("active", isAllActive())
                 .click(@menuItemActionHandler ($this, condUI) ->
@@ -282,39 +289,63 @@ class ConditionsUI extends CompositeElement
                     condUI.find(".condition-value")
                         .toggleClass("active", $this.hasClass("active"))
                 )
+            condUI.toggleClass("active", not @conditionsHidden[name]?)
+                .find(".condition-hide-toggle")
+                    .click(do (condUI) => (e) =>
+                        e.stopPropagation()
+                        e.preventDefault()
+                        condUI.toggleClass("active")
+                        @updateDisplay condUI
+                        do @persist
+                        do @triggerIfChanged
+                    )
             @updateDisplay condUI
+            @condUI[name] = condUI
             log "initCondition #{name}:#{type}=#{values.join ","}"
         do updateScrollSpy
 
+    @ICON_CLASS_VISIBLE: "icon-check"
+    @ICON_CLASS_HIDDEN:  "icon-check-empty"
     updateDisplay: (condUI) =>
         name = condUI.find(".condition-name")?.text()
         values = condUI.find(".condition-value.active").map( -> $(this).text()).get()
-        @conditionsActive[name] = values
         hasValues = values?.length > 0
+        isHidden = not condUI.hasClass("active")
+        @conditionValues[name] =
+            if hasValues
+                values
+        @conditionsHidden[name] =
+            if isHidden
+                true
         condUI.find(".condition-values")
             ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
-        wasActive = condUI.hasClass("active")
-        condUI.toggleClass("active", hasValues)
-        condUI.trigger("changed", hasValues) if wasActive != hasValues
+        condUI.find(".condition-hide-toggle")
+            .removeClass("#{ConditionsUI.ICON_CLASS_VISIBLE} #{ConditionsUI.ICON_CLASS_HIDDEN}")
+            .toggleClass(ConditionsUI.ICON_CLASS_VISIBLE, not isHidden)
+            .toggleClass(ConditionsUI.ICON_CLASS_HIDDEN ,     isHidden)
 
     menuItemActionHandler: (handle) =>
         c = @
         (e) ->
+            e.stopPropagation()
+            e.preventDefault()
             $this = $(this)
             condUI = $this.closest(".condition")
             ret = handle($this, condUI, e)
             c.updateDisplay condUI
             do c.persist
             do c.triggerChangedAfterMenuBlurs
-            e.stopPropagation()
-            e.preventDefault()
             ret
 
-    ifChangedDo: (job) =>
-        thisConditionsActive = JSON.stringify @conditionsActive
-        if @lastConditionsActive != thisConditionsActive
-            @lastConditionsActive = thisConditionsActive
-            do job
+    triggerIfChanged: =>
+        thisConditionValues = JSON.stringify @conditionValues
+        if @lastConditionValues != thisConditionValues
+            @lastConditionValues = thisConditionValues
+            _.defer => @trigger "filterChange"
+        thisConditionsHidden = JSON.stringify @conditionsHidden
+        if @lastConditionsHidden != thisConditionsHidden
+            @lastConditionsHidden = thisConditionsHidden
+            _.defer => @trigger "visibilityChange"
 
     triggerChangedAfterMenuBlurs: =>
         ($html = $("html"))
@@ -322,8 +353,8 @@ class ConditionsUI extends CompositeElement
             .on("click.conditions touchstart.conditions", ":not(##{@baseElement.id} *)", (e) =>
                     _.delay =>
                         return if @baseElement.find(".dropdown.open").length > 0
-                        @ifChangedDo => @trigger "changed"
-                        $html.off(e)
+                        $html.off(".conditions")
+                        do @triggerIfChanged
                     , 100
                 )
 
@@ -398,29 +429,33 @@ class MeasurementsUI extends CompositeElement
         aggregation = if isActive then aggregationActive.first().text()
         @measurementsAggregation[name] = aggregation
         measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
-        wasActive = measUI.hasClass("active")
         isActive = true if name == RUN_COLUMN_NAME
         measUI.toggleClass("active", isActive)
-        measUI.trigger("changed", isActive) if wasActive != isActive or name == RUN_COLUMN_NAME
 
     menuActionHandler: (handle) ->
         m = @
         (e) ->
+            e.stopPropagation()
+            e.preventDefault()
             $this = $(this)
             measUI = $this.closest(".measurement")
             ret = handle($this, measUI, e)
             m.updateDisplay measUI
             do m.persist
             do m.triggerChangedAfterMenuBlurs
-            e.stopPropagation()
-            e.preventDefault()
             ret
 
-    ifChangedDo: (job) =>
+    triggerIfChanged: (job) =>
         thisMeasurementsAggregation = JSON.stringify @measurementsAggregation
         if @lastMeasurementsAggregation != thisMeasurementsAggregation
             @lastMeasurementsAggregation = thisMeasurementsAggregation
-            do job
+            _.defer => @trigger "aggregationChange"
+            # special notification for changes to RUN_COLUMN_NAME
+            last = try JSON.parse @lastMeasurementsAggregation
+            runActiveHasChangedTo =
+                if @measurementsAggregation[RUN_COLUMN_NAME] != last?[RUN_COLUMN_NAME]
+                    @measurementsAggregation[RUN_COLUMN_NAME]?.length > 0
+            _.defer => @run.trigger "changed", runActiveHasChangedTo if runActiveHasChangedTo?
 
     triggerChangedAfterMenuBlurs: =>
         ($html = $("html"))
@@ -428,8 +463,8 @@ class MeasurementsUI extends CompositeElement
             .on("click.measurements touchstart.measurements", ":not(##{@baseElement.id} *)", (e) =>
                     _.delay =>
                         return if @baseElement.find(".dropdown.open").length > 0
-                        @ifChangedDo => @trigger "changed"
-                        $html.off(e)
+                        $html.off(".measurements")
+                        do @triggerIfChanged
                     , 100
                 )
 
@@ -444,6 +479,7 @@ class ResultsTable extends CompositeElement
 
     constructor: (@baseElement, @conditions, @measurements, @optionElements = {}) ->
         super @baseElement
+        @columnsToExpand = (try JSON.parse localStorage.resultsColumnsToExpand) ? {}
         @columnNames = null
         @columnNamesGrouping = null
         @columnNamesMeasured = null
@@ -461,11 +497,11 @@ class ResultsTable extends CompositeElement
                 localStorage.resultsIncludeEmpty = JSON.stringify this.checked
                 do t.display
             )
-        @optionElements.toggleHideInactiveConditions
-           ?.prop("checked", (try JSON.parse localStorage.resultsHideInactiveConditions) ? false)
+        @optionElements.toggleShowHiddenConditions
+           ?.prop("checked", (try JSON.parse localStorage.resultsShowHiddenConditions) ? false)
             .change((e) ->
-                localStorage.resultsHideInactiveConditions = JSON.stringify this.checked
-                do t.updateColumnVisibility
+                localStorage.resultsShowHiddenConditions = JSON.stringify this.checked
+                do t.display
             )
         @optionElements.buttonResetColumnOrder
            ?.toggleClass("disabled", @isColumnReordered())
@@ -474,23 +510,10 @@ class ResultsTable extends CompositeElement
                 $(this).addClass("disabled")
                 e.preventDefault()
             )
-        # TODO encaps this detail with MeasurementsUI
-        runAggregations = @measurements.run?.find(".dropdown-menu .measurement-aggregation")
-        updateResultsWithoutAgg = =>
-            @optionElements.toggleWithoutAggregation
-               ?.prop("checked", runAggregations.filter(".active").length == 0)
-        updateResultsWithoutAgg()
-            .change((e) ->
-                if this.checked
-                    runAggregations.filter(".active").click()
-                else
-                    runAggregations.first().click()
-            )
-        @measurements.run
-           ?.bind("changed", (e, isActive) -> do updateResultsWithoutAgg)
         do @display # initializing results table with empty data first
-        @conditions.on "changed", @load
-        @measurements.on "changed", @display
+        @conditions.on("filterChange", @load)
+                   .on("visibilityChange", @display)
+        @measurements.on "aggregationChange", @display
 
     load: =>
         displayNewResults = (newResults) =>
@@ -498,12 +521,12 @@ class ResultsTable extends CompositeElement
             @results = newResults
             do @display
         (
-            if _.values(@conditions.conditionsActive).some((vs) -> vs?.length > 0)
+            if _.values(@conditions.conditionValues).some((vs) -> vs?.length > 0)
                 @optionElements.containerForStateDisplay?.addClass("loading")
                 $.get("#{ExpKitServiceBaseURL}/api/results",
                     runs: []
                     batches: []
-                    conditions: JSON.stringify @conditions.conditionsActive
+                    conditions: JSON.stringify @conditions.conditionValues
                 ).success(displayNewResults)
             else
                 $.when displayNewResults(ResultsTable.EMPTY_RESULTS)
@@ -513,7 +536,10 @@ class ResultsTable extends CompositeElement
         <script id="results-table-head-skeleton" type="text/x-jsrender">
           <tr>
             {{for columns}}
-            <th><span class="{{>className}}">{{>name}}</span></th>
+            <th class="{{>className}}"><span>{{>name}}</span
+                >{{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
+                icon icon-folder-{{if isForGrouping}}open{{else}}close{{/if}}-alt"
+                ></i>{{/if}}</th>
             {{/for}}
           </tr>
         </script>
@@ -554,18 +580,27 @@ class ResultsTable extends CompositeElement
             enumerate
 
     display: =>
+        @optionElements.containerForStateDisplay?.addClass("displaying")
+        deferred = $.Deferred()
+            .done(=> @optionElements.containerForStateDisplay?.removeClass("displaying"))
+        _.delay (=> do @_display; deferred.resolve()), 10
+        deferred
+    _display: =>
         columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in @results.names
-        @columnNamesGrouping = (name for name of @conditions.conditions when @conditions.conditionsActive[name]?.length > 0)
+        @columnNamesGrouping =
+            if @optionElements.toggleShowHiddenConditions?.is(":checked")
+                (name for name,value of @columnsToExpand when value)
+            else
+                (name for name,value of @columnsToExpand when value and not @conditions.conditionsHidden[name]?)
         @columnNamesMeasured = (name for name of @measurements.measurements when @measurements.measurementsAggregation[name]?)
-        if @optionElements.toggleWithoutAggregation?.is(":checked")
-            # or equivalently: RUN_COLUMN_NAME not in @columnNamesMeasured
-            @columnNamesGrouping.push RUN_COLUMN_NAME
-            @columnNamesMeasured.unshift RUN_COLUMN_NAME
         @columnNames = (name for name of @conditions.conditions).concat @columnNamesMeasured
         @columnAggregation = {}
 
-        if RUN_COLUMN_NAME in @columnNamesGrouping
+        isRunIdExpanded = RUN_COLUMN_NAME in @columnNamesGrouping
+
+        if isRunIdExpanded
             # present results without aggregation
+            @optionElements.toggleIncludeEmpty?.prop("disabled", true)
             log "no aggregation"
             @resultsForRendering =
                 for row in @results.rows
@@ -573,6 +608,7 @@ class ResultsTable extends CompositeElement
                         value: row[columnIndex[name]]
         else
             # aggregate data
+            @optionElements.toggleIncludeEmpty?.prop("disabled", false)
             for name in @columnNamesMeasured
                 aggs = Aggregation.FOR_TYPE[@measurements.measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
                 aggName = @measurements.measurementsAggregation[name]
@@ -602,7 +638,10 @@ class ResultsTable extends CompositeElement
             emptyRows = []
             if @optionElements.toggleIncludeEmpty?.is(":checked")
                 emptyValues = []
-                forEachCombination (@conditions.conditionsActive[name] for name in @columnNamesGrouping), (group) =>
+                columnValuesForGrouping =
+                    for name in @columnNamesGrouping
+                        @conditions.conditionValues[name] ? @conditions.conditions[name].values
+                forEachCombination columnValuesForGrouping, (group) =>
                     key = JSON.stringify group
                     unless key in aggregatedGroups
                         #log "padding empty row for #{key}"
@@ -633,10 +672,10 @@ class ResultsTable extends CompositeElement
                     columnMetadata[name] =
                         name: name
                         type: type
-                        className:
-                            if name in @columnNamesMeasured then "measurement"
-                            else if name in @columnNamesGrouping then "condition"
-                            else "muted"
+                        className: "#{if name in @columnNamesMeasured        then "measurement" else "condition"
+                                   }#{if @conditions.conditionsHidden[name]? then " muted"      else ""
+                                   }#{if name in @columnNamesGrouping        then " expanded"   else ""
+                                   }"
                         isForGrouping: isForGrouping
                         isMeasured: name in @columnNamesMeasured
                         isntImportant: @conditions.conditions[name]? and not isForGrouping
@@ -644,8 +683,21 @@ class ResultsTable extends CompositeElement
                         aggregation: @columnAggregation[name]?.name unless isForGrouping
                         formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, @resultsForRendering, idx)
             )
-            , {ExpKitServiceBaseURL}
+            , {ExpKitServiceBaseURL, isRunIdExpanded}
             ))
+        # allow the column header to toggle aggregation
+        t = @
+        thead.find(".aggregation-toggler").click((e) ->
+            return if e.shiftKey # to reduce interference with DataTables' sorting
+            $this = $(this)
+            th = $this.closest("th")
+            th.toggleClass("expanded")
+            name = th.find("span").text()
+            t.columnsToExpand[name] = if th.hasClass("expanded") then true else null
+            localStorage.resultsColumnsToExpand = JSON.stringify t.columnsToExpand
+            do t.display
+            do e.stopPropagation
+        )
 
         # populate table body
         @baseElement.find("tbody").remove()
@@ -690,8 +742,7 @@ class ResultsTable extends CompositeElement
         do updateScrollSpy
 
         # trigger event for others
-        try
-            @trigger("changed", @resultsForRendering)
+        _.defer => @trigger("changed", @resultsForRendering)
 
     isColumnReordered: =>
         colOrder = @getColumnOrdering()
@@ -706,8 +757,8 @@ class ResultsTable extends CompositeElement
         colOrder = @getColumnOrdering()
         return unless colOrder?.length == @columnNames.length
         isVisible =
-            if @optionElements.toggleHideInactiveConditions?.is(":checked")
-            then (name) => (name in @columnNamesMeasured or name in @columnNamesGrouping)
+            unless @optionElements.toggleShowHiddenConditions?.is(":checked")
+            then (name) => (not @conditions.conditionsHidden[name]? or name in @columnNamesMeasured)
             else (name) => true
         idx = 0
         for name in @columnNames
@@ -829,6 +880,29 @@ initChartUI = ->
 
 
 
+class BatchesTable extends CompositeElement
+    constructor: (@baseElement, @planner) ->
+        super @baseElement
+
+    load: =>
+        @dataTable = $(@baseElement).dataTable
+            sDom: '<"H"fir>t<"F"lp>'
+            bDestroy: true
+            bLengthChange: false
+            bPaginate: false
+            bAutoWidth: true
+            bProcessing: true
+            bServerSide: true
+            sAjaxSource: "#{ExpKitServiceBaseURL}/api/batches.DataTables"
+            bScrollInfinite: true
+            bScrollCollapse: true
+            sScrollY: "200px"
+            bSort: false
+            bStateSave: true
+            # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
+            fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
+            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
+
 # initialize UI
 $ ->
     # make things visible to the outside world
@@ -841,11 +915,12 @@ $ ->
         ExpKit.results = new ResultsTable $("#results-table"),
             ExpKit.conditions, ExpKit.measurements,
             toggleIncludeEmpty          : $("#results-include-empty")
-            toggleHideInactiveConditions: $("#results-hide-inactive-conditions")
-            toggleWithoutAggregation    : $("#results-without-aggregation")
+            toggleShowHiddenConditions  : $("#results-show-hidden-conditions")
             buttonResetColumnOrder      : $("#results-reset-column-order")
             containerForStateDisplay    : $("#results")
         ExpKit.results.load()
+    ExpKit.batches = new BatchesTable $("#batches-table"), null
+    ExpKit.batches.load()
     do initNavBar
     do initChartUI
 
