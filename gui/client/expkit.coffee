@@ -889,11 +889,11 @@ class BatchesTable extends CompositeElement
             sDom: '<"H"fir>t<"F"lp>'
             bDestroy: true
             bLengthChange: false
-            bPaginate: false
             bAutoWidth: true
             bProcessing: true
             bServerSide: true
             sAjaxSource: "#{ExpKitServiceBaseURL}/api/batches.DataTables"
+            #bPaginate: false
             bScrollInfinite: true
             bScrollCollapse: true
             sScrollY: "200px"
