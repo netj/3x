@@ -6,6 +6,7 @@
 ###
 express = require "express"
 child_process = require "child_process"
+async = require "async"
 Lazy = require "lazy"
 _ = require "underscore"
 
@@ -84,26 +85,39 @@ normalizeNamedColumnLines = (
 ###
 # CLI helpers
 ###
-cli = (cmd, args, withOut, onEnd
+cliBare = (cmd, args, withOut, onEnd
         , withErr = (err, next) -> err.join next
 ) ->
     console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
     p = child_process.spawn cmd, args
     _code = null; _result = null; _error = null
-    tryEnd = -> onEnd _code, _error, _result... if _code? and _error? and _result?
+    tryEnd = ->
+        if _code? and _error? and _result?
+            _error = null unless _error?.length > 0
+            onEnd _code, _error, _result...
     withOut Lazy(p.stdout).lines.map(String), (result...) -> _result = result; do tryEnd
-    withErr Lazy(p.stderr).lines.map(String), (error...)  -> _error  = error ; do tryEnd
+    withErr Lazy(p.stderr).lines.map(String), (error)     -> _error  = error ; do tryEnd
     p.on "exit",                              (code)      -> _code   = code  ; do tryEnd
 
 handleNonZeroExitCode = (res, next) -> (code, err, result...) ->
     if code is 0
-        next err, result...
+        next null, result...
     else
-        res.send 500, err?.join "\n" ? err
+        res.send 500, (err?.join "\n") ? err
+        next err, result...
 
-cliEnv = (env, cmd, args, rest...) ->
+cliBareEnv = (env, cmd, args, rest...) ->
     envArgs = ("#{name}=#{value}" for name,value of env)
-    cli "env", [envArgs..., cmd, args...], rest...
+    cliBare "env", [envArgs..., cmd, args...], rest...
+
+cli    = (res,      cmd, args, withOut, onEnd, withErr) -> (next) ->
+    cliBare         cmd, args, withOut, (handleNonZeroExitCode res, next), withErr
+
+cliEnv = (res, env, cmd, args, withOut, onEnd, withErr) -> (next) ->
+    cliBareEnv env, cmd, args, withOut, (handleNonZeroExitCode res, next), withErr
+
+respondJSON = (res) -> (err, result) ->
+    res.json result unless err
 
 
 
@@ -119,8 +133,8 @@ app.get "/api/*", (req, res, next) ->
     next()
 
 app.get "/api/conditions", (req, res) ->
-    cli "exp-conditions", ["-v"]
-        , ((lazyLines, next) -> lazyLines
+    cli(res, "exp-conditions", ["-v"]
+        , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
                         [name, value] = line.split "=", 2
@@ -131,13 +145,12 @@ app.get "/api/conditions", (req, res) ->
                             ]
                     )
                 .join (pairs) -> next (_.object pairs)
-            )
-        , handleNonZeroExitCode res, (err, conditions) ->
-            res.json conditions
+    ) (err, conditions) ->
+        res.json conditions unless err
 
 app.get "/api/measurements", (req, res) ->
-    cli "exp-measures", []
-        , ((lazyLines, next) -> lazyLines
+    cli(res, "exp-measures", []
+        , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
                     [name, type] = line.split ":", 2
@@ -147,8 +160,8 @@ app.get "/api/measurements", (req, res) ->
                         ]
                 )
                 .join (pairs) -> next (_.object pairs)
-            )
-        , handleNonZeroExitCode res, (err, measurements) ->
+    ) (err, measurements) ->
+        unless err
             measurements[RUN_COLUMN_NAME] =
                 type: "nominal"
             res.json measurements
@@ -164,59 +177,55 @@ app.get "/api/results", (req, res) ->
     for name,values of conditions
         if values?.length > 0
             args.push "#{name}=#{values.join ","}"
-    cli "exp-results", args
-        , (normalizeNamedColumnLines (line) ->
-            [run, columns...] = line.split /\s+/
-            ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
-        )
-        , handleNonZeroExitCode res, (err, results) ->
-            res.json results
+    cli(res, "exp-results", args
+        , normalizeNamedColumnLines (line) ->
+                [run, columns...] = line.split /\s+/
+                ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
+    ) (err, results) ->
+        res.json results unless err
 
 app.get "/api/run/batch.DataTables", (req, res) ->
     query = req.param("sSearch") ? ""
-    # TODO don't nest these, try to do them in parallel
-    cliEnv {
-        LIMIT:  req.param("iDisplayLength")
-        OFFSET: req.param("iDisplayStart")
-    }, "exp-batches", ["-l", query]
-        , ((lazyLines, next) ->
-            lazyLines
-                .filter((line) -> line isnt "")
-                .map((line) -> line.split /\t/)
-                .join next
-            )
-        , handleNonZeroExitCode res, (err, table) ->
-            cli "exp-batches", ["-c", query]
-                , ((lazyLines, next) ->
+    async.parallel [
+            cliEnv res, {
+                LIMIT:  req.param("iDisplayLength") ? -1
+                OFFSET: req.param("iDisplayStart") ? 0
+            }, "exp-batches", ["-l", query]
+                , (lazyLines, next) ->
+                    lazyLines
+                        .filter((line) -> line isnt "")
+                        .map((line) -> line.split /\t/)
+                        .join next
+        ,
+            cli res, "exp-batches", ["-c", query]
+                , (lazyLines, next) ->
                     lazyLines
                         .take(1)
                         .join ([line]) -> next (+line.trim())
-                    )
-                , handleNonZeroExitCode res, (err, filteredCount) ->
-                    cli "exp-batches", ["-c"]
-                        , ((lazyLines, next) ->
-                            lazyLines
-                                .take(1)
-                                .join ([line]) -> next (+line.trim())
-                            )
-                        , handleNonZeroExitCode res, (err, totalCount) ->
-                            res.json
-                                sEcho: req.param("sEcho")
-                                iTotalRecords: totalCount
-                                iTotalDisplayRecords: filteredCount
-                                aaData: table
+        ,
+            cli res, "exp-batches", ["-c"]
+                , (lazyLines, next) ->
+                    lazyLines
+                        .take(1)
+                        .join ([line]) -> next (+line.trim())
+        ], (err, [table, filteredCount, totalCount]) ->
+            unless err
+                res.json
+                    sEcho: req.param("sEcho")
+                    iTotalRecords: totalCount
+                    iTotalDisplayRecords: filteredCount
+                    aaData: table
 
 app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId
-    cli "exp-status", [batchId]
-        , (normalizeNamedColumnLines (line) ->
+    cli(res, "exp-status", [batchId]
+        , normalizeNamedColumnLines (line) ->
                 [state, columns..., sequence] = line.split /\s+/
                 sequence = +(sequence?.replace /^#/, "")
                 ["#{STATE_COLUMN_NAME}=#{state}", "#{SEQUENCE_COLUMN_NAME}=#{sequence}", columns...] if state
-            )
-        , handleNonZeroExitCode res, (err, result) ->
-            res.json result
+    ) (err, batch) ->
+        res.json batch unless err
 
 
 app.listen expKitPort, ->

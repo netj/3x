@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {
     "lazy": "1.0.8",
+    "async": "0.1.22",
     "express": "3.0.2",
     "moment": "1.7.2",
     "time": "0.8.3",
