@@ -6,6 +6,8 @@
 ###
 express = require "express"
 child_process = require "child_process"
+Lazy = require "lazy"
+_ = require "underscore"
 
 expKitPort = parseInt process.argv[2] ? 0
 
@@ -49,57 +51,61 @@ app.configure "production", ->
 # arrays with a header array:
 # "k1=v1 k2=v2\nk1=v3 k3=v4\n..." ->
 #   { names:[k1,k2,k3,...], rows:[[v1,v2,null],[v3,null,v4],...] }
-normalizeNamedColumnLines = (streamOfLines, next
-    , lineToKVPairs = (line) -> line.split /\s+/
-) ->
+normalizeNamedColumnLines = (
+        lineToKVPairs = (line) -> line.split /\s+/
+) -> (lazyLines, next) ->
     columnIndex = {}
     columnNames = []
-    rows = []
-    for line in String(streamOfLines).split /\n/
-        columns = lineToKVPairs line
-        continue unless columns
-        row = []
-        for column in columns
-            [name, value] = column.split "=", 2
-            continue unless name and value?
-            idx = columnIndex[name]
-            unless idx?
-                idx = columnNames.length
-                columnIndex[name] = idx
-                columnNames.push name
-            row[idx] = value
-        rows.push row
-    next {
-        names: columnNames
-        rows: rows
-    }
+    lazyLines
+        .map(String)
+        .map(lineToKVPairs)
+        .filter((x) -> x?)
+        .map((columns) ->
+            row = []
+            for column in columns
+                [name, value] = column.split "=", 2
+                continue unless name and value?
+                idx = columnIndex[name]
+                unless idx?
+                    idx = columnNames.length
+                    columnIndex[name] = idx
+                    columnNames.push name
+                row[idx] = value
+            row
+        )
+        .join((rows) ->
+            next {
+                names: columnNames
+                rows: rows
+            }
+        )
 
-cliIO = (cmd, args, onOut, onEnd=null, onErr=null) ->
+
+###
+# CLI helpers
+###
+cli = (cmd, args, withOut, onEnd
+        , withErr = (err, next) -> err.join next
+) ->
     console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
     p = child_process.spawn cmd, args
-    p.stdout.on "data", onOut
-    p.on "exit", onEnd if onEnd?
-    p.stderr.on "data", onErr if onErr?
+    _code = null; _result = null; _error = null
+    tryEnd = -> onEnd _code, _error, _result... if _code? and _error? and _result?
+    withOut Lazy(p.stdout).lines.map(String), (result...) -> _result = result; do tryEnd
+    withErr Lazy(p.stderr).lines.map(String), (error...)  -> _error  = error ; do tryEnd
+    p.on "exit",                              (code)      -> _code   = code  ; do tryEnd
 
-cli = (cmd, args, onEnd) ->
-    stdoutBuf = ""
-    stderrBuf = ""
-    cliIO cmd, args
-        , (data) ->
-            stdoutBuf += data
-        , (code) ->
-            onEnd code, stdoutBuf, stderrBuf
-        , (data) ->
-            stderrBuf += data
-cliEnv = (env, cmd, args, onEnd) ->
-    envArgs = ("#{name}=#{value}" for name,value of env)
-    cli "env", [envArgs..., cmd, args...], onEnd
-
-handleCLIError = (res, next) -> (code, stdout, stderr) ->
-    if code == 0
-        next code, stdout, stderr
+handleNonZeroExitCode = (res, next) -> (code, err, result...) ->
+    if code is 0
+        next err, result...
     else
-        res.send 500, stderr
+        res.send 500, err?.join "\n" ? err
+
+cliEnv = (env, cmd, args, rest...) ->
+    envArgs = ("#{name}=#{value}" for name,value of env)
+    cli "env", [envArgs..., cmd, args...], rest...
+
+
 
 # Allow Cross Origin AJAX Requests
 app.options "/api/*", (req, res) ->
@@ -114,28 +120,38 @@ app.get "/api/*", (req, res, next) ->
 
 app.get "/api/conditions", (req, res) ->
     cli "exp-conditions", ["-v"]
-        , handleCLIError res, (code, stdout, stderr) ->
-            conditions = {}
-            for line in stdout.split "\n" when line.length > 0
-                [name, value] = line.split "=", 2
-                if name and value
-                    conditions[name] =
-                        values: value?.split ","
-                        type: "nominal" # FIXME extend exp-conditions to output datatype as well (-t?)
-            res.json(conditions)
+        , ((lazyLines, next) -> lazyLines
+                .filter((line) -> line.length > 0)
+                .map((line) ->
+                        [name, value] = line.split "=", 2
+                        if name and value
+                            [name,
+                                values: value?.split ","
+                                type: "nominal" # FIXME extend exp-conditions to output datatype as well (-t?)
+                            ]
+                    )
+                .join (pairs) -> next (_.object pairs)
+            )
+        , handleNonZeroExitCode res, (err, conditions) ->
+            res.json conditions
 
 app.get "/api/measurements", (req, res) ->
     cli "exp-measures", []
-        , handleCLIError res, (code, stdout, stderr) ->
-            measurements = {}
+        , ((lazyLines, next) -> lazyLines
+                .filter((line) -> line.length > 0)
+                .map((line) ->
+                    [name, type] = line.split ":", 2
+                    if name?
+                        [name,
+                            type: type
+                        ]
+                )
+                .join (pairs) -> next (_.object pairs)
+            )
+        , handleNonZeroExitCode res, (err, measurements) ->
             measurements[RUN_COLUMN_NAME] =
                 type: "nominal"
-            for line in stdout.split "\n" when line.length > 0
-                [name, type] = line.split ":", 2
-                if name?
-                    measurements[name] =
-                        type: type
-            res.json(measurements)
+            res.json measurements
 
 app.get "/api/results", (req, res) ->
     args = []
@@ -149,13 +165,12 @@ app.get "/api/results", (req, res) ->
         if values?.length > 0
             args.push "#{name}=#{values.join ","}"
     cli "exp-results", args
-        , handleCLIError res, (code, stdout, stderr) ->
-            normalizeNamedColumnLines stdout
-                , (results) ->
-                    res.json results
-                , (line) ->
-                    [run, columns...] = line.split /\s+/
-                    ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
+        , (normalizeNamedColumnLines (line) ->
+            [run, columns...] = line.split /\s+/
+            ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
+        )
+        , handleNonZeroExitCode res, (err, results) ->
+            res.json results
 
 app.get "/api/run/batch.DataTables", (req, res) ->
     query = req.param("sSearch") ? ""
@@ -164,16 +179,27 @@ app.get "/api/run/batch.DataTables", (req, res) ->
         LIMIT:  req.param("iDisplayLength")
         OFFSET: req.param("iDisplayStart")
     }, "exp-batches", ["-l", query]
-        , handleCLIError res, (code, stdout, stderr) ->
-            table =
-                for line in stdout.trim().split(/\n/) when line != ""
-                    col for col in line.split(/\t/)
+        , ((lazyLines, next) ->
+            lazyLines
+                .filter((line) -> line isnt "")
+                .map((line) -> line.split /\t/)
+                .join next
+            )
+        , handleNonZeroExitCode res, (err, table) ->
             cli "exp-batches", ["-c", query]
-                , handleCLIError res, (code, stdout, stderr) ->
-                    filteredCount = +stdout.trim()
+                , ((lazyLines, next) ->
+                    lazyLines
+                        .take(1)
+                        .join ([line]) -> next (+line.trim())
+                    )
+                , handleNonZeroExitCode res, (err, filteredCount) ->
                     cli "exp-batches", ["-c"]
-                        , handleCLIError res, (code, stdout, stderr) ->
-                            totalCount = +stdout.trim()
+                        , ((lazyLines, next) ->
+                            lazyLines
+                                .take(1)
+                                .join ([line]) -> next (+line.trim())
+                            )
+                        , handleNonZeroExitCode res, (err, totalCount) ->
                             res.json
                                 sEcho: req.param("sEcho")
                                 iTotalRecords: totalCount
@@ -184,14 +210,13 @@ app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId
     cli "exp-status", [batchId]
-        , handleCLIError res, (code, stdout, stderr) ->
-            normalizeNamedColumnLines stdout
-                , (results) ->
-                    res.json results
-                , (line) ->
-                    [state, columns..., sequence] = line.split /\s+/
-                    sequence = +(sequence?.replace /^#/, "")
-                    ["#{STATE_COLUMN_NAME}=#{state}", "#{SEQUENCE_COLUMN_NAME}=#{sequence}", columns...] if state
+        , (normalizeNamedColumnLines (line) ->
+                [state, columns..., sequence] = line.split /\s+/
+                sequence = +(sequence?.replace /^#/, "")
+                ["#{STATE_COLUMN_NAME}=#{state}", "#{SEQUENCE_COLUMN_NAME}=#{sequence}", columns...] if state
+            )
+        , handleNonZeroExitCode res, (err, result) ->
+            res.json result
 
 
 app.listen expKitPort, ->

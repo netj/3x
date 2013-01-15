@@ -52,6 +52,8 @@
     * scatter plot
     * small multiple
 
+* allow multiple instances of GUI with diff port (pid file is the singleton enforcer right now)
+
 * easy creating/removing of condition values
 
 * list of runs and batches

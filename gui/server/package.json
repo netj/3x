@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "lazy": "1.0.8",
     "express": "3.0.2",
     "moment": "1.7.2",
     "time": "0.8.3",
