@@ -892,7 +892,7 @@ class BatchesTable extends CompositeElement
             bAutoWidth: true
             bProcessing: true
             bServerSide: true
-            sAjaxSource: "#{ExpKitServiceBaseURL}/api/batches.DataTables"
+            sAjaxSource: "#{ExpKitServiceBaseURL}/api/run/batch.DataTables"
             #bPaginate: false
             bScrollInfinite: true
             bScrollCollapse: true

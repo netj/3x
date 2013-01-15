@@ -5,6 +5,7 @@ error                       $TOOLSDIR/
 customize                   $TOOLSDIR/
 be-quiet                    $TOOLSDIR/
 limitOffset                 $TOOLSDIR/
+serialOnEachLine            $TOOLSDIR/
 
 exp-findroot                $TOOLSDIR/
 exp-hack                    $TOOLSDIR/

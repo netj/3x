@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# serialOnEachLine -- add a serial number to each line
+# Usage: serialOnEachLine INPUT >OUTPUT
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-14
+set -eu
+
+f=$1
+cols=$(awk <"$f" '{w=length($0);if(w>m){m=w}} END{print m}')
+rows=$(wc -l <"$f")
+awk <"$f" '{printf "%-'$cols's #%0'${#rows}'d\n", $0, ++seq}'

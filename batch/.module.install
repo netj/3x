@@ -1,4 +1,5 @@
 exp-start               $TOOLSDIR/
 new-batch-id            $TOOLSDIR/
 
+exp-status              $TOOLSDIR/
 exp-batches             $TOOLSDIR/

@@ -57,12 +57,6 @@ if [ ! -s remaining ]; then
         exit 2
     else
         msg "Initializing $EXPBATCH"
-        serialOnEachLine() {
-            local f=$1
-            local cols=$(awk <"$f" '{w=length($0);if(w>m){m=w}} END{print m}')
-            local rows=$(wc -l <"$f")
-            awk <"$f" '{printf "%-'$cols's #%0'${#rows}'d\n", $0, ++seq}'
-        }
         serialOnEachLine plan >remaining
         chmod a-w plan
         wc -l <plan >count

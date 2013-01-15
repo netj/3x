@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# exp-status -- display status of an experiment batch
+# Usage: exp status BATCH
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-14
+set -eu
+
+[ $# -eq 1 ] || usage "$0" "Exactly one BATCH must be given"
+
+Batch=$1
+
+: ${EXPROOT:=$(exp-findroot)}
+cd "$EXPROOT"
+
+cd run/batch/"$Batch"
+
+{
+    hasProgress=false
+    # runs already finished
+    if [ -r done ]; then
+        sed 's:^exp run :DONE :' <"done"
+        hasProgress=true
+    fi
+
+    # runs still running
+    for running in running.*; do
+        [ -d "$running" ] || continue
+        # TODO see if it's actually running
+        sed 's:^exp run :RUNNING :' <"$running"/cmdln
+        # TODO add column for the actual runId?
+        hasProgress=true
+    done
+
+    # runs yet to be run
+    if [ -r remaining ]; then
+        sed 's:^exp run :REMAINING :' <"remaining"
+        hasProgress=true
+    fi
+
+    # if there's only a plan, show them as remaining
+    if ! $hasProgress; then
+        serialOnEachLine "plan" |
+        sed 's:^exp run :REMAINING :'
+    fi
+} | column -t

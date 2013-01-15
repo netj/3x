@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # exp-batches -- list experiment batches
-# Usage: exp batches [BATCH_FILTER]...
+# Usage: exp batches [-OPTIONS] [BATCH_FILTER]...
+# 
+# Lists all batches whose name contains BATCH_FILTER from $EXPROOT/run/batch/.
+# 
+# To see detailed listing of each batch:
+#     exp batches -l
+# 
+# To simply count the number of batches:
+#     exp batches -c BATCH_FILTER
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-12

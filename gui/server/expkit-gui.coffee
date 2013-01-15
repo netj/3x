@@ -11,7 +11,8 @@ expKitPort = parseInt process.argv[2] ? 0
 
 
 RUN_COLUMN_NAME = "run#"
-
+STATE_COLUMN_NAME = "state#"
+SEQUENCE_COLUMN_NAME = "sequence#"
 
 # use text/plain MIME type for ExpKit artifacts in run/
 express.static.mime.define
@@ -44,6 +45,34 @@ app.configure "development", ->
 app.configure "production", ->
     app.use express.errorHandler()
 
+# convert lines of multiple key=value pairs (or named columns) to an array of
+# arrays with a header array:
+# "k1=v1 k2=v2\nk1=v3 k3=v4\n..." ->
+#   { names:[k1,k2,k3,...], rows:[[v1,v2,null],[v3,null,v4],...] }
+normalizeNamedColumnLines = (streamOfLines, next
+    , lineToKVPairs = (line) -> line.split /\s+/
+) ->
+    columnIndex = {}
+    columnNames = []
+    rows = []
+    for line in String(streamOfLines).split /\n/
+        columns = lineToKVPairs line
+        continue unless columns
+        row = []
+        for column in columns
+            [name, value] = column.split "=", 2
+            continue unless name and value?
+            idx = columnIndex[name]
+            unless idx?
+                idx = columnNames.length
+                columnIndex[name] = idx
+                columnNames.push name
+            row[idx] = value
+        rows.push row
+    next {
+        names: columnNames
+        rows: rows
+    }
 
 cliIO = (cmd, args, onOut, onEnd=null, onErr=null) ->
     console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
@@ -121,29 +150,14 @@ app.get "/api/results", (req, res) ->
             args.push "#{name}=#{values.join ","}"
     cli "exp-results", args
         , handleCLIError res, (code, stdout, stderr) ->
-            columnIndex = {}
-            columnNames = [RUN_COLUMN_NAME]
-            rows = []
-            for line in stdout.split /\n/
-                [run, columns...] = line.split /\s+/
-                continue unless run
-                row = [run]
-                for column in columns
-                    [name, value] = column.split "=", 2
-                    continue unless name
-                    idx = columnIndex[name]
-                    unless idx?
-                        idx = columnNames.length
-                        columnIndex[name] = idx
-                        columnNames.push name
-                    row[idx] = value
-                rows.push row
-            res.json(
-                names: columnNames
-                rows: rows
-            )
+            normalizeNamedColumnLines stdout
+                , (results) ->
+                    res.json results
+                , (line) ->
+                    [run, columns...] = line.split /\s+/
+                    ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
 
-app.get "/api/batches.DataTables", (req, res) ->
+app.get "/api/run/batch.DataTables", (req, res) ->
     query = req.param("sSearch") ? ""
     # TODO don't nest these, try to do them in parallel
     cliEnv {
@@ -165,6 +179,19 @@ app.get "/api/batches.DataTables", (req, res) ->
                                 iTotalRecords: totalCount
                                 iTotalDisplayRecords: filteredCount
                                 aaData: table
+
+app.get "/api/run/batch/:batchId", (req, res) ->
+    batchId = req.param("batchId")
+    # TODO sanitize batchId
+    cli "exp-status", [batchId]
+        , handleCLIError res, (code, stdout, stderr) ->
+            normalizeNamedColumnLines stdout
+                , (results) ->
+                    res.json results
+                , (line) ->
+                    [state, columns..., sequence] = line.split /\s+/
+                    sequence = +(sequence?.replace /^#/, "")
+                    ["#{STATE_COLUMN_NAME}=#{state}", "#{SEQUENCE_COLUMN_NAME}=#{sequence}", columns...] if state
 
 
 app.listen expKitPort, ->
