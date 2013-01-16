@@ -218,6 +218,39 @@ initNavBar = ->
     )
 
 
+initBaseURLControl = ->
+    urlModalToggler = $("#url")
+    urlModal = $("#url-switch")
+    inputHost = urlModal.find(".url-input-host")
+    inputPort = urlModal.find(".url-input-port")
+    btnPrimary = urlModal.find(".btn-primary")
+
+    urlModalToggler
+        .text(ExpKitServiceBaseURL)
+        .click((e) -> this.blur())
+    urlModal.find("input").keyup (e) ->
+        switch e.keyCode
+            when 14, 13 # enter or return
+                btnPrimary.click()
+    urlModal.on "show", ->
+        m = ExpKitServiceBaseURL.match ///
+            ^http://
+            ([^/]+)
+            :
+            (\d+)
+            ///
+        inputHost.val(m[1])
+        inputPort.val(m[2])
+    urlModal.on "shown", -> inputPort.focus()
+    btnPrimary.click (e) ->
+        url = "http://#{inputHost.val()}:#{inputPort.val()}"
+        if url isnt ExpKitServiceBaseURL
+            $("#url").text(url)
+            ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL = url
+            do location.reload # TODO find a nice way to avoid reload?
+        urlModal.modal "hide"
+
+
 # TODO find a cleaner way to do this, i.e., leveraging jQuery
 class CompositeElement
     constructor: (@baseElement) ->
@@ -1035,4 +1068,5 @@ $ ->
     ExpKit.batches.load()
     do initNavBar
     do initChartUI
+    do initBaseURLControl
 

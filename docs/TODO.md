@@ -52,6 +52,8 @@
     * scatter plot
     * small multiple
 
+* Title with .exp/description or basename of the $EXPROOT and ExpKitServiceBaseURL
+* DONE ExpKitServiceBaseURL change option
 * allow multiple instances of GUI with diff port (pid file is the singleton enforcer right now)
 
 * easy creating/removing of condition values
@@ -67,7 +69,6 @@
 
 * Use hash for representing GUI state as URL and using the browser history and back/forward
 
-* Title with .exp/description
 * DONE add right margin to icons in h2 instead of space
 
 ## Wild ideas
