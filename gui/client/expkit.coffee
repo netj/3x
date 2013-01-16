@@ -207,11 +207,13 @@ class Aggregation
                 _.identity
 
 
+simplifyURL = (url) ->
+    url.replace /^[^:]+:\/\//, ""
 
 initTitle = ->
     $.getJSON("#{ExpKitServiceBaseURL}/api/description")
         .success((exp) ->
-            document.title = "ExpKit — #{exp.name} — #{ExpKitServiceBaseURL}"
+            document.title = "ExpKit — #{exp.name} — #{simplifyURL ExpKitServiceBaseURL}"
             $("#url").attr
                 title: "#{exp.fileSystemPath}#{
                     unless exp.description? then ""
@@ -239,8 +241,7 @@ initBaseURLControl = ->
     btnPrimary = urlModal.find(".btn-primary")
 
     urlModalToggler
-        .text(ExpKitServiceBaseURL)
-        .click((e) -> this.blur())
+        .text(simplifyURL ExpKitServiceBaseURL)
     urlModal.find("input").keyup (e) ->
         switch e.keyCode
             when 14, 13 # enter or return
@@ -251,14 +252,15 @@ initBaseURLControl = ->
             ([^/]+)
             :
             (\d+)
-            ///
+            ///i
         inputHost.val(m[1])
         inputPort.val(m[2])
     urlModal.on "shown", -> inputPort.focus()
+    urlModal.on "hidden", -> urlModalToggler.blur()
     btnPrimary.click (e) ->
         url = "http://#{inputHost.val()}:#{inputPort.val()}"
         if url isnt ExpKitServiceBaseURL
-            $("#url").text(url)
+            $("#url").text(simplifyURL url)
             ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL = url
             do location.reload # TODO find a nice way to avoid reload?
         urlModal.modal "hide"
