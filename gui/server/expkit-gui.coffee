@@ -5,6 +5,7 @@
 # Created: 2012-11-11
 ###
 express = require "express"
+fs = require "fs"
 child_process = require "child_process"
 async = require "async"
 Lazy = require "lazy"
@@ -131,6 +132,16 @@ app.get "/api/*", (req, res, next) ->
     res.set
         "Access-Control-Allow-Origin": "*"
     next()
+
+app.get "/api/description", (req, res) ->
+    [basename] = process.env.EXPROOT.match /[^/]+$/
+    desc = String(fs.readFileSync "#{process.env.EXPROOT}/.exp/description").trim()
+    if desc == "Unnamed repository; edit this file 'description' to name the repository."
+        desc = null
+    res.json
+        name: basename
+        fileSystemPath: process.env.EXPROOT
+        description: desc
 
 app.get "/api/conditions", (req, res) ->
     cli(res, "exp-conditions", ["-v"]

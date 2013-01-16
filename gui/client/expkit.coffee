@@ -207,6 +207,19 @@ class Aggregation
                 _.identity
 
 
+
+initTitle = ->
+    $.getJSON("#{ExpKitServiceBaseURL}/api/description")
+        .success((exp) ->
+            document.title = "ExpKit — #{exp.name} — #{ExpKitServiceBaseURL}"
+            $("#url").attr
+                title: "#{exp.fileSystemPath}#{
+                    unless exp.description? then ""
+                    else "\n#{exp.description}"
+                }"
+        )
+
+
 updateScrollSpy = ->
     $('[data-spy="scroll"]').each(-> $(this).scrollspy('refresh'))
 
@@ -1066,6 +1079,7 @@ $ ->
     ExpKit.runs = new RunsTable $("#runs-table"), ExpKit.conditions
     ExpKit.batches = new BatchesTable $("#batches-table"), ExpKit.runs
     ExpKit.batches.load()
+    do initTitle
     do initNavBar
     do initChartUI
     do initBaseURLControl
