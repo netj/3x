@@ -210,9 +210,11 @@ class Aggregation
 simplifyURL = (url) ->
     url.replace /^[^:]+:\/\//, ""
 
+ExpDescriptor = null
 initTitle = ->
     $.getJSON("#{ExpKitServiceBaseURL}/api/description")
         .success((exp) ->
+            ExpDescriptor = exp
             hostport =
                 if exp.hostname? and exp.port? then "#{exp.hostname}:#{exp.port}"
                 else simplifyURL ExpKitServiceBaseURL
@@ -257,8 +259,8 @@ initBaseURLControl = ->
             :
             (\d+)
             ///i
-        inputHost.val(m[1])
-        inputPort.val(m[2])
+        inputHost.val(m?[1] ? ExpDescriptor.hostname)
+        inputPort.val(m?[2] ? ExpDescriptor.port)
     urlModal.on "shown", -> inputPort.focus()
     urlModal.on "hidden", -> urlModalToggler.blur()
     btnPrimary.click (e) ->
