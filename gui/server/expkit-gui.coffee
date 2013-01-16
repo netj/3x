@@ -6,6 +6,7 @@
 ###
 express = require "express"
 fs = require "fs"
+os = require "os"
 child_process = require "child_process"
 async = require "async"
 Lazy = require "lazy"
@@ -140,8 +141,10 @@ app.get "/api/description", (req, res) ->
         desc = null
     res.json
         name: basename
-        fileSystemPath: process.env.EXPROOT
         description: desc
+        fileSystemPath: process.env.EXPROOT
+        hostname: os.hostname()
+        port: expKitPort
 
 app.get "/api/conditions", (req, res) ->
     cli(res, "exp-conditions", ["-v"]

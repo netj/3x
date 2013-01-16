@@ -213,12 +213,16 @@ simplifyURL = (url) ->
 initTitle = ->
     $.getJSON("#{ExpKitServiceBaseURL}/api/description")
         .success((exp) ->
-            document.title = "ExpKit — #{exp.name} — #{simplifyURL ExpKitServiceBaseURL}"
-            $("#url").attr
-                title: "#{exp.fileSystemPath}#{
-                    unless exp.description? then ""
-                    else "\n#{exp.description}"
-                }"
+            hostport =
+                if exp.hostname? and exp.port? then "#{exp.hostname}:#{exp.port}"
+                else simplifyURL ExpKitServiceBaseURL
+            document.title = "ExpKit — #{exp.name} — #{hostport}"
+            $("#url").text("#{hostport}")
+                .attr
+                    title: "#{exp.fileSystemPath}#{
+                        unless exp.description? then ""
+                        else "\n#{exp.description}"
+                    }"
         )
 
 
