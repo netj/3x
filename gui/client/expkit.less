@@ -186,6 +186,16 @@ body > .navbar .brand .icon {
 }
 
 #runs-table {
+  thead th.fixed, tbody td.state {
+    text-align: center;
+  }
+  tbody td.serial {
+    text-align: right;
+  }
+  tbody {
+    tr.DONE    { background-color: @grayLighter; }
+    tr.RUNNING { background-color: @infoBackground; }
+  }
 }
 
 // vim:sw=2:sts=2

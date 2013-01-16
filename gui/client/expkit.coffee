@@ -35,8 +35,12 @@ $.views.tags({
 `
 jQuery.extend( jQuery.fn.dataTableExt.oSort, {
     "num-html-pre": function ( a ) {
-        var x = a.replace( /<[\s\S]*?>/g, "" );
-        return parseFloat( x );
+        if (typeof a == "number") {
+            return a;
+        } else {
+            var x = String(a).replace( /<[\s\S]*?>/g, "" );
+            return parseFloat( x );
+        }
     },
  
     "num-html-asc": function ( a, b ) {
@@ -89,7 +93,7 @@ jQuery.fn.dataTableExt.aTypes.unshift( function ( sData )
 } );
 `
 
-safeId = (str) -> str.replace(/[#-]/g, "-")
+safeId = (str) -> str.replace(/[^A-Za-z0-9_-]/g, "-")
 
 
 RUN_COLUMN_NAME = "run#"
@@ -898,6 +902,7 @@ class BatchesTable extends CompositeElement
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
             bStateSave: true
+            # TODO fnRowCallback: (row, data) -> # TODO add controls
         tbody = @baseElement.find("tbody")
         planner = @planner
         tbody.find("tr").find("td").live("click", (e) ->
@@ -919,8 +924,9 @@ class RunsTable extends CompositeElement
     @HEAD_SKELETON: $("""
         <script id="runs-table-head-skeleton" type="text/x-jsrender">
           <tr>
-            <th>Order</th>
-            <th>State</th>
+            <th class="fixed"></th>
+            <th class="fixed">#</th>
+            <th class="fixed">State</th>
             {{for columns}}
             <th><span>{{>name}}</span></th>
             {{/for}}
@@ -929,9 +935,10 @@ class RunsTable extends CompositeElement
         """)
     @ROW_SKELETON: $("""
         <script id="runs-table-row-skeleton" type="text/x-jsrender">
-          <tr class="run">
-            <td>{{>sequence}}</td>
-            <td>{{>state}}</td>
+          <tr class="run {{>state}}" id="{{>~batchId}}-{{>serial}}">
+            <td>{{>ordinal}}</td>
+            <td class="serial">{{>serial}}</td>
+            <td class="state"><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></td>
             {{for columns}}
             <td>{{>value}}</td>
             {{/for}}
@@ -963,14 +970,24 @@ class RunsTable extends CompositeElement
         # populate table body
         @baseElement.find("tbody").remove()
         tbody = $("<tbody>").appendTo(@baseElement)
-        for row in data.rows
+        extraData =
+            batchId: "run"
+        ICON_BY_STATE =
+            DONE: "ok"
+            RUNNING: "spin icon-spinner"
+            REMAINING: "time"
+        ordUB = data.rows.length
+        for row,ord in data.rows
             metadata = {}
             metadata[name] = row[idx] for name,idx of metaColumnNames
-            tbody.append(RunsTable.ROW_SKELETON.render(_.extend metadata,
+            tbody.append(RunsTable.ROW_SKELETON.render(_.extend(metadata,
+                    ordinal: ord
+                    ordinalGroup: if metadata.state == "REMAINING" then ordUB else ord
+                    icon: ICON_BY_STATE[metadata.state]
                     columns:
                         for name in columnNames
                             value: row[columnIndex[name]]
-                ))
+                ), extraData))
         # make it a DataTable
         @dataTable = $(@baseElement).dataTable
             sDom: 'R<"H"fir>t<"F"lp>'
@@ -978,11 +995,23 @@ class RunsTable extends CompositeElement
             bLengthChange: false
             bPaginate: false
             bAutoWidth: false
+            aaSortingFixed: [[2, "asc"]]
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
-            fnStateSave: (oSettings, oData) -> localStorage.runsDataTablesState = JSON.stringify oData
-            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.runsDataTablesState
+            fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
+            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
             bStateSave: true
-        # TODO with reordering possible
+        @dataTable.fnSort [[0, "asc"]]
+        # hide the first column of ordinals
+        colOrder = @dataTable._oPluginColReorder?.fnGetCurrentOrder?()
+        indexColumn = colOrder.indexOf(0)
+        @dataTable.fnSetColumnVis indexColumn, false
+        # with reordering possible
+        @dataTable.rowReordering
+            iIndexColumn: indexColumn
+        @dataTable.find("tbody").sortable
+            items:  "tr.REMAINING"
+            cancel: "tr:not(.REMAINING)"
+        @dataTable.find("tbody tr").disableSelection()
 
 
 # initialize UI

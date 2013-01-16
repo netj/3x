@@ -23,4 +23,10 @@ DataTables.ColReorder/media/js/ColReorder.js                                    
 DataTables.ColReorder/media/css/ColReorder.css                                          $GUIDIR/client/resource/DataTables/css/
 DataTables.ColReorder/media/images/insert.png                                           $GUIDIR/client/resource/DataTables/images/
 
+jquery-ui/ui/jquery.ui.core.js                                                          $GUIDIR/client/resource/
+jquery-ui/ui/jquery.ui.widget.js                                                        $GUIDIR/client/resource/
+jquery-ui/ui/jquery.ui.mouse.js                                                         $GUIDIR/client/resource/
+jquery-ui/ui/jquery.ui.sortable.js                                                      $GUIDIR/client/resource/
+DataTables.RowReorder/media/js/jquery.dataTables.rowReordering.js                       $GUIDIR/client/resource/
+
 d3/d3.js                                                $GUIDIR/client/resource/

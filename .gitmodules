@@ -25,3 +25,9 @@
 [submodule "gui/Font-Awesome"]
 	path = gui/Font-Awesome
 	url = https://github.com/FortAwesome/Font-Awesome.git
+[submodule "gui/jquery-ui"]
+	path = gui/jquery-ui
+	url = https://github.com/jquery/jquery-ui.git
+[submodule "gui/DataTables.RowReorder"]
+	path = gui/DataTables.RowReorder
+	url = https://github.com/netj/jquery-datatables-row-reordering.git

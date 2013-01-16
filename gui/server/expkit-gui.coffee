@@ -15,7 +15,7 @@ expKitPort = parseInt process.argv[2] ? 0
 
 RUN_COLUMN_NAME = "run#"
 STATE_COLUMN_NAME = "state#"
-SEQUENCE_COLUMN_NAME = "sequence#"
+SERIAL_COLUMN_NAME = "serial#"
 
 # use text/plain MIME type for ExpKit artifacts in run/
 express.static.mime.define
@@ -221,9 +221,9 @@ app.get "/api/run/batch/:batchId", (req, res) ->
     # TODO sanitize batchId
     cli(res, "exp-status", [batchId]
         , normalizeNamedColumnLines (line) ->
-                [state, columns..., sequence] = line.split /\s+/
-                sequence = +(sequence?.replace /^#/, "")
-                ["#{STATE_COLUMN_NAME}=#{state}", "#{SEQUENCE_COLUMN_NAME}=#{sequence}", columns...] if state
+                [state, columns..., serial] = line.split /\s+/
+                serial = +(serial?.replace /^#/, "")
+                ["#{STATE_COLUMN_NAME}=#{state}", "#{SERIAL_COLUMN_NAME}=#{serial}", columns...] if state
     ) (err, batch) ->
         res.json batch unless err
 
