@@ -523,7 +523,7 @@ class ResultsTable extends CompositeElement
         (
             if _.values(@conditions.conditionValues).some((vs) -> vs?.length > 0)
                 @optionElements.containerForStateDisplay?.addClass("loading")
-                $.get("#{ExpKitServiceBaseURL}/api/results",
+                $.getJSON("#{ExpKitServiceBaseURL}/api/results",
                     runs: []
                     batches: []
                     conditions: JSON.stringify @conditions.conditionValues
@@ -586,7 +586,7 @@ class ResultsTable extends CompositeElement
         _.delay (=> do @_display; deferred.resolve()), 10
         deferred
     _display: =>
-        columnIndex = {}; idx = 0; columnIndex[name] = idx++ for name in @results.names
+        columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
         @columnNamesGrouping =
             if @optionElements.toggleShowHiddenConditions?.is(":checked")
                 (name for name,value of @columnsToExpand when value)
@@ -662,9 +662,7 @@ class ResultsTable extends CompositeElement
         columnMetadata = {}
         thead.append(ResultsTable.HEAD_SKELETON.render(
             columns: (
-                idx = -1
-                for name in @columnNames
-                    idx++
+                for name,idx in @columnNames
                     isForGrouping = name in @columnNamesGrouping
                     # use aggregation type or the type of original data
                     type = (@columnAggregation[name]?.type unless isForGrouping) ?
@@ -705,9 +703,8 @@ class ResultsTable extends CompositeElement
         for row in @resultsForRendering
             tbody.append(ResultsTable.ROW_SKELETON.render(
                 columns: (
-                    idx = 0
-                    for name in @columnNames
-                        c = $.extend columnMetadata[name], row[idx++]
+                    for name,idx in @columnNames
+                        c = $.extend columnMetadata[name], row[idx]
                         c.formattedValue = c.formatter c.value
                         c
                 )
@@ -728,7 +725,6 @@ class ResultsTable extends CompositeElement
             # because otherwise @baseElement gets polluted by DataTables, and that
             # previous state will make it behave very weirdly.
             sDom: 'R<"H"fir>t<"F"lp>'
-            bStateSave: true
             bDestroy: true
             bLengthChange: false
             bPaginate: false
@@ -736,6 +732,7 @@ class ResultsTable extends CompositeElement
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.resultsDataTablesState
+            bStateSave: true
             oColReorder:
                 fnReorderCallback: => @optionElements.buttonResetColumnOrder?.toggleClass("disabled", @isColumnReordered())
         do @updateColumnVisibility
@@ -760,9 +757,8 @@ class ResultsTable extends CompositeElement
             unless @optionElements.toggleShowHiddenConditions?.is(":checked")
             then (name) => (not @conditions.conditionsHidden[name]? or name in @columnNamesMeasured)
             else (name) => true
-        idx = 0
-        for name in @columnNames
-            @dataTable.fnSetColumnVis (colOrder.indexOf idx++), (isVisible name), false
+        for name,idx in @columnNames
+            @dataTable.fnSetColumnVis (colOrder.indexOf idx), (isVisible name), false
         do @dataTable.fnDraw
 
 
@@ -898,10 +894,96 @@ class BatchesTable extends CompositeElement
             bScrollCollapse: true
             sScrollY: "200px"
             bSort: false
-            bStateSave: true
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
+            bStateSave: true
+        tbody = @baseElement.find("tbody")
+        planner = @planner
+        tbody.find("tr").find("td").live("click", (e) ->
+            batchId = $(this).closest("tr").find("td:nth(0)").text()
+            log "clicked #{batchId}"
+            planner.load batchId
+        )
+
+
+class RunsTable extends CompositeElement
+    constructor: (@baseElement, @conditions) ->
+        super @baseElement
+
+    load: (batchId) =>
+        @batchId = batchId
+        $.getJSON("#{ExpKitServiceBaseURL}/api/run/batch/#{batchId}")
+            .success(@display)
+
+    @HEAD_SKELETON: $("""
+        <script id="runs-table-head-skeleton" type="text/x-jsrender">
+          <tr>
+            <th>Order</th>
+            <th>State</th>
+            {{for columns}}
+            <th><span>{{>name}}</span></th>
+            {{/for}}
+          </tr>
+        </script>
+        """)
+    @ROW_SKELETON: $("""
+        <script id="runs-table-row-skeleton" type="text/x-jsrender">
+          <tr class="run">
+            <td>{{>sequence}}</td>
+            <td>{{>state}}</td>
+            {{for columns}}
+            <td>{{>value}}</td>
+            {{/for}}
+          </tr>
+        </script>
+        """)
+
+    display: (data) =>
+        log "showing batch", @batchId, data
+
+        # prepare to distinguish metadata from condition columns
+        columnIndex = {}; columnIndex[name] = idx for name,idx in data.names
+        columnNames = (name for name of @conditions.conditions)
+        metaColumnNames = {}
+        for name,idx in data.names
+            if (m = name.match /^(.*)#$/)?
+                metaColumnNames[m[1]] = idx
+            else if not name in columnNames
+                columnNames.push name
+
+        # populate table head
+        thead = @baseElement.find("thead")
+        thead.find("tr").remove()
+        thead.append(RunsTable.HEAD_SKELETON.render(
+                columns:
+                    for name in columnNames
+                        name: name
+            ))
+        # populate table body
+        @baseElement.find("tbody").remove()
+        tbody = $("<tbody>").appendTo(@baseElement)
+        for row in data.rows
+            metadata = {}
+            metadata[name] = row[idx] for name,idx of metaColumnNames
+            tbody.append(RunsTable.ROW_SKELETON.render(_.extend metadata,
+                    columns:
+                        for name in columnNames
+                            value: row[columnIndex[name]]
+                ))
+        # make it a DataTable
+        @dataTable = $(@baseElement).dataTable
+            sDom: 'R<"H"fir>t<"F"lp>'
+            bDestroy: true
+            bLengthChange: false
+            bPaginate: false
+            bAutoWidth: false
+            # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
+            fnStateSave: (oSettings, oData) -> localStorage.runsDataTablesState = JSON.stringify oData
+            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.runsDataTablesState
+            bStateSave: true
+        # TODO with reordering possible
+
 
 # initialize UI
 $ ->
@@ -919,7 +1001,8 @@ $ ->
             buttonResetColumnOrder      : $("#results-reset-column-order")
             containerForStateDisplay    : $("#results")
         ExpKit.results.load()
-    ExpKit.batches = new BatchesTable $("#batches-table"), null
+    ExpKit.runs = new RunsTable $("#runs-table"), ExpKit.conditions
+    ExpKit.batches = new BatchesTable $("#batches-table"), ExpKit.runs
     ExpKit.batches.load()
     do initNavBar
     do initChartUI
