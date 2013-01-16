@@ -929,7 +929,7 @@ initChartUI = ->
 
 
 class BatchesTable extends CompositeElement
-    constructor: (@baseElement, @planner) ->
+    constructor: (@baseElement, @status) ->
         super @baseElement
 
     load: =>
@@ -941,10 +941,10 @@ class BatchesTable extends CompositeElement
             bProcessing: true
             bServerSide: true
             sAjaxSource: "#{ExpKitServiceBaseURL}/api/run/batch.DataTables"
-            #bPaginate: false
+            bPaginate: true
             bScrollInfinite: true
             bScrollCollapse: true
-            sScrollY: "200px"
+            sScrollY: "240px"
             bSort: false
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
@@ -952,16 +952,21 @@ class BatchesTable extends CompositeElement
             bStateSave: true
             # TODO fnRowCallback: (row, data) -> # TODO add controls
         tbody = @baseElement.find("tbody")
-        planner = @planner
-        tbody.find("tr").find("td").live("click", (e) ->
+        bt = @
+        tbody.find("tr").live("click", (e) ->
             batchId = $(this).closest("tr").find("td:nth(0)").text()
-            log "clicked #{batchId}"
-            planner.load batchId
+            bt.status.load batchId
+            localStorage.lastBatchId = batchId
         )
+        if localStorage.lastBatchId?
+            @status.load localStorage.lastBatchId
+        else
+            @dataTable.one "draw", ->
+                tbody.find("tr:nth(0)").click()
 
 
-class RunsTable extends CompositeElement
-    constructor: (@baseElement, @conditions) ->
+class StatusTable extends CompositeElement
+    constructor: (@baseElement, @conditions, @optionElements) ->
         super @baseElement
 
     load: (batchId) =>
@@ -995,7 +1000,8 @@ class RunsTable extends CompositeElement
         """)
 
     display: (data) =>
-        log "showing batch", @batchId, data
+        log "showing batch status", @batchId, data
+        @optionElements.nameDisplay?.text(@batchId)
 
         # prepare to distinguish metadata from condition columns
         columnIndex = {}; columnIndex[name] = idx for name,idx in data.names
@@ -1010,7 +1016,7 @@ class RunsTable extends CompositeElement
         # populate table head
         thead = @baseElement.find("thead")
         thead.find("tr").remove()
-        thead.append(RunsTable.HEAD_SKELETON.render(
+        thead.append(StatusTable.HEAD_SKELETON.render(
                 columns:
                     for name in columnNames
                         name: name
@@ -1028,7 +1034,7 @@ class RunsTable extends CompositeElement
         for row,ord in data.rows
             metadata = {}
             metadata[name] = row[idx] for name,idx of metaColumnNames
-            tbody.append(RunsTable.ROW_SKELETON.render(_.extend(metadata,
+            tbody.append(StatusTable.ROW_SKELETON.render(_.extend(metadata,
                     ordinal: ord
                     ordinalGroup: if metadata.state == "REMAINING" then ordUB else ord
                     icon: ICON_BY_STATE[metadata.state]
@@ -1069,18 +1075,21 @@ $ ->
         conditions: new ConditionsUI $("#conditions")
         measurements: new MeasurementsUI $("#measurements")
     # load conditions, measurements
-    ExpKit.conditions.load().success -> ExpKit.measurements.load().success ->
-        # and the results
-        ExpKit.results = new ResultsTable $("#results-table"),
-            ExpKit.conditions, ExpKit.measurements,
-            toggleIncludeEmpty          : $("#results-include-empty")
-            toggleShowHiddenConditions  : $("#results-show-hidden-conditions")
-            buttonResetColumnOrder      : $("#results-reset-column-order")
-            containerForStateDisplay    : $("#results")
-        ExpKit.results.load()
-    ExpKit.runs = new RunsTable $("#runs-table"), ExpKit.conditions
-    ExpKit.batches = new BatchesTable $("#batches-table"), ExpKit.runs
-    ExpKit.batches.load()
+    ExpKit.conditions.load().success ->
+        ExpKit.measurements.load().success ->
+            # and the results
+            ExpKit.results = new ResultsTable $("#results-table"),
+                ExpKit.conditions, ExpKit.measurements,
+                toggleIncludeEmpty          : $("#results-include-empty")
+                toggleShowHiddenConditions  : $("#results-show-hidden-conditions")
+                buttonResetColumnOrder      : $("#results-reset-column-order")
+                containerForStateDisplay    : $("#results")
+            ExpKit.results.load()
+        ExpKit.status = new StatusTable $("#status-table"),
+            ExpKit.conditions,
+            nameDisplay: $("#status-name")
+        ExpKit.batches = new BatchesTable $("#batches-table"), ExpKit.status
+        ExpKit.batches.load()
     do initTitle
     do initNavBar
     do initChartUI
