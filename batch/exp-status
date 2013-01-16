@@ -17,9 +17,11 @@ cd run/batch/"$Batch"
 
 {
     hasProgress=false
+
+    PREFIXPATT='^exp[ 	]*run[ 	]*'
     # runs already finished
     if [ -r done ]; then
-        sed 's:^exp run :DONE :' <"done"
+        sed "s:$PREFIXPATT:DONE :" <"done"
         hasProgress=true
     fi
 
@@ -27,20 +29,20 @@ cd run/batch/"$Batch"
     for running in running.*; do
         [ -d "$running" ] || continue
         # TODO see if it's actually running
-        sed 's:^exp run :RUNNING :' <"$running"/cmdln
+        sed "s:$PREFIXPATT:RUNNING :" <"$running"/cmdln
         # TODO add column for the actual runId?
         hasProgress=true
     done
 
     # runs yet to be run
     if [ -r remaining ]; then
-        sed 's:^exp run :REMAINING :' <"remaining"
+        sed "s:$PREFIXPATT:REMAINING :" <"remaining"
         hasProgress=true
     fi
 
     # if there's only a plan, show them as remaining
     if ! $hasProgress; then
         serialOnEachLine "plan" |
-        sed 's:^exp run :REMAINING :'
+        sed "s:$PREFIXPATT:REMAINING :"
     fi
 } | column -t
