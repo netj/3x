@@ -54,7 +54,7 @@
 
 * DONE Title with .exp/description or basename of the $EXPROOT and ExpKitServiceBaseURL
 * DONE ExpKitServiceBaseURL change option
-* allow multiple instances of GUI with diff port (pid file is the singleton enforcer right now)
+* DONE allow multiple instances of GUI with diff port (pid file is the singleton enforcer right now)
 
 * easy creating/removing of condition values
 

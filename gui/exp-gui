@@ -25,15 +25,28 @@ cmd=${1:-start}
 [ $# -eq 0 ] || shift
 case $cmd in
     start)
-        # reuse the last port if available
-        port=$(cat $portfile 2>/dev/null || echo $defaultPort)
-        if ! pid=$(get-pid); then
-            if [ $# -eq 0 ]; then
-                # TODO determine port automatically if in use
-                true
-            else
-                port=$1; shift
-                # TODO fail if port already in use
+        pid=$(get-pid || true)
+        port=$(cat $portfile 2>/dev/null)
+        launchNew=false
+        if [ -z "$pid" ]; then
+            # use given port or reuse the last port or the default
+            port=${1:-${port:-$defaultPort}}
+            launchNew=true
+        else
+            msg "ExpKit GUI already running at http://$host:$port/"
+            if [ $# -eq 1 ] && [ "$1" != "$port" ]; then
+                # launch another GUI on different port
+                port=$1
+                launchNew=true
+            fi
+        fi
+        url="http://$host:$port/"
+        if $launchNew; then
+            # fail if port is already in use
+            if nc -z $host $port; then
+                [ $# -eq 0 ] ||
+                    error "Cannot start GUI at port $port: already in use"
+                # TODO determine unused port automatically
             fi
             # launch server
             node "$GUIDIR"/server/expkit-gui.js $port \
@@ -42,9 +55,8 @@ case $cmd in
             # record pid, port
             echo $pid >$pidfile
             echo $port >$portfile
+            msg "ExpKit GUI started at $url"
         fi
-        url="http://$host:$port/"
-        msg "ExpKit GUI running at $url"
         # watch log if requested
         be-quiet +1 || exp-gui watch &
         # and launch web browser on known platforms
@@ -65,7 +77,7 @@ case $cmd in
 
     stop)
         pid=$(get-pid) || error "ExpKit GUI not running"
-        kill $pid
+        kill -TERM $pid
         mv -f $logfile $logfile.0
         rm -f $pidfile
         msg "ExpKit GUI stopped"
