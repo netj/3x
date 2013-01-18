@@ -41,7 +41,7 @@ cd "$EXPROOT/$Batch"
         # TODO add column for the actual runId?
         case $state in
             RUNNING)
-                run=$(readlink -f "runs/$(sed 's:.*#::' <"$running"/cmdln)" || true)
+                run=$(readlink -f "$running"/run || true)
                 run=${run#$EXPROOT/}
                 line+=" ${run:-?}"
                 ;;

@@ -73,12 +73,14 @@ while [ -s remaining ] && ! $abort; do
     serial=${line##*"#"}
     cmdln=${line%"#"*}
     EXPRUN=$(new-run-id)
+    runRelPath="../../../${EXPRUN#run/}"
     msg "Batch #$serial/$count of $EXPBATCH as $EXPRUN"
+    ln -sfn "$runRelPath" $run/run
     EXPRUN=$EXPRUN $cmdln || true
     ! $abort || break
     # after it ends, record the run in the "done" queue
     record() {
-        ln -sfn "../../../${EXPRUN#run/}" runs/$serial
+        ln -sfn "$runRelPath" runs/$serial
         echo "$line" >>"done"
         rm -rf "$run"
     }
