@@ -232,13 +232,24 @@ app.get "/api/run/batch.DataTables", (req, res) ->
                     aaData: table
 
 app.get "/api/run/batch.numRUNNING", (req, res) ->
-    cli(res, "sh", ["-c", "exp-batches -l | grep -c RUNNING"]
+    cli(res, "sh", ["-c", "exp-batches -l | grep -c RUNNING || true"]
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
                 .join ([line]) -> next (+line.trim())
     ) (err, count) ->
         res.json count unless err
+
+app.get ////api/run/batch/([^:]+):(start|stop)///, (req, res) ->
+    batchId = req.params[0]
+    # TODO sanitize batchId
+    action = req.params[1]
+    cli(res, "sh", ["-c", "exp-#{action} run/batch/#{batchId} </dev/null &>/dev/null &"]
+        , (lazyLines, next) ->
+            lazyLines
+                .join -> next (true)
+    ) (err, result) ->
+        res.json result unless err
 
 app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")

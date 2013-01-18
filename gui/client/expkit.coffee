@@ -939,18 +939,21 @@ class BatchesTable extends CompositeElement
         super @baseElement
 
     load: =>
-        # update running count
-        $.getJSON("#{ExpKitServiceBaseURL}/api/run/batch.numRUNNING")
-            .success((count) =>
-                @countDisplay
-                    ?.text(count)
-                     .toggleClass("hide", count == 0)
-            )
+        do @updateRunningCount
         bt = @
-        # remember the column names
-        bt.headerNames = []
-        @baseElement.find("thead th:gt(1)")
-            .each(-> bt.headerNames.push $(this).text().replace /^#/, "")
+        unless @dataTable?
+            # clone original thead row
+            @thead = @baseElement.find("thead")
+            @origHeadRow = @thead.find("tr").clone()
+            # remember the column names
+            bt.headerNames = []
+            @thead.find("th:gt(1)")
+                .each(-> bt.headerNames.push $(this).text().replace /^#/, "")
+        else
+            @thead.find("tr").remove()
+            @thead.append(@origHeadRow)
+            @baseElement.find("tbody").remove()
+            @baseElement.append("<tbody>")
         # initialize server-side DataTables
         @dataTable = $(@baseElement).dataTable
             sDom: '<"H"fir>t<"F"lp>'
@@ -970,6 +973,9 @@ class BatchesTable extends CompositeElement
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
             bStateSave: true
+            # update running count every time we pull data
+            fnDrawCallback: (oSettings) =>
+                do @updateRunningCount
             # manipulate header columns
             fnHeaderCallback: (nHead, aData, iStart, iEnd, aiDisplay) ->
                 $("th:gt(1)", nHead).remove()
@@ -1017,15 +1023,21 @@ class BatchesTable extends CompositeElement
                         <div class="bar" style="width: #{percentage}%"></div>
                     </div>""")
                 # add action buttons
-                ACTION_BY_STATE =
+                ICON_BY_STATE =
                     DONE: null
                     RUNNING: "stop"
                     PAUSED: "play"
                     PLANNED: "play"
+                ACTION_BY_STATE =
+                    DONE: null
+                    RUNNING: "stop"
+                    PAUSED: "start"
+                    PLANNED: "start"
                 if (action = ACTION_BY_STATE[state])?
+                    icon = ICON_BY_STATE[state]
                     $actionCell = $row.find("td:nth(2)")
                     $actionCell.html("""<a class="btn btn-small
-                        #{action}"><i class="icon icon-#{action}"></i></a>""")
+                        #{action}"><i class="icon icon-#{icon}"></i></a>""")
                     $actionCell.find(".btn").click(bt.actionHandler action)
         tbody = @baseElement.find("tbody")
         tbody.find("tr").live("click", (e) ->
@@ -1045,13 +1057,30 @@ class BatchesTable extends CompositeElement
     displaySelected: ($row) =>
         @baseElement.find("tbody tr").removeClass("info"); $row.addClass("info")
 
-    actionHandler: (action) ->
+    actionHandler: (action) =>
         bt = @
         (e) ->
             $row = $(this).closest("tr")
             batchId = $row.find("td:nth(0)").text()
+            log "#{action}ing #{batchId}"
+            $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}:#{action}")
+                .success (result) ->
+                    # TODO find the best way to refresh
+                    setTimeout (-> bt.dataTable.fnPageChange "first"), 1000
+                    # setTimeout bt.load, 1000
+                    # setTimeout bt.dataTable.fnDraw, 1000
+                # TODO feedback on failure
             do e.preventDefault
             do e.stopPropagation
+
+    updateRunningCount: =>
+        # update running count
+        $.getJSON("#{ExpKitServiceBaseURL}/api/run/batch.numRUNNING")
+            .success((count) =>
+                @countDisplay
+                    ?.text(count)
+                     .toggleClass("hide", count == 0)
+            )
 
 
 class StatusTable extends CompositeElement
@@ -1086,6 +1115,7 @@ class StatusTable extends CompositeElement
             <td class="serial">{{>serial}}</td>
             <td class="state"><div class="detail"
             {{if run}}
+            title="Detailed Info"
             data-placement="bottom" data-html="true" data-trigger="click"
             data-content='<a href="{{>run}}">{{>run}}</a>'
             {{/if}}><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></div></td>
