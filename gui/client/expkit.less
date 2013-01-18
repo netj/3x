@@ -180,35 +180,33 @@ body > .navbar .brand .icon {
 
 
 #batches-table {
-  tbody tr {
-    cursor: pointer;
+  thead {
+    th { text-align: center; }
+    th.state { width: 25%; }
+  }
+  tbody {
+    tr        { cursor: pointer; }
+    .progress { margin-bottom: 0px; }
+    td.action { text-align: center; }
+    td.id     { text-align: left; }
+    td        { text-align: right; }
   }
 }
 
 #runs {
   h3 {
-    margin-top: 1em;
+    margin-top: 2em;
   }
 }
 
-#batches-table, #status-table {
-  thead th.fixed, tbody td.state {
-    text-align: center;
-  }
+#status-table {
+  thead th.fixed, tbody td.state { text-align: center; }
   tbody {
-    td.order {
-      color: @grayLight;
-    }
+    td.order { color: @grayLight; }
     td.order,
-    td.serial {
-      text-align: right;
-    }
+    td.serial { text-align: right; }
     td.state .popover { width: auto; }
-    tr.ui-sortable-helper td.order {
-      visibility: hidden;
-    }
-    tr.DONE    { background-color: @grayLighter; }
-    tr.RUNNING { background-color: @errorBackground; }
+    tr.ui-sortable-helper td.order { visibility: hidden; }
   }
 }
 

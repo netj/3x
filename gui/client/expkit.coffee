@@ -946,6 +946,12 @@ class BatchesTable extends CompositeElement
                     ?.text(count)
                      .toggleClass("hide", count == 0)
             )
+        bt = @
+        # remember the column names
+        bt.headerNames = []
+        @baseElement.find("thead th:gt(1)")
+            .each(-> bt.headerNames.push $(this).text().replace /^#/, "")
+        # initialize server-side DataTables
         @dataTable = $(@baseElement).dataTable
             sDom: '<"H"fir>t<"F"lp>'
             bDestroy: true
@@ -957,18 +963,75 @@ class BatchesTable extends CompositeElement
             iDisplayLength: 5
             bPaginate: true
             #bScrollInfinite: true
-            #bScrollCollapse: true
+            bScrollCollapse: true
             #sScrollY: "#{Math.max(240, .2 * window.innerHeight)}px"
             bSort: false
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
             bStateSave: true
-            # TODO fnRowCallback: (row, data) -> # TODO add controls
+            # manipulate header columns
+            fnHeaderCallback: (nHead, aData, iStart, iEnd, aiDisplay) ->
+                $("th:gt(1)", nHead).remove()
+                $(nHead).append("""
+                    <th class="action">Action</th>
+                    <th>#Total</th>
+                    <th>#Done</th>
+                    <th>#Running</th>
+                    <th>#Remaining</th>
+                    """)
+            # manipulate rows before they are rendered
+            fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) ->
+                $row = $(nRow)
+                # indicate which batch's status is displayed
+                $batchCell = $row.find("td:nth(0)")
+                batchId = $batchCell.text()
+                if localStorage.lastBatchId is batchId
+                    bt.displaySelected $row
+                # collect the values and replace columns
+                value = {}
+                $row.find("td:gt(1)")
+                    .each((i) -> value[bt.headerNames[i]] = $(this).text())
+                    .remove()
+                totalRuns = (+value.done) + (+value.running) + (+value.remaining)
+                percentage = (100 * (+value.done) / totalRuns).toFixed(0)
+                $row.append("""
+                    <td class="action"></td>
+                    <td>#{totalRuns}</td>
+                    <td>#{value.done}</td>
+                    <td>#{value.running}</td>
+                    <td>#{value.remaining}</td>
+                    """)
+                $batchCell.attr(id:"id")
+                # progress bar
+                $stateCell = $row.find("td:nth(1)")
+                state = $stateCell.text()
+                $row.addClass(state)
+                PROGRESS_BY_STATE =
+                    DONE: "progress-success"
+                    RUNNING: "progress-striped active"
+                    PAUSED: "progress-warning"
+                    PLANNED: ""
+                $stateCell.html("""<div
+                    class="progress #{PROGRESS_BY_STATE[state]}">
+                        <div class="bar" style="width: #{percentage}%"></div>
+                    </div>""")
+                # add action buttons
+                ACTION_BY_STATE =
+                    DONE: null
+                    RUNNING: "stop"
+                    PAUSED: "play"
+                    PLANNED: "play"
+                if (action = ACTION_BY_STATE[state])?
+                    $actionCell = $row.find("td:nth(2)")
+                    $actionCell.html("""<a class="btn btn-small
+                        #{action}"><i class="icon icon-#{action}"></i></a>""")
+                    $actionCell.find(".btn").click(bt.actionHandler action)
         tbody = @baseElement.find("tbody")
-        bt = @
         tbody.find("tr").live("click", (e) ->
-            batchId = $(this).closest("tr").find("td:nth(0)").text()
+            $row = $(this).closest("tr")
+            bt.displaySelected $row
+            batchId = $row.find("td:nth(0)").text()
             bt.status.load batchId
             localStorage.lastBatchId = batchId
         )
@@ -978,6 +1041,17 @@ class BatchesTable extends CompositeElement
         else
             @dataTable.one "draw", ->
                 tbody.find("tr:nth(0)").click()
+
+    displaySelected: ($row) =>
+        @baseElement.find("tbody tr").removeClass("info"); $row.addClass("info")
+
+    actionHandler: (action) ->
+        bt = @
+        (e) ->
+            $row = $(this).closest("tr")
+            batchId = $row.find("td:nth(0)").text()
+            do e.preventDefault
+            do e.stopPropagation
 
 
 class StatusTable extends CompositeElement
@@ -1007,7 +1081,7 @@ class StatusTable extends CompositeElement
         """)
     @ROW_SKELETON: $("""
         <script id="runs-table-row-skeleton" type="text/x-jsrender">
-          <tr class="run {{>state}}" id="{{>~batchId}}-{{>serial}}">
+          <tr class="run {{>className}} {{>state}}" id="{{>~batchId}}-{{>serial}}">
             <td class="order">{{>ordinal}}</td>
             <td class="serial">{{>serial}}</td>
             <td class="state"><div class="detail"
@@ -1053,10 +1127,16 @@ class StatusTable extends CompositeElement
             DONE: "ok"
             RUNNING: "spin icon-spinner"
             REMAINING: "time"
+        CLASS_BY_STATE =
+            DONE: "success"
+            RUNNING: "info"
+            PAUSED: "warning"
+            REMAINING: ""
         ordUB = data.rows.length
         for row,ord in data.rows
             metadata = {}
             metadata[name] = row[idx] for name,idx of metaColumnNames
+            metadata.className = CLASS_BY_STATE[metadata.state]
             tbody.append(StatusTable.ROW_SKELETON.render(_.extend(metadata,
                     ordinal: ord
                     ordinalGroup: if metadata.state == "REMAINING" then ordUB else ord
