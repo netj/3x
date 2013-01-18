@@ -21,8 +21,7 @@ exp-assemble "$EXPWD" "$@"
 # run it
 msg "Running $EXPRUN with $*"
 cd "$EXPWD"
-set -m
-env - \
+setsid env - \
     PATH="$TOOLSDIR:$(dirname $(type -p sed)):$(dirname "$SHELL")" \
     EXPKIT_HOME="$EXPKIT_HOME" \
     EXPKIT_LOGLVL="$EXPKIT_LOGLVL" \
@@ -31,18 +30,23 @@ env - \
     EXPRUN="$EXPRUN" \
     record-run &
 runpid=$!
-set +m
 
 # watch stdout and stderr
-trap "kill -TERM -$runpid; wait" INT
+trap "kill -TERM -$runpid; wait" TERM INT
 be-quiet +1 || {
 tail -qF stdout --pid=$runpid      2>/dev/null &
 tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &
 }
 wait || true
 
-exitcode=$(cat exitcode 2>/dev/null || echo 127)
-msg "Finished $EXPRUN with exitcode $exitcode"
+if [ -e exitcode ]; then
+    exitcode=$(cat exitcode)
+    msg "Finished $EXPRUN with exitcode $exitcode"
+else
+    exitcode=127
+    msg "Interrupted $EXPRUN"
+    exit $exitcode
+fi
 
 # run measurements
 for mx in exp.measure/*/measure; do

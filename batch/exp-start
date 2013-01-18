@@ -13,6 +13,7 @@ set -eu
 
 batch=$1
 
+# figure out which batch we are talking about
 if [ $# -eq 1 -a -d "$batch" ]; then
     batchpath=$(readlink -f "$batch")
     [[ $batchpath == $EXPROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
@@ -28,88 +29,6 @@ export EXPBATCH
 
 cd "$EXPROOT/$EXPBATCH"
 
-is-alive() {
-    local pid=$(cat "$1") || return 2
-    ps -p $pid && ! [[ $pid = $$ ]]
-    # TODO additional check for more robustness?
-} &>/dev/null
-synchronized() {
-    local lock=$1; shift
-    # TODO use a more reliable locking mechanism
-    while is-alive "$lock"; do sleep 0.$RANDOM; done
-    echo $$ >"$lock"
-    local c=0
-    "$@" || c=$?
-    rm -f "$lock"
-    return $c
-}
-pick-next() {
-    local src=$1; shift
-    local dest=$1; shift
-    head -n 1 "$src" >"$dest"/cmdln
-    { echo 1d; echo wq; } | ed "$src" &>/dev/null
-}
-
-# prepare a remaining queue based on the plan
-if [ ! -s remaining ]; then
-    if [ -e done -a -e count ] && [[ $(wc -l <done) == $(cat count) ]]; then
-        msg "Nothing remaining for $EXPBATCH"
-        exit 2
-    else
-        msg "Initializing $EXPBATCH"
-        serialOnEachLine plan >remaining
-        chmod a-w plan
-        wc -l <plan >count
-        mkdir -p runs
-    fi
-fi
-
-# repeat until all "remaining" runs are done
-msg "Starting $EXPBATCH"
-count=$(cat count)
-abort=false
-trap "abort=true" INT
-while [ -s remaining ] && ! $abort; do
-    # check if there's any running item which isn't alive
-    run=
-    for r in running.*; do
-        [ -d $r ] || continue
-        ! is-alive $r/lock || continue
-        echo $$ >$r/lock
-        msg +2 " resuming $r..."
-        run=$r; break
-    done
-    # otherwise, dequeue from remaining
-    if ! [ -d "$run" ]; then
-        run=$(mktemp -d running.XXX)
-        echo $$ >$run/lock
-        synchronized remaining.lock  pick-next remaining $run
-    fi
-    # run the one we picked for next
-    run1() {
-        local run=$1
-        local line=$(cat $run/cmdln)
-        local serial=${line##*"#"}
-        cmdln=${line%"#"*}
-        local EXPRUN=$(new-run-id)
-        msg "Batch #$serial/$count of $EXPBATCH as $EXPRUN"
-        EXPRUN=$EXPRUN $cmdln || true
-        ! $abort || return 0
-        # after it ends, record the run in the "done" queue
-        record() {
-            ln -sfn "../../../${EXPRUN#run/}" runs/$serial
-            echo "$line" >>"done"
-            rm -rf "$run"
-        }
-        synchronized done.lock record
-    }
-    synchronized $run/lock  run1 $run
-done
-if $abort; then
-    error "Aborted $EXPBATCH" || true
-    msg "To resume, run:"
-    msg "  exp start $EXPBATCH"
-    exit 2
-else
-    msg "Done $EXPBATCH"
-fi
+# launch batch-loop in a separate process group, using bash -i, so we can kill
+# all related processes together later.
+exec setsid batch-loop

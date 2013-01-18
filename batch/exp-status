@@ -11,9 +11,7 @@ set -eu
 Batch=$1
 
 : ${EXPROOT:=$(exp-findroot)}
-cd "$EXPROOT"
-
-cd run/batch/"$Batch"
+cd "$EXPROOT/$Batch"
 
 {
     hasProgress=false
@@ -28,8 +26,11 @@ cd run/batch/"$Batch"
     # runs still running
     for running in running.*; do
         [ -d "$running" ] || continue
-        # TODO see if it's actually running
-        sed "s:$PREFIXPATT:RUNNING :" <"$running"/cmdln
+        [ -s "$running"/cmdln ] || continue
+        # see if it's actually running
+        state=RUNNING
+        lockproc "$running"/lock alive || state=REMAINING
+        sed "s:$PREFIXPATT:$state :" <"$running"/cmdln
         # TODO add column for the actual runId?
         hasProgress=true
     done

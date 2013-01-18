@@ -14,6 +14,13 @@
 # Created: 2013-01-12
 set -eu
 TAB=$'\t'
+tsvline() {
+    local line= col=
+    for col
+    do line+="$TAB$col"
+    done
+    echo "${line#$TAB}"
+}
 
 ListDetails=false
 ShowCount=false
@@ -32,15 +39,61 @@ cd "$EXPROOT/run/batch"
 
 limitOffset ls -td *"$Query"*/ 2>/dev/null |
 if $ListDetails; then
+    {
+    tsvline \
+        "batch" \
+        "state" \
+        "#running" \
+        "#done" \
+        "#remaining" \
+        "#planned" \
+        #
     while read -r batch; do
         batch=${batch%/}
-        count=$(echo $(cat <$batch/count || wc -l <$batch/plan))
-        progress=$(wc -l <$batch/done || echo 0)
-        echo "$batch$TAB$count$TAB$progress$TAB?"
-    done 2>/dev/null |
+        if [ -e $batch/remaining ]; then
+            state=PAUSED
+            numPlanned=$(echo $(cat <$batch/count  || wc -l <$batch/plan || echo 0))
+            numRemaining=$(wc -l <$batch/remaining || echo 0)
+            numDone=$(     wc -l <$batch/done      || echo 0)
+        else
+            state=PLANNED
+            numPlanned=$(wc -l <$batch/plan || echo 0)
+            numRemaining=$numPlanned
+            numDone=0
+        fi 2>/dev/null
+        # determine running ones
+        for pidfile in $batch/worker-*.lock; do
+            if lockproc $pidfile alive; then
+                state=RUNNING
+                break
+            fi
+        done
+        numRunning=0
+        for run in $batch/running.*/cmdln; do
+            [ -e "$run" ] || continue
+            run=${run%/cmdln}
+            if lockproc $run/lock alive; then
+                let ++numRunning
+                state=RUNNING
+            else
+                let ++numRemaining
+            fi
+        done
+        [ $numRemaining -gt 0 ] || state=DONE
+        # output in tab-separated columns
+        tsvline \
+            "run/batch/$batch" \
+            "$state" \
+            "$numRunning" \
+            "$numDone" \
+            "$numRemaining" \
+            "$numPlanned" \
+            #
+    done
+    } |
     if [ -t 1 ]; then column -t; else cat; fi
 elif $ShowCount; then
     wc -l
 else
-    sed 's:/$::'
+    sed 's:/$::; s:^:run/batch/:'
 fi

@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# batch-loop -- The loop that handles a batch
+# Usage: export EXPBATCH; cd $EXPROOT/$EXPBATCH; batch-loop
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-17
+set -eu
+
+synchronized() {
+    local Lock=$1; shift
+    lockproc $Lock grab
+    "$@"
+    lockproc $Lock release
+}
+
+# prepare a remaining queue based on the plan
+if ! [ -e remaining -a -s count -a -d runs ]; then
+    initialize() {
+        msg "Initializing $EXPBATCH"
+        serialOnEachLine plan >remaining
+        chmod a-w plan
+        wc -l <plan >count
+        mkdir -p runs
+    }
+    synchronized remaining.lock  initialize
+fi
+if ! [ -s remaining ] && [[ $(find running.*/cmdln 2>/dev/null | wc -l) == 0 ]]; then
+    rm -rf running.*/
+    msg "Nothing remaining for $EXPBATCH"
+    exit 2
+fi
+
+# register worker pid
+register-pid() {
+    local id=0
+    local handle=
+    while handle=worker-"$id".lock
+        lockproc $handle alive
+    do let ++id
+    done
+    lockproc $handle grab
+}
+synchronized workers.lock register-pid
+
+# repeat until all "remaining" runs are done
+msg "Starting $EXPBATCH"
+count=$(cat count || wc -l <plan)
+abort=false
+trap "abort=true" TERM INT
+while [ -s remaining ] && ! $abort; do
+    # check if there's any running item which isn't alive
+    run=
+    for r in running.*/; do
+        [ -d "$r" ] || continue
+        [ -s "$r"/cmdln ] || continue
+        ! lockproc $r/lock alive || continue
+        lockproc $r/lock grab
+        msg +2 " resuming $r..."
+        run=$r; break
+    done
+    # otherwise, dequeue from remaining
+    if ! [ -d "$run" ]; then
+        run=$(mktemp -d running.XXX)
+        lockproc $run/lock grab
+        pick-next() {
+            head -n 1 remaining >$run/cmdln
+            { echo 1d; echo wq; } | ed remaining &>/dev/null
+        }
+        synchronized remaining.lock  pick-next
+    fi
+    # run the one we picked for next
+    line=$(cat $run/cmdln)
+    serial=${line##*"#"}
+    cmdln=${line%"#"*}
+    EXPRUN=$(new-run-id)
+    msg "Batch #$serial/$count of $EXPBATCH as $EXPRUN"
+    EXPRUN=$EXPRUN $cmdln || true
+    ! $abort || break
+    # after it ends, record the run in the "done" queue
+    record() {
+        ln -sfn "../../../${EXPRUN#run/}" runs/$serial
+        echo "$line" >>"done"
+        rm -rf "$run"
+    }
+    synchronized done.lock  record
+    lockproc $run/lock release
+done
+if $abort; then
+    error "Aborted $EXPBATCH" || true
+    msg "To resume, run:"
+    msg "  exp start $EXPBATCH"
+    exit 2
+else
+    msg "Done $EXPBATCH"
+fi

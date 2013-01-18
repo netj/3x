@@ -977,7 +977,7 @@ class StatusTable extends CompositeElement
 
     load: (batchId) =>
         @batchId = batchId
-        $.getJSON("#{ExpKitServiceBaseURL}/api/run/batch/#{batchId}")
+        $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}")
             .success(@display)
 
     @HEAD_SKELETON: $("""

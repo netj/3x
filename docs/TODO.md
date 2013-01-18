@@ -13,7 +13,7 @@
 
         exp setup  VAR1=V1,V2  VAR2=V3,V4..V5 ...  'COMMAND'  MEASURE1='PATT1_FROM_OUTPUT'  MEASURE2='PATT2_FROM_OUTPUT' ...
 
-* exp stop for stopping a running batch or run
+* DONE exp stop for stopping a running batch or run
 * keep links to currently running batch and/or run
 
 * better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
@@ -22,6 +22,8 @@
 * exp-rerun for re-running past runs: do a copy --archive --link from the run dir and simply run it again?
 
 * better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
+
+* enumerate dependencies, improve portability: readlink -f
 
 ## GUI
 * DONE chasis with express.js + node + bootstrap + coffee-script

@@ -1,5 +1,11 @@
 exp-start               $TOOLSDIR/
 new-batch-id            $TOOLSDIR/
+batch-loop              $TOOLSDIR/
+
+exp-stop                $TOOLSDIR/
 
 exp-status              $TOOLSDIR/
 exp-batches             $TOOLSDIR/
+
+lockproc                $TOOLSDIR/
+synchronized            $TOOLSDIR/

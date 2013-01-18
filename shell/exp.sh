@@ -6,18 +6,23 @@
 # 
 #   exp init
 # 
+#   exp gui
+# 
 #   exp plan [NAME[=VALUE[,VALUE]...]]...
 # 
 #   exp start [NAME[=VALUE[,VALUE]...]]...
 #   exp start BATCH
+#   exp batches [-l] [QUERY]
+#   exp status BATCH
 #   exp stop  BATCH
 # 
-#   exp results [BATCH | RUN]... [NAME[=VALUE[,VALUE]...]]...
-# 
-#   exp gui
+#   exp results [BATCH | RUN]... [QUERY]...
 # 
 #   exp conditions [-v] [NAME]...
+#   exp measures [-v] [NAME]...
+# 
 #   exp run [NAME=VALUE]...
+#   exp findroot
 # 
 # Global OPTION is one of:
 #   -v      for increasing verbosity

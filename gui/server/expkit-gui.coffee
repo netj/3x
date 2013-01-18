@@ -207,6 +207,7 @@ app.get "/api/run/batch.DataTables", (req, res) ->
             }, "exp-batches", ["-l", query]
                 , (lazyLines, next) ->
                     lazyLines
+                        .skip(1)
                         .filter((line) -> line isnt "")
                         .map((line) -> line.split /\t/)
                         .join next
@@ -233,7 +234,7 @@ app.get "/api/run/batch.DataTables", (req, res) ->
 app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId
-    cli(res, "exp-status", [batchId]
+    cli(res, "exp-status", ["run/batch/#{batchId}"]
         , normalizeNamedColumnLines (line) ->
                 [state, columns..., serial] = line.split /\s+/
                 serial = +(serial?.replace /^#/, "")

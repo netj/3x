@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# synchronized -- Run one process for the command at a time
+#
+# Created: 2008-03-05
+# 
+# Written by Jaeho Shin <netj@sparcs.org>.
+# (C) 2008, Geoul Project. (http://ftp.kaist.ac.kr/geoul)
+set -eu
+
+# become a process group leader
+[ x"`ps -o pgid= -p $$`" = x"$$" ] || exec setsid "$@"
+
+Lock=$1; shift
+
+# use lockproc to proctect our synchronized command
+lockproc "$Lock" grab $$
+trap 'c=$?; lockproc "$Lock" release; exit $c' EXIT
+
+# run the given command
+"$@"
