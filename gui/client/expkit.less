@@ -195,10 +195,17 @@ body > .navbar .brand .icon {
   thead th.fixed, tbody td.state {
     text-align: center;
   }
-  tbody td.serial {
-    text-align: right;
-  }
   tbody {
+    td.order {
+      color: @grayLight;
+    }
+    td.order,
+    td.serial {
+      text-align: right;
+    }
+    tr.ui-sortable-helper td.order {
+      visibility: hidden;
+    }
     tr.DONE    { background-color: @grayLighter; }
     tr.RUNNING { background-color: @infoBackground; }
   }

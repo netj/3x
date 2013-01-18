@@ -942,15 +942,16 @@ class BatchesTable extends CompositeElement
         @dataTable = $(@baseElement).dataTable
             sDom: '<"H"fir>t<"F"lp>'
             bDestroy: true
-            bLengthChange: false
             bAutoWidth: true
             bProcessing: true
             bServerSide: true
             sAjaxSource: "#{ExpKitServiceBaseURL}/api/run/batch.DataTables"
+            bLengthChange: false
+            iDisplayLength: 5
             bPaginate: true
-            bScrollInfinite: true
-            bScrollCollapse: true
-            sScrollY: "240px"
+            #bScrollInfinite: true
+            #bScrollCollapse: true
+            #sScrollY: "#{Math.max(240, .2 * window.innerHeight)}px"
             bSort: false
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
@@ -980,6 +981,7 @@ class StatusTable extends CompositeElement
         $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}")
             .success(@display)
 
+
     @HEAD_SKELETON: $("""
         <script id="runs-table-head-skeleton" type="text/x-jsrender">
           <tr>
@@ -995,7 +997,7 @@ class StatusTable extends CompositeElement
     @ROW_SKELETON: $("""
         <script id="runs-table-row-skeleton" type="text/x-jsrender">
           <tr class="run {{>state}}" id="{{>~batchId}}-{{>serial}}">
-            <td>{{>ordinal}}</td>
+            <td class="order">{{>ordinal}}</td>
             <td class="serial">{{>serial}}</td>
             <td class="state"><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></td>
             {{for columns}}
@@ -1052,19 +1054,30 @@ class StatusTable extends CompositeElement
         @dataTable = $(@baseElement).dataTable
             sDom: 'R<"H"fir>t<"F"lp>'
             bDestroy: true
+            bAutoWidth: false
             bLengthChange: false
             bPaginate: false
-            bAutoWidth: false
+            bScrollInfinite: true
+            bScrollCollapse: true
+            sScrollY: "#{Math.max(400, .618 * window.innerHeight)}px"
             aaSortingFixed: [[2, "asc"]]
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
-            fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
-            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
+            fnStateSave: (oSettings, oData) -> localStorage.statusDataTablesState = JSON.stringify oData
+            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.statusDataTablesState
             bStateSave: true
+            # Workaround for DataTables resetting the scrollTop after sorting/reordering
+            # TODO port this to the jquery.dataTables.rowReordering project
+            fnPreDrawCallback: =>
+                @scrollTop = @scrollBody?.scrollTop
+            fnDrawCallback: =>
+                @scrollBody?.scrollTop = @scrollTop
+        @scrollBody = @dataTable.closest(".dataTables_wrapper").find(".dataTables_scrollBody")[0]
         @dataTable.fnSort [[0, "asc"]]
-        # hide the first column of ordinals
-        colOrder = @dataTable._oPluginColReorder?.fnGetCurrentOrder?()
-        indexColumn = colOrder.indexOf(0)
-        @dataTable.fnSetColumnVis indexColumn, false
+        indexColumn = 0
+        ## hide the first column of ordinals
+        #colOrder = @dataTable._oPluginColReorder?.fnGetCurrentOrder?()
+        #indexColumn = colOrder.indexOf(0)
+        #@dataTable.fnSetColumnVis indexColumn, false
         # with reordering possible
         @dataTable.rowReordering
             iIndexColumn: indexColumn
@@ -1072,6 +1085,9 @@ class StatusTable extends CompositeElement
             items:  "tr.REMAINING"
             cancel: "tr:not(.REMAINING)"
         @dataTable.find("tbody tr").disableSelection()
+        # scroll to the first REMAINING row
+        if (firstREMAININGrow = @dataTable.find("tbody tr.REMAINING:nth(0)")[0])?
+            @scrollBody?.scrollTop = firstREMAININGrow.offsetTop - firstREMAININGrow.offsetHeight * 3.5
 
 
 # initialize UI
