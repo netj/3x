@@ -236,9 +236,16 @@ app.get "/api/run/batch/:batchId", (req, res) ->
     # TODO sanitize batchId
     cli(res, "exp-status", ["run/batch/#{batchId}"]
         , normalizeNamedColumnLines (line) ->
-                [state, columns..., serial] = line.split /\s+/
-                serial = +(serial?.replace /^#/, "")
-                ["#{STATE_COLUMN_NAME}=#{state}", "#{SERIAL_COLUMN_NAME}=#{serial}", columns...] if state
+                [state, columns..., serial, runId] = line.split /\s+/
+                serial = (serial?.replace /^#/, "")
+                runId = "" if runId is "?"
+                if state
+                    [
+                        "#{STATE_COLUMN_NAME}=#{state}"
+                        "#{SERIAL_COLUMN_NAME}=#{serial}"
+                        "#{RUN_COLUMN_NAME}=#{runId}"
+                        columns...
+                    ]
     ) (err, batch) ->
         res.json batch unless err
 

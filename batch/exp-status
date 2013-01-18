@@ -19,7 +19,14 @@ cd "$EXPROOT/$Batch"
     PREFIXPATT='^exp[ 	]*run[ 	]*'
     # runs already finished
     if [ -r done ]; then
-        sed "s:$PREFIXPATT:DONE :" <"done"
+        sed "s:$PREFIXPATT:DONE :" <"done" |
+        perl -ne '
+            use strict; use Cwd "abs_path";
+            my ($line, $serial) = /^(.*#)(\d+)$/;
+            my $runpath = abs_path("runs/$serial");
+            $runpath =~ s#.*/run/#run/#;
+            printf "%s%s %s\n", $line, $serial, $runpath;
+            '
         hasProgress=true
     fi
 
@@ -30,20 +37,28 @@ cd "$EXPROOT/$Batch"
         # see if it's actually running
         state=RUNNING
         lockproc "$running"/lock alive || state=REMAINING
-        sed "s:$PREFIXPATT:$state :" <"$running"/cmdln
+        line=$(sed "s:$PREFIXPATT:$state :" <"$running"/cmdln)
         # TODO add column for the actual runId?
+        case $state in
+            RUNNING)
+                run=$(readlink -f "runs/$(sed 's:.*#::' <"$running"/cmdln)")
+                run=${run#$EXPROOT/}
+                line+=" $run"
+                ;;
+        esac
+        echo "$line"
         hasProgress=true
     done
 
     # runs yet to be run
     if [ -r remaining ]; then
-        sed "s:$PREFIXPATT:REMAINING :" <"remaining"
+        sed "s:$PREFIXPATT:REMAINING :; s:$: ?:" <"remaining"
         hasProgress=true
     fi
 
     # if there's only a plan, show them as remaining
     if ! $hasProgress; then
         serialOnEachLine "plan" |
-        sed "s:$PREFIXPATT:REMAINING :"
+        sed "s:$PREFIXPATT:REMAINING :; s:$: ?:"
     fi
 } | column -t

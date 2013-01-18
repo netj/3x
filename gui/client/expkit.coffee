@@ -975,6 +975,9 @@ class BatchesTable extends CompositeElement
 class StatusTable extends CompositeElement
     constructor: (@baseElement, @conditions, @optionElements) ->
         super @baseElement
+        $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
+                @popovers?.popover("hide")
+            )
 
     load: (batchId) =>
         @batchId = batchId
@@ -999,7 +1002,11 @@ class StatusTable extends CompositeElement
           <tr class="run {{>state}}" id="{{>~batchId}}-{{>serial}}">
             <td class="order">{{>ordinal}}</td>
             <td class="serial">{{>serial}}</td>
-            <td class="state"><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></td>
+            <td class="state"><div class="detail"
+            {{if run}}
+            data-placement="bottom" data-html="true" data-trigger="click"
+            data-content='<a href="{{>run}}">{{>run}}</a>'
+            {{/if}}><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></div></td>
             {{for columns}}
             <td>{{>value}}</td>
             {{/for}}
@@ -1050,6 +1057,16 @@ class StatusTable extends CompositeElement
                         for name in columnNames
                             value: row[columnIndex[name]]
                 ), extraData))
+        # popover detail (link to run)
+        t = @
+        @popovers = tbody.find(".state .detail")
+            .popover(trigger: "manual")
+            .click((e) ->
+                t.popovers.not(this).popover("hide")
+                $(this).popover("show")
+                e.stopPropagation()
+                e.preventDefault()
+            )
         # make it a DataTable
         @dataTable = $(@baseElement).dataTable
             sDom: 'R<"H"fir>t<"F"lp>'
