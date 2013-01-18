@@ -1117,7 +1117,7 @@ class StatusTable extends CompositeElement
             {{if run}}
             title="Detailed Info"
             data-placement="bottom" data-html="true" data-trigger="click"
-            data-content='<a href="{{>run}}">{{>run}}</a>'
+            data-content='<a href="{{>~ExpKitServiceBaseURL}}/{{>run}}">{{>run}}</a>'
             {{/if}}><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></div></td>
             {{for columns}}
             <td>{{>value}}</td>
@@ -1153,6 +1153,7 @@ class StatusTable extends CompositeElement
         tbody = $("<tbody>").appendTo(@baseElement)
         extraData =
             batchId: "run"
+            ExpKitServiceBaseURL: ExpKitServiceBaseURL
         ICON_BY_STATE =
             DONE: "ok"
             RUNNING: "spin icon-spinner"
