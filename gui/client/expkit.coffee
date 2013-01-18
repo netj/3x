@@ -935,10 +935,17 @@ initChartUI = ->
 
 
 class BatchesTable extends CompositeElement
-    constructor: (@baseElement, @status) ->
+    constructor: (@baseElement, @countDisplay, @status) ->
         super @baseElement
 
     load: =>
+        # update running count
+        $.getJSON("#{ExpKitServiceBaseURL}/api/run/batch.numRUNNING")
+            .success((count) =>
+                @countDisplay
+                    ?.text(count)
+                     .toggleClass("hide", count == 0)
+            )
         @dataTable = $(@baseElement).dataTable
             sDom: '<"H"fir>t<"F"lp>'
             bDestroy: true
@@ -965,6 +972,7 @@ class BatchesTable extends CompositeElement
             bt.status.load batchId
             localStorage.lastBatchId = batchId
         )
+        # TODO count RUNNING batches and show it in $("#runs .label").text()
         if localStorage.lastBatchId?
             @status.load localStorage.lastBatchId
         else
@@ -1127,7 +1135,7 @@ $ ->
         ExpKit.status = new StatusTable $("#status-table"),
             ExpKit.conditions,
             nameDisplay: $("#status-name")
-        ExpKit.batches = new BatchesTable $("#batches-table"), ExpKit.status
+        ExpKit.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), ExpKit.status
         ExpKit.batches.load()
     do initTitle
     do initNavBar

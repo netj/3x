@@ -231,6 +231,15 @@ app.get "/api/run/batch.DataTables", (req, res) ->
                     iTotalDisplayRecords: filteredCount
                     aaData: table
 
+app.get "/api/run/batch.numRUNNING", (req, res) ->
+    cli(res, "sh", ["-c", "exp-batches -l | grep -c RUNNING"]
+        , (lazyLines, next) ->
+            lazyLines
+                .take(1)
+                .join ([line]) -> next (+line.trim())
+    ) (err, count) ->
+        res.json count unless err
+
 app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId

@@ -191,7 +191,7 @@ body > .navbar .brand .icon {
   }
 }
 
-#status-table {
+#batches-table, #status-table {
   thead th.fixed, tbody td.state {
     text-align: center;
   }
@@ -208,7 +208,7 @@ body > .navbar .brand .icon {
       visibility: hidden;
     }
     tr.DONE    { background-color: @grayLighter; }
-    tr.RUNNING { background-color: @infoBackground; }
+    tr.RUNNING { background-color: @errorBackground; }
   }
 }
 
