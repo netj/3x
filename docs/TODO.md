@@ -62,9 +62,11 @@
 
 * list of runs and batches
     * planning/altering a batch (mostly just ordering)
+    * api for storing new/updated batch
+    * regular update (setInterval)
 * batch page
-    * monitoring running state
-    * start/stop/resume
+    * DONE monitoring running state
+    * DONE start/stop/resume
 * run page
     * monitoring logs
     * better looking run summary page
