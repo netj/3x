@@ -79,6 +79,12 @@
 * concise way to specify parallel execution order in the plan
 * automatic suggestion of representative condition values given a range, based
   on how each varies output (Ashish)
+* Think about what's a good way to present measurement datum which is
+  multi-dimensional itself, e.g., instead of summarizing the result of a run as
+  a scalar value (N/O/I/R), there can be an image file of some scatterplot
+  generated for each combination of condition params.  Maybe ExpKit can show
+  these images in the results table, but there should be a simple/general way
+  to do aggregation over these images.
 
 <!--
 vim:undofile
