@@ -15,3 +15,9 @@ PACKAGEEXECUTES := bin/exp
 
 STAGEDIR := @prefix@
 include buildkit/modules.mk
+
+count-loc:
+	@[ -d @prefix@ ] || { echo Run make first; false; }
+	wc -l $$(find Makefile @prefix@/{tools,bin} gui/{client,server} -type f) shell/package.json \
+	    $$(find * \( -name .build -o -name node_modules \) -prune -false -o -name '.module.*') \
+	    | sort -n

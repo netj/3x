@@ -7,19 +7,24 @@
 * DONE exp-results bug fix for empty args
 * DONE exp-results query on measurements (=/</>/<=/>=)
 * DONE exp-plan with the output of exp-results query (e.g., when you want to rerun exps for certain conditions with failures/anomalies/etc.)
+* DONE exp stop for stopping a running batch or run
 
-* Options for declaring new ones for `exp conditions` and `exp measurements`
+* separate the working directory for runs from other artifacts being assembled
+    e.g., $EXPRUN/{args,env,measures/,stdin,stdout,stderr,...} $EXPRUN/cwd/{run,and all the other files of user's}
+
+* Commands for adding new ones/removing old ones for `exp conditions` and `exp measurements`
+
 * a simple way to bootstrap an exp repository
 
         exp setup  VAR1=V1,V2  VAR2=V3,V4..V5 ...  'COMMAND'  MEASURE1='PATT1_FROM_OUTPUT'  MEASURE2='PATT2_FROM_OUTPUT' ...
 
-* DONE exp stop for stopping a running batch or run
-* keep links to currently running batch and/or run
-
-* better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
+* keep links to currently running batch and/or run in a concentrated place, say `run/current/*` or so
+* record observed real/user/sys times
 
 * `exp measure` for running newly added measures: requires partial assembly for exp.measure, and separating the running part from exp-run.
 * exp-rerun for re-running past runs: do a copy --archive --link from the run dir and simply run it again?
+
+* better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
 
 * better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
 
@@ -41,7 +46,6 @@
     * DONE different number precision for diff measurements (using mean of |fractional|s of the actual values)
     * DONE fill empty results for selected conditions
         * from the popup, let user easily add exp plans
-    * show multiple aggregation for each measurements
     * DONE clear separation of split aggregation control and selection/filtering/projection of columns
         * aggregate/or not menuitem on conditions
         * aggregate/or not icon on table column header
@@ -49,24 +53,45 @@
     * DONE show progress while doing ResultsTable.display
 * DONE clean up navbar with scrollspy
 * DONE Encapsulate with CoffeeScript classes
-* d3 plots of results
-    * bar chart
-    * scatter plot
-    * small multiple
 
 * DONE Title with .exp/description or basename of the $EXPROOT and ExpKitServiceBaseURL
 * DONE ExpKitServiceBaseURL change option
 * DONE allow multiple instances of GUI with diff port (pid file is the singleton enforcer right now)
 
-* easy creating/removing of condition values
+* DONE batch page
+    * DONE monitoring running state
+    * DONE start/stop/resume
 
 * list of runs and batches
     * planning/altering a batch (mostly just ordering)
     * api for storing new/updated batch
-    * regular update (setInterval)
-* batch page
-    * DONE monitoring running state
-    * DONE start/stop/resume
+
+* Handy way to generate condition combinations from the result table and add them to plan table
+
+* Selection(Filter) on measurements
+* Show multiple columns of same measurement with diff aggregation in results table
+
+* easy add/removal of condition values
+
+* Charting
+    * use d3 to plot results
+    * invent an intuitive interaction for mapping column(condition) to x/y/series
+    * predefined set of visualizations
+        * bar chart
+        * scatter plot
+    * and probably a composite one
+        * small multiple
+
+* Use WebSockets (socket.io) to notify changes to the run/batch status and deliver new results incrementally
+    * Use python portable library for inotify and Mac equiv to monitor file changes
+    * Detect if new runs finish or start
+    * and simply deliver using the awesome socket.io library
+
+* Uniting runs in the results table
+    * hint on what condition combination is running
+    * and how many of them are running
+    * update the table as new results get added
+
 * run page
     * monitoring logs
     * better looking run summary page
