@@ -23,9 +23,9 @@
 @navbarHeight: 40px;
 #main {
   & > .row-fluid {
-    padding-bottom: (5 * @navbarHeight);
+    margin-bottom: (5 * @navbarHeight);
     &:last-child {
-      padding-bottom: 0;
+      margin-bottom: 0;
     }
   }
 }
@@ -42,7 +42,7 @@
     margin-top: -@navbarHeight;
     & > .row-fluid {
       padding-top: (@mainTopSpacing + @navbarHeight);
-      min-height: 980px; // TODO find a better way to give enough space for each section
+      min-height: 0.618 * 980px; // TODO find a better way to give enough space for each section
     }
   }
   #setup {
