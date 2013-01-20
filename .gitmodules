@@ -4,30 +4,30 @@
 [submodule "gui/bootstrap"]
 	path = gui/bootstrap
 	url = git://github.com/twitter/bootstrap.git
-[submodule "gui/d3"]
-	path = gui/d3
-	url = git://github.com/mbostock/d3.git
-[submodule "gui/jsrender"]
-	path = gui/jsrender
-	url = https://github.com/BorisMoore/jsrender.git
+[submodule "gui/Font-Awesome"]
+	path = gui/Font-Awesome
+	url = https://github.com/FortAwesome/Font-Awesome.git
 [submodule "gui/underscore"]
 	path = gui/underscore
 	url = https://github.com/documentcloud/underscore.git
+[submodule "gui/jsrender"]
+	path = gui/jsrender
+	url = https://github.com/BorisMoore/jsrender.git
+[submodule "gui/jquery-ui"]
+	path = gui/jquery-ui
+	url = https://github.com/jquery/jquery-ui.git
 [submodule "gui/DataTables"]
 	path = gui/DataTables
 	url = https://github.com/DataTables/DataTables.git
 [submodule "gui/DataTables.Plugins"]
 	path = gui/DataTables.Plugins
-	url = https://github.com/DataTables/Plugins.git
+	url = https://github.com/netj/DataTables.Plugins.git
 [submodule "gui/DataTables.ColReorder"]
 	path = gui/DataTables.ColReorder
 	url = https://github.com/netj/DataTables.ColReorder.git
-[submodule "gui/Font-Awesome"]
-	path = gui/Font-Awesome
-	url = https://github.com/FortAwesome/Font-Awesome.git
-[submodule "gui/jquery-ui"]
-	path = gui/jquery-ui
-	url = https://github.com/jquery/jquery-ui.git
 [submodule "gui/DataTables.RowReorder"]
 	path = gui/DataTables.RowReorder
-	url = https://github.com/netj/jquery-datatables-row-reordering.git
+	url = https://github.com/netj/DataTables.RowReorder.git
+[submodule "gui/d3"]
+	path = gui/d3
+	url = git://github.com/mbostock/d3.git
