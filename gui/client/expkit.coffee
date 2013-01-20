@@ -1337,7 +1337,14 @@ class PlanTable extends PlanTableBase
                     if (i = expandedConditions[name])?
                         [$(cells[i]).text().trim()]
                     else
-                        @conditions.conditionValues[name] ? allValues
+                        values = @conditions.conditionValues[name]
+                        if values?.length > 0 then values
+                        else allValues?.values ? []
+            # check valuesMatrix to see if we are actually generating some plans
+            for values,idx in valuesMatrix when not values? or values.length is 0
+                name = (name of @conditions.conditions)[idx]
+                error "Cannot add anything to plan: no values for condition #{name}"
+                return
             # add generated combinations to the current plan
             log "adding plans for", valuesMatrix
             rows = @plan.rows
