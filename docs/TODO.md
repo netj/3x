@@ -63,13 +63,22 @@
     * DONE start/stop/resume
 
 * list of runs and batches
-    * planning/altering a batch (mostly just ordering)
+    * DONE planning/altering a batch (mostly just ordering)
     * api for storing new/updated batch
+    * make PlanTable selectable
+    * and allow removal of the selected items
 
-* Handy way to generate condition combinations from the result table and add them to plan table
+* DONE Handy way to generate condition combinations from the result table and add them to plan table
+    * minor: append the popover in the first or run# column to avoid glitches
+    * minor: scroll to bottom of plan after adding
 
 * Selection(Filter) on measurements
 * Show multiple columns of same measurement with diff aggregation in results table
+
+* Re-layout Results/Chart/Plan/Runs to minimize scrolls and make it look
+  better, and look not so complicated by adding margin
+
+* Unify the common dataTables UI stuffs into a single base class, e.g., "Reset Column Order"
 
 * easy add/removal of condition values
 
