@@ -34,7 +34,8 @@ safeId = (str) -> str.replace(/[^A-Za-z0-9_-]/g, "-")
 
 
 RUN_COLUMN_NAME = "run#"
-
+SERIAL_COLUMN_NAME = "serial#"
+STATE_COLUMN_NAME  = "state#"
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -1072,10 +1073,17 @@ class PlanTableBase extends CompositeElement
         # prepare to distinguish metadata from condition columns
         columnIndex = {}; columnIndex[name] = idx for name,idx in data.names
         columnNames = (name for name of @conditions.conditions)
-        metaColumnNames = {} # at the least, there should be serial# and state#
+        metaColumnNames = {} # at the least, there should be SERIAL_COLUMN_NAME and STATE_COLUMN_NAME
         for name,idx in data.names
             if (m = name.match /^(.*)#$/)?
-                metaColumnNames[m[1]] = idx
+                nm = switch name
+                    when STATE_COLUMN_NAME
+                        "state"
+                    when SERIAL_COLUMN_NAME
+                        "serial"
+                    else
+                        m[1]
+                metaColumnNames[nm] = idx
             else if not name in columnNames
                 columnNames.push name
 
@@ -1213,7 +1221,7 @@ class PlanTable extends PlanTableBase
         localStorage[@planTableId] = JSON.stringify @plan
 
     newPlan: =>
-        names: ["serial#", "state#", (name for name of @conditions.conditions)...]
+        names: [SERIAL_COLUMN_NAME, STATE_COLUMN_NAME, (name for name of @conditions.conditions)...]
         rows: []
         lastSerial: 0
 
@@ -1316,7 +1324,7 @@ class PlanTable extends PlanTableBase
             # rewrite serial numbers if needed
             serialLength = String(rows.length).length
             if serialLength > prevSerialLength
-                serialIdx = @plan.names.indexOf("serial#")
+                serialIdx = @plan.names.indexOf(SERIAL_COLUMN_NAME)
                 zeros = ""; zeros += "0" for i in [1..serialLength]
                 rewriteSerial = (serial) -> "#{zeros.substring(String(serial).length)}#{serial}"
                 for row in rows
