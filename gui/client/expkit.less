@@ -19,8 +19,18 @@
 @import "DataTables/dataTables.bootstrap.css";
 @import "DataTables/css/ColReorder.css";
 
+// responsive layout for the main structure
+@navbarHeight: 40px;
+#main {
+  & > .row-fluid {
+    padding-bottom: (5 * @navbarHeight);
+    &:last-child {
+      padding-bottom: 0;
+    }
+  }
+}
 @media screen and (min-width: 980px) {
-  @navbarHeight: 40px;
+  @mainTopSpacing: 10px;
   body {
     padding-top: @navbarHeight;
     padding-bottom: @navbarHeight;
@@ -28,20 +38,26 @@
   .container-fluid {
     padding: 0 @fluidGridGutterWidth;
   }
-  @mainTopSpacing: 10px;
   #main {
     margin-top: -@navbarHeight;
     & > .row-fluid {
       padding-top: (@mainTopSpacing + @navbarHeight);
       min-height: 980px; // TODO find a better way to give enough space for each section
-      padding-bottom: (5 * @navbarHeight);
-      &:last-child {
-        padding-bottom: 0;
-      }
     }
   }
   #setup {
     padding-top: 2*@mainTopSpacing !important;
+  }
+}
+@media screen and (max-width: 979px) {
+  #setup {
+    &.affix {
+      position: absolute;
+    }
+  }
+}
+@media screen and (min-width: 768px) {
+  #setup{
     &.affix {
       width: 2*@fluidGridColumnWidth + @fluidGridGutterWidth;
       padding: 1px;
@@ -55,27 +71,17 @@
         overflow: auto;
       }
     }
-    h4 {
-      margin-bottom: 4px;
-    }
-    .condition, .measurement {
-      .dropdown-toggle {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        padding-right: 14px;
-        .caret {
-          float: right;
-          margin-right: -7px;
-        }
-        .condition-values {
-          word-wrap: initial;
-          display: inline;
-        }
-      }
+  }
+}
+@media screen and (max-width: 767px) {
+  #setup {
+    padding-bottom: 5 * @navbarHeight;
+    &.affix {
+      position: initial;
     }
   }
 }
+
 
 body > .navbar .brand .icon {
   height: 20px;
@@ -87,44 +93,68 @@ body > .navbar .brand .icon {
   }
 }
 
-#conditions, #measurements {
-  .dropdown-menu a {
-    padding-left: 4ex;
-    &.active:before {
-      margin-left: -2ex;
-      content: "✓ ";
+#setup {
+  h4 {
+    margin-bottom: 4px;
+  }
+
+  .condition, .measurement {
+    .dropdown-toggle {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-right: 14px;
+      .caret {
+        float: right;
+        margin-right: -7px;
+      }
+      .condition-values {
+        word-wrap: initial;
+        display: inline;
+      }
     }
   }
-}
-.condition-hide-toggle {
-  margin-left: -.3em;
-  margin-right: .3em;
-}
-.condition-values {
-  word-wrap: break-word;
-  display: inline-block;
+
+  #conditions, #measurements {
+    .dropdown-menu a {
+      padding-left: 4ex;
+      &.active:before {
+        margin-left: -2ex;
+        content: "✓ ";
+      }
+    }
+  }
+  .condition-hide-toggle {
+    margin-left: -.3em;
+    margin-right: .3em;
+  }
+  .condition-values {
+    word-wrap: break-word;
+    display: inline-block;
+  }
+
+  #measurements {
+    & > li > a {
+      color: @errorText;
+      .caret {
+        border-top-color: @errorText;
+        border-bottom-color: @errorText;
+      }
+    }
+    & > li.active > a {
+      &, &:hover {
+        color: @white;
+        background-color: @errorText;
+      }
+      .caret {
+        border-top-color: @white;
+        border-bottom-color: @white;
+      }
+    }
+  }
 }
 
-#measurements {
-  & > li > a {
-    color: @errorText;
-    .caret {
-      border-top-color: @errorText;
-      border-bottom-color: @errorText;
-    }
-  }
-  & > li.active > a {
-    &, &:hover {
-      color: @white;
-      background-color: @errorText;
-    }
-    .caret {
-      border-top-color: @white;
-      border-bottom-color: @white;
-    }
-  }
-}
-
+#results {
 #results-table {
   thead {
     .muted {
@@ -163,7 +193,7 @@ body > .navbar .brand .icon {
 #results-table-progress {
   display: none;
 }
-#results {
+
 &.loading, &.displaying {
   #results-table-progress {
     display: block;
@@ -213,6 +243,9 @@ body > .navbar .brand .icon {
     td.state .popover { width: auto; text-align: initial; }
     tr.ui-sortable-helper td.order { visibility: hidden; }
   }
+}
+#results-table .planner.popover {
+  max-width: 2 * 100%/12;
 }
 
 #run-count, #plan-count {

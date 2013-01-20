@@ -1276,7 +1276,7 @@ class PlanTable extends PlanTableBase
         # add a popover to the attached results table
         if (rt = @optionElements.resultsTable)?
             popover = @resultsActionPopover = $("""
-                <div class="popover fade left" style="display:block;">
+                <div class="planner popover fade left" style="display:block;">
                     <div class="arrow"></div>
                     <div class="popover-inner">
                         <div class="popover-content">
