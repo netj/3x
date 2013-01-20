@@ -1315,7 +1315,7 @@ class PlanTable extends PlanTableBase
                         popoverHideTimeout = null
                     , 100
                     )
-                .on("tbody tr .add.btn").click(@addPlanFromRowHandler())
+                .on("click", "tbody tr .add.btn", @addPlanFromRowHandler())
     @STATE: "REMAINING"
     addPlanFromRowHandler: =>
         add = ($tr) =>
