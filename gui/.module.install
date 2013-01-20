@@ -19,6 +19,8 @@ DataTables/media/js/jquery.dataTables.js                                        
 DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js                        $GUIDIR/client/resource/jquery.dataTables.bootstrap.js
 DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css                       $GUIDIR/client/resource/DataTables/
 DataTables.Plugins/integration/bootstrap/images/sort_{{asc,desc}{,_disabled},both}.png  $GUIDIR/client/resource/DataTables/images/
+DataTables.Plugins/type-detection/num-html.js                                           $GUIDIR/client/resource/jquery.dataTables.type-detection.num-html.js
+DataTables.Plugins/sorting/num-html.js                                                  $GUIDIR/client/resource/jquery.dataTables.sorting.num-html.js
 DataTables.ColReorder/media/js/ColReorder.js                                            $GUIDIR/client/resource/jquery.dataTables.ColReorder.js
 DataTables.ColReorder/media/css/ColReorder.css                                          $GUIDIR/client/resource/DataTables/css/
 DataTables.ColReorder/media/images/insert.png                                           $GUIDIR/client/resource/DataTables/images/
