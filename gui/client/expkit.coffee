@@ -658,6 +658,9 @@ class ResultsTable extends CompositeElement
 
         log "rendering results:", @resultsForRendering
 
+        # fold any artifacts made by previous DataTables
+        @dataTable?.dataTable bDestroy:true
+
         # populate table head
         thead = @baseElement.find("thead")
         thead.find("tr").remove()
@@ -912,6 +915,8 @@ class BatchesTable extends CompositeElement
             @thead.find("th:gt(1)")
                 .each (i,th) => @headerNames.push $(th).text().replace /^#/, ""
         else
+            # fold any artifacts made by previous DataTables
+            @dataTable?.dataTable bDestroy:true
             @thead.find("tr").remove()
             @thead.append(@origHeadRow)
             @baseElement.find("tbody").remove()
@@ -1086,6 +1091,9 @@ class PlanTableBase extends CompositeElement
                 metaColumnNames[nm] = idx
             else if not name in columnNames
                 columnNames.push name
+
+        # fold any artifacts left by previous DataTables construction
+        @dataTable?.dataTable bDestroy:true
 
         # populate table head
         thead = @baseElement.find("thead")
