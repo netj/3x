@@ -31,7 +31,14 @@
   @mainTopSpacing: 10px;
   #main {
     margin-top: -@navbarHeight;
-    & > .row-fluid { padding-top: (@mainTopSpacing + @navbarHeight); }
+    & > .row-fluid {
+      padding-top: (@mainTopSpacing + @navbarHeight);
+      min-height: 980px; // TODO find a better way to give enough space for each section
+      padding-bottom: (5 * @navbarHeight);
+      &:last-child {
+        padding-bottom: 0;
+      }
+    }
   }
   #setup {
     padding-top: 2*@mainTopSpacing !important;

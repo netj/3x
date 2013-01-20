@@ -44,10 +44,10 @@
             <ul class="nav">
               <li><a href="#results"><i class="icon-table icon"></i>Results</a></li>
               <li><a href="#chart"><i class="icon-bar-chart icon"></i>Chart</a></li>
-              <li><a href="#runs"><i class="icon-cogs icon"></i>Runs
-                  <small><span id="run-count" class="label label-important hide">0</span></small></a></li>
               <li><a href="#plan"><i class="icon-time icon"></i>Plan
                   <small><span id="plan-count" class="label label-info hide">0</span></small></a></li>
+              <li><a href="#runs"><i class="icon-cogs icon"></i>Runs
+                  <small><span id="run-count" class="label label-important hide">0</span></small></a></li>
             </ul>
           </div>
         </div>
@@ -131,29 +131,6 @@
             <div id="chart-body" style="height: 500px;"></div>
           </div>
 
-          <div class="row-fluid" id="runs">
-            <h2><i class="icon-cogs icon"></i>Runs</h2>
-            <table id="batches-table" class="table table-hover table-bordered"
-              cellpadding="0" cellspacing="0" border="0">
-              <thead>
-                <th class="id">Batch</th>
-                <th class="state">State</th>
-                <th>#running</th>
-                <th>#done</th>
-                <th>#remaining</th>
-                <th>#planned</th>
-              </thead>
-              <tbody></tbody>
-            </table>
-
-            <h3><i class="icon-cog icon"></i><span id="status-name">Status</span></h3>
-            <table id="status-table" class="table table-hover table-bordered"
-              cellpadding="0" cellspacing="0" border="0">
-              <thead></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
           <div class="row-fluid" id="plan">
             <h2><i class="icon-time icon"></i>Plan</h2>
 
@@ -178,28 +155,52 @@
             </table>
           </div>
 
-          <div id="url-switch" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-              <h3>Change ExpKit URL</h3>
-            </div>
-            <div class="modal-body">
-              <div class="input-prepend input-append">
-                <span class="add-on">http://</span>
-                <input type="text" placeholder="hostname" class="input-xlarge url-input-host">
-                <span class="add-on">:</span>
-                <input type="number" placeholder="port" class="input-mini url-input-port" min="0" max="65535" step="1">
-                <span class="add-on"></span>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <a href="#" class="btn" data-dismiss="modal">Close</a>
-              <a href="#" class="btn btn-primary">Save changes</a>
-            </div>
+          <div class="row-fluid" id="runs">
+            <h2><i class="icon-cogs icon"></i>Runs</h2>
+            <table id="batches-table" class="table table-hover table-bordered"
+              cellpadding="0" cellspacing="0" border="0">
+              <thead>
+                <th class="id">Batch</th>
+                <th class="state">State</th>
+                <th>#running</th>
+                <th>#done</th>
+                <th>#remaining</th>
+                <th>#planned</th>
+              </thead>
+              <tbody></tbody>
+            </table>
+
+            <h3><i class="icon-cog icon"></i><span id="status-name">Status</span></h3>
+            <table id="status-table" class="table table-hover table-bordered"
+              cellpadding="0" cellspacing="0" border="0">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
           </div>
 
         </div>
       </div>
+
+      <div id="url-switch" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h3>Change ExpKit URL</h3>
+        </div>
+        <div class="modal-body">
+          <div class="input-prepend input-append">
+            <span class="add-on">http://</span>
+            <input type="text" placeholder="hostname" class="input-xlarge url-input-host">
+            <span class="add-on">:</span>
+            <input type="number" placeholder="port" class="input-mini url-input-port" min="0" max="65535" step="1">
+            <span class="add-on"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="#" class="btn" data-dismiss="modal">Close</a>
+          <a href="#" class="btn btn-primary">Save changes</a>
+        </div>
+      </div>
+
     </div>
 
   </body>

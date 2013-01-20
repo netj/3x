@@ -75,7 +75,7 @@
 * Selection(Filter) on measurements
 * Show multiple columns of same measurement with diff aggregation in results table
 
-* Re-layout Results/Chart/Plan/Runs to minimize scrolls and make it look
+* DONE Re-layout Results/Chart/Plan/Runs to minimize scrolls and make it look
   better, and look not so complicated by adding margin
 
 * Unify the common dataTables UI stuffs into a single base class, e.g., "Reset Column Order"
