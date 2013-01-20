@@ -1220,11 +1220,13 @@ class PlanTable extends PlanTableBase
         do @attachToResultsTable
         do @initButtons
         @on "reordered", @persist
-        # finally, show the current plan in table
+        # finally, show the current plan in table, and display count
         @display @plan
+        do @updateCountDisplay
 
     persist: =>
         log "saving plan for later", @plan
+        do @updateCountDisplay
         # persist in localStorage
         localStorage[@planTableId] = JSON.stringify @plan
 
@@ -1239,6 +1241,12 @@ class PlanTable extends PlanTableBase
         do @persist
         _.defer =>
             @display @plan
+
+    updateCountDisplay: =>
+        count = @plan.rows.length
+        @optionElements.countDisplay
+            ?.text(count)
+             .toggleClass("hide", count == 0)
 
     updateButtons: =>
         # turn on/off buttons
@@ -1368,6 +1376,7 @@ $ ->
                 resultsTable: ExpKit.results
                 buttonSubmit: $("#plan-submit")
                 buttonClear : $("#plan-clear")
+                countDisplay: $("#plan-count.label")
         # runs
         ExpKit.status = new StatusTable "status", $("#status-table"),
             ExpKit.conditions,
