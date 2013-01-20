@@ -541,6 +541,8 @@ class ResultsTable extends CompositeElement
             <th class="{{>className}}"><span>{{>name}}</span
                 >{{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
                 icon icon-folder-{{if isForGrouping}}open{{else}}close{{/if}}-alt"
+                title="{{if isForGrouping}}Aggregate and fold the values of {{>name}}{{else
+                }}Expand the aggregated values of {{>name}}{{/if}}"
                 ></i>{{/if}}</th>
             {{/for}}
           </tr>
