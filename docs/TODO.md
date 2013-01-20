@@ -69,8 +69,8 @@
     * and allow removal of the selected items
 
 * DONE Handy way to generate condition combinations from the result table and add them to plan table
-    * minor: append the popover in the first or run# column to avoid glitches
-    * minor: scroll to bottom of plan after adding
+    * DONE minor: append the popover in the first or run# column to avoid glitches
+    * DONE minor: scroll to bottom of plan after adding
 
 * Selection(Filter) on measurements
 * Show multiple columns of same measurement with diff aggregation in results table

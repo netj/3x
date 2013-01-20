@@ -1230,6 +1230,12 @@ class PlanTable extends PlanTableBase
         # persist in localStorage
         localStorage[@planTableId] = JSON.stringify @plan
 
+    display: (data) =>
+        super data
+        # scroll to the last row
+        if (lastRow = @dataTable.find("tbody tr").last()[0])?
+            @scrollBody?.scrollTop = lastRow.offsetTop
+
     newPlan: =>
         names: [SERIAL_COLUMN_NAME, STATE_COLUMN_NAME, (name for name of @conditions.conditions)...]
         rows: []
@@ -1288,7 +1294,7 @@ class PlanTable extends PlanTableBase
                 return if popover.parent()?.index() is $tr.index()
                 popover.removeClass("in")
                 _.defer ->
-                    $tr.append(popover)
+                    $tr.find("td:nth(0)").append(popover)
                     pos = $tr.position()
                     popover.addClass("in")
                         .css
