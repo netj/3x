@@ -1291,7 +1291,7 @@ class PlanTable extends PlanTableBase
             displayPopover = ($tr) ->
                 # TODO display only when there is an expanded condition column
                 # try to avoid attaching to the same row more than once
-                return if popover.parent()?.index() is $tr.index()
+                return if popover.closest("tr")?.index() is $tr.index()
                 popover.removeClass("in")
                 _.defer ->
                     $tr.find("td:nth(0)").append(popover)
