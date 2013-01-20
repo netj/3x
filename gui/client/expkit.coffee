@@ -1012,7 +1012,7 @@ class BatchesTable extends CompositeElement
         @baseElement.find("tbody tr").removeClass("info"); $row.addClass("info")
 
     actionHandler: (action) =>
-        action = ($row) =>
+        act = ($row) =>
             batchId = $row.find("td:nth(0)").text()
             log "#{action}ing #{batchId}"
             $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}:#{action}")
@@ -1020,7 +1020,7 @@ class BatchesTable extends CompositeElement
                     setTimeout (=> @dataTable.fnPageChange "first"), 1000
                 # TODO feedback on failure
         (e) ->
-            action $(this).closest("tr")
+            act $(this).closest("tr")
             do e.preventDefault
             do e.stopPropagation
 
