@@ -144,7 +144,7 @@
               <tbody></tbody>
             </table>
 
-            <h3><i class="icon-dashboard icon"></i><span id="status-name">Status</span></h3>
+            <h3><i class="icon-cog icon"></i><span id="status-name">Status</span></h3>
             <table id="status-table" class="table table-hover table-bordered"
               cellpadding="0" cellspacing="0" border="0">
               <thead></thead>
@@ -154,8 +154,26 @@
 
           <div class="row-fluid" id="plan">
             <h2><i class="icon-time icon"></i>Plan</h2>
-            ...
-            <div style="height: 500px;"></div>
+
+            <form class="form-inline">
+              <a id="plan-submit" class="btn btn-primary disabled"><i class="icon icon-magic"></i>
+                Create a new <i class="icon icon-cog"></i> Batch
+              </a>
+              <label class="checkbox inline">
+                <input type="checkbox" id="plan-start-after-create">
+                <i class="icon icon-bolt"></i>
+                Start after creating it
+              </label>
+              <a id="plan-clear"  class="btn btn-danger disabled pull-right"><i class="icon icon-trash"></i>
+                Clear
+              </a>
+            </form>
+
+            <table id="plan-table" class="table table-hover table-bordered"
+              cellpadding="0" cellspacing="0" border="0">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
           </div>
 
           <div id="url-switch" class="modal hide fade" tabindex="-1" role="dialog" aria-hidden="true">

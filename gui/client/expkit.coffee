@@ -6,7 +6,8 @@
 
 ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL ? ""
 
-log = (args...) -> console.log args...; args[0]
+log   = (args...) -> console.log   args...; args[0]
+error = (args...) -> console.error args...; args[0]
 
 Array::joinTextsWithShy = (delim) ->
     ($("<div/>").text(v).html() for v in @).join "&shy;#{delim}"
@@ -275,8 +276,9 @@ initBaseURLControl = ->
 # TODO find a cleaner way to do this, i.e., leveraging jQuery
 class CompositeElement
     constructor: (@baseElement) ->
-        @on      = $.proxy @baseElement.on,      @baseElement
-        @one     = $.proxy @baseElement.one,     @baseElement
+        @on      = $.proxy @baseElement.on     , @baseElement
+        @off     = $.proxy @baseElement.off    , @baseElement
+        @one     = $.proxy @baseElement.one    , @baseElement
         @trigger = $.proxy @baseElement.trigger, @baseElement
 
 
@@ -291,6 +293,7 @@ class ConditionsUI extends CompositeElement
         @conditionsHidden = JSON.parse @lastConditionsHidden
 
     persist: =>
+        # TODO isolate localStorage key
         localStorage.conditionValues = JSON.stringify @conditionValues
         localStorage.conditionsHidden = JSON.stringify @conditionsHidden
 
@@ -424,6 +427,7 @@ class MeasurementsUI extends CompositeElement
         @measurementsAggregation = try JSON.parse (localStorage.measurementsAggregation ?= "{}")
 
     persist: =>
+        # TODO isolate localStorage key
         localStorage.measurementsAggregation = JSON.stringify @measurementsAggregation
 
     load: =>
@@ -537,6 +541,7 @@ class ResultsTable extends CompositeElement
 
     constructor: (@baseElement, @conditions, @measurements, @optionElements = {}) ->
         super @baseElement
+        # TODO isolate localStorage key
         @columnsToExpand = (try JSON.parse localStorage.resultsColumnsToExpand) ? {}
         @columnNames = null
         @columnNamesGrouping = null
@@ -552,12 +557,14 @@ class ResultsTable extends CompositeElement
         @optionElements.toggleIncludeEmpty
            ?.prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
             .change((e) ->
+                # TODO isolate localStorage key
                 localStorage.resultsIncludeEmpty = JSON.stringify this.checked
                 do t.display
             )
         @optionElements.toggleShowHiddenConditions
            ?.prop("checked", (try JSON.parse localStorage.resultsShowHiddenConditions) ? false)
             .change((e) ->
+                # TODO isolate localStorage key
                 localStorage.resultsShowHiddenConditions = JSON.stringify this.checked
                 do t.display
             )
@@ -788,6 +795,7 @@ class ResultsTable extends CompositeElement
             bPaginate: false
             bAutoWidth: false
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
+            # TODO isolate localStorage key
             fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.resultsDataTablesState
             bStateSave: true
@@ -938,7 +946,24 @@ class BatchesTable extends CompositeElement
     constructor: (@baseElement, @countDisplay, @status) ->
         super @baseElement
 
-    load: =>
+        openBatchStatusFor = ($row) =>
+            @displaySelected $row
+            batchId = $row.find("td:nth(0)").text()
+            @status.load batchId
+            # TODO isolate localStorage key
+            localStorage.lastBatchId = batchId
+        @baseElement.on "click", "tbody tr", (e) ->
+            openBatchStatusFor $(this).closest("tr")
+        # TODO isolate localStorage key
+        if localStorage.lastBatchId?
+            @status.load localStorage.lastBatchId
+        else
+            @dataTable.one "draw", ->
+                tbody.find("tr:nth(0)").click()
+
+        do @display
+
+    display: =>
         do @updateRunningCount
         bt = @
         unless @dataTable?
@@ -946,9 +971,9 @@ class BatchesTable extends CompositeElement
             @thead = @baseElement.find("thead")
             @origHeadRow = @thead.find("tr").clone()
             # remember the column names
-            bt.headerNames = []
+            @headerNames = []
             @thead.find("th:gt(1)")
-                .each(-> bt.headerNames.push $(this).text().replace /^#/, "")
+                .each (i,th) => @headerNames.push $(th).text().replace /^#/, ""
         else
             @thead.find("tr").remove()
             @thead.append(@origHeadRow)
@@ -958,7 +983,7 @@ class BatchesTable extends CompositeElement
         @dataTable = $(@baseElement).dataTable
             sDom: '<"H"fir>t<"F"lp>'
             bDestroy: true
-            bAutoWidth: true
+            bAutoWidth: false
             bProcessing: true
             bServerSide: true
             sAjaxSource: "#{ExpKitServiceBaseURL}/api/run/batch.DataTables"
@@ -970,6 +995,7 @@ class BatchesTable extends CompositeElement
             #sScrollY: "#{Math.max(240, .2 * window.innerHeight)}px"
             bSort: false
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
+            # TODO isolate localStorage key
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
             bStateSave: true
@@ -987,17 +1013,17 @@ class BatchesTable extends CompositeElement
                     <th>#Remaining</th>
                     """)
             # manipulate rows before they are rendered
-            fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) ->
+            fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
                 $row = $(nRow)
                 # indicate which batch's status is displayed
                 $batchCell = $row.find("td:nth(0)")
                 batchId = $batchCell.text()
                 if localStorage.lastBatchId is batchId
-                    bt.displaySelected $row
+                    @displaySelected $row
                 # collect the values and replace columns
                 value = {}
                 $row.find("td:gt(1)")
-                    .each((i) -> value[bt.headerNames[i]] = $(this).text())
+                    .each((i,td) => value[@headerNames[i]] = $(td).text())
                     .remove()
                 totalRuns = (+value.done) + (+value.running) + (+value.remaining)
                 percentage = (100 * (+value.done) / totalRuns).toFixed(0)
@@ -1008,7 +1034,7 @@ class BatchesTable extends CompositeElement
                     <td>#{value.running}</td>
                     <td>#{value.remaining}</td>
                     """)
-                $batchCell.attr(id:"id")
+                $batchCell.addClass("id")
                 # progress bar
                 $stateCell = $row.find("td:nth(1)")
                 state = $stateCell.text()
@@ -1038,38 +1064,21 @@ class BatchesTable extends CompositeElement
                     $actionCell = $row.find("td:nth(2)")
                     $actionCell.html("""<a class="btn btn-small
                         #{action}"><i class="icon icon-#{icon}"></i></a>""")
-                    $actionCell.find(".btn").click(bt.actionHandler action)
-        tbody = @baseElement.find("tbody")
-        tbody.find("tr").live("click", (e) ->
-            $row = $(this).closest("tr")
-            bt.displaySelected $row
-            batchId = $row.find("td:nth(0)").text()
-            bt.status.load batchId
-            localStorage.lastBatchId = batchId
-        )
-        # TODO count RUNNING batches and show it in $("#runs .label").text()
-        if localStorage.lastBatchId?
-            @status.load localStorage.lastBatchId
-        else
-            @dataTable.one "draw", ->
-                tbody.find("tr:nth(0)").click()
+                    $actionCell.find(".btn").click(@actionHandler action)
 
     displaySelected: ($row) =>
         @baseElement.find("tbody tr").removeClass("info"); $row.addClass("info")
 
     actionHandler: (action) =>
-        bt = @
-        (e) ->
-            $row = $(this).closest("tr")
+        action = ($row) =>
             batchId = $row.find("td:nth(0)").text()
             log "#{action}ing #{batchId}"
             $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}:#{action}")
-                .success (result) ->
-                    # TODO find the best way to refresh
-                    setTimeout (-> bt.dataTable.fnPageChange "first"), 1000
-                    # setTimeout bt.load, 1000
-                    # setTimeout bt.dataTable.fnDraw, 1000
+                .success (result) =>
+                    setTimeout (=> @dataTable.fnPageChange "first"), 1000
                 # TODO feedback on failure
+        (e) ->
+            action $(this).closest("tr")
             do e.preventDefault
             do e.stopPropagation
 
@@ -1083,33 +1092,30 @@ class BatchesTable extends CompositeElement
             )
 
 
-class StatusTable extends CompositeElement
-    constructor: (@baseElement, @conditions, @optionElements) ->
+
+
+class PlanTableBase extends CompositeElement
+    constructor: (@planTableId, @baseElement, @conditions, @optionElements) ->
         super @baseElement
         $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
                 @popovers?.popover("hide")
             )
-
-    load: (batchId) =>
-        @batchId = batchId
-        $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}")
-            .success(@display)
-
+        # TODO check if there's uncommitted changes beforeunload of document
 
     @HEAD_SKELETON: $("""
-        <script id="runs-table-head-skeleton" type="text/x-jsrender">
+        <script type="text/x-jsrender">
           <tr>
             <th class="fixed"></th>
             <th class="fixed">#</th>
             <th class="fixed">State</th>
             {{for columns}}
-            <th><span>{{>name}}</span></th>
+            <th>{{>name}}</th>
             {{/for}}
           </tr>
         </script>
         """)
     @ROW_SKELETON: $("""
-        <script id="runs-table-row-skeleton" type="text/x-jsrender">
+        <script type="text/x-jsrender">
           <tr class="run {{>className}} {{>state}}" id="{{>~batchId}}-{{>serial}}">
             <td class="order">{{>ordinal}}</td>
             <td class="serial">{{>serial}}</td>
@@ -1127,13 +1133,10 @@ class StatusTable extends CompositeElement
         """)
 
     display: (data) =>
-        log "showing batch status", @batchId, data
-        @optionElements.nameDisplay?.text(@batchId)
-
         # prepare to distinguish metadata from condition columns
         columnIndex = {}; columnIndex[name] = idx for name,idx in data.names
         columnNames = (name for name of @conditions.conditions)
-        metaColumnNames = {}
+        metaColumnNames = {} # at the least, there should be serial# and state#
         for name,idx in data.names
             if (m = name.match /^(.*)#$/)?
                 metaColumnNames[m[1]] = idx
@@ -1152,7 +1155,7 @@ class StatusTable extends CompositeElement
         @baseElement.find("tbody").remove()
         tbody = $("<tbody>").appendTo(@baseElement)
         extraData =
-            batchId: "run"
+            batchId: @planTableId
             ExpKitServiceBaseURL: ExpKitServiceBaseURL
         ICON_BY_STATE =
             DONE: "ok"
@@ -1166,7 +1169,8 @@ class StatusTable extends CompositeElement
         ordUB = data.rows.length
         for row,ord in data.rows
             metadata = {}
-            metadata[name] = row[idx] for name,idx of metaColumnNames
+            for name,idx of metaColumnNames
+                metadata[name] = row[idx]
             metadata.className = CLASS_BY_STATE[metadata.state]
             tbody.append(StatusTable.ROW_SKELETON.render(_.extend(metadata,
                     ordinal: ord
@@ -1176,6 +1180,7 @@ class StatusTable extends CompositeElement
                         for name in columnNames
                             value: row[columnIndex[name]]
                 ), extraData))
+        tbody.find("tr").each (i,tr) -> tr.ordinal = i
         # popover detail (link to run)
         t = @
         @popovers = tbody.find(".state .detail")
@@ -1198,8 +1203,8 @@ class StatusTable extends CompositeElement
             sScrollY: "#{Math.max(400, .618 * window.innerHeight)}px"
             aaSortingFixed: [[2, "asc"]]
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
-            fnStateSave: (oSettings, oData) -> localStorage.statusDataTablesState = JSON.stringify oData
-            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.statusDataTablesState
+            fnStateSave: (oSettings, oData) => localStorage["#{@planTableId}DataTablesState"] = JSON.stringify oData
+            fnStateLoad: (oSettings       ) => try JSON.parse localStorage["#{@planTableId}DataTablesState"]
             bStateSave: true
             # Workaround for DataTables resetting the scrollTop after sorting/reordering
             # TODO port this to the jquery.dataTables.rowReordering project
@@ -1207,13 +1212,22 @@ class StatusTable extends CompositeElement
                 @scrollTop = @scrollBody?.scrollTop
             fnDrawCallback: =>
                 @scrollBody?.scrollTop = @scrollTop
+                _.defer =>
+                    # detect and reflect reordering to the given data
+                    $trs = tbody.find("tr")
+                    return unless $trs.is (i) -> this.ordinal isnt i
+                    # reorder internal plan according to the order of rows in the table
+                    newRows = []; rows = data.rows
+                    $trs.each (i,tr) =>
+                        if tr.ordinal?
+                            newRows[i] = rows[tr.ordinal]
+                        tr.ordinal = i
+                    # finally, save the plan with reordered rows
+                    data.rows = newRows
+                    @trigger "reordered"
         @scrollBody = @dataTable.closest(".dataTables_wrapper").find(".dataTables_scrollBody")[0]
-        @dataTable.fnSort [[0, "asc"]]
-        indexColumn = 0
-        ## hide the first column of ordinals
-        #colOrder = @dataTable._oPluginColReorder?.fnGetCurrentOrder?()
-        #indexColumn = colOrder.indexOf(0)
-        #@dataTable.fnSetColumnVis indexColumn, false
+        indexColumn = @dataTable._oPluginColReorder?.fnGetCurrentOrder().indexOf(0) ? 0
+        @dataTable.fnSort [[indexColumn, "asc"]]
         # with reordering possible
         @dataTable.rowReordering
             iIndexColumn: indexColumn
@@ -1221,9 +1235,162 @@ class StatusTable extends CompositeElement
             items:  "tr.REMAINING"
             cancel: "tr:not(.REMAINING)"
         @dataTable.find("tbody tr").disableSelection()
+
+
+class StatusTable extends PlanTableBase
+    constructor: (args...) ->
+        super args...
+
+        @on "reordered", => # TODO notify changes to server
+
+    load: (batchId) =>
+        @batchId = batchId
+        $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}")
+            .success(@display)
+
+    display: (@status) =>
+        # display the name of the batch
+        log "showing batch status", @batchId, @status
+        @optionElements.nameDisplay?.text(@batchId)
+        # render table
+        super @status
         # scroll to the first REMAINING row
         if (firstREMAININGrow = @dataTable.find("tbody tr.REMAINING:nth(0)")[0])?
             @scrollBody?.scrollTop = firstREMAININGrow.offsetTop - firstREMAININGrow.offsetHeight * 3.5
+
+
+class PlanTable extends PlanTableBase
+    constructor: (args...) ->
+        super args...
+        # load plan and display it
+        @plan = (try JSON.parse localStorage[@planTableId]) ? @newPlan()
+        # intialize UI and hook events
+        do @attachToResultsTable
+        do @initButtons
+        @on "reordered", @persist
+        # finally, show the current plan in table
+        @display @plan
+
+    persist: =>
+        log "saving plan for later", @plan
+        # persist in localStorage
+        localStorage[@planTableId] = JSON.stringify @plan
+
+    newPlan: =>
+        names: ["serial#", "state#", (name for name of @conditions.conditions)...]
+        rows: []
+        lastSerial: 0
+
+    updatePlan: (plan) =>
+        @plan = plan
+        do @updateButtons
+        do @persist
+        _.defer =>
+            @display @plan
+
+    updateButtons: =>
+        # turn on/off buttons
+        isEmpty = @plan.rows.length is 0
+        @optionElements.buttonClear ?.toggleClass("disabled", isEmpty)
+        @optionElements.buttonSubmit?.toggleClass("disabled", isEmpty)
+    initButtons: =>
+        if (btnClear = @optionElements.buttonClear)?
+            btnClear.click (e) =>
+                unless btnClear.hasClass("disabled")
+                    @updatePlan @newPlan()
+        if (btnSubmit = @optionElements.buttonSubmit)?
+            btnSubmit.click (e) =>
+                unless btnSubmit.hasClass("disabled")
+                    # TODO send plan to server to create a new batch
+                    @updatePlan @newPlan()
+                    # TODO open from the batches
+        do @updateButtons
+
+    attachToResultsTable: =>
+        # add a popover to the attached results table
+        if (rt = @optionElements.resultsTable)?
+            popover = @resultsActionPopover = $("""
+                <div class="popover fade left" style="display:block;">
+                    <div class="arrow"></div>
+                    <div class="popover-inner">
+                        <div class="popover-content">
+                        <a class="btn add"><i class="icon icon-plus"></i> Add runs to <i class="icon icon-time"></i> Plan</a>
+                        </div>
+                    </div>
+                </div>
+                """).appendTo(document.body)
+            # attach the popover to the results table
+            #  in a somewhat complicated way to make it appear/disappear after a delay
+            popoverShowTimeout = null
+            displayPopover = ($tr) ->
+                # TODO display only when there is an expanded condition column
+                # try to avoid attaching to the same row more than once
+                return if popover.parent()?.index() is $tr.index()
+                popover.removeClass("in")
+                _.defer ->
+                    $tr.append(popover)
+                    pos = $tr.position()
+                    popover.addClass("in")
+                        .css
+                            top:  "#{pos.top  - (popover.height() - $tr.height())/2}px"
+                            left: "#{pos.left -  popover.width()                   }px"
+            popoverHideTimeout = null
+            rt.baseElement.parent()
+                .on("mouseover", "tbody tr", (e) ->
+                    popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
+                    popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
+                    popoverShowTimeout = setTimeout (=> displayPopover $(this).closest("tr")), 100
+                    )
+                .on("mouseout", "tbody tr", (e) ->
+                    popoverHideTimeout = setTimeout ->
+                        popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
+                        popover.removeClass("in")
+                        setTimeout (-> popover.remove()), 100
+                        popoverHideTimeout = null
+                    , 100
+                    )
+                .on("tbody tr .add.btn").click(@addPlanFromRowHandler())
+    @STATE: "REMAINING"
+    addPlanFromRowHandler: =>
+        add = ($tr) =>
+            cells = $tr.find("td").get()
+            # see which columns are the expanded conditions
+            expandedConditions = {}
+            $tr.closest("table").find("thead th.condition.expanded").each ->
+                $th = $(this)
+                expandedConditions[$th.text().trim()] = $th.index()
+            log "found expanded conditions", JSON.stringify expandedConditions
+            # don't proceed if no condition is expanded
+            if _.size(expandedConditions) is 0
+                error "Cannot add anything to plan: no expanded condition"
+                return
+            # TODO estimate size and confirm before adding to plan if too big
+            # and prepare the list of values
+            valuesMatrix =
+                for name,allValues of @conditions.conditions
+                    if (i = expandedConditions[name])?
+                        [$(cells[i]).text().trim()]
+                    else
+                        @conditions.conditionValues[name] ? allValues
+            # add generated combinations to the current plan
+            log "adding plans for", valuesMatrix
+            rows = @plan.rows
+            prevSerialLength = String(rows.length).length
+            forEachCombination valuesMatrix, (comb) => rows.push [++@plan.lastSerial, PlanTable.STATE, comb...]
+            # rewrite serial numbers if needed
+            serialLength = String(rows.length).length
+            if serialLength > prevSerialLength
+                serialIdx = @plan.names.indexOf("serial#")
+                zeros = ""; zeros += "0" for i in [1..serialLength]
+                rewriteSerial = (serial) -> "#{zeros.substring(String(serial).length)}#{serial}"
+                for row in rows
+                    row[serialIdx] = rewriteSerial row[serialIdx]
+            @updatePlan @plan
+        (e) ->
+            # find out from which row we're going to extract values
+            add $(e.srcElement).closest("tr")
+
+
 
 
 # initialize UI
@@ -1243,11 +1410,17 @@ $ ->
                 buttonResetColumnOrder      : $("#results-reset-column-order")
                 containerForStateDisplay    : $("#results")
             ExpKit.results.load()
-        ExpKit.status = new StatusTable $("#status-table"),
+            # plan
+            ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
+                ExpKit.conditions,
+                resultsTable: ExpKit.results
+                buttonSubmit: $("#plan-submit")
+                buttonClear : $("#plan-clear")
+        # runs
+        ExpKit.status = new StatusTable "status", $("#status-table"),
             ExpKit.conditions,
             nameDisplay: $("#status-name")
         ExpKit.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), ExpKit.status
-        ExpKit.batches.load()
     do initTitle
     do initNavBar
     do initChartUI
