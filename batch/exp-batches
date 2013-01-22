@@ -34,7 +34,7 @@ shift $(($OPTIND - 1))
 
 Query=$*
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 cd "$EXPROOT/run/batch"
 
 limitOffset ls -td *"$Query"*/ 2>/dev/null |

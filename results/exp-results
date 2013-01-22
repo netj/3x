@@ -20,7 +20,7 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" "At least a RUN/BATCH directory or condition variable must be given"
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 export EXPROOT
 
 verboseFiltering=

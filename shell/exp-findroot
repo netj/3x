@@ -6,16 +6,22 @@
 # Created: 2012-11-01
 set -eu
 
-OPWD=$PWD
-
 is-root() { [ -d .exp -a -d condition -a -d program ]; }
 
-while ! is-root && [ "$PWD" != / ]; do
-    cd ..
-done
-
-if is-root; then
-    pwd -P
+if [ -n "${EXPROOT:-}" ]; then
+    if [ -d "$EXPROOT" ] && cd "$EXPROOT" && is-root; then
+        echo "$EXPROOT"
+    else
+        error "$EXPROOT: \$EXPROOT does not point to an experiment repository"
+    fi
 else
-    error "$OPWD: Not inside an experiment repository"
+    OPWD=$PWD
+    while ! is-root && [ "$PWD" != / ]; do
+        cd ..
+    done
+    if is-root; then
+        pwd
+    else
+        error "$OPWD: Not inside an experiment repository"
+    fi
 fi

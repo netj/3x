@@ -11,7 +11,7 @@ set -eu
 outputDir=$1; shift
 outputDir=$(readlink -f "$outputDir")
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 : ${EXPWD:=$outputDir}
 : ${EXPRUN:=${EXPWD#$EXPROOT/}}
 export EXPROOT EXPRUN EXPWD

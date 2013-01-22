@@ -10,7 +10,7 @@ set -eu
 
 Batch=$1
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 cd "$EXPROOT/$Batch"
 
 {

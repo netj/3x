@@ -41,7 +41,7 @@ shift $(($OPTIND - 1))
 
 [ $# -gt 0 ] || exit 0
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 
 ## normalize command-line arguments
 args=()

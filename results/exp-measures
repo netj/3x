@@ -6,7 +6,7 @@
 # Created: 2012-11-07
 set -eu
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 export EXPROOT
 
 cd "$EXPROOT"

@@ -8,7 +8,7 @@ set -eu
 
 [ $# -ge 1 ] || usage "$0" "BATCH must be given"
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 
 batch=$1; shift
 prePlanned=${1:-}

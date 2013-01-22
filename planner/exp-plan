@@ -28,7 +28,7 @@ set -eu
     false
 }
 
-: ${EXPROOT:=$(exp-findroot)}
+EXPROOT=$(exp-findroot)
 : ${EXPBATCH:=$(new-batch-id)}
 export EXPROOT EXPBATCH
 
