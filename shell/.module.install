@@ -7,9 +7,11 @@ error                       $TOOLSDIR/
 msg                         $TOOLSDIR/
 be-quiet                    $TOOLSDIR/
 
+edit                        $TOOLSDIR/
+customize                   $TOOLSDIR/
+
 limitOffset                 $TOOLSDIR/
 serialOnEachLine            $TOOLSDIR/
-customize                   $TOOLSDIR/
 lockproc                    $TOOLSDIR/
 synchronized                $TOOLSDIR/
 setsid                      $TOOLSDIR/

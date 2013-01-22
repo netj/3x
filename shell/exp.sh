@@ -8,13 +8,15 @@
 # 
 #   exp gui
 # 
-#   exp plan [NAME[=VALUE[,VALUE]...]]...
+#   exp plan   [NAME[=VALUE[,VALUE]...]]...
+#   exp start  [NAME[=VALUE[,VALUE]...]]...
 # 
-#   exp start [NAME[=VALUE[,VALUE]...]]...
-#   exp start BATCH
-#   exp batches [-l] [QUERY]
+#   exp start  BATCH
+#   exp stop   BATCH
 #   exp status BATCH
-#   exp stop  BATCH
+#   exp edit   BATCH
+# 
+#   exp batches [-l] [QUERY]
 # 
 #   exp results [BATCH | RUN]... [QUERY]...
 # 

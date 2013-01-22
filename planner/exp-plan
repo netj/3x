@@ -28,7 +28,6 @@ set -eu
     false
 }
 
-: ${EDITOR:=vim}
 : ${EXPROOT:=$(exp-findroot)}
 : ${EXPBATCH:=$(new-batch-id)}
 export EXPROOT EXPBATCH
@@ -98,25 +97,14 @@ case $1 in
         ;;
 esac
 
-cd "$EXPROOT"
+cd "$EXPROOT/$EXPBATCH"
 
 # let user do a finish edit of the generated plan
-case $EDITOR in
-    true)
-        trap - EXIT
-        ;;
-    *)
-        progress="$EXPBATCH"/exp.planning.in-progress
-        touch -r "$EXPBATCH"/plan "$progress"
-        $EDITOR "$EXPBATCH"/plan
-        if [ "$EXPBATCH"/plan -nt "$progress" ]; then
-            rm -f "$progress"
-            trap - EXIT
-        else
-            error "Aborted planning"
-        fi
-        ;;
-esac
+if edit plan plan.in-progress; then
+    trap - EXIT
+else
+    error "Aborted planning"
+fi
 
 # and the batch creation is done
 msg +0 -n "Batch created at "

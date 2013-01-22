@@ -14,6 +14,9 @@
 
 * Commands for adding new ones/removing old ones for `exp conditions` and `exp measurements`
 
+* Make exp-findroot fail, i.e., EXPROOT=${EXPROOT:-$(exp-findroot)} instead of : ${EXPROOT:=$(exp-findroot)}
+* Factorize EXPBATCH arg normalization
+
 * a simple way to bootstrap an exp repository
 
         exp setup  VAR1=V1,V2  VAR2=V3,V4..V5 ...  'COMMAND'  MEASURE1='PATT1_FROM_OUTPUT'  MEASURE2='PATT2_FROM_OUTPUT' ...

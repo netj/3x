@@ -1,8 +1,9 @@
 exp-start               $TOOLSDIR/
 new-batch-id            $TOOLSDIR/
 batch-loop              $TOOLSDIR/
-
 exp-stop                $TOOLSDIR/
 
 exp-status              $TOOLSDIR/
+exp-edit                $TOOLSDIR/
+
 exp-batches             $TOOLSDIR/

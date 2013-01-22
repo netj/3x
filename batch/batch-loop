@@ -8,7 +8,7 @@ set -eu
 
 synchronized() {
     local Lock=$1; shift
-    lockproc $Lock grab
+    until lockproc $Lock grab; do sleep 1; done
     "$@"
     lockproc $Lock release
 }
@@ -55,26 +55,26 @@ count=$(cat count || wc -l <plan)
 abort=false
 trap "abort=true" TERM INT
 while [ -s remaining ] && ! $abort; do
-    # check if there's any running item which isn't alive
     run=
-    for r in running.*/; do
-        [ -d "$r" ] || continue
-        [ -s "$r"/cmdln ] || continue
-        ! lockproc $r/lock alive || continue
-        lockproc $r/lock grab
-        msg +2 " resuming $r..."
-        run=$r; break
-    done
-    # otherwise, dequeue from remaining
-    if ! [ -d "$run" ]; then
-        run=$(mktemp -d running.XXX)
-        lockproc $run/lock grab
-        pick-next() {
+    pick-next() {
+        # check if there's any running item which isn't alive
+        for r in running.*/; do
+            [ -d "$r" ] || continue
+            [ -s "$r"/cmdln ] || continue
+            ! lockproc $r/lock alive || continue
+            lockproc $r/lock grab || continue
+            msg +2 " resuming $r..."
+            run=$r; break
+        done
+        # otherwise, dequeue from remaining
+        if ! [ -d "$run" ]; then
+            run=$(mktemp -d running.XXX)
+            lockproc $run/lock grab || continue
             head -n 1 remaining >$run/cmdln
             { echo 1d; echo wq; } | ed remaining &>/dev/null
-        }
-        synchronized remaining.lock  pick-next
-    fi
+        fi
+    }
+    synchronized remaining.lock  pick-next || continue
     # run the one we picked for next
     line=$(cat $run/cmdln)
     serial=${line##*"#"}
@@ -89,10 +89,10 @@ while [ -s remaining ] && ! $abort; do
     record() {
         ln -sfn "$runRelPath" runs/$serial
         echo "$line" >>"done"
-        rm -rf "$run"
     }
     synchronized done.lock  record
-    lockproc $run/lock release
+    rm -rf "$run"
+    #lockproc $run/lock release || true # no need to release the removed lock
 done
 if $abort; then
     error "Aborted $EXPBATCH" || true

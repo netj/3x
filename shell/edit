@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# edit -- Edit given file with the $EDITOR
+# Usage: EDITOR=...  edit FILE [TIMESTAMP_FILE]
+# 
+# Returns 0 only when the file is actually edited (modified).
+# When EDITOR=true then this will always return 0.
+# 
+# If TIMESTAMP_FILE is not given, FILE.timestamp's mtime will be set to FILE's.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-22
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "FILE to edit is missing"
+
+: ${EDITOR:=vim}
+
+File=$1; shift
+Timestamp=${1:-$File.timestamp}
+
+case $EDITOR in
+    true)
+        true
+        ;;
+    *)
+        touch -r "$File" "$Timestamp"
+        trap 'rm -f "$Timestamp"' EXIT
+        $EDITOR "$File"
+        [ "$File" -nt "$Timestamp" ]
+        ;;
+esac

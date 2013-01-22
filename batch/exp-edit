@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# exp-edit -- edit plan for REMAINING runs of an experiment batch
+# Usage: exp edit BATCH
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-22
+set -eu
+
+[ $# -ge 1 ] || usage "$0" "BATCH must be given"
+
+: ${EXPROOT:=$(exp-findroot)}
+
+batch=$1; shift
+prePlanned=${1:-}
+
+# figure out which batch we are talking about
+batchpath=$(readlink -f "$batch")
+[[ $batchpath == $EXPROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
+export EXPBATCH=${batchpath#$EXPROOT/}
+
+newPlan=plan.editing
+
+# prepare the plan file for editing
+if ! [ -e "$newPlan" ]; then
+    if [ -r "$prePlanned" ]; then
+        cp "$prePlanned" "$EXPROOT/$EXPBATCH/$newPlan"
+        EDITOR=true
+    else
+        exp-status "$EXPBATCH" | grep REMAINING |
+        sed 's/^[^ ]* */exp run  /; s/ *[^ ]*$//' >"$EXPROOT/$EXPBATCH/$newPlan"
+    fi
+fi
+
+cd "$EXPROOT/$EXPBATCH"
+
+# let user edit the plan and update the batch once it gets modified
+if edit $newPlan $newPlan.in-progress; then
+    # TODO sanity check of $newPlan
+    # make sure nobody else changes the status of runs in this batch
+    lockproc remaining.lock grab
+    trap "lockproc remaining.lock release" EXIT
+    # find out the serials of runs which are still REMAINING
+    exp-status "$EXPBATCH" | grep REMAINING |
+    sed 's/ *[^ ]*$//; s/^.*#/#/' >$newPlan.serials
+    # replace the remaining file with newly planned runs still REMAINING
+    grep -f $newPlan.serials <$newPlan >remaining
+    rm -f $newPlan.serials
+    # TODO having dedup of serials in the remaining might be a good idea
+    # clean up any running.* that's not actually RUNNING, therefore REMAINING,
+    # and could have been pushed to later in the new plan
+    for r in running.*/; do
+        [ -d "$r" ] || continue
+        ! lockproc "$r"/lock alive || continue
+        rm -rf "$r"
+    done
+    msg +0 -n "Updated plan of $(wc -l <remaining) REMAINING runs in "
+    echo "$EXPBATCH"
+else
+    msg "Canceled editing $EXPBATCH"
+fi
+rm -f $newPlan
