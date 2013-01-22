@@ -4,7 +4,7 @@
 # 
 # Lists all batches whose name contains BATCH_FILTER from $EXPROOT/run/batch/.
 # 
-# To see detailed listing of each batch:
+# To simply see a quick listing of batches:
 #     exp batches -l
 # 
 # To simply count the number of batches:
@@ -22,12 +22,12 @@ tsvline() {
     echo "${line#$TAB}"
 }
 
-ListDetails=false
+ListDetails=true
 ShowCount=false
 while getopts "cl" o; do
     case $o in
         c) ShowCount=true ListDetails=false ;;
-        l) ListDetails=true ;;
+        l) ListDetails=false ;;
     esac
 done
 shift $(($OPTIND - 1))

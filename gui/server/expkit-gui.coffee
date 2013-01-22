@@ -215,7 +215,7 @@ app.get "/api/run/batch.DataTables", (req, res) ->
             cliEnv res, {
                 LIMIT:  req.param("iDisplayLength") ? -1
                 OFFSET: req.param("iDisplayStart") ? 0
-            }, "exp-batches", ["-l", query]
+            }, "exp-batches", ["--", query]
                 , (lazyLines, next) ->
                     lazyLines
                         .skip(1)
@@ -243,7 +243,7 @@ app.get "/api/run/batch.DataTables", (req, res) ->
                     aaData: table
 
 app.get "/api/run/batch.numRUNNING", (req, res) ->
-    cli(res, "sh", ["-c", "exp-batches -l | grep -c RUNNING || true"]
+    cli(res, "sh", ["-c", "exp-batches | grep -c RUNNING || true"]
         , (lazyLines, next) ->
             lazyLines
                 .take(1)

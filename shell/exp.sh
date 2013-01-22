@@ -16,7 +16,7 @@
 #   exp status BATCH
 #   exp edit   BATCH
 # 
-#   exp batches [-l] [QUERY]
+#   exp batches [QUERY]
 # 
 #   exp results [BATCH | RUN]... [QUERY]...
 # 
