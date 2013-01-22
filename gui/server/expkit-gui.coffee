@@ -129,6 +129,9 @@ cliEnv =  (res, rest...) -> (next) ->
 respondJSON = (res) -> (err, result) ->
     res.json result unless err
 
+cliSimple = (cmd, args...) ->
+    cliBare(cmd, args) (code, err, out) ->
+        console.error err unless code is 0
 
 
 # Allow Cross Origin AJAX Requests
@@ -298,9 +301,7 @@ app.post "/api/run/batch/*", (req, res) ->
     # start right away if shouldStart
     startIfNeeded = (batchId) ->
         if shouldStart
-            cliBare("sh", ["-c", "exp-start #{batchId} </dev/null &>/dev/null &"]
-            ) (code, err, out) ->
-                console.error err unless code is 0
+            cliSimple "sh", "-c", "exp-start #{batchId} </dev/null &>/dev/null &"
 
     if batchId? # modify existing one
         # TODO
@@ -310,6 +311,8 @@ app.post "/api/run/batch/*", (req, res) ->
             fs.writeFile planFile, generateLines(), ->
                 cli(res, "exp-plan", ["with", planFile]
                 ) (err, [batchId]) ->
+                    # remove temporary file
+                    cliSimple "rm", "-f", planFile
                     unless err
                         startIfNeeded batchId
                         res.json batchId
