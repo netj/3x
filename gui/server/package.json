@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "mktemp": "0.1.0",
     "lazy": "1.0.8",
     "async": "0.1.22",
     "express": "3.0.2",

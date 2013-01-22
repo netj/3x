@@ -17,7 +17,14 @@ synchronized() {
 if ! [ -e remaining -a -s count -a -d runs ]; then
     initialize() {
         msg "Initializing $EXPBATCH"
-        serialOnEachLine plan >remaining
+        # append serial numbers to each line unless all lines already have one
+        if grep -q -v '#[0-9]+$' <plan; then
+            mv -f plan plan.orig
+            sed 's/#.*//' <plan.orig >plan
+            serialOnEachLine plan >remaining
+        else
+            cat plan >remaining
+        fi
         chmod a-w plan
         wc -l <plan >count
         mkdir -p runs

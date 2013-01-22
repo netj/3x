@@ -8,6 +8,7 @@ express = require "express"
 fs = require "fs"
 os = require "os"
 child_process = require "child_process"
+mktemp = require "mktemp"
 async = require "async"
 Lazy = require "lazy"
 _ = require "underscore"
@@ -37,7 +38,7 @@ app.configure ->
     #app.set "views", __dirname + "/views"
     #app.set "view engine", "jade"
     app.use express.logger()
-    #app.use express.bodyParser()
+    app.use express.bodyParser()
     #app.use express.methodOverride()
     app.use app.router
     app.use "/run", express.static    "#{process.env.EXPROOT}/run"
@@ -83,6 +84,12 @@ normalizeNamedColumnLines = (
             }
         )
 
+generateNamedColumnLines = (data, columns = null) ->
+    names = {}
+    for name,i in data.names when not columns? or name in columns
+        names[name] = i
+    for row in data.rows
+        (" #{name}=#{row[i]}" for name,i of names).join " "
 
 ###
 # CLI helpers
@@ -273,6 +280,39 @@ app.get "/api/run/batch/:batchId", (req, res) ->
         ) (err, batch) ->
             res.json batch unless err
 
+app.post "/api/run/batch/*", (req, res) ->
+    batchId = req.params[0]
+    batchId = null if batchId?.length is 0
+    # TODO sanitize batchId
+    plan        = req.body.plan
+    shouldStart = req.body.shouldStart?
+
+    generateLines = ->
+        columns = (name for name in plan.names when name.indexOf("#") is -1)
+        serialCol = plan.names.indexOf SERIAL_COLUMN_NAME
+        (for line,idx in generateNamedColumnLines(plan, columns)
+            serial = plan.rows[idx][serialCol]
+            "exp run#{line} ##{serial}"
+        ).join "\n"
+
+    # start right away if shouldStart
+    startIfNeeded = (batchId) ->
+        if shouldStart
+            cliBare("sh", ["-c", "exp-start #{batchId} </dev/null &>/dev/null &"]
+            ) (code, err, out) ->
+                console.error err unless code is 0
+
+    if batchId? # modify existing one
+        # TODO
+        res.json generateLines()
+    else # create a new batch
+        mktemp.createFile "#{process.env.EXPROOT}/.exp/plan.XXXXXX", (err, planFile) ->
+            fs.writeFile planFile, generateLines(), ->
+                cli(res, "exp-plan", ["with", planFile]
+                ) (err, [batchId]) ->
+                    unless err
+                        startIfNeeded batchId
+                        res.json batchId
 
 app.listen expKitPort, ->
     #console.log "ExpKit GUI started at http://localhost:%d/", expKitPort

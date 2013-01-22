@@ -1285,8 +1285,17 @@ class PlanTable extends PlanTableBase
             btnSubmit.click (e) =>
                 unless btnSubmit.hasClass("disabled")
                     # TODO send plan to server to create a new batch
-                    @updatePlan @newPlan()
-                    # TODO open from the batches
+                    $.post("#{ExpKitServiceBaseURL}/api/run/batch/",
+                        shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
+                        plan: @plan
+                    )
+                        .success (batchId) =>
+                            @updatePlan @newPlan()
+                            # FIXME clean this dependency by listening to batch changes directly via socket.io
+                            ExpKit.batches.openBatchStatus batchId
+                            do ExpKit.batches.reload
+                        .fail (err) =>
+                            error err # TODO better error presentation
         do @updateButtons
 
     attachToResultsTable: =>
@@ -1336,6 +1345,8 @@ class PlanTable extends PlanTableBase
     @STATE: "REMAINING"
     addPlanFromRowHandler: =>
         add = ($tr) =>
+            # first, remove our popover to prevent its content being mixed to the values
+            $tr.find(".planner.popover").remove()
             cells = $tr.find("td").get()
             # see which columns are the expanded conditions
             expandedConditions = {}
@@ -1407,6 +1418,7 @@ $ ->
                 buttonSubmit: $("#plan-submit")
                 buttonClear : $("#plan-clear")
                 countDisplay: $("#plan-count.label")
+                toggleShouldStart: $("#plan-start-after-create")
         # runs
         ExpKit.status = new StatusTable "status", $("#status-table"),
             ExpKit.conditions,

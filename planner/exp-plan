@@ -58,9 +58,15 @@ permute() {
     fi
 }
 
-# decide whether we want to plan from results or pure combinations
+# decide how we want to plan this batch
 case $1 in
-    results|skip)
+    with) # based on the given files
+        shift
+        EDITOR=true
+        cat "$@" |
+        sed 's/^\(^exp[ 	]*run[ 	]*\)\?/exp run /' | column -t >"$tmp"/plan
+        ;;
+    results|skip) # based on query over results
         results=$1; shift
         invertResults=false; case $results in skip) invertResults=true ;; esac
 
@@ -81,7 +87,7 @@ case $1 in
         fi |
         sed 's/^/exp run /' | column -t >"$tmp"/plan
         ;;
-    *)
+    *) # by editing combinations generated from given condition values
         # normalize command-line arguments
         args=($(normalize-conditions -nv "$@"))
         [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
@@ -94,16 +100,25 @@ esac
 
 cd "$EXPROOT"
 
-progress="$EXPBATCH"/exp.planning.in-progress
-touch -r "$EXPBATCH"/plan "$progress"
-$EDITOR "$EXPBATCH"/plan
-if [ "$EXPBATCH"/plan -nt "$progress" ]; then
-    rm -f "$progress"
-    trap - EXIT
-else
-    error "Aborted planning"
-fi
+# let user do a finish edit of the generated plan
+case $EDITOR in
+    true)
+        trap - EXIT
+        ;;
+    *)
+        progress="$EXPBATCH"/exp.planning.in-progress
+        touch -r "$EXPBATCH"/plan "$progress"
+        $EDITOR "$EXPBATCH"/plan
+        if [ "$EXPBATCH"/plan -nt "$progress" ]; then
+            rm -f "$progress"
+            trap - EXIT
+        else
+            error "Aborted planning"
+        fi
+        ;;
+esac
 
+# and the batch creation is done
 msg +0 -n "Batch created at "
 echo "$EXPBATCH"
 if ! ${EXPBATCH_STARTING:-false}; then
