@@ -49,12 +49,12 @@ case $cmd in
                 # TODO determine unused port automatically
             fi
             # launch server
-            node "$GUIDIR"/server/expkit-gui.js $port \
+            setsid node "$GUIDIR"/server/expkit-gui.js $port \
                 </dev/null >$logfile 2>&1 &
             pid=$!
             # record pid, port
-            pid+=" $(get-pid)"
-            echo $pid >$pidfile
+            pids="$pid $(get-pid || true)"
+            echo $pids >$pidfile
             echo $port >$portfile
             msg "ExpKit GUI started at $url"
         fi
@@ -72,13 +72,14 @@ case $cmd in
 
     watch)
         # watch log
-        pid=$(get-pid) || error "ExpKit GUI not running"
+        pids=($(get-pid)) || error "ExpKit GUI not running"
+        pid=${pids[0]}
         exec tail -qF $logfile --pid=$pid 2>/dev/null
         ;;
 
     stop)
-        pid=$(get-pid) || error "ExpKit GUI not running"
-        kill -TERM $pid
+        pids=$(get-pid) || error "ExpKit GUI not running"
+        kill -TERM $(for pid in $pids; do echo -$pid; done)
         mv -f $logfile $logfile.0
         rm -f $pidfile
         msg "ExpKit GUI stopped"
