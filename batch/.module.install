@@ -6,6 +6,3 @@ exp-stop                $TOOLSDIR/
 
 exp-status              $TOOLSDIR/
 exp-batches             $TOOLSDIR/
-
-lockproc                $TOOLSDIR/
-synchronized            $TOOLSDIR/

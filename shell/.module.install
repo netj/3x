@@ -1,14 +1,18 @@
 .build/exp.sh               $BINDIR/exp
-usage                       $TOOLSDIR/
-msg                         $TOOLSDIR/
-error                       $TOOLSDIR/
-customize                   $TOOLSDIR/
-be-quiet                    $TOOLSDIR/
-limitOffset                 $TOOLSDIR/
-serialOnEachLine            $TOOLSDIR/
-
 exp-findroot                $TOOLSDIR/
 exp-hack                    $TOOLSDIR/
+
+usage                       $TOOLSDIR/
+error                       $TOOLSDIR/
+msg                         $TOOLSDIR/
+be-quiet                    $TOOLSDIR/
+
+limitOffset                 $TOOLSDIR/
+serialOnEachLine            $TOOLSDIR/
+customize                   $TOOLSDIR/
+lockproc                    $TOOLSDIR/
+synchronized                $TOOLSDIR/
+setsid                      $TOOLSDIR/
 
 .build/node_modules         $LIBDIR/
 .build/node_modules/.bin    $LIBDIR/node_modules/

@@ -1,5 +1,3 @@
 exp-run                 $TOOLSDIR/
 new-run-id              $TOOLSDIR/
 record-run              $TOOLSDIR/
-
-setsid                  $TOOLSDIR/
