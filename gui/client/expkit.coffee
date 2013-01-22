@@ -1346,7 +1346,7 @@ class PlanTable extends PlanTableBase
     addPlanFromRowHandler: =>
         add = ($tr) =>
             # first, remove our popover to prevent its content being mixed to the values
-            $tr.find(".planner.popover").remove()
+            $tr.find(".planner.popover").appendTo($tr.parent())
             cells = $tr.find("td").get()
             # see which columns are the expanded conditions
             expandedConditions = {}
