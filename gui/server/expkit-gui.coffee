@@ -118,7 +118,7 @@ handleNonZeroExitCode = (res, next) -> (code, err, result...) ->
         next null, result...
     else
         res.send 500, (err?.join "\n") ? err
-        next err, result...
+        next err ? code, result...
 
 cli    =  (res, rest...) -> (next) ->
     (cliBare    rest...) (handleNonZeroExitCode res, next)
@@ -285,12 +285,15 @@ app.get "/api/run/batch/:batchId", (req, res) ->
 
 app.post "/api/run/batch/*", (req, res) ->
     batchId = req.params[0]
-    batchId = null if batchId?.length is 0
+    batchId = if batchId?.length is 0 then null else "run/batch/#{batchId}"
     # TODO sanitize batchId
-    plan        = req.body.plan
+    try
+        plan        = JSON.parse req.body.plan
+    catch err
+        return res.send 400, "Bad request\nplan must be posted in strict JSON format"
     shouldStart = req.body.shouldStart?
 
-    generateLines = ->
+    generatePlanLines = ->
         columns = (name for name in plan.names when name.indexOf("#") is -1)
         serialCol = plan.names.indexOf SERIAL_COLUMN_NAME
         (for line,idx in generateNamedColumnLines(plan, columns)
@@ -301,21 +304,23 @@ app.post "/api/run/batch/*", (req, res) ->
     # start right away if shouldStart
     startIfNeeded = (batchId) ->
         if shouldStart
-            cliSimple "sh", "-c", "exp-start #{batchId} </dev/null &>/dev/null &"
+            try cliSimple "sh", "-c", "exp-start #{batchId} </dev/null &>/dev/null &"
 
-    if batchId? # modify existing one
-        # TODO
-        res.json generateLines()
-    else # create a new batch
-        mktemp.createFile "#{process.env.EXPROOT}/.exp/plan.XXXXXX", (err, planFile) ->
-            fs.writeFile planFile, generateLines(), ->
+    mktemp.createFile "#{process.env.EXPROOT}/.exp/plan.XXXXXX", (err, planFile) ->
+        andRespond = (err, [batchId]) ->
+            # remove temporary file
+            unless err
+                res.json batchId
+                startIfNeeded batchId
+            try cliSimple "rm", "-f", planFile
+        fs.writeFile planFile, generatePlanLines(), ->
+            if batchId? # modify existing one
+                cli(res, "exp-edit", [batchId, planFile]
+                ) andRespond
+            else # create a new batch
                 cli(res, "exp-plan", ["with", planFile]
-                ) (err, [batchId]) ->
-                    # remove temporary file
-                    cliSimple "rm", "-f", planFile
-                    unless err
-                        startIfNeeded batchId
-                        res.json batchId
+                ) andRespond
+
 
 app.listen expKitPort, ->
     #console.log "ExpKit GUI started at http://localhost:%d/", expKitPort

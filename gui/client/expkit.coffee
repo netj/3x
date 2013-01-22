@@ -1056,10 +1056,11 @@ class BatchesTable extends CompositeElement
 class PlanTableBase extends CompositeElement
     constructor: (@planTableId, @baseElement, @conditions, @optionElements) ->
         super @baseElement
+        @plan = null
+        do @initButtons
         $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
                 @popovers?.popover("hide")
             )
-        # TODO check if there's uncommitted changes beforeunload of document
 
     @HEAD_SKELETON: $("""
         <script type="text/x-jsrender">
@@ -1091,12 +1092,12 @@ class PlanTableBase extends CompositeElement
         </script>
         """)
 
-    display: (data) =>
+    display: (@plan) =>
         # prepare to distinguish metadata from condition columns
-        columnIndex = {}; columnIndex[name] = idx for name,idx in data.names
+        columnIndex = {}; columnIndex[name] = idx for name,idx in @plan.names
         columnNames = (name for name of @conditions.conditions)
         metaColumnNames = {} # at the least, there should be SERIAL_COLUMN_NAME and STATE_COLUMN_NAME
-        for name,idx in data.names
+        for name,idx in @plan.names
             if (m = name.match /^(.*)#$/)?
                 nm = switch name
                     when STATE_COLUMN_NAME
@@ -1135,8 +1136,8 @@ class PlanTableBase extends CompositeElement
             RUNNING: "info"
             PAUSED: "warning"
             REMAINING: ""
-        ordUB = data.rows.length
-        for row,ord in data.rows
+        ordUB = @plan.rows.length
+        for row,ord in @plan.rows
             metadata = {}
             for name,idx of metaColumnNames
                 metadata[name] = row[idx]
@@ -1186,13 +1187,13 @@ class PlanTableBase extends CompositeElement
                     $trs = tbody.find("tr")
                     return unless $trs.is (i) -> this.ordinal isnt i
                     # reorder internal plan according to the order of rows in the table
-                    newRows = []; rows = data.rows
+                    newRows = []; rows = @plan.rows
                     $trs.each (i,tr) =>
                         if tr.ordinal?
                             newRows[i] = rows[tr.ordinal]
                         tr.ordinal = i
                     # finally, save the plan with reordered rows
-                    data.rows = newRows
+                    @plan.rows = newRows
                     @trigger "reordered"
         @scrollBody = @dataTable.closest(".dataTables_wrapper").find(".dataTables_scrollBody")[0]
         indexColumn = @dataTable._oPluginColReorder?.fnGetCurrentOrder().indexOf(0) ? 0
@@ -1205,27 +1206,61 @@ class PlanTableBase extends CompositeElement
             cancel: "tr:not(.REMAINING)"
         @dataTable.find("tbody tr").disableSelection()
 
+    updateButtons: =>
+        # turn on/off buttons
+        @optionElements.buttonClear ?.toggleClass("disabled", not @canClear())
+        @optionElements.buttonCommit?.toggleClass("disabled", not @canCommit())
+    initButtons: =>
+        (btn = @optionElements.buttonClear )?.click (e) => @handleClear (e) unless btn.hasClass("disabled")
+        (btn = @optionElements.buttonCommit)?.click (e) => @handleCommit(e) unless btn.hasClass("disabled")
+        do @updateButtons
+    handleClear: (e) => error "handleClear not implemented for", @
+    canClear: => false
+    handleCommit: (e) => error "handleCommit not implemented for", @
+    canCommit: => false
+
 
 class StatusTable extends PlanTableBase
     constructor: (args...) ->
         super args...
+        @plan = null
+        @batchId = null
+        @on "reordered", =>
+            # TODO see if it's actually different from the original
+            @isReordered = true
+            do @updateButtons
+        # TODO check if there's uncommitted changes beforeunload of document
 
-        @on "reordered", => # TODO notify changes to server
-
-    load: (batchId) =>
-        @batchId = batchId
-        $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}")
+    load: (@batchId) =>
+        $.getJSON("#{ExpKitServiceBaseURL}/api/#{@batchId}")
             .success(@display)
 
-    display: (@status) =>
+    display: (args...) =>
         # display the name of the batch
-        log "showing batch status", @batchId, @status
         @optionElements.nameDisplay?.text(@batchId)
         # render table
-        super @status
+        super args...
+        log "showing batch status", @batchId, @plan
+        @isReordered = false
+        do @updateButtons
         # scroll to the first REMAINING row
         if (firstREMAININGrow = @dataTable.find("tbody tr.REMAINING:nth(0)")[0])?
             @scrollBody?.scrollTop = firstREMAININGrow.offsetTop - firstREMAININGrow.offsetHeight * 3.5
+
+    canClear: => @batchId? and @isReordered
+    handleClear: (e) =>
+        do @load @batchId
+    canCommit: => @batchId? and @isReordered
+    handleCommit: (e) =>
+        # send plan to server to create a new batch
+        $.post("#{ExpKitServiceBaseURL}/api/#{@batchId}",
+            shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
+            plan: JSON.stringify @plan
+        )
+            .success(@load)
+            .fail (err) =>
+                error err # TODO better error presentation
+
 
 
 class PlanTable extends PlanTableBase
@@ -1235,7 +1270,6 @@ class PlanTable extends PlanTableBase
         @plan = (try JSON.parse localStorage[@planTableId]) ? @newPlan()
         # intialize UI and hook events
         do @attachToResultsTable
-        do @initButtons
         @on "reordered", @persist
         # finally, show the current plan in table, and display count
         @display @plan
@@ -1247,8 +1281,8 @@ class PlanTable extends PlanTableBase
         # persist in localStorage
         localStorage[@planTableId] = JSON.stringify @plan
 
-    display: (data) =>
-        super data
+    display: (args...) =>
+        super args...
         # scroll to the last row
         if (lastRow = @dataTable.find("tbody tr").last()[0])?
             @scrollBody?.scrollTop = lastRow.offsetTop
@@ -1271,32 +1305,23 @@ class PlanTable extends PlanTableBase
             ?.text(count)
              .toggleClass("hide", count == 0)
 
-    updateButtons: =>
-        # turn on/off buttons
-        isEmpty = @plan.rows.length is 0
-        @optionElements.buttonClear ?.toggleClass("disabled", isEmpty)
-        @optionElements.buttonSubmit?.toggleClass("disabled", isEmpty)
-    initButtons: =>
-        if (btnClear = @optionElements.buttonClear)?
-            btnClear.click (e) =>
-                unless btnClear.hasClass("disabled")
-                    @updatePlan @newPlan()
-        if (btnSubmit = @optionElements.buttonSubmit)?
-            btnSubmit.click (e) =>
-                unless btnSubmit.hasClass("disabled")
-                    # TODO send plan to server to create a new batch
-                    $.post("#{ExpKitServiceBaseURL}/api/run/batch/",
-                        shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
-                        plan: @plan
-                    )
-                        .success (batchId) =>
-                            @updatePlan @newPlan()
-                            # FIXME clean this dependency by listening to batch changes directly via socket.io
-                            ExpKit.batches.openBatchStatus batchId
-                            do ExpKit.batches.reload
-                        .fail (err) =>
-                            error err # TODO better error presentation
-        do @updateButtons
+    canClear: => @plan?.rows.length > 0
+    handleClear: (e) =>
+        @updatePlan @newPlan()
+    canCommit: => @plan?.rows.length > 0
+    handleCommit: (e) =>
+        # send plan to server to create a new batch
+        $.post("#{ExpKitServiceBaseURL}/api/run/batch/",
+            shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
+            plan: JSON.stringify @plan
+        )
+            .success (batchId) =>
+                @updatePlan @newPlan()
+                # FIXME clean this dependency by listening to batch changes directly via socket.io
+                ExpKit.batches.openBatchStatus batchId
+                do ExpKit.batches.reload
+            .fail (err) =>
+                error err # TODO better error presentation
 
     attachToResultsTable: =>
         # add a popover to the attached results table
@@ -1415,14 +1440,17 @@ $ ->
             ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
                 ExpKit.conditions,
                 resultsTable: ExpKit.results
-                buttonSubmit: $("#plan-submit")
-                buttonClear : $("#plan-clear")
                 countDisplay: $("#plan-count.label")
+                buttonCommit: $("#plan-submit")
+                buttonClear : $("#plan-clear")
                 toggleShouldStart: $("#plan-start-after-create")
         # runs
         ExpKit.status = new StatusTable "status", $("#status-table"),
             ExpKit.conditions,
-            nameDisplay: $("#status-name")
+            nameDisplay : $("#status-name")
+            buttonCommit: $("#status-submit")
+            buttonClear : $("#status-clear")
+            toggleShouldStart: $("#status-start-after-create")
         ExpKit.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), ExpKit.status
     do initTitle
     do initNavBar

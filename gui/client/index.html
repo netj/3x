@@ -163,6 +163,20 @@
             </table>
 
             <h3><i class="icon-cog icon"></i><span id="status-name">Status</span></h3>
+            <form class="form-inline">
+              <a id="status-submit" class="btn btn-primary disabled"><i class="icon icon-upload-alt"></i>
+                Save Changes
+              </a>
+              <label class="checkbox inline">
+                <input type="checkbox" id="status-start-after-create">
+                <i class="icon icon-bolt"></i>
+                Start after saving
+              </label>
+              <a id="status-clear"  class="btn btn-danger disabled pull-right"><i class="icon icon-trash"></i>
+                Reset
+              </a>
+            </form>
+
             <table id="status-table" class="table table-hover table-bordered"
               cellpadding="0" cellspacing="0" border="0">
               <thead></thead>
