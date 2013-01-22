@@ -87,19 +87,24 @@ normalizeNamedColumnLines = (
 ###
 # CLI helpers
 ###
-cliBare = (cmd, args, withOut, onEnd
-        , withErr = (err, next) -> err.join next
-) ->
+cliBare = (cmd, args
+        , withOut = ((outLines, next) -> outLines.join next)
+        , withErr = ((errLines, next) -> errLines.join next)
+) -> (next) ->
     console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
     p = child_process.spawn cmd, args
     _code = null; _result = null; _error = null
     tryEnd = ->
         if _code? and _error? and _result?
             _error = null unless _error?.length > 0
-            onEnd _code, _error, _result...
+            next _code, _error, _result...
     withOut Lazy(p.stdout).lines.map(String), (result...) -> _result = result; do tryEnd
     withErr Lazy(p.stderr).lines.map(String), (error)     -> _error  = error ; do tryEnd
     p.on "exit",                              (code)      -> _code   = code  ; do tryEnd
+
+cliBareEnv = (env, cmd, args, rest...) ->
+    envArgs = ("#{name}=#{value}" for name,value of env)
+    cliBare "env", [envArgs..., cmd, args...], rest...
 
 handleNonZeroExitCode = (res, next) -> (code, err, result...) ->
     if code is 0
@@ -108,15 +113,11 @@ handleNonZeroExitCode = (res, next) -> (code, err, result...) ->
         res.send 500, (err?.join "\n") ? err
         next err, result...
 
-cliBareEnv = (env, cmd, args, rest...) ->
-    envArgs = ("#{name}=#{value}" for name,value of env)
-    cliBare "env", [envArgs..., cmd, args...], rest...
+cli    =  (res, rest...) -> (next) ->
+    (cliBare    rest...) (handleNonZeroExitCode res, next)
 
-cli    = (res,      cmd, args, withOut, onEnd, withErr) -> (next) ->
-    cliBare         cmd, args, withOut, (handleNonZeroExitCode res, next), withErr
-
-cliEnv = (res, env, cmd, args, withOut, onEnd, withErr) -> (next) ->
-    cliBareEnv env, cmd, args, withOut, (handleNonZeroExitCode res, next), withErr
+cliEnv =  (res, rest...) -> (next) ->
+    (cliBareEnv rest...) (handleNonZeroExitCode res, next)
 
 respondJSON = (res) -> (err, result) ->
     res.json result unless err
@@ -129,7 +130,7 @@ app.options "/api/*", (req, res) ->
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
         "Access-Control-Allow-Headers": req.get("access-control-request-headers")
     res.send(200)
-app.get "/api/*", (req, res, next) ->
+app.all "/api/*", (req, res, next) ->
     res.set
         "Access-Control-Allow-Origin": "*"
     next()
@@ -254,20 +255,23 @@ app.get ////api/run/batch/([^:]+):(start|stop)///, (req, res) ->
 app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId
-    cli(res, "exp-status", ["run/batch/#{batchId}"]
-        , normalizeNamedColumnLines (line) ->
-                [state, columns..., serial, runId] = line.split /\s+/
-                serial = (serial?.replace /^#/, "")
-                runId = "" if runId is "?"
-                if state
-                    [
-                        "#{STATE_COLUMN_NAME}=#{state}"
-                        "#{SERIAL_COLUMN_NAME}=#{serial}"
-                        "#{RUN_COLUMN_NAME}=#{runId}"
-                        columns...
-                    ]
-    ) (err, batch) ->
-        res.json batch unless err
+    batchPath = "run/batch/#{batchId}"
+    fs.exists "#{process.env.EXPROOT}/#{batchPath}", (exists) ->
+        return res.send 404, "Not found: #{batchPath}" unless exists
+        cli(res, "exp-status", [batchPath]
+            , normalizeNamedColumnLines (line) ->
+                    [state, columns..., serial, runId] = line.split /\s+/
+                    serial = (serial?.replace /^#/, "")
+                    runId = "" if runId is "?"
+                    if state
+                        [
+                            "#{STATE_COLUMN_NAME}=#{state}"
+                            "#{SERIAL_COLUMN_NAME}=#{serial}"
+                            "#{RUN_COLUMN_NAME}=#{runId}"
+                            columns...
+                        ]
+        ) (err, batch) ->
+            res.json batch unless err
 
 
 app.listen expKitPort, ->
