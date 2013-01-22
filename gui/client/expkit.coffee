@@ -888,22 +888,27 @@ class BatchesTable extends CompositeElement
     constructor: (@baseElement, @countDisplay, @status) ->
         super @baseElement
 
+        # TODO isolate localStorage key
+        @currentBatchId = localStorage.lastBatchId
+
         openBatchStatusFor = ($row) =>
-            @displaySelected $row
             batchId = $row.find("td:nth(0)").text()
-            @status.load batchId
-            # TODO isolate localStorage key
-            localStorage.lastBatchId = batchId
+            @openBatchStatus batchId, $row
         @baseElement.on "click", "tbody tr", (e) ->
             openBatchStatusFor $(this).closest("tr")
-        # TODO isolate localStorage key
-        if localStorage.lastBatchId?
-            @status.load localStorage.lastBatchId
+
+        # load the current batch status
+        if @currentBatchId?
+            @status.load @currentBatchId
         else
             @dataTable.one "draw", ->
                 tbody.find("tr:nth(0)").click()
 
         do @display
+
+    persist: =>
+        # TODO isolate localStorage key
+        localStorage.lastBatchId = @currentBatchId
 
     display: =>
         do @updateRunningCount
@@ -963,7 +968,7 @@ class BatchesTable extends CompositeElement
                 $batchCell = $row.find("td:nth(0)")
                 batchId = $batchCell.text()
                 if localStorage.lastBatchId is batchId
-                    @displaySelected $row
+                    @_displaySelected $row
                 # collect the values and replace columns
                 value = {}
                 $row.find("td:gt(1)")
@@ -1010,8 +1015,18 @@ class BatchesTable extends CompositeElement
                         #{action}"><i class="icon icon-#{icon}"></i></a>""")
                     $actionCell.find(".btn").click(@actionHandler action)
 
-    displaySelected: ($row) =>
+    _displaySelected: ($row) =>
         @baseElement.find("tbody tr").removeClass("info"); $row.addClass("info")
+
+    openBatchStatus: (batchId, $row) =>
+        @currentBatchId = batchId
+        $row ?= @baseElement.find("tbody tr").filter(-> $(this).text() is batchId)
+        @_displaySelected $row
+        @status.load @currentBatchId
+        do @persist
+
+    reload: =>
+        @dataTable.fnPageChange "first"
 
     actionHandler: (action) =>
         act = ($row) =>
@@ -1019,7 +1034,7 @@ class BatchesTable extends CompositeElement
             log "#{action}ing #{batchId}"
             $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}:#{action}")
                 .success (result) =>
-                    setTimeout (=> @dataTable.fnPageChange "first"), 1000
+                    setTimeout @reload, 1000
                 # TODO feedback on failure
         (e) ->
             act $(this).closest("tr")
