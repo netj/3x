@@ -30,10 +30,11 @@ if [ $# -gt 0 ]; then
     done
     set -- "${handles[@]}"
 else
-    set -- worker-*.lock
+    set -- worker-*.lock running.*/lock
 fi
 
 # and stop the workers
-for handle
-do lockproc "$handle" kill
+for handle; do
+    [ -e "$handle" ] || continue
+    lockproc "$handle" kill
 done

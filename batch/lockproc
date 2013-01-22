@@ -20,6 +20,7 @@
 # 
 # Written by Jaeho Shin <netj@sparcs.org>.
 # (C) 2006-2009, Geoul Project. (http://project.sparcs.org/geoul)
+set -eu
 
 LockArg=$1; shift
 
@@ -47,7 +48,7 @@ lockproc() {
             # use lockfile(1) included in procmail(1)
             if lockfile -r3 "$Lock" 2>/dev/null; then
                 # record owner info
-                echo "$HOSTNAME:$pgid" >"$Lock".owner
+                echo "$HOSTNAME:$(echo -n $pgid)" >"$Lock".owner
             else
                 false
             fi
@@ -71,11 +72,11 @@ lockproc() {
 
         owner)
         if owner=`cat "$Lock".owner 2>/dev/null`; then
-            echo owner=$owner
-            echo host=${owner%:*}
-            echo pgrp=${owner#*:}
+            echo owner=\'"$owner"\'
+            echo host=\'$(echo -n ${owner%:*})\'
+            echo pgrp=\'$(echo -n ${owner#*:})\'
         else
-            false
+            echo false
         fi
         ;;
 
