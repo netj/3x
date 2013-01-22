@@ -53,6 +53,7 @@ case $cmd in
                 </dev/null >$logfile 2>&1 &
             pid=$!
             # record pid, port
+            pid+=" $(get-pid)"
             echo $pid >$pidfile
             echo $port >$portfile
             msg "ExpKit GUI started at $url"
