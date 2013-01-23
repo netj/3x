@@ -4,3 +4,5 @@
 .build
 /@prefix@
 /exp-*.sh
+
+/test-exp

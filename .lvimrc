@@ -1,0 +1,25 @@
+" local vimrc for ExpKit
+" Author: Jaeho Shin <netj@cs.stanford.edu>
+" Created: 2013-01-22
+
+let $SourceRoot = expand("<sfile>:h")
+let $EXPROOT = $SourceRoot."/test-exp"
+
+" Build with Cmd-Enter
+nmap <buffer> <D-CR> :make -C $SourceRoot install PREFIX=~<CR>
+imap <buffer> <D-CR> <C-\><C-N><D-CR><CR>gi
+
+" .module.* involves mostly local stuff
+au! BufRead,BufNewFile .module.* lcd %:h
+
+" Handy command for searching strings in the source code
+command! -nargs=1 FindSource
+            \ lgrep -r <args>
+            \    shell assembler planner batch runner results
+            \    gui/{exp-*,.module.*,package.json} gui/client/*.* gui/server
+            \    --exclude='*/.build/*'
+
+command! TODOs  FindSource TODO
+
+" Open the to do list with Shift-Cmd-Enter
+nmap <buffer> <S-D-CR> :split $SourceRoot/docs/TODO.md<CR>

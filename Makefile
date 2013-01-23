@@ -16,6 +16,10 @@ PACKAGEEXECUTES := bin/exp
 STAGEDIR := @prefix@
 include buildkit/modules.mk
 
+gui-test-loop:
+	while sleep .1; do EXPROOT="$(PWD)/test-exp"  exp -v gui; done
+
+
 count-loc:
 	@[ -d @prefix@ ] || { echo Run make first; false; }
 	wc -l $$(find Makefile @prefix@/{tools,bin} gui/{client,server} -type f) shell/package.json \
