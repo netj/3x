@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# column -- BSD column utility without the noise
+# This simply executes the system's column utility without messing up the exit code
+# Some older versions complains about the line being too long.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-22
+# TODO a custom implementation is needed for `column -t`
+set -eu
+column=$(type -ap column | tail -n +2 | head -n 1)
+"$column" "$@" 2>/dev/null || true
