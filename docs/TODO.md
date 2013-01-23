@@ -32,6 +32,7 @@
 * better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
 
 * enumerate dependencies, improve portability: readlink -f
+    * column -t: bsdmainutils, http://www.cs.indiana.edu/~kinzler/align/
 
 ## GUI
 * DONE chasis with express.js + node + bootstrap + coffee-script
