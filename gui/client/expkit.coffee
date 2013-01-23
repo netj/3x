@@ -1205,6 +1205,8 @@ class PlanTableBase extends CompositeElement
             items:  "tr.REMAINING"
             cancel: "tr:not(.REMAINING)"
         @dataTable.find("tbody tr").disableSelection()
+        # update buttons
+        do @updateButtons
 
     updateButtons: =>
         # turn on/off buttons
@@ -1242,7 +1244,6 @@ class StatusTable extends PlanTableBase
         super args...
         log "showing batch status", @batchId, @plan
         @isReordered = false
-        do @updateButtons
         # scroll to the first REMAINING row
         if (firstREMAININGrow = @dataTable.find("tbody tr.REMAINING:nth(0)")[0])?
             @scrollBody?.scrollTop = firstREMAININGrow.offsetTop - firstREMAININGrow.offsetHeight * 3.5
@@ -1294,7 +1295,6 @@ class PlanTable extends PlanTableBase
 
     updatePlan: (plan) =>
         @plan = plan
-        do @updateButtons
         do @persist
         _.defer =>
             @display @plan
