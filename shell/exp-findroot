@@ -10,7 +10,7 @@ is-root() { [ -d .exp -a -d condition -a -d program ]; }
 
 if [ -n "${EXPROOT:-}" ]; then
     if [ -d "$EXPROOT" ] && cd "$EXPROOT" && is-root; then
-        echo "$EXPROOT"
+        pwd -P
     else
         error "$EXPROOT: \$EXPROOT does not point to an experiment repository"
     fi
@@ -20,7 +20,7 @@ else
         cd ..
     done
     if is-root; then
-        pwd
+        pwd -P
     else
         error "$OPWD: Not inside an experiment repository"
     fi
