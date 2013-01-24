@@ -74,12 +74,12 @@ fi
 
 ## find matching conditions to get outcomes
 msg +1 "Filtering results with $*"
-find "${runs[@]}" -name exp.outcome \
+find "${runs[@]}" -name outcome \
     "${findPredicate[@]}" -print |
 while read -r outcome; do
-    run=${outcome%/exp.outcome}
+    run=${outcome%/outcome}
     run=$(cd "$run" && pwd -P); run=${run#$EXPROOT/}
-    condition=$run/exp.condition
+    condition=$run/condition
     [ -r "$outcome" ] || continue
     echo "$run"$'\t'"$(tr '\n' '\t' <"$outcome")$((sort | tr '\n' '\t') <"$condition")"
 done |

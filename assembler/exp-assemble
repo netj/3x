@@ -8,11 +8,15 @@ set -eu
 
 [ $# -ge 1 ] || usage "$0" "At least OUTPUTDIR must be given"
 
-outputDir=$1; shift
-outputDir=$(readlink -f "$outputDir")
+EXPWD=$1; shift
 
 EXPROOT=$(exp-findroot)
-: ${EXPWD:=$outputDir}
+
+# create the OUTPUTDIR with a working directory
+mkdir -p "$EXPWD"/workdir
+
+# decide some important environment values
+EXPWD=$(readlink -f "$EXPWD")
 : ${EXPRUN:=${EXPWD#$EXPROOT/}}
 export EXPROOT EXPRUN EXPWD
 cd "$EXPROOT"
@@ -34,17 +38,17 @@ update-assemble-script $assembleScript program condition/*=* measure/*/*=*
 
 # assemble the conditions for experiment
 msg "Assembling $EXPRUN for $*"
-: >"$EXPWD"/exp.assembly
+: >"$EXPWD"/assembly
 (
     # override some commands used in the assembly script
     error() {
         command error "$@"
-        touch "$EXPWD"/exp.assembly.error
+        touch "$EXPWD"/assembly.error
     }
     source() {
         # replace source with our function that avoids any evaluation in the definitions
         local f=$1
-        ! grep -qF "${f%/env}" "$EXPWD"/exp.assembly || return 0
+        ! grep -qF "${f%/env}" "$EXPWD"/assembly || return 0
         local decl= v= l=1
         while read -r decl; do
             decl=${decl%%*([ 	])#*}
@@ -76,25 +80,25 @@ msg "Assembling $EXPRUN for $*"
 
     # repeat iterations with assembly script until no change
     assemble-iteration() {
-        wc -l <"$EXPWD"/exp.assembly >"$EXPWD"/exp.assembly.in-progress
+        wc -l <"$EXPWD"/assembly >"$EXPWD"/assembly.in-progress
         builtin source "$assembleScript"
-        [ $(wc -l <"$EXPWD"/exp.assembly) -eq $(cat "$EXPWD"/exp.assembly.in-progress) ]
+        [ $(wc -l <"$EXPWD"/assembly) -eq $(cat "$EXPWD"/assembly.in-progress) ]
     }
     while ! assemble-iteration; do :; done
-    rm -f "$EXPWD"/exp.assembly.in-progress
+    rm -f "$EXPWD"/assembly.in-progress
 )
 
 # check if assembly went ok
-[ ! -e "$EXPWD"/exp.assembly.error ]
-if ! [ -x "$EXPWD"/run ]; then
+[ ! -e "$EXPWD"/assembly.error ]
+if ! [ -x "$EXPWD"/workdir/run ]; then
     error "Assembly failed for $EXPRUN: No executable \`run' exists"
 fi
 
 # record all condition parameters again in a separate file
-for param in "$@"; do echo "$param"; done >"$EXPWD"/exp.condition
+for param in "$@"; do echo "$param"; done >"$EXPWD"/condition
 
 # make sure some files exist
-ln -f "$assembleScript" "$EXPWD"/exp.assemble.sh
+ln -f "$assembleScript" "$EXPWD"/assemble.sh
 for f in env args stdin; do
     [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
 done

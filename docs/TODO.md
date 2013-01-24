@@ -9,7 +9,7 @@
 * DONE exp-plan with the output of exp-results query (e.g., when you want to rerun exps for certain conditions with failures/anomalies/etc.)
 * DONE exp stop for stopping a running batch or run
 
-* separate the working directory for runs from other artifacts being assembled
+* DONE separate the working directory for runs from other artifacts being assembled
     e.g., $EXPRUN/{args,env,measures/,stdin,stdout,stderr,...} $EXPRUN/cwd/{run,and all the other files of user's}
 
 * Commands for adding new ones/removing old ones for `exp conditions` and `exp measurements`
@@ -101,6 +101,7 @@
     * Use python portable library for inotify and Mac equiv to monitor file changes
     * Detect if new runs finish or start
     * and simply deliver using the awesome socket.io library
+    * <https://github.com/galenwp/draft> might help
 
 * Uniting runs in the results table
     * hint on what condition combination is running

@@ -76,7 +76,7 @@ case $1 in
         # transform the results into a batch plan
         cut -f$(( 1 + $(exp-measures | wc -l) + 1 ))- <"$tmp"/plan.$results |
         if $invertResults; then # TODO invert from the combination
-            excl="$tmp"/exp.planning.exclusion
+            excl="$tmp"/plan.skipped
             sort | column -t >"$excl"
             permute "" $(normalize-conditions -v \
                 $(tr ' \t' '\n' <"$excl" | sed -n 's/=.*//p' | sort -u)) |

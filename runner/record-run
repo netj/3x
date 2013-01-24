@@ -18,7 +18,7 @@ $(cat args)
 
 (
 be-quiet +1 || set -x
-cd "$EXPWD"
-"${cmd[@]}" <stdin >stdout 2>stderr
+cd "$EXPWD"/workdir
+"${cmd[@]}" <../stdin >../stdout 2>../stderr
 )
 echo $? >exitcode

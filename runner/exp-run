@@ -12,9 +12,6 @@ EXPROOT=$(exp-findroot)
 : ${EXPRUN:=$(new-run-id)}
 export EXPROOT EXPRUN EXPWD="$EXPROOT/$EXPRUN"
 
-# create a working directory for this experiment ($EXPWD)
-mkdir -p "$EXPWD"
-
 # assemble it for running and measurement
 exp-assemble "$EXPWD" "$@"
 
@@ -49,12 +46,12 @@ else
 fi
 
 # run measurements
-for mx in exp.measure/*/measure; do
+for mx in measure/*/measure; do
     m=$(basename "$(dirname "$mx")")
     if [ -x "$mx" ]; then
         # TODO under the same env
         echo "$m=$("$mx")"
     fi
-done >exp.outcome
+done >outcome
 
 exit $exitcode

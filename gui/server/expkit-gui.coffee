@@ -23,10 +23,7 @@ SERIAL_COLUMN_NAME = "serial#"
 # use text/plain MIME type for ExpKit artifacts in run/
 express.static.mime.define
     "text/plain": """
-        sh env args stdin stdout stderr exitcode
-        run measure
-        condition assembly outcome
-        plan remaining done count cmdln
+        sh
     """.split /\s+/
 
 ###
@@ -134,6 +131,15 @@ cliSimple = (cmd, args...) ->
         console.error err unless code is 0
 
 
+# Override content type for run directory
+app.get "/run/*", (req, res, next) ->
+    path = req.params[0]
+    unless path.match ///.+(/workdir/.+|/$)///
+        console.log "text", path
+        res.type "text/plain"
+    do next
+
+
 # Allow Cross Origin AJAX Requests
 app.options "/api/*", (req, res) ->
     res.set
@@ -144,6 +150,7 @@ app.all "/api/*", (req, res, next) ->
     res.set
         "Access-Control-Allow-Origin": "*"
     next()
+
 
 app.get "/api/description", (req, res) ->
     [basename] = process.env.EXPROOT.match /[^/]+$/

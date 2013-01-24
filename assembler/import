@@ -17,9 +17,9 @@ cpopts=
 be-quiet +1 || cpopts+=--verbose
 
 for path in "$@"; do
-    if ! grep -q "^$path$" "$EXPWD"/exp.assembly; then
+    if ! grep -q "^$path$" "$EXPWD"/assembly; then
         msg " importing $path"
-        echo "$path" >>"$EXPWD"/exp.assembly
+        echo "$path" >>"$EXPWD"/assembly
         if [ -d "$path" ]; then
             # a directory containing files and nested patterns
             case $path in
@@ -30,7 +30,7 @@ for path in "$@"; do
                         -o -name 'args' -o -name '+args' -o -name 'args+' \
                         \) -print0 2>/dev/null |
                     xargs -0  cp $cpopts --archive --link \
-                        --target-directory="$EXPWDabbrev"/ 2>/dev/null |
+                        --target-directory="$EXPWDabbrev"/workdir/ 2>/dev/null |
                     # TODO check and emit error if any files get overwritten
                     sed 's/^/  linking /'
                     # environment variables
@@ -70,7 +70,7 @@ for path in "$@"; do
                     m=$path
                     m=${m#measure/}
                     m=${m%%/*}
-                    md="$EXPWD"/exp.measure/"$m"
+                    md="$EXPWD"/measure/"$m"
                     # copy files for measurement
                     mkdir -p "$md"
                     find "$path" -mindepth 1 -maxdepth 1 -print 2>/dev/null |
