@@ -131,6 +131,12 @@ cliSimple = (cmd, args...) ->
         console.error err unless code is 0
 
 
+# Redirect to its canonical location when a run is requested via serial of batch
+app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
+    fs.realpath "#{process.env.EXPROOT}/#{req.path}", (err, path) ->
+        res.redirect path.replace(process.env.EXPROOT, "")
+
+
 # Override content type for run directory
 app.get "/run/*", (req, res, next) ->
     path = req.params[0]
