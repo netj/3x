@@ -14,6 +14,7 @@ PACKAGENAME := exp
 PACKAGEEXECUTES := bin/exp
 
 STAGEDIR := @prefix@
+MODULES := shell setup assembler batch planner runner results gui
 include buildkit/modules.mk
 
 gui-test-loop:
