@@ -29,10 +29,10 @@ for path in "$@"; do
                         -o -name '.' -o -name '..' -o -name '*=*' \
                         -o -name 'args' -o -name '+args' -o -name 'args+' \
                         \) -print0 2>/dev/null |
-                    xargs -0  cp $cpopts --archive --link \
+                    xargs -0  cp $cpopts --archive \
                         --target-directory="$EXPWDabbrev"/workdir/ 2>/dev/null |
                     # TODO check and emit error if any files get overwritten
-                    sed 's/^/  linking /'
+                    sed 's/^/  copying /'
                     # environment variables
                     for f in env; do
                         if [ -r "$path"/$f ]; then
@@ -47,7 +47,7 @@ for path in "$@"; do
                                 args) # replace arguments
                                     ! [ -e "$EXPWD"/args ] || error "$a cannot overwrite already existing args"
                                     cp $cpopts --no-clobber "$a" "$EXPWDabbrev"/args |
-                                    sed 's/^/  linking /'
+                                    sed 's/^/  copying /'
                                     ;;
                                 args+) # append arguments
                                     msg +1 "  appending $a"
@@ -74,9 +74,9 @@ for path in "$@"; do
                     # copy files for measurement
                     mkdir -p "$md"
                     find "$path" -mindepth 1 -maxdepth 1 -print 2>/dev/null |
-                    xargs cp $cpopts --archive --link \
+                    xargs cp $cpopts --archive --copy \
                         --target-directory="$md"/ |
-                    sed 's/^/  linking /'
+                    sed 's/^/  copying /'
                     ;;
             esac
         else

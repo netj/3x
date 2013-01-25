@@ -98,7 +98,7 @@ fi
 for param in "$@"; do echo "$param"; done >"$EXPWD"/condition
 
 # make sure some files exist
-ln -f "$assembleScript" "$EXPWD"/assemble.sh
+cp -af "$assembleScript" "$EXPWD"/assemble.sh
 for f in env args stdin; do
     [ -e "$EXPWD/$f" ] || touch "$EXPWD/$f"
 done

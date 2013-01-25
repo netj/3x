@@ -29,7 +29,7 @@
 
 * better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
 
-* better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
+* DONE better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
 
 * enumerate dependencies, improve portability: readlink -f
     * column -t: bsdmainutils, http://www.cs.indiana.edu/~kinzler/align/

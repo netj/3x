@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# archive -- De-duplicate given FILEs with the hardlink copies in REPO
+# Usage: archive REPO FILE...
+# 
+# If there's a file already in the REPO with the same hash, FILE will be
+# replaced as a hardlink to it.  Otherwise, a new hardlink of FILE will be
+# created in the REPO, named after its hash in the REPO, e.g.,
+# REPO/9a/da/8506c0746cb36bb250449c5322590748a924.  The SHA1 hash for each FILE
+# is computed with `git hash-object`.
+# 
+# All the hardlinked files will be marked read-only, i.e., have writable
+# permission cleared after they are archived.
+# 
+# When a directory is archived, all the files within that directory will be
+# archived first, then the directories will be marked read-only.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "No REPO given"
+[ $# -gt 1 ] || usage "$0" "No FILE given"
+
+REPO=$1; shift
+
+# prepare some dirs for archive
+mkdir -p "$REPO"
+tmp=$(mktemp -d "${TMPDIR:-/tmp}"/archive.XXXXXX)
+trap "rm -rf $tmp" EXIT
+
+# generate a list of files first
+filelist="$tmp"/files
+find "$@" -type f >"$filelist" || true
+
+# generate a shell script that unifies all the files with the ones in the archive
+{
+    be-quiet +4 || echo "set -x"
+    cat <<-PROLOGUE
+	set -u
+	u() {
+	    local archived='${REPO//\'/\'\\\'\'}'/"\$1"
+	    local file=\$2
+	    if [ -e "\$archived" ]; then
+	        if ! [ "\$file" -ef "\$archived" ]; then
+	            touch -r "\$file" "\$archived"
+	            ln -fn "\$archived" "\$file"
+	        fi
+	    else
+	        mkdir -p \$(dirname "\$archived")
+	        cp --archive --link --force "\$file" "\$archived"
+	    fi
+	    chmod a-w "\$archived"
+	}
+	PROLOGUE
+    # use git hash-object to compute SHA1 sum of each file
+    git hash-object --stdin-paths <"$filelist" |
+    sed 's:^....:&/:; s:^..:&/:' |
+    paste - "$filelist" |
+    perl -Mstrict -e '
+    sub esc { my $f = shift; $f =~ s/'\''/'\''\\'\'\''/g; $f }
+    while (my $line = <>) {
+        chomp $line;
+        my ($sha1file, $path) = split /\t/, $line, 2;
+        printf "u %s '\''%s'\''\n", $sha1file, esc($path);
+    }
+    '
+} >"$tmp"/dedup.sh
+
+# and run it
+bash "$tmp"/dedup.sh
+
+# finally, make all involved directories read-only
+find "$@" -type d -exec chmod a-w {} +

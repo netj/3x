@@ -11,13 +11,29 @@ set -eu
 EXPROOT=$(exp-findroot)
 : ${EXPRUN:=$(new-run-id)}
 export EXPROOT EXPRUN EXPWD="$EXPROOT/$EXPRUN"
+EXPARCHIVE="$EXPROOT"/.exp/files
+
+# archive everything when run exits
+cleanup() {
+    local c=$?
+    set +e
+    (
+    set -e
+    cd "$EXPWD" 2>/dev/null
+    msg +2 "Archiving $EXPRUN to .exp/files/"
+    chmod a-w outcome stdout stderr 2>/dev/null || true
+    archive "$EXPARCHIVE" . ! -path ./outcome ! -path ./stdout ! -path ./stderr
+    )
+    exit $c
+}
+trap cleanup EXIT
 
 # assemble it for running and measurement
 exp-assemble "$EXPWD" "$@"
 
 # run it
-msg "Running $EXPRUN with $*"
 cd "$EXPWD"
+msg "Running $EXPRUN with $*"
 setsid env - \
     PATH="$TOOLSDIR:$(dirname $(type -p sed)):$(dirname "$SHELL")" \
     EXPKIT_HOME="$EXPKIT_HOME" \

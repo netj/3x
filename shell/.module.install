@@ -9,6 +9,7 @@ be-quiet                    $TOOLSDIR/
 
 edit                        $TOOLSDIR/
 customize                   $TOOLSDIR/
+archive                     $TOOLSDIR/
 
 column                      $TOOLSDIR/
 limitOffset                 $TOOLSDIR/
