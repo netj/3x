@@ -12,6 +12,7 @@ export EXPROOT
 cd "$EXPROOT"
 cd measure
 for name in */; do
+    [ -e "$name" ] || continue
     name=${name%/}
     typefile="$name/datatype"
     type=$(cat "$typefile" 2>/dev/null || echo)

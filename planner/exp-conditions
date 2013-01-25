@@ -67,6 +67,7 @@ else
     showCondition() { echo "$1"; }
 fi
 for path in "$@"; do
+    [ -e "$path" ] || continue
     name=$(basename "$path")
     name=${name%%=*}
     showCondition $name "$path"
