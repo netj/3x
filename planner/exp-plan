@@ -30,6 +30,7 @@ set -eu
 
 EXPROOT=$(exp-findroot)
 : ${EXPBATCH:=$(new-batch-id)}
+: ${EXPBATCH_STARTING:=false}
 export EXPROOT EXPBATCH
 
 # create the batch directory
@@ -108,8 +109,10 @@ fi
 
 # and the batch creation is done
 msg +0 -n "Batch created at "
-echo "$EXPBATCH"
-if ! ${EXPBATCH_STARTING:-false}; then
+if $EXPBATCH_STARTING; then
+    msg +0 "$EXPBATCH"
+else
+    echo "$EXPBATCH"
     msg "To start the batch, run:"
     msg "  exp start $EXPBATCH"
 fi
