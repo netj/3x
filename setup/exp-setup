@@ -74,3 +74,7 @@ be-quiet +2 ||
 
 # and run it to bootstrap an experiment
 bash "$tmp"/setup-script
+msg "Finished setup of experiment $EXPROOT"
+msg "You can start the GUI by running:"
+msg "  cd $(escape-args-for-shell "$EXPROOT")"
+msg "  exp gui start"

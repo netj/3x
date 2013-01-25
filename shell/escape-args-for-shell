@@ -12,7 +12,7 @@ for arg; do
             echo -n "$arg "
             ;;
         *)
-            echo -n "'${arg//\'/\'\\\'\'}' "
+            echo -n "'"${arg//\'/\'\\\'\'}"' "
             ;;
     esac
 done
