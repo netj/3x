@@ -897,14 +897,14 @@ class BatchesTable extends CompositeElement
         @baseElement.on "click", "tbody tr", (e) ->
             openBatchStatusFor $(this).closest("tr")
 
+        do @display
+
         # load the current batch status
         if @currentBatchId?
             @status.load @currentBatchId
         else
             @dataTable.one "draw", ->
                 tbody.find("tr:nth(0)").click()
-
-        do @display
 
     persist: =>
         # TODO isolate localStorage key

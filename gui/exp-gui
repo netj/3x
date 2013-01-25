@@ -25,7 +25,7 @@ cmd=${1:-start}
 case $cmd in
     start)
         pid=$(get-pid || true)
-        port=$(cat $portfile 2>/dev/null)
+        port=$(cat $portfile 2>/dev/null || true)
         launchNew=false
         if [ -z "$pid" ]; then
             # use given port or reuse the last port or the default
