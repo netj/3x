@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# extract-regexp -- Extract the first string that matches given regular
+#                   expresion from any single line of the INPUT
+# Usage: extract-regexp REGEXP_BEFORE  REGEXP  REGEXP_AFTER  <INPUT
+# 
+# All REGEXP should be Perl regular expressions.  See man page for perlre(1).
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+set -eu
+
+[ $# -eq 3 ] || usage "$0" "Three regular expressions must be given"
+
+Patt=$2 PattBefore=$1 PattAfter=$3
+
+# TODO handle / in the patterns
+
+# count how many matching groups PattBefore has
+parens=$PattBefore
+#  first, remove all \\
+parens=${parens//'\\'/}
+#  then, remove all \(
+parens=${parens//'\('/}
+#  finally, count how many left parentheses remain
+parens=${parens//[^\(]/}
+group=${#parens}
+
+exec perl -Mstrict -e '
+while (my $line = <>) {
+    if (my @m = ($line =~ /'"$PattBefore"'('"$Patt"')'"$PattAfter"'/)) {
+        print $m['$group'], "\n";
+        exit;
+    }
+}
+exit 1;
+'

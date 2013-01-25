@@ -10,6 +10,8 @@ be-quiet                    $TOOLSDIR/
 edit                        $TOOLSDIR/
 customize                   $TOOLSDIR/
 archive                     $TOOLSDIR/
+escape-args-for-shell       $TOOLSDIR/
+extract-regexp              $TOOLSDIR/
 
 column                      $TOOLSDIR/
 limitOffset                 $TOOLSDIR/

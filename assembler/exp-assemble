@@ -62,7 +62,7 @@ msg "Assembling $EXPRUN for $*"
     }
 
     # record environment variables
-    envFiles=(condition/env.default) # "$DATADIR"/env.default
+    envFiles=(condition/env.default)
     if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
         envVarNames=$(list-var-names "${envFiles[@]}")
         msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames

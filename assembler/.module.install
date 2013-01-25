@@ -3,5 +3,3 @@ generate-assembly-script        $TOOLSDIR/
 import                          $TOOLSDIR/
 no-comments                     $TOOLSDIR/
 list-var-names                  $TOOLSDIR/
-
-env.default                     $DATADIR/

@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# exp-setup -- Setup a new computational experiment
+# Usage:
+#   exp-setup EXPROOT \
+#      --conditions [NAME=VALUE1[,VALUE2]]...   \
+#      --programs   [NAME='COMMAND']...         \
+#      --measures   ['...{{NAME=~REGEXP}}...']...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "EXPROOT is missing"
+
+EXPROOT=$1; shift
+
+# prepare a script
+tmp=$(mktemp -d "${TMPDIR:-/tmp}"/exp-setup.XXXXXX)
+trap "rm -rf $tmp" EXIT
+
+# generate a experiment setup script
+{
+    # create the EXPROOT directory
+    escape-args-for-shell exp-init "$EXPROOT"
+    escape-args-for-shell cd "$EXPROOT"
+    # map command line args to exp-define commands
+    what=
+    for arg; do
+        # detect section leader arguments
+        case $arg in
+            --conditions|--programs|--measures)
+                what=${arg#--}
+                what=${what%s}
+                continue
+                ;;
+            --*)
+                error "Unknown argument $arg"
+                ;;
+        esac
+        if [ -z "$what" ]; then
+            msg +1 "Assuming --conditions for $arg"
+            what=condition
+        fi
+        # translate $arg to the appropriate command
+        case $what in
+            condition)
+                name=${arg%%=*}
+                IFS=, how=(${arg#$name=})
+                ;;
+
+            program)
+                name=${arg%%=*}
+                how=("${arg#$name=}")
+                ;;
+
+            measure)
+                LDELIM='{{' MDELIM='=~' RDELIM='}}'
+                regexpBefore=${arg%%$LDELIM*}
+                rest=${arg#$regexpBefore$LDELIM}
+                name=${rest%%$MDELIM*}
+                rest=${rest#$name$MDELIM}
+                regexp=${rest%%$RDELIM*}
+                regexpAfter=${rest#*$RDELIM}
+                how=("$regexpBefore" "$regexp" "$regexpAfter")
+                ;;
+        esac
+        escape-args-for-shell exp define $what "$name" "${how[@]}"
+    done
+} >"$tmp"/setup-script
+
+msg +2 "Setting up new experiment"
+be-quiet +2 ||
+    while read -r line; do msg +2 "  $line"; done <"$tmp"/setup-script
+
+# and run it to bootstrap an experiment
+bash "$tmp"/setup-script

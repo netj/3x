@@ -4,9 +4,14 @@
 # 
 # COMMAND is one of the following forms:
 # 
-#   exp init
+#   exp setup DIR ...
 # 
 #   exp gui
+# 
+#   exp init
+#   exp define condition
+#   exp define measure
+#   exp define program 
 # 
 #   exp plan   [NAME[=VALUE[,VALUE]...]]...
 #   exp start  [NAME[=VALUE[,VALUE]...]]...

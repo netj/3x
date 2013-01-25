@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# exp-init -- Initialize a new computational experiment directory
+# Usage: exp-init EXPROOT
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "EXPROOT is missing"
+
+EXPROOT=$1; shift
+
+if [ -d "$EXPROOT" ]; then
+    if [[ $(EXPROOT=$EXPROOT exp-findroot 2>/dev/null) == $(readlink -f "$EXPROOT") ]]; then
+        msg "No need to initialize $EXPROOT"
+        exit
+    else
+        error "$EXPROOT already exists, but isn't an experiment directory"
+    fi
+fi
+
+# initialize the EXPROOT
+mkdir -p "$EXPROOT"
+cd "$EXPROOT"
+
+# create the skeleton directories
+mkdir -p .exp/{files,gui} condition measure program run/batch
+
+# copy some default files
+customize "$DATADIR"/exp.template <<RULES
+RULES
+
+msg "Initialized $EXPROOT"

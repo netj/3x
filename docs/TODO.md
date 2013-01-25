@@ -12,12 +12,13 @@
 * DONE separate the working directory for runs from other artifacts being assembled
     e.g., $EXPRUN/{args,env,measures/,stdin,stdout,stderr,...} $EXPRUN/cwd/{run,and all the other files of user's}
 
-* Commands for adding new ones/removing old ones for `exp conditions` and `exp measurements`
+* DONE Commands for adding new ones for `exp conditions` and `exp measurements`
+* Command for removing old ones for `exp conditions` and `exp measurements`
 
 * DONE Make exp-findroot fail, i.e., EXPROOT=${EXPROOT:-$(exp-findroot)} instead of : ${EXPROOT:=$(exp-findroot)}
 * Factorize EXPBATCH arg normalization
 
-* a simple way to bootstrap an exp repository
+* DONE a simple way to bootstrap an exp repository
 
         exp setup  VAR1=V1,V2  VAR2=V3,V4..V5 ...  'COMMAND'  MEASURE1='PATT1_FROM_OUTPUT'  MEASURE2='PATT2_FROM_OUTPUT' ...
 
