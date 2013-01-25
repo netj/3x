@@ -30,11 +30,16 @@ update-assemble-script() {
         rm -f "$scpt"
         EXPWD=$EXPWD \
             generate-assembly-script "$@" >"$scpt"
-        screen -m -D vim -n "$scpt" +"set ft=sh" +"norm gg=G" +wq &>/dev/null || true
+        { vim -u NONE -i NONE -N -n -e -s "$scpt" &>/dev/null || true; } <<-EOF
+	source \$VIMRUNTIME/vimrc_example.vim
+	set ft=sh
+	norm gg=G
+	wq!
+	EOF
     fi
 }
 assembleScript=.exp/assemble.sh
-update-assemble-script $assembleScript program condition/*=* measure/*/*=*
+update-assemble-script $assembleScript program condition/*=* measure/*
 
 # assemble the conditions for experiment
 msg "Assembling $EXPRUN for $*"

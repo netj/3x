@@ -19,6 +19,13 @@ codeForPatternDirs() {
     for pattDir; do
         [ -e "$pattDir" ] || continue
         echo "# $pattDir"
+        case $pattDir in
+            # measurements themselves need not any guards
+            measure/+([^/]))
+                codeForMatchedPatternFile "$pattDir"
+                continue
+                ;;
+        esac
         patt=$(basename "$pattDir")
         case $patt in
             *=?*)
