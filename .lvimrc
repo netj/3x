@@ -3,7 +3,12 @@
 " Created: 2013-01-22
 
 let $SourceRoot = expand("<sfile>:h")
+let modules = split("shell setup assembler planner batch runner results gui")
+
 let $EXPROOT = $SourceRoot."/test-exp"
+
+lcd $SourceRoot
+exec "setlocal path+=".join(map(modules,'$SourceRoot."/".v:val'), ",")
 
 " Build with Cmd-Enter
 nmap <buffer> <D-CR> :make -C $SourceRoot install PREFIX=~<CR>
@@ -14,10 +19,9 @@ au! BufRead,BufNewFile .module.* lcd %:h
 
 " Handy command for searching strings in the source code
 command! -nargs=1 FindSource
-            \ lgrep -r <args>
-            \    shell assembler planner batch runner results
-            \    gui/{exp-*,.module.*,package.json} gui/client/*.* gui/server
-            \    --exclude='*/.build/*'
+            \ exec "lgrep -r <args> ".join(filter(copy(modules),'v:val!="gui"'), " ")
+            \     ." gui/{exp-*,.module.*,package.json} gui/client/*.* gui/server"
+            \     ." --exclude='*/.build/*'"
 
 command! TODOs  FindSource TODO
 
