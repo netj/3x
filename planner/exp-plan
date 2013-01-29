@@ -64,7 +64,7 @@ case $1 in
         shift
         EDITOR=true
         cat "$@" |
-        sed 's/^\(^exp[ 	]*run[ 	]*\)\?/exp run /' | column -t >"$tmp"/plan
+        sed 's/^\(^exp[ 	]*run[ 	]*\)\?/exp run /' | column -t >"$tmp"/plan.editing
         ;;
     results|skip) # based on query over results
         results=$1; shift
@@ -85,7 +85,7 @@ case $1 in
             comm -13 "$excl" -
         else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate conditions
         fi |
-        sed 's/^/exp run /' | column -t >"$tmp"/plan
+        sed 's/^/exp run /' | column -t >"$tmp"/plan.editing
         ;;
     *) # by editing combinations generated from given condition values
         # normalize command-line arguments
@@ -94,14 +94,15 @@ case $1 in
 
         # permute the arguments and generate a batch plan
         msg "Permuting conditions for ${@%%=*}..."
-        permute "exp run" "$@" | column -t >"$tmp"/plan
+        permute "exp run" "$@" | column -t >"$tmp"/plan.editing
         ;;
 esac
 
 cd "$EXPROOT/$EXPBATCH"
 
 # let user do a finish edit of the generated plan
-if edit plan plan.in-progress; then
+if edit plan.editing plan.in-progress; then
+    mv -f plan.editing plan
     trap - EXIT
 else
     error "Aborted planning"

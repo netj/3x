@@ -99,10 +99,10 @@
         * small multiple
 
 * Use WebSockets (socket.io) to notify changes to the run/batch status and deliver new results incrementally
-    * Use python portable library for inotify and Mac equiv to monitor file changes
+    * Use fs.watch to monitor file changes
     * Detect if new runs finish or start
     * and simply deliver using the awesome socket.io library
-    * <https://github.com/galenwp/draft> might help
+    * watchr is good but generates spurious events when there's dangling symlink under watched dirs
 
 * Uniting runs in the results table
     * hint on what condition combination is running

@@ -5,6 +5,9 @@
 # Created: 2012-11-11
 ###
 express = require "express"
+http = require "http"
+socketIO = require "socket.io"
+watchr = require "watchr"
 fs = require "fs"
 os = require "os"
 child_process = require "child_process"
@@ -13,7 +16,8 @@ async = require "async"
 Lazy = require "lazy"
 _ = require "underscore"
 
-expKitPort = parseInt process.argv[2] ? 0
+EXPROOT = process.env.EXPROOT
+EXPGUIPORT = parseInt process.argv[2] ? 0
 
 
 RUN_COLUMN_NAME = "run#"
@@ -30,6 +34,8 @@ express.static.mime.define
 # Express.js server
 ###
 app = module.exports = express()
+server = http.createServer app
+io = socketIO.listen server
 
 app.configure ->
     #app.set "views", __dirname + "/views"
@@ -38,8 +44,8 @@ app.configure ->
     app.use express.bodyParser()
     #app.use express.methodOverride()
     app.use app.router
-    app.use "/run", express.static    "#{process.env.EXPROOT}/run"
-    app.use "/run", express.directory "#{process.env.EXPROOT}/run"
+    app.use "/run", express.static    "#{EXPROOT}/run"
+    app.use "/run", express.directory "#{EXPROOT}/run"
     app.use         express.static    "#{__dirname}/../client"
 
 app.configure "development", ->
@@ -133,8 +139,8 @@ cliSimple = (cmd, args...) ->
 
 # Redirect to its canonical location when a run is requested via serial of batch
 app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
-    fs.realpath "#{process.env.EXPROOT}/#{req.path}", (err, path) ->
-        res.redirect path.replace(process.env.EXPROOT, "")
+    fs.realpath "#{EXPROOT}/#{req.path}", (err, path) ->
+        res.redirect path.replace(EXPROOT, "")
 
 
 # Override content type for run directory
@@ -159,16 +165,16 @@ app.all "/api/*", (req, res, next) ->
 
 
 app.get "/api/description", (req, res) ->
-    [basename] = process.env.EXPROOT.match /[^/]+$/
-    desc = String(fs.readFileSync "#{process.env.EXPROOT}/.exp/description").trim()
+    [basename] = EXPROOT.match /[^/]+$/
+    desc = String(fs.readFileSync "#{EXPROOT}/.exp/description").trim()
     if desc == "Unnamed repository; edit this file 'description' to name the repository."
         desc = null
     res.json
         name: basename
         description: desc
-        fileSystemPath: process.env.EXPROOT
+        fileSystemPath: EXPROOT
         hostname: os.hostname()
-        port: expKitPort
+        port: EXPGUIPORT
 
 app.get "/api/conditions", (req, res) ->
     cli(res, "exp-conditions", ["-v"]
@@ -279,7 +285,7 @@ app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId
     batchPath = "run/batch/#{batchId}"
-    fs.exists "#{process.env.EXPROOT}/#{batchPath}", (exists) ->
+    fs.exists "#{EXPROOT}/#{batchPath}", (exists) ->
         return res.send 404, "Not found: #{batchPath}" unless exists
         cli(res, "exp-status", [batchPath]
             , normalizeNamedColumnLines (line) ->
@@ -319,7 +325,7 @@ app.post "/api/run/batch/*", (req, res) ->
         if shouldStart
             try cliSimple "sh", "-c", "exp-start #{batchId} </dev/null &>/dev/null &"
 
-    mktemp.createFile "#{process.env.EXPROOT}/.exp/plan.XXXXXX", (err, planFile) ->
+    mktemp.createFile "#{EXPROOT}/.exp/plan.XXXXXX", (err, planFile) ->
         andRespond = (err, [batchId]) ->
             # remove temporary file
             unless err
@@ -335,6 +341,49 @@ app.post "/api/run/batch/*", (req, res) ->
                 ) andRespond
 
 
-app.listen expKitPort, ->
-    #console.log "ExpKit GUI started at http://localhost:%d/", expKitPort
+
+###### WebSockets with Socket.IO
+
+io.of("/run/batch/")
+    .on "connection", (socket) ->
+        updateRunningCount = ->
+            cliBare("sh", ["-c", "exp-batches | grep -c RUNNING || true"]
+                , (lazyLines, next) ->
+                    lazyLines
+                        .take(1)
+                        .join ([line]) -> next (+line.trim())
+            ) (code, err, count) ->
+                socket.volatile.emit "running-count", count
+
+        do updateRunningCount
+
+        console.log "#{socket.id}: start watching batches"
+        batchRootDir = "#{EXPROOT}/run/batch/"
+        watchr.watch
+            path: batchRootDir
+            listeners:
+                change: (event, fullpath) ->
+                    # assuming first path component is the batch ID
+                    batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""
+                    filename = fullpath?.substring((batchRootDir + batchIdProper).length)
+                    return unless batchIdProper?
+                    batchId = "run/batch/#{batchIdProper}"
+                    console.log "#{batchId} #{event} #{filename}"
+                    if filename is "/plan"
+                        socket.volatile.emit "listing-update", [batchId, event]
+                    else if filename?.match /// worker-\d+.lock ///
+                        do updateRunningCount
+                        socket.volatile.emit "state-update", [
+                            batchId
+                            if event is "create" then "START" else "STOP"
+                            # TODO pass new state, #running, #done, #remaining, ...??
+                        ]
+            next: (err, watchers) ->
+                socket.on "disconnect", ->
+                    console.log "#{socket.id}: stop watching batches"
+                    watchers.map (watcher) -> do watcher.close
+
+
+server.listen EXPGUIPORT, ->
+    #console.log "ExpKit GUI started at http://localhost:%d/", EXPGUIPORT
 

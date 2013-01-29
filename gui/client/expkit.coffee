@@ -888,6 +888,28 @@ class BatchesTable extends CompositeElement
     constructor: (@baseElement, @countDisplay, @status) ->
         super @baseElement
 
+        # subscribe to batch notifications
+        @socket = io.connect("#{ExpKitServiceBaseURL}/run/batch/")
+            .on "listing-update", ([batchId, createOrDelete]) =>
+                # TODO any non intrusive way to give feedback?
+                log "batch #{batchId} #{createOrDelete}"
+                do @reload
+
+            .on "state-update", ([batchId, newStatus]) =>
+                log batchId, newStatus
+                # TODO update only when the batch is visible on current page
+                # TODO rate limit?
+                do @reload
+
+                # TODO when the batch is opened in status table, and unless it's dirty, update it
+                @openBatchStatus batchId
+
+            .on "running-count", (count) =>
+                # update how many batches are running
+                @countDisplay
+                    ?.text(count)
+                     .toggleClass("hide", count == 0)
+
         # TODO isolate localStorage key
         @currentBatchId = localStorage.lastBatchId
 
@@ -911,7 +933,6 @@ class BatchesTable extends CompositeElement
         localStorage.lastBatchId = @currentBatchId
 
     display: =>
-        do @updateRunningCount
         bt = @
         unless @dataTable?
             # clone original thead row
@@ -948,9 +969,6 @@ class BatchesTable extends CompositeElement
             fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
             bStateSave: true
-            # update running count every time we pull data
-            fnDrawCallback: (oSettings) =>
-                do @updateRunningCount
             # manipulate header columns
             fnHeaderCallback: (nHead, aData, iStart, iEnd, aiDisplay) ->
                 $("th:gt(1)", nHead).remove()
@@ -1033,22 +1051,11 @@ class BatchesTable extends CompositeElement
             batchId = $row.find("td:nth(0)").text()
             log "#{action}ing #{batchId}"
             $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}:#{action}")
-                .success (result) =>
-                    setTimeout @reload, 1000
                 # TODO feedback on failure
         (e) ->
             act $(this).closest("tr")
             do e.preventDefault
             do e.stopPropagation
-
-    updateRunningCount: =>
-        # update running count
-        $.getJSON("#{ExpKitServiceBaseURL}/api/run/batch.numRUNNING")
-            .success((count) =>
-                @countDisplay
-                    ?.text(count)
-                     .toggleClass("hide", count == 0)
-            )
 
 
 
@@ -1418,6 +1425,13 @@ class PlanTable extends PlanTableBase
 
 
 
+## notifications via Socket.IO
+initSocketIO = ->
+    socket = io.connect ExpKitServiceBaseURL
+    # TODO move /api/description to here?
+    socket.on "news", (data) ->
+        log data
+        socket.emit "my other event", my: "data"
 
 # initialize UI
 $ ->
@@ -1456,4 +1470,5 @@ $ ->
     do initNavBar
     do initChartUI
     do initBaseURLControl
+    do initSocketIO
 

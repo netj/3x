@@ -13,6 +13,10 @@ Font-Awesome/font/fontawesome-webfont.{eot,ttf,woff}    $GUIDIR/client/resource/
 
 underscore/underscore.js                                $GUIDIR/client/resource/
 
+client/socket.io-client/dist/socket.io.js               $GUIDIR/client/resource/
+client/socket.io-client/dist/WebSocketMain.swf          $GUIDIR/client/resource/
+client/socket.io-client/dist/WebSocketMainInsecure.swf  $GUIDIR/client/resource/
+
 jsrender/jsrender.js                                    $GUIDIR/client/resource/
 
 DataTables/media/js/jquery.dataTables.js                                                $GUIDIR/client/resource/jquery.dataTables.js
