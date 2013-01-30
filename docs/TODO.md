@@ -1,4 +1,9 @@
 # TODOs
+
+## Documentation
+* intro of Concepts, Workflow
+
+## CLI
 * DONE change fancy printf stuffs done in exp-plan to `column -t`
 * DONE exp-results
     * run restriction
@@ -24,6 +29,8 @@
 
 * keep links to currently running batch and/or run in a concentrated place, say `run/current/*` or so
 * record observed real/user/sys times
+
+* support exp setup --measurements pattern with more than one capture pattern
 
 * `exp measure` for running newly added measures: requires partial assembly for exp.measure, and separating the running part from exp-run.
 * exp-rerun for re-running past runs: do a copy --archive --link from the run dir and simply run it again?
@@ -72,12 +79,15 @@
     * api for storing new/updated batch
     * make PlanTable selectable
     * and allow removal of the selected items
+* make title clearer
 
 * DONE Handy way to generate condition combinations from the result table and add them to plan table
     * DONE minor: append the popover in the first or run# column to avoid glitches
     * DONE minor: scroll to bottom of plan after adding
     * Show hints on combinations of what will be added to plans from the
       popover, and only display when it will actuall add ones.
+
+* bug of plan table -> create batch -> 1 line less batch
 
 * Selection(Filter) on measurements
 * Show multiple columns of same measurement with diff aggregation in results table
