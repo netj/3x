@@ -16,7 +16,6 @@ ln -f ../../server/package.json
 echo >README.md
 npm install
 coffee -c -o . ../../server/*.coffee
-(cd ../../watchit && NODE_PATH=$PWD/.. cake build)
 
 
 # client

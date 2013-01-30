@@ -7,13 +7,13 @@
 express = require "express"
 http = require "http"
 socketIO = require "socket.io"
-watchit = require "watchit"
 fs = require "fs"
 os = require "os"
 child_process = require "child_process"
 mktemp = require "mktemp"
 async = require "async"
 Lazy = require "lazy"
+StreamSplitter = require "stream-splitter"
 _ = require "underscore"
 
 EXPROOT = process.env.EXPROOT
@@ -363,7 +363,7 @@ updateRunningCount = (socket = batchSockets) ->
         socket.volatile.emit "running-count", count
 
 batchRootDir = "#{EXPROOT}/run/batch/"
-batchNotifyChange = (event) -> (fullpath, stat, statPrev) ->
+batchNotifyChange = (event, fullpath) ->
     console.log "WATCH #{event} #{fullpath}"
     # assuming first path component is the batch ID
     batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""
@@ -381,22 +381,15 @@ batchNotifyChange = (event) -> (fullpath, stat, statPrev) ->
             # TODO pass new state, #running, #done, #remaining, ...??
         ]
 
-EVENT_NAMES =
-    change: "changed"
-    create: "created"
-    unlink: "deleted"
-monitor = watchit(batchRootDir,
-    persistent: false
-    recurse: true
-    include: true
-    #retain: true # XXX never use retain with recurse or include together
-    debounce: true
-    followSymlinkDirs: false
-    filter: (f, stat) ->
-        # skip symlink dirs
-        /// ( running\.[^/]+/run | runs/\d+ )$ ///.test f
-)
-.on "all", (evt, path)
-for evt,name of EVENT_NAMES
-    monitor.on evt, (evtnm, path) -> batchNotifyChange name
-
+# Use Python watchdog to monitor filesystem changes
+p = child_process.spawn "watchmedo", [
+    'shell-command'
+    '--recursive'
+    '--patterns=*'
+    '--command=echo ${watch_event_type} ${watch_src_path}'
+    batchRootDir
+]
+splitter = p.stdout.pipe(StreamSplitter("\n"))
+splitter.on "token", (line) ->
+    [event, path] = String(line).split " ", 2
+    batchNotifyChange event, path
