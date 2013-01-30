@@ -24,10 +24,10 @@ cmd=${1:-start}
 [ $# -eq 0 ] || shift
 case $cmd in
     start)
-        pid=$(get-pid || true)
+        pids=$(get-pid || true)
         port=$(cat $portfile 2>/dev/null || true)
         launchNew=false
-        if [ -z "$pid" ]; then
+        if [ -z "$pids" ]; then
             # use given port or reuse the last port or the default
             port=${1:-${port:-$defaultPort}}
             launchNew=true
@@ -48,6 +48,9 @@ case $cmd in
                 # TODO determine unused port automatically
             fi
             # launch server
+            python_site_dir="$GUIDIR"/server/python-packages
+            PATH="$python_site_dir:$PATH" \
+            PYTHONPATH="$python_site_dir${PYTHONPATH:+:$PYTHONPATH}" \
             setsid node "$GUIDIR"/server/expkit-gui.js $port \
                 </dev/null >$logfile 2>&1 &
             pid=$!
@@ -66,6 +69,7 @@ case $cmd in
                 open "$url"
                 ;;
         esac
+        trap "kill -TERM \$(for pid in $pids; do echo -\$pid; done)" INT QUIT TERM
         wait
         ;;
 
