@@ -905,6 +905,7 @@ class BatchesTable extends CompositeElement
                 @openBatchStatus batchId
 
             .on "running-count", (count) =>
+                log "running-count", count
                 # update how many batches are running
                 @countDisplay
                     ?.text(count)

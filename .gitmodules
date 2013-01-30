@@ -31,3 +31,6 @@
 [submodule "gui/d3"]
 	path = gui/d3
 	url = git://github.com/mbostock/d3.git
+[submodule "gui/watchr"]
+	path = gui/watchr
+	url = https://github.com/netj/watchr.git

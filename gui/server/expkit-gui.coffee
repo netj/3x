@@ -341,49 +341,61 @@ app.post "/api/run/batch/*", (req, res) ->
                 ) andRespond
 
 
-
-###### WebSockets with Socket.IO
-
-io.of("/run/batch/")
-    .on "connection", (socket) ->
-        updateRunningCount = ->
-            cliBare("sh", ["-c", "exp-batches | grep -c RUNNING || true"]
-                , (lazyLines, next) ->
-                    lazyLines
-                        .take(1)
-                        .join ([line]) -> next (+line.trim())
-            ) (code, err, count) ->
-                socket.volatile.emit "running-count", count
-
-        do updateRunningCount
-
-        console.log "#{socket.id}: start watching batches"
-        batchRootDir = "#{EXPROOT}/run/batch/"
-        watchr.watch
-            path: batchRootDir
-            listeners:
-                change: (event, fullpath) ->
-                    # assuming first path component is the batch ID
-                    batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""
-                    filename = fullpath?.substring((batchRootDir + batchIdProper).length)
-                    return unless batchIdProper?
-                    batchId = "run/batch/#{batchIdProper}"
-                    console.log "#{batchId} #{event} #{filename}"
-                    if filename is "/plan"
-                        socket.volatile.emit "listing-update", [batchId, event]
-                    else if filename?.match /// worker-\d+.lock ///
-                        do updateRunningCount
-                        socket.volatile.emit "state-update", [
-                            batchId
-                            if event is "create" then "START" else "STOP"
-                            # TODO pass new state, #running, #done, #remaining, ...??
-                        ]
-            next: (err, watchers) ->
-                socket.on "disconnect", ->
-                    console.log "#{socket.id}: stop watching batches"
-                    watchers.map (watcher) -> do watcher.close
-
-
 server.listen EXPGUIPORT, ->
     #console.log "ExpKit GUI started at http://localhost:%d/", EXPGUIPORT
+
+
+
+###### incremental updates via WebSockets with Socket.IO
+
+batchSockets =
+io.of("/run/batch/")
+    .on "connection", (socket) ->
+        updateRunningCount socket
+
+updateRunningCount = (socket = batchSockets) ->
+    cliBare("sh", ["-c", "exp-batches | grep -c RUNNING || true"]
+        , (lazyLines, next) ->
+            lazyLines
+                .take(1)
+                .join ([line]) -> next (+line.trim())
+    ) (code, err, count) ->
+        socket.volatile.emit "running-count", count
+
+batchRootDir = "#{EXPROOT}/run/batch/"
+batchNotifyChange = (event, fullpath, stat, statPrev) ->
+    console.log "WATCH #{event} #{fullpath}"
+    # assuming first path component is the batch ID
+    batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""
+    filename = fullpath?.substring((batchRootDir + batchIdProper).length)
+    return unless batchIdProper?
+    batchId = "run/batch/#{batchIdProper}"
+    console.log "WATCH #{batchId} #{event} #{filename}"
+    if filename is "/plan"
+        batchSockets.volatile.emit "listing-update", [batchId, event]
+    else if filename.match /// ^/worker-\d+\.lock$ /// or filename.match /// ^/running\.[^/]+/lock$ ///
+        do updateRunningCount
+        batchSockets.volatile.emit "state-update", [
+            batchId
+            if event is "created" then "START" else "STOP"
+            # TODO pass new state, #running, #done, #remaining, ...??
+        ]
+
+EVENT_NAMES =
+    change: "changed"
+    update: "updated"
+    delete: "deleted"
+watchr.watch
+    path: batchRootDir
+    filter: (f, stat) ->
+        # skip symlink dirs
+        /// ( running\.[^/]+/run | runs/\d+ )$ ///.test f
+    listeners:
+        change: (event, fullpath) ->
+            batchNotifyChange EVENT_NAMES[event], fullpath
+    next: (err, watcher) ->
+        console.log "WATCH start #{batchRootDir}"
+#        socket.on "disconnect", ->
+#            console.log "#{socket.id}: stop watching batches"
+#            do watcher.close
 

@@ -16,6 +16,8 @@ ln -f ../../server/package.json
 echo >README.md
 npm install
 coffee -c -o . ../../server/*.coffee
+make -C ../../watchr install compile
+
 
 # client
 cd ../client
