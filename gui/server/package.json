@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "socket.io": "0.9.13",
-    "watchr": "2.3.3",
+    "watchit": "0.0.4",
     "mktemp": "0.1.0",
     "lazy": "1.0.8",
     "async": "0.1.22",

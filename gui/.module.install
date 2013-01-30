@@ -1,7 +1,7 @@
 exp-gui                                                 $TOOLSDIR/
 
 .build/server                                           $GUIDIR/server
-watchr                                                  $GUIDIR/server/node_modules/watchr
+watchit                                                 $GUIDIR/server/node_modules/
 
 client/index.html                                       $GUIDIR/client/
 .build/client/resource/expkit.js                        $GUIDIR/client/resource/

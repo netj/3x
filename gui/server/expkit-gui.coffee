@@ -7,7 +7,7 @@
 express = require "express"
 http = require "http"
 socketIO = require "socket.io"
-watchr = require "watchr"
+watchit = require "watchit"
 fs = require "fs"
 os = require "os"
 child_process = require "child_process"
@@ -363,7 +363,7 @@ updateRunningCount = (socket = batchSockets) ->
         socket.volatile.emit "running-count", count
 
 batchRootDir = "#{EXPROOT}/run/batch/"
-batchNotifyChange = (event, fullpath, stat, statPrev) ->
+batchNotifyChange = (event) -> (fullpath, stat, statPrev) ->
     console.log "WATCH #{event} #{fullpath}"
     # assuming first path component is the batch ID
     batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""
@@ -383,19 +383,20 @@ batchNotifyChange = (event, fullpath, stat, statPrev) ->
 
 EVENT_NAMES =
     change: "changed"
-    update: "updated"
-    delete: "deleted"
-watchr.watch
-    path: batchRootDir
+    create: "created"
+    unlink: "deleted"
+monitor = watchit(batchRootDir,
+    persistent: false
+    recurse: true
+    include: true
+    #retain: true # XXX never use retain with recurse or include together
+    debounce: true
+    followSymlinkDirs: false
     filter: (f, stat) ->
         # skip symlink dirs
         /// ( running\.[^/]+/run | runs/\d+ )$ ///.test f
-    listeners:
-        change: (event, fullpath) ->
-            batchNotifyChange EVENT_NAMES[event], fullpath
-    next: (err, watcher) ->
-        console.log "WATCH start #{batchRootDir}"
-#        socket.on "disconnect", ->
-#            console.log "#{socket.id}: stop watching batches"
-#            do watcher.close
+)
+.on "all", (evt, path)
+for evt,name of EVENT_NAMES
+    monitor.on evt, (evtnm, path) -> batchNotifyChange name
 
