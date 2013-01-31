@@ -454,7 +454,6 @@ class MeasurementsUI extends CompositeElement
         aggregation = if isActive then aggregationActive.first().text()
         @measurementsAggregation[name] = aggregation
         measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
-        isActive = true if name == RUN_COLUMN_NAME
         measUI.toggleClass("active", isActive)
 
     menuActionHandler: (handle) ->
