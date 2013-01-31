@@ -90,12 +90,35 @@
 
 * DONE bug of plan table -> create batch -> 1 line less batch
 
+* DONE Consider turning navbar into exclusive tabs, i.e., actually hiding other
+  sections while one is shown. (because of the scrolling problem)
+    * improve the table height determination method, or use CSS bottom
+
 * Keep track of the results table configuration, and allow user to go back/forth in history
 * DONE Reload button for results table
+* toggle results table's refresh button depending on new data
+
+* An infrastructure for interactive aggregated data display/inspection/provenance
+    * Refactor current table cell construction
+        * aggregated value display
+        * popover data generation
+    * To support interactive data inspection of aggregated cells
+        * Events mouseover/mouseout toggles it.
+        * As user hovers horizontally, the cell should display concrete value
+          at the corresponding relative position of the mouse cursor to the
+          width of the cell.
+        * ExpKit should provide the relative position of interest along with
+          the cell, data row, position & all data rows in the group, aggregated
+          value (summary) in the cell, so the data type handler can manipulate
+          the cell's DOM to present the most appropriate thing.
+        * When user clicks, it should freeze and a popover with a link to the
+          run (provenance) should appear.
+* Use jQuery.appear to defer loading images
 
 * DONE Don't treat RUNID special anymore (always active)
 * Selection(Filter) on measurements
 * Show multiple columns of same measurement with diff aggregation in results table
+* Use the same checkbox as for conditions to toggle measurements in tables
 
 * DONE Re-layout Results/Chart/Plan/Runs to minimize scrolls and make it look
   better, and look not so complicated by adding margin

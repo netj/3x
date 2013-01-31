@@ -31,3 +31,6 @@
 [submodule "gui/d3"]
 	path = gui/d3
 	url = git://github.com/mbostock/d3.git
+[submodule "gui/jquery.appear"]
+	path = gui/jquery.appear
+	url = https://github.com/morr/jquery.appear.git

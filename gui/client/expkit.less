@@ -21,29 +21,16 @@
 
 // responsive layout for the main structure
 @navbarHeight: 40px;
-#main {
-  & > .row-fluid {
-    margin-bottom: (5 * @navbarHeight);
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-}
 @media screen and (min-width: 980px) {
   @mainTopSpacing: 10px;
   body {
-    padding-top: @navbarHeight;
-    padding-bottom: @navbarHeight;
+    padding-top: @navbarHeight + @mainTopSpacing;
   }
   .container-fluid {
     padding: 0 @fluidGridGutterWidth;
   }
   #main {
-    margin-top: -@navbarHeight;
-    & > .row-fluid {
-      padding-top: (@mainTopSpacing + @navbarHeight);
-      min-height: 0.618 * 980px; // TODO find a better way to give enough space for each section
-    }
+    padding-bottom: @navbarHeight;
   }
   #setup {
     padding-top: 2*@mainTopSpacing !important;
@@ -57,7 +44,13 @@
   }
 }
 @media screen and (min-width: 768px) {
-  #setup{
+  #main > .row-fluid {
+    & > h2 {
+      visibility: hidden;
+      height: 0px;
+    }
+  }
+  #setup {
     &.affix {
       width: 2*@fluidGridColumnWidth + @fluidGridGutterWidth;
       padding: 1px;
@@ -74,6 +67,14 @@
   }
 }
 @media screen and (max-width: 767px) {
+  #main {
+    & > .row-fluid {
+      margin-bottom: (5 * @navbarHeight);
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
   #setup {
     padding-bottom: 5 * @navbarHeight;
     &.affix {
@@ -247,6 +248,9 @@ body > .navbar .brand .icon {
 
 #runs > h3 {
   margin-top: 2em;
+  &:first-of-type {
+    margin-top: 0;
+  }
 }
 
 #status-table, #plan-table {

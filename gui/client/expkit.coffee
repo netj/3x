@@ -141,7 +141,7 @@ class Aggregation
                     style="opacity: #{BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)};">
                     """
                 ).join ""
-        add "image/png": aggs "overlay"
+        add "image/png": aggs "overlay", "count"
 
         # TODO allow user to plug-in their custom aggregation functions
 
@@ -196,15 +196,17 @@ initTitle = ->
         )
 
 
-updateScrollSpy = ->
-    $('[data-spy="scroll"]').each(-> $(this).scrollspy('refresh'))
+initTabs = ->
+    # re-render some tables since it could be in bad shape while the tab wasn't active
+    $(".navbar a[data-toggle='tab']").on "shown", (e) ->
+        tab = $(e.target).attr("href").substring(1)
+        log "showing tab", tab
+        switch tab
+            when "plan"
+                ExpKit.planner?.dataTable?.fnDraw()
+            when "runs"
+                ExpKit.status?.dataTable?.fnDraw()
 
-initNavBar = ->
-    $("body > .navbar-fixed-top .nav a").click((e) ->
-        [target] = $($(this).attr("href")).get()
-        do target.scrollIntoView
-        e.preventDefault()
-    )
 
 
 initBaseURLControl = ->
@@ -330,7 +332,6 @@ class ConditionsUI extends CompositeElement
             @updateDisplay condUI
             @condUI[name] = condUI
             log "initCondition #{name}:#{type}=#{values.join ","}"
-        do updateScrollSpy
 
     @ICON_CLASS_VISIBLE: "icon-check"
     @ICON_CLASS_HIDDEN:  "icon-check-empty"
@@ -449,7 +450,6 @@ class MeasurementsUI extends CompositeElement
                     $this.toggleClass("active", aggregation == @measurementsAggregation[name])
             @updateDisplay measUI
             log "initMeasurement #{name}:#{type}.#{@measurementsAggregation[name]}"
-        do updateScrollSpy
 
     updateDisplay: (measUI) =>
         name = measUI.find(".measurement-name")?.text()
@@ -791,7 +791,7 @@ class ResultsTable extends CompositeElement
             sScrollX: "100%"
             sScrollXInner: "#{Math.round Math.max(computeRequireTableWidth(@columnMetadata),
                                   @baseElement.parent().size().width)}px"
-            sScrollY: "#{Math.round Math.max(400, .75 * window.innerHeight)}px"
+            sScrollY: "#{Math.round Math.max(400, window.innerHeight - @baseElement.position().top - 80)}px"
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             # TODO isolate localStorage key
             fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
@@ -800,7 +800,6 @@ class ResultsTable extends CompositeElement
             oColReorder:
                 fnReorderCallback: => @optionElements.buttonResetColumnOrder?.toggleClass("disabled", @isColumnReordered())
         do @updateColumnVisibility
-        do updateScrollSpy
 
         # trigger event for others
         _.defer => @trigger("changed", @resultsForRendering)
@@ -1525,8 +1524,8 @@ $ ->
             toggleShouldStart: $("#status-start-after-create")
         ExpKit.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), ExpKit.status
     do initTitle
-    do initNavBar
     do initChartUI
     do initBaseURLControl
     do initSocketIO
+    do initTabs
 
