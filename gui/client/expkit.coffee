@@ -76,6 +76,8 @@ class Aggregation
     @FOR_TYPE: do ->
         typesToAgg = {}
         add = (maps...) -> _.extend typesToAgg, maps...
+        aggs = (names...) -> _.pick Aggregation.FOR_NAME, names...
+
         # aggregation for standard measurement types N/O/I/R
         withNumbersIn = (vs) -> v for v in vs.map parseFloat when not isNaN v
         new Aggregation "count",    "number", (vs) -> vs?.length
@@ -114,7 +116,6 @@ class Aggregation
                     n++
                 (Math.sqrt(dsqsum / n))
             else null
-        aggs = (names...) -> _.pick Aggregation.FOR_NAME, names...
         add nominal  : aggs "count"  , "mode"  , "enumerate"
         add ordinal  : aggs "median" , "mode"  , "min"       , "max"  , "count" , "enumerate"
         add interval : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
@@ -122,17 +123,20 @@ class Aggregation
 
         # aggregation for images
         new Aggregation "overlay", "object", do ->
-            MAX_IMAGES = 8
-            MIN_OPACITY = 0.1
+            MAX_IMAGES = 20
+            BASE_OPACITY = 0.05 # minimum opacity
+            VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
             (imgs, rows, colIdx, colIdxs, col) ->
                 runColIdx = colIdxs[RUN_COLUMN_NAME]
-                (for row in rows[..MAX_IMAGES]
+                numOverlaid = Math.min(MAX_IMAGES, rows.length)
+                divOpacity = (1 - BASE_OPACITY) / numOverlaid
+                (for row,i in rows[..MAX_IMAGES] # TODO sample images, instead of just starting picking from beginning
                     """
                     <img class="overlay"
                     src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
-                    style="opacity: #{MIN_OPACITY + (1 - MIN_OPACITY) / Math.min(MAX_IMAGES, rows.length)};">
+                    style="opacity: #{BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)};">
                     """
-                ).join "\n"
+                ).join ""
         add "image/png": aggs "overlay"
 
         # TODO allow user to plug-in their custom aggregation functions
@@ -578,7 +582,7 @@ class ResultsTable extends CompositeElement
               {{if aggregation}}
               <div class="aggregated {{>aggregation}}"
                 {{if type != "object" && values}}
-                data-placement="bottom" data-trigger="click"
+                data-placement="{{if isLastColumn}}left{{else}}bottom{{/if}}" data-trigger="click"
                 title="{{>aggregation}}{{if aggregation != 'enumerate'}} = {{:value}}{{/if}}"
                 data-html="true" data-content='<ul>
                   {{for values}}
@@ -709,6 +713,8 @@ class ResultsTable extends CompositeElement
                         isRunIdColumn: name == RUN_COLUMN_NAME
                         aggregation: @columnAggregation[name]?.name unless isForGrouping
                         formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, @resultsForRendering, idx)
+                        columnIndex: idx
+                        isLastColumn: idx is @columnNames.length - 1
             )
             , {ExpKitServiceBaseURL, isRunIdExpanded}
             ))
@@ -748,6 +754,21 @@ class ResultsTable extends CompositeElement
                 e.preventDefault()
             )
 
+        computeRequireTableWidth = (columnMetadata) ->
+            width = 0
+            for name,col of columnMetadata
+                width +=
+                    # TODO be more precise
+                    switch col.type
+                        when "object"
+                            300
+                        when "number", "string"
+                            150
+                        else
+                            100
+            width
+
+
         # finally, make the table interactive with DataTable
         @dataTable = $(@baseElement).dataTable
             # XXX @baseElement must be enclosed by a $() before .dataTable(),
@@ -758,6 +779,11 @@ class ResultsTable extends CompositeElement
             bLengthChange: false
             bPaginate: false
             bAutoWidth: false
+            bScrollCollapse: true
+            sScrollX: "100%"
+            sScrollXInner: "#{Math.round Math.max(computeRequireTableWidth(@columnMetadata),
+                                  @baseElement.parent().size().width)}px"
+            sScrollY: "#{Math.round Math.max(400, .75 * window.innerHeight)}px"
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             # TODO isolate localStorage key
             fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData

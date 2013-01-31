@@ -155,7 +155,6 @@ body > .navbar .brand .icon {
 }
 
 #results {
-#results-table {
   thead {
     .muted {
       color: @grayLight !important;
@@ -188,16 +187,22 @@ body > .navbar .brand .icon {
     .nominal-type         { text-align: inherit; }
     .popover              { width: auto; }
     .aggregated.overlay {
-      width: 200px;
-      height: 200px;
+      cursor: initial;
+      text-align: center;
+      display: inline-block;
+      margin: 0px auto;
+      @imageOverlayHeight: 200px;
+      min-width: @imageOverlayHeight;
+      position: relative;
       img.overlay {
+        height: @imageOverlayHeight;
         position: absolute;
-        width: 200px;
-        height: 200px;
+      }
+      img.overlay:last-child {
+        position: static;
       }
     }
   }
-}
 
 #results-table-progress {
   display: none;
@@ -219,6 +224,7 @@ body > .navbar .brand .icon {
     opacity: 0.5;
   }
 }
+
                  h4            { display: none; }
   &.loading    { h4.loading    { display: block; } }
   &.displaying { h4.displaying { display: block; } }
