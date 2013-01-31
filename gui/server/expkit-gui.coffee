@@ -364,7 +364,6 @@ updateRunningCount = (socket = batchSockets) ->
 
 batchRootDir = "#{EXPROOT}/run/batch/"
 batchNotifyChange = (event, fullpath) ->
-    console.log "WATCH #{event} #{fullpath}"
     # assuming first path component is the batch ID
     batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""
     filename = fullpath?.substring((batchRootDir + batchIdProper).length)
@@ -373,12 +372,13 @@ batchNotifyChange = (event, fullpath) ->
     console.log "WATCH #{batchId} #{event} #{filename}"
     if filename is "/plan"
         batchSockets.volatile.emit "listing-update", [batchId, event]
-    else if filename.match /// ^/worker-\d+\.lock$ /// or filename.match /// ^/running\.[^/]+/lock$ ///
+    else if filename.match /// ^/( worker-\d+\.lock )$ ///
         do updateRunningCount
+    else if filename.match /// ^/( running\.[^/]+/lock )$ ///
         batchSockets.volatile.emit "state-update", [
             batchId
-            if event is "created" then "START" else "STOP"
-            # TODO pass new state, #running, #done, #remaining, ...??
+            if event is "deleted" then "PAUSED" else "RUNNING"
+            # TODO pass new progress: running/done/remaining/total
         ]
 
 # Use Python watchdog to monitor filesystem changes

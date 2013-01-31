@@ -38,6 +38,7 @@ if ! [ -s remaining ] && [[ $(find running.*/cmdln 2>/dev/null | wc -l) == 0 ]];
 fi
 
 # register worker pid
+workerHandle=
 register-pid() {
     local id=0
     local handle=
@@ -46,6 +47,7 @@ register-pid() {
     do let ++id
     done
     lockproc $handle grab
+    workerHandle=$handle
 }
 synchronized workers.lock register-pid
 
@@ -94,6 +96,10 @@ while [ -s remaining ] && ! $abort; do
     rm -rf "$run"
     #lockproc $run/lock release || true # no need to release the removed lock
 done
+
+# unregister worker pid
+lockproc $workerHandle release
+
 if $abort; then
     error "Aborted $EXPBATCH" || true
     msg "To resume, run:"

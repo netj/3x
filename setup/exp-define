@@ -9,7 +9,8 @@
 # Created: 2013-01-24
 set -eu
 
-export EXPROOT=$(exp-findroot)
+EXPROOT=$(exp-findroot)
+export EXPROOT
 
 [ $# -gt 0 ] || usage "$0" "WHAT to define is missing"
 What=$1; shift

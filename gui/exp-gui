@@ -10,7 +10,8 @@ set -eu
 defaultPort=38917
 host=$(hostname -f)
 
-export EXPROOT=$(exp-findroot)
+EXPROOT=$(exp-findroot)
+export EXPROOT
 
 cd "$EXPROOT"
 

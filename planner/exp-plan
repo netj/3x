@@ -62,9 +62,16 @@ permute() {
 case $1 in
     with) # based on the given files
         shift
-        EDITOR=true
-        cat "$@" |
-        sed 's/^\(^exp[ 	]*run[ 	]*\)\?/exp run /' | column -t >"$tmp"/plan.editing
+        # adjust EXPROOT-relative paths
+        [ $# -eq 0 ] || [ -e "$1" ] || ! [ -e "$EXPROOT/$1" ] || {
+            path=$1; shift
+            set -- "$EXPROOT/$path" "$@"
+        }
+        [ -t 0 ] || EDITOR=true
+        {
+            cat "$@"
+            echo
+        } >"$tmp"/plan.editing
         ;;
     results|skip) # based on query over results
         results=$1; shift
@@ -102,8 +109,27 @@ cd "$EXPROOT/$EXPBATCH"
 
 # let user do a finish edit of the generated plan
 if edit plan.editing plan.in-progress; then
-    mv -f plan.editing plan
     trap - EXIT
+    sanitize() {
+        local i=$1 o=$2
+        grep -E -v '^\s*$' <"$i" >"$o"
+        # check if every line starts with `exp run '
+        ! grep -Hn -E -v '^exp\s+run\s+' "$o" ||
+            error "Syntax Error: All plan lines must start with \`exp run '"
+        # Skip checks of serials at the end of each line, since this is exp-starts' job
+        #! grep -E -v '\s+#\d+$' "$o" ||
+        #    error "$EXPBATCH/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
+        # TODO check whether all condition values are sane
+    }
+    mv -f plan.editing plan.editing.orig
+    sanitize plan.editing.orig plan.editing || {
+        mv -f plan.editing.orig plan.editing
+        msg "Edit the file and retry with the following command:"
+        msg "  exp plan with $EXPBATCH/plan.editing"
+        false
+    }
+    rm -f plan.editing.orig
+    mv -f plan.editing plan
 else
     error "Aborted planning"
 fi
