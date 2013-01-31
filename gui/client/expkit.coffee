@@ -538,6 +538,11 @@ class ResultsTable extends CompositeElement
                 $(this).addClass("disabled")
                 e.preventDefault()
             )
+        @optionElements.buttonRefresh
+           ?.toggleClass("disabled", false) # TODO keep disabled until new results arrive
+            .click (e) =>
+               do e.preventDefault
+               do @load
         do @display # initializing results table with empty data first
         @conditions.on("filterChange", @load)
                    .on("visibilityChange", @display)
@@ -1498,6 +1503,7 @@ $ ->
                 toggleShowHiddenConditions  : $("#results-show-hidden-conditions")
                 buttonResetColumnOrder      : $("#results-reset-column-order")
                 containerForStateDisplay    : $("#results")
+                buttonRefresh               : $("#results-refresh")
             ExpKit.results.load()
             # plan
             ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),

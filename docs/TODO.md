@@ -38,6 +38,7 @@
 * better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
 
 * DONE better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
+* what if a file with same content has different perm mode? should we use name, perms, ... when archiving?
 
 * enumerate dependencies, improve portability: readlink -f
     * column -t: bsdmainutils, http://www.cs.indiana.edu/~kinzler/align/
@@ -90,7 +91,7 @@
 * DONE bug of plan table -> create batch -> 1 line less batch
 
 * Keep track of the results table configuration, and allow user to go back/forth in history
-* Reload button for results table
+* DONE Reload button for results table
 
 * Don't treat RUNID special anymore (always active)
 * Selection(Filter) on measurements
