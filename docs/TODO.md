@@ -79,7 +79,7 @@
     * api for storing new/updated batch
     * make PlanTable selectable
     * and allow removal of the selected items
-* make title clearer
+* DONE make title clearer
 
 * DONE Handy way to generate condition combinations from the result table and add them to plan table
     * DONE minor: append the popover in the first or run# column to avoid glitches
@@ -87,7 +87,7 @@
     * Show hints on combinations of what will be added to plans from the
       popover, and only display when it will actuall add ones.
 
-* bug of plan table -> create batch -> 1 line less batch
+* DONE bug of plan table -> create batch -> 1 line less batch
 
 * Selection(Filter) on measurements
 * Show multiple columns of same measurement with diff aggregation in results table
@@ -108,11 +108,12 @@
     * and probably a composite one
         * small multiple
 
-* Use WebSockets (socket.io) to notify changes to the run/batch status and deliver new results incrementally
-    * Use fs.watch to monitor file changes
-    * Detect if new runs finish or start
-    * and simply deliver using the awesome socket.io library
-    * watchr is good but generates spurious events when there's dangling symlink under watched dirs
+* DONE Use WebSockets (socket.io) to notify changes to the run/batch status and deliver new results incrementally
+    * SKIP Use fs.watch to monitor file changes
+    * DONE Detect if new runs finish or start
+    * DONE and simply deliver using the awesome socket.io library
+    * SKIP watchr is good but generates spurious events when there's dangling symlink under watched dirs
+* Incremental(more efficient)/Non-intrusive(more usable GUI) updates of batch progress and states
 
 * Uniting runs in the results table
     * hint on what condition combination is running
