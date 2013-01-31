@@ -89,6 +89,10 @@
 
 * DONE bug of plan table -> create batch -> 1 line less batch
 
+* Keep track of the results table configuration, and allow user to go back/forth in history
+* Reload button for results table
+
+* Don't treat RUNID special anymore (always active)
 * Selection(Filter) on measurements
 * Show multiple columns of same measurement with diff aggregation in results table
 

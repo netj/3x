@@ -74,6 +74,9 @@ class Aggregation
     @FOR_NAME: {}
 
     @FOR_TYPE: do ->
+        typesToAgg = {}
+        add = (maps...) -> _.extend typesToAgg, maps...
+        # aggregation for standard measurement types N/O/I/R
         withNumbersIn = (vs) -> v for v in vs.map parseFloat when not isNaN v
         new Aggregation "count",    "number", (vs) -> vs?.length
         new Aggregation "mode",     "string", (vs) ->
@@ -99,7 +102,7 @@ class Aggregation
                     count++
                 if count > 0 then (sum / count) else null
             else null
-         new Aggregation "stdev",   "number", (vs) ->
+        new Aggregation "stdev",   "number", (vs) ->
             ns = withNumbersIn vs
             if ns.length > 0
                 dsqsum = 0
@@ -112,10 +115,29 @@ class Aggregation
                 (Math.sqrt(dsqsum / n))
             else null
         aggs = (names...) -> _.pick Aggregation.FOR_NAME, names...
-        nominal  : aggs "count"  , "mode"  , "enumerate"
-        ordinal  : aggs "median" , "mode"  , "min"       , "max"  , "count" , "enumerate"
-        interval : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
-        ratio    : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
+        add nominal  : aggs "count"  , "mode"  , "enumerate"
+        add ordinal  : aggs "median" , "mode"  , "min"       , "max"  , "count" , "enumerate"
+        add interval : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
+        add ratio    : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
+
+        # aggregation for images
+        new Aggregation "overlay", "object", do ->
+            MAX_IMAGES = 8
+            MIN_OPACITY = 0.1
+            (imgs, rows, colIdx, colIdxs, col) ->
+                runColIdx = colIdxs[RUN_COLUMN_NAME]
+                (for row in rows[..MAX_IMAGES]
+                    """
+                    <img class="overlay"
+                    src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
+                    style="opacity: #{MIN_OPACITY + (1 - MIN_OPACITY) / Math.min(MAX_IMAGES, rows.length)};">
+                    """
+                ).join "\n"
+        add "image/png": aggs "overlay"
+
+        # TODO allow user to plug-in their custom aggregation functions
+
+        typesToAgg
 
     @DATA_FORMATTER_FOR_TYPE: (type, rows, colIdx) ->
         switch type
@@ -552,10 +574,10 @@ class ResultsTable extends CompositeElement
         <script id="results-table-row-skeleton" type="text/x-jsrender">
           <tr class="result">
             {{for columns}}
-            <td class="{{>className}} {{>type}}-type" data-value="{{:value}}">
+            <td class="{{>className}} {{>type}}-type" data-value="{{>value}}">
               {{if aggregation}}
               <div class="aggregated {{>aggregation}}"
-                {{if values}}
+                {{if type != "object" && values}}
                 data-placement="bottom" data-trigger="click"
                 title="{{>aggregation}}{{if aggregation != 'enumerate'}} = {{:value}}{{/if}}"
                 data-html="true" data-content='<ul>
@@ -629,8 +651,8 @@ class ResultsTable extends CompositeElement
                         if name in @columnNamesGrouping
                             value: groupedRows[0][idx]
                         else
-                            values = _.uniq (row[idx] for row in groupedRows)
-                            value: @columnAggregation[name].func(values)
+                            values = (row[idx] for row in groupedRows)
+                            value: @columnAggregation[name].func(values, groupedRows, idx, columnIndex, name)
                             values: values
                 grouped = mapReduce(map, red)(rows)
                 [_.values(grouped), _.keys(grouped)]

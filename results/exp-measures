@@ -21,8 +21,11 @@ for name in */; do
             # Stanley Stevens' theory of scale types
             # http://en.wikipedia.org/wiki/Level_of_measurement
             ;;
-        *)
+        "")
             type=ratio
+            ;;
+        *)
+            # user defined data type
             ;;
     esac
     echo "$name:$type"
