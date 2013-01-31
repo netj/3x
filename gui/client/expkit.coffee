@@ -129,8 +129,12 @@ class Aggregation
             (imgs, rows, colIdx, colIdxs, col) ->
                 runColIdx = colIdxs[RUN_COLUMN_NAME]
                 numOverlaid = Math.min(MAX_IMAGES, rows.length)
+                sampledRows =
+                    if rows.length <= MAX_IMAGES then rows
+                    # TODO can we do a better sampling?
+                    else rows[i] for i in [0...rows.length] by Math.floor(rows.length / MAX_IMAGES)
                 divOpacity = (1 - BASE_OPACITY) / numOverlaid
-                (for row,i in rows[..MAX_IMAGES] # TODO sample images, instead of just starting picking from beginning
+                (for row,i in sampledRows
                     """
                     <img class="overlay"
                     src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
