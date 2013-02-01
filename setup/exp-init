@@ -28,6 +28,7 @@ mkdir -p .exp/{files,gui} condition measure program run/batch
 
 # copy some default files
 customize "$DATADIR"/exp.template <<RULES
+@@dot@@=.
 RULES
 
 msg "Initialized $EXPROOT"

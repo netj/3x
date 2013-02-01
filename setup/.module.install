@@ -3,4 +3,3 @@ exp-define              $TOOLSDIR/
 
 exp-init                $TOOLSDIR/
 template                $DATADIR/exp.template
-template/.*             $DATADIR/exp.template/
