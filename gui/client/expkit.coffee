@@ -123,7 +123,7 @@ class Aggregation
 
         # aggregation for images
         new Aggregation "overlay", "object", do ->
-            MAX_IMAGES = 20
+            MAX_IMAGES = 20 # TODO Chrome is sluggish at rendering many translucent images
             BASE_OPACITY = 0.05 # minimum opacity
             VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
             (imgs, rows, colIdx, colIdxs, col) ->

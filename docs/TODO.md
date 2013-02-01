@@ -27,7 +27,7 @@
 
         exp setup  VAR1=V1,V2  VAR2=V3,V4..V5 ...  'COMMAND'  MEASURE1='PATT1_FROM_OUTPUT'  MEASURE2='PATT2_FROM_OUTPUT' ...
 
-* keep links to currently running batch and/or run in a concentrated place, say `run/current/*` or so
+* SKIP keep links to currently running batch and/or run in a concentrated place, say `run/current/*` or so
 * record observed real/user/sys times
 
 * support exp setup --measurements pattern with more than one capture pattern
@@ -77,7 +77,7 @@
 
 * list of runs and batches
     * DONE planning/altering a batch (mostly just ordering)
-    * api for storing new/updated batch
+    * DONE api for storing new/updated batch
     * make PlanTable selectable
     * and allow removal of the selected items
 * DONE make title clearer

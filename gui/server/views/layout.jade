@@ -1,0 +1,32 @@
+doctype 5
+html
+  head
+    meta(charset='utf-8')
+    title= title
+    link(rel='stylesheet', href='/resource/expkit.css')
+  body
+
+    .navbar.navbar-fixed-top
+      .navbar-inner
+        .container-fluid
+          div
+            a.brand(href='http://netj.github.com/expkit/')
+              i.icon-beaker.icon
+              | ExpKit
+          ul.nav
+            li.active
+              a(href='/docs/tutorial')
+                i.icon.icon-question-sign
+                | Tutorial
+            li
+              a(href='/docs/reference')
+                i.icon.icon-book
+                | Reference
+            li
+              a(href='/')
+                i.icon.icon-reply
+                | Back to Experiment
+
+    div.container-fluid
+      div.row-fluid
+        block content

@@ -7,14 +7,20 @@
 express = require "express"
 http = require "http"
 socketIO = require "socket.io"
+StreamSplitter = require "stream-splitter"
+
 fs = require "fs"
 os = require "os"
 child_process = require "child_process"
+
 mktemp = require "mktemp"
+_ = require "underscore"
 async = require "async"
 Lazy = require "lazy"
-StreamSplitter = require "stream-splitter"
-_ = require "underscore"
+
+jade = require "jade"
+marked = require "marked"
+
 
 EXPROOT = process.env.EXPROOT
 EXPGUIPORT = parseInt process.argv[2] ? 0
@@ -38,8 +44,9 @@ server = http.createServer app
 io = socketIO.listen server
 
 app.configure ->
-    #app.set "views", __dirname + "/views"
-    #app.set "view engine", "jade"
+    app.set "views", "#{__dirname}/views"
+    app.set "view engine", "jade"
+
     app.use express.logger()
     app.use express.bodyParser()
     #app.use express.methodOverride()
@@ -53,6 +60,42 @@ app.configure "development", ->
 
 app.configure "production", ->
     app.use express.errorHandler()
+
+###
+# Some routes
+###
+
+docsCache = {}
+app.get "/docs/*", (req, res) ->
+    path = req.params[0]
+    title = path
+    filepath = "#{process.env.DOCSDIR}/#{path}.md"
+    markdown = (filename) ->
+        marked String(fs.readFileSync filename)
+    res.render "docs", {markdown, title, path, filepath}
+    #if filepath in docsCache
+    #    respond docsCache[filepath]
+    #else
+    #    fs.readFile filepath, (err, contents) ->
+    #        return res.send 404, "Not found #{err}" if err
+    #        docsCache[filepath] = contents
+    #        respond contents
+
+
+# Redirect to its canonical location when a run is requested via serial of batch
+app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
+    fs.realpath "#{EXPROOT}/#{req.path}", (err, path) ->
+        res.redirect path.replace(EXPROOT, "")
+
+
+# Override content type for run directory
+app.get "/run/*", (req, res, next) ->
+    path = req.params[0]
+    unless path.match ///.+(/workdir/.+|/$)///
+        console.log "text", path
+        res.type "text/plain"
+    do next
+
 
 # convert lines of multiple key=value pairs (or named columns) to an array of
 # arrays with a header array:
@@ -135,21 +178,6 @@ respondJSON = (res) -> (err, result) ->
 cliSimple = (cmd, args...) ->
     cliBare(cmd, args) (code, err, out) ->
         console.error err unless code is 0
-
-
-# Redirect to its canonical location when a run is requested via serial of batch
-app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
-    fs.realpath "#{EXPROOT}/#{req.path}", (err, path) ->
-        res.redirect path.replace(EXPROOT, "")
-
-
-# Override content type for run directory
-app.get "/run/*", (req, res, next) ->
-    path = req.params[0]
-    unless path.match ///.+(/workdir/.+|/$)///
-        console.log "text", path
-        res.type "text/plain"
-    do next
 
 
 # Allow Cross Origin AJAX Requests

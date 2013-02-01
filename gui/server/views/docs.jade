@@ -1,0 +1,14 @@
+extends layout
+
+// TODO analyze TOC from contents
+block content
+  div.span2
+    ul.nav.nav-list.affix-top
+      //li
+      //  i.icon-chevron-right
+      //  a(href='#section1') Section 1
+      //li
+      //  i.icon-chevron-right
+      //  a(href='#section2') Section 2
+  div.span10
+    != markdown(filepath)

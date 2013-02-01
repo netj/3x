@@ -9,12 +9,13 @@ export TOOLSDIR       := tools
 export LIBDIR         := lib
 export DATADIR        := data
 export GUIDIR         := gui
+export DOCSDIR        := docs
 
 PACKAGENAME := exp
 PACKAGEEXECUTES := bin/exp
 
 STAGEDIR := @prefix@
-MODULES := shell setup assembler batch planner runner results gui
+MODULES := shell setup assembler batch planner runner results gui docs
 include buildkit/modules.mk
 
 gui-test-loop:

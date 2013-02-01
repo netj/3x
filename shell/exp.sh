@@ -64,6 +64,7 @@ if [ -z "${EXPKIT_HOME:-}" ]; then
     export DATADIR="$EXPKIT_HOME/@DATADIR@"
     export GUIDIR="$EXPKIT_HOME/@GUIDIR@"
     export LIBDIR="$EXPKIT_HOME/@LIBDIR@"
+    export DOCSDIR="$EXPKIT_HOME/@DOCSDIR@"
     export NODE_PATH="$LIBDIR/node_modules${NODE_PATH:+:$NODE_PATH}"
     export PATH="$TOOLSDIR:$LIBDIR/node_modules/.bin:$PATH"
     unset CDPATH

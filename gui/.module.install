@@ -1,6 +1,7 @@
 exp-gui                                                 $TOOLSDIR/
 
 .build/server                                           $GUIDIR/server
+server/views                                            $GUIDIR/server/
 
 client/index.html                                       $GUIDIR/client/
 .build/client/resource/expkit.js                        $GUIDIR/client/resource/
