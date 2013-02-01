@@ -20,7 +20,9 @@ trap "rm -rf $tmp" EXIT
 
 # generate a experiment setup script
 {
+    echo "set -eu"
     shopt -s extglob
+    . "$TOOLSDIR"/sanity-checks.sh
     # create the EXPROOT directory
     escape-args-for-shell exp-init "$EXPROOT"
     escape-args-for-shell cd "$EXPROOT"
@@ -46,12 +48,17 @@ trap "rm -rf $tmp" EXIT
         case $what in
             condition)
                 name=${arg%%=*}
+                checkIfNameIsSane "$name" "$name"
                 IFS=, how=(${arg#$name=})
+                for value in "${how[@]}"
+                do checkIfValueIsSane "$value" "$name" "--conditions $name=$value"
+                done
                 ;;
 
             program)
                 name=${arg%%=*}
                 how=("${arg#$name=}")
+                checkIfValueIsSane "$name" program "--programs $name"
                 ;;
 
             measure)
@@ -68,6 +75,7 @@ trap "rm -rf $tmp" EXIT
                 regexp=${regexp/%+([ 	])/}
                 regexpAfter=${rest#*$RDELIM}
                 how=("$regexpBefore" "$regexp" "$regexpAfter")
+                checkIfNameIsSane "$name" "--measures $name"
                 ;;
         esac
         escape-args-for-shell exp define $what "$name" "${how[@]}"

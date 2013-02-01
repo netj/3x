@@ -18,6 +18,8 @@ What=$1; shift
 [ $# -gt 0 ] || usage "$0" "NAME is missing"
 Name=$1; shift
 
+. "$TOOLSDIR"/sanity-checks.sh
+
 # TODO expand glob pattern in any arguments?
 
 cd "$EXPROOT"
@@ -25,8 +27,12 @@ cd "$EXPROOT"
 case $What in
     condition)
         dir="condition/$Name="
-        mkdir -p "$dir"
+        checkIfNameIsSane "$Name" "$dir"
         for Value; do
+            checkIfValueIsSane "$Value" "$Name" "$dir/$Value"
+        done
+        for Value; do
+            checkIfNameIsSane "$Name" "$Name"
             vdir="$dir/$Value"
             mkdir -p "$vdir"
             touch "$vdir/env"
@@ -36,6 +42,7 @@ case $What in
 
     program)
         dir="program/$Name"
+        checkIfValueIsSane "$Name" program "$dir"
         mkdir -p "$dir"
         touch "$dir"/env
         {
@@ -49,6 +56,7 @@ case $What in
 
     measure)
         dir="measure/$Name"
+        checkIfNameIsSane "$Name" "$dir"
         mkdir -p "$dir"
         {
             echo "#!/usr/bin/env bash"

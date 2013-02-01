@@ -22,24 +22,7 @@ export EXPROOT EXPRUN EXPWD
 cd "$EXPROOT"
 
 # prepare the assemble script
-update-assemble-script() {
-    local scpt=$1; shift
-    if ! [ -s "$scpt" ] ||
-        find "$0" $(type -p generate-assembly-script) "$@" -newer "$scpt" | read; then
-        msg "Updating $scpt"
-        rm -f "$scpt"
-        EXPWD=$EXPWD \
-            generate-assembly-script "$@" >"$scpt"
-        { vim -u NONE -i NONE -N -n -e -s "$scpt" &>/dev/null || true; } <<-EOF
-	source \$VIMRUNTIME/vimrc_example.vim
-	set ft=sh
-	norm gg=G
-	wq!
-	EOF
-    fi
-}
-assembleScript=.exp/assemble.sh
-update-assemble-script $assembleScript program condition/*=* measure/*
+assembleScript=$(update-assembly-script)
 
 # assemble the conditions for experiment
 msg "Assembling $EXPRUN for $*"

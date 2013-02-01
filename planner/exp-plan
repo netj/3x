@@ -33,6 +33,9 @@ EXPROOT=$(exp-findroot)
 : ${EXPBATCH_STARTING:=false}
 export EXPROOT EXPBATCH
 
+# do a sanity check before we proceed
+update-assembly-script >/dev/null
+
 # create the batch directory
 tmp="$EXPROOT/$EXPBATCH"
 trap "rm -rf $tmp" EXIT

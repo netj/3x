@@ -22,6 +22,8 @@ codeForPatternDirs() {
         case $pattDir in
             # measurements themselves need not any guards
             measure/+([^/]))
+                name=${pattDir#measure/}
+                checkIfNameIsSane "$name" "$pattDir"
                 codeForMatchedPatternFile "$pattDir"
                 continue
                 ;;
@@ -30,17 +32,20 @@ codeForPatternDirs() {
         case $patt in
             *=?*)
                 name=${patt%%=*}
+                checkIfNameIsSane "$name" "$pattDir"
                 echo "if [ x\"\${$name:-}\" = x'${patt#*=}' ]; then"
                 codeForMatchedPatternFile "$pattDir"
                 echo "fi"
                 ;;
             *) # or *=)
                 name=${patt%%=}
+                checkIfNameIsSane "$name" "$pattDir"
                 echo "case \${$name:-} in"
-                for pattCaseFile in "$pattDir"/*/ "$pattDir"/*.env; do
-                    [ -e "$pattCaseFile" ] || continue
-                    pattCase=$(basename "$pattCaseFile" .env)
-                    pattCaseFile=${pattCaseFile%/}
+                for pattCaseFileOrig in "$pattDir"/*/ "$pattDir"/*.env; do
+                    [ -e "$pattCaseFileOrig" ] || continue
+                    pattCase=$(basename "$pattCaseFileOrig" .env)
+                    pattCaseFile=${pattCaseFileOrig%/}
+                    checkIfValueIsSane "$pattCase" "$name" "$pattCaseFileOrig"
                     echo "\"$pattCase\")"
                     codeForMatchedPatternFile "$pattCaseFile"
                     echo ";;"
@@ -75,5 +80,7 @@ codeForSourcing() {
         echo source "$env"
     fi
 }
+
+. "$TOOLSDIR"/sanity-checks.sh
 
 codeForPatternDirs "$@"
