@@ -4,7 +4,7 @@
 #   exp-setup EXPROOT \
 #      --conditions [NAME=VALUE1[,VALUE2]]...   \
 #      --programs   [NAME='COMMAND']...         \
-#      --measures   ['...{{NAME=~REGEXP}}...']...
+#      --measures   ['...{{NAME =~ REGEXP}}...']...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
@@ -20,6 +20,7 @@ trap "rm -rf $tmp" EXIT
 
 # generate a experiment setup script
 {
+    shopt -s extglob
     # create the EXPROOT directory
     escape-args-for-shell exp-init "$EXPROOT"
     escape-args-for-shell cd "$EXPROOT"
@@ -54,12 +55,17 @@ trap "rm -rf $tmp" EXIT
                 ;;
 
             measure)
+                WHITESPACE=$'[ \t]'
                 LDELIM='{{' MDELIM='=~' RDELIM='}}'
                 regexpBefore=${arg%%$LDELIM*}
                 rest=${arg#$regexpBefore$LDELIM}
+                rest=${rest/#+([ 	])/}
                 name=${rest%%$MDELIM*}
                 rest=${rest#$name$MDELIM}
+                rest=${rest/#+([ 	])/}
+                name=${name/%+([ 	])/}
                 regexp=${rest%%$RDELIM*}
+                regexp=${regexp/%+([ 	])/}
                 regexpAfter=${rest#*$RDELIM}
                 how=("$regexpBefore" "$regexp" "$regexpAfter")
                 ;;
