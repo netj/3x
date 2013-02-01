@@ -17,14 +17,14 @@ codeForPatternDirs() {
     local nestingLevel=$((${depth:--1} + 1))
     local pattDir= patt= name=
     for pattDir; do
-        [ -e "$pattDir" ] || continue
+        [ -d "$pattDir" ] || continue
         echo "# $pattDir"
         case $pattDir in
             # measurements themselves need not any guards
             measure/+([^/]))
                 name=${pattDir#measure/}
                 checkIfNameIsSane "$name" "$pattDir"
-                codeForMatchedPatternFile "$pattDir"
+                codeForMatchedPatternDir "$pattDir"
                 continue
                 ;;
         esac
@@ -34,20 +34,21 @@ codeForPatternDirs() {
                 name=${patt%%=*}
                 checkIfNameIsSane "$name" "$pattDir"
                 echo "if [ x\"\${$name:-}\" = x'${patt#*=}' ]; then"
-                codeForMatchedPatternFile "$pattDir"
+                codeForMatchedPatternDir "$pattDir"
                 echo "fi"
                 ;;
             *) # or *=)
                 name=${patt%%=}
                 checkIfNameIsSane "$name" "$pattDir"
                 echo "case \${$name:-} in"
-                for pattCaseFileOrig in "$pattDir"/*/ "$pattDir"/*.env; do
-                    [ -e "$pattCaseFileOrig" ] || continue
-                    pattCase=$(basename "$pattCaseFileOrig" .env)
-                    pattCaseFile=${pattCaseFileOrig%/}
-                    checkIfValueIsSane "$pattCase" "$name" "$pattCaseFileOrig"
+                for pattCaseDirOrig in "$pattDir"/*/; do
+                    [ -d "$pattCaseDirOrig" ] || continue
+                    pattCase=$(basename "$pattCaseDirOrig" .env)
+                    pattCaseDir=${pattCaseDirOrig%/}
+                    checkIfValueIsSane "$pattCase" "$name" "$pattCaseDirOrig"
                     echo "\"$pattCase\")"
-                    codeForMatchedPatternFile "$pattCaseFile"
+                    codeForMatchedPatternDir "$pattDir"
+                    codeForMatchedPatternDir "$pattCaseDir"
                     echo ";;"
                 done
                 if [[ $nestingLevel = 0 ]]; then
@@ -61,17 +62,12 @@ codeForPatternDirs() {
     done
 }
 
-codeForMatchedPatternFile() {
+codeForMatchedPatternDir() {
     local f=$1; shift
-    if [ -d "$f" ]; then
-        codeForSourcing "$f"/env
-        echo import "$f"
-        # look for nested pattern directories and generate code for them too
-        codeForPatternDirs "$f"/*=*
-    else
-        codeForSourcing "$f"
-        echo import "$f"
-    fi
+    codeForSourcing "$f"/env
+    echo import "$f"
+    # look for nested pattern directories and generate code for them too
+    codeForPatternDirs "$f"/?*=*
 }
 
 codeForSourcing() {

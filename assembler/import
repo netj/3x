@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # import -- import an input directory
-# Usage: EXPWD=OUTPUTDIR import INPUTDIR...
+# Usage: cd $EXPROOT;  EXPWD=OUTPUTDIR import INPUTDIR...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
@@ -15,6 +15,25 @@ shopt -s extglob
 # TODO check if cp is GNU coreutil's
 cpopts=
 be-quiet +1 || cpopts+=--verbose
+be-quiet +3 || set -x
+copyFilesTo() {
+    local dst=$1; shift
+    local src=$1; shift
+    # rest are find predicates for matching excluded children of $src
+    [ $# -eq 0 ] || set -- -o "$@"
+    # prepare destination and copy files
+    mkdir -p "$dst"
+    find "$src"/{,.}*  -maxdepth 0 ! \( \
+            -type d \( -name '.' -o -name '..' \
+                    -o -name '?*=*' -o -path '*=/*' \) "$@" \
+        \) -print0 |
+    {
+        set -o pipefail
+        xargs -0  cp $cpopts --archive --target-directory="$dst" |
+        # TODO check and emit warning if any files get overwritten
+        sed 's/^/  copying /'
+    }
+}
 
 for path in "$@"; do
     if ! grep -q "^$path$" "$EXPWD"/assembly; then
@@ -25,14 +44,10 @@ for path in "$@"; do
             case $path in
                 @(condition|program)/*)
                     # copy files
-                    find "$path"/{,.}*  -maxdepth 0 ! \( -name 'env' \
-                        -o -name '.' -o -name '..' -o -name '*=*' \
-                        -o -name 'args' -o -name '+args' -o -name 'args+' \
-                        \) -print0 2>/dev/null |
-                    xargs -0  cp $cpopts --archive \
-                        --target-directory="$EXPWDabbrev"/workdir/ 2>/dev/null |
-                    # TODO check and emit error if any files get overwritten
-                    sed 's/^/  copying /'
+                    copyFilesTo "$EXPWDabbrev"/workdir/ "$path" \
+                        -type f \( -name 'env' \
+                                -o -name 'args' -o -name '+args' -o -name 'args+' \) \
+                        #
                     # environment variables
                     for f in env; do
                         if [ -r "$path"/$f ]; then
@@ -70,13 +85,10 @@ for path in "$@"; do
                     m=$path
                     m=${m#measure/}
                     m=${m%%/*}
-                    md="$EXPWD"/measure/"$m"
-                    # copy files for measurement
-                    mkdir -p "$md"
-                    find "$path" -mindepth 1 -maxdepth 1 -print 2>/dev/null |
-                    xargs cp $cpopts --archive --copy \
-                        --target-directory="$md"/ |
-                    sed 's/^/  copying /'
+                    # copy files of measure
+                    copyFilesTo "$EXPWDabbrev"/measure/"$m" "$path" \
+                        # nothing to exclude
+                        #
                     ;;
             esac
         else
