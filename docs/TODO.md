@@ -113,6 +113,9 @@
           the cell's DOM to present the most appropriate thing.
         * When user clicks, it should freeze and a popover with a link to the
           run (provenance) should appear.
+    * Andreas' feedback
+        * some slider / mouse hover to vary one variable, to see what happens
+          in other ones.
 * Use jQuery.appear to defer loading images
 
 * DONE Don't treat RUNID special anymore (always active)
