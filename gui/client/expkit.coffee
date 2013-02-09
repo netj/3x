@@ -116,10 +116,10 @@ class Aggregation
                     n++
                 (Math.sqrt(dsqsum / n))
             else null
-        add nominal  : aggs "count"  , "mode"  , "enumerate"
-        add ordinal  : aggs "median" , "mode"  , "min"       , "max"  , "count" , "enumerate"
-        add interval : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
-        add ratio    : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumerate"
+        add nominal  : aggs "count"  , "mode"  , "enumeration"
+        add ordinal  : aggs "median" , "mode"  , "min"       , "max"  , "count" , "enumeration"
+        add interval : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
+        add ratio    : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
 
         # aggregation for images
         new Aggregation "overlay", "object", do ->
@@ -430,9 +430,6 @@ class ResultsTable extends CompositeElement
         # TODO isolate localStorage key
         @columnsToExpand = (try JSON.parse localStorage.resultsColumnsToExpand) ? {}
         @columnNames = null
-        @columnNamesExpanded = null
-        @columnNamesMeasured = null
-        @columnAggregation = null
         @dataTable = null
         @results = ResultsTable.EMPTY_RESULTS
         @resultsForRendering = null
@@ -469,7 +466,8 @@ class ResultsTable extends CompositeElement
         do @display # initializing results table with empty data first
         @conditions.on("filterChange", @load)
                    .on("visibilityChange", @display)
-        @measurements.on "filterChange", @display
+        @measurements.on("filterChange", @display)
+                   .on("visibilityChange", @display)
 
     load: =>
         displayNewResults = (newResults) =>
@@ -494,8 +492,8 @@ class ResultsTable extends CompositeElement
             {{for columns}}
             <th class="{{>className}}"><span>{{>name}}</span
                 >{{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
-                icon icon-folder-{{if isForGrouping}}open{{else}}close{{/if}}-alt"
-                title="{{if isForGrouping}}Aggregate and fold the values of {{>name}}{{else
+                icon icon-folder-{{if isExpanded}}open{{else}}close{{/if}}-alt"
+                title="{{if isExpanded}}Aggregate and fold the values of {{>name}}{{else
                 }}Expand the aggregated values of {{>name}}{{/if}}"
                 ></i>{{/if}}</th>
             {{/for}}
@@ -508,10 +506,10 @@ class ResultsTable extends CompositeElement
             {{for columns}}
             <td class="{{>className}} {{>type}}-type" data-value="{{>value}}">
               {{if aggregation}}
-              <div class="aggregated {{>aggregation}}"
+              <div class="aggregated {{>aggregation.name}}"
                 {{if type != "object" && values}}
                 data-placement="{{if isLastColumn}}left{{else}}bottom{{/if}}" data-trigger="click"
-                title="{{>aggregation}}{{if aggregation != 'enumerate'}} = {{:value}}{{/if}}"
+                title="{{>aggregation.name}}{{if aggregation.name != 'enumeration'}} = {{:value}}{{/if}}"
                 data-html="true" data-content='<ul>
                   {{for values}}
                   <li>{{for #data tmpl=~CELL_SKELETON ~column=#parent.parent.data ~value=#data/}}</li>
@@ -544,21 +542,68 @@ class ResultsTable extends CompositeElement
         _.delay (=> do @_display; deferred.resolve()), 10
         deferred
     _display: =>
-        columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
+        do =>
+            # construct column definitions
+            columns = {}
+            idx = 0
+            #  first, conditions
+            showHiddenConditions = @optionElements.toggleShowHiddenConditions?.is(":checked")
+            for name,condition of @conditions.conditions
+                isExpanded =  @columnsToExpand[RUN_COLUMN_NAME] or
+                    @columnsToExpand[name] and (showHiddenConditions or not @conditions.menusInactive[name]?)
+                columns[name] =
+                    name: name
+                    dataName: name
+                    type: if isExpanded then condition.type else "string"
+                    isMeasured: no
+                    isInactive: @conditions.menusInactive[name]
+                    isExpanded: isExpanded
+                    aggregation: {name:"enumeration", type:"string", func:@_enumerateAll name} unless isExpanded
+                    index: idx++
+            #  then, measures
+            for name,measure of @measurements.measurements when not @measurements.menusInactive[name]
+                isRunIdColumn = name is RUN_COLUMN_NAME
+                col =
+                    dataName: name
+                    type: measure.type
+                    isMeasured: yes
+                    isInactive: @measurements.menusInactive[name]
+                    isExpanded: @columnsToExpand[RUN_COLUMN_NAME]
+                if col.isExpanded
+                    columns[name] = _.extend col,
+                        name: name
+                        index: idx++
+                else
+                    aggs = Aggregation.FOR_TYPE[col.type] ? _.values(Aggregation.FOR_TYPE)[0]
+                    for aggName in @measurements.menuItemsSelected[name] ? []
+                        agg = aggs[aggName]
+                        agg = _.values(aggs)[0] unless agg?
+                        colName = "#{name}.#{aggName}"
+                        columns[colName] = _.extend {}, col,
+                            name: colName
+                            type: agg.type
+                            aggregation: agg
+                            index: idx++
+            @columns = columns
+            @columnNames = []; @columnNames[col.index] = name for name,col of columns
+        log "column order:", @columnNames
+        log "column definitions:", @columns
+
+        # prepare several other auxiliary structures
+        idx = 0
         @columnNamesExpanded =
-            if @optionElements.toggleShowHiddenConditions?.is(":checked")
-                (name for name,value of @columnsToExpand when value)
-            else
-                (name for name,value of @columnsToExpand when value and not @conditions.menusInactive[name]?)
-        @columnNamesMeasured = (name for name of @measurements.measurements when @measurements.menuItemsSelected[name]?)
-        @columnNames = (name for name of @conditions.conditions).concat @columnNamesMeasured
-        @columnAggregation = {}
+            for name in @columnNames when @columns[name].isExpanded
+                @columns[name].indexAmongExpanded = idx++
+                name
+        columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
 
-        isRunIdExpanded = RUN_COLUMN_NAME in @columnNamesExpanded
-
+        # and preprocess data
+        isRunIdExpanded = @columns[RUN_COLUMN_NAME]?.isExpanded
+            # or we could use: @columnsToExpand[RUN_COLUMN_NAME]
+            #    (it will allow unaggregated tables without run column)
+        @optionElements.toggleIncludeEmpty?.prop("disabled", isRunIdExpanded)
         if isRunIdExpanded
             # present results without aggregation
-            @optionElements.toggleIncludeEmpty?.prop("disabled", true)
             log "no aggregation"
             @resultsForRendering =
                 for row in @results.rows
@@ -566,32 +611,23 @@ class ResultsTable extends CompositeElement
                         value: row[columnIndex[name]]
         else
             # aggregate data
-            @optionElements.toggleIncludeEmpty?.prop("disabled", false)
-            for name in @columnNamesMeasured
-                aggs = Aggregation.FOR_TYPE[@measurements.measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
-                aggName = @measurements.menuItemsSelected[name]
-                aggName = _.keys(aggs)[0] unless aggs[aggName]
-                @columnAggregation[name] = aggs[aggName]
-            for name of @conditions.conditions
-                @columnAggregation[name] ?= {name:"enumerate", type:"string", func:@_enumerateAll name}
-            log "aggregation:", JSON.stringify @columnAggregation
             groupRowsByColumns = (rows) =>
                 map = (row) => JSON.stringify (@columnNamesExpanded.map (name) -> row[columnIndex[name]])
                 red = (key, groupedRows) =>
                     for name in @columnNames
-                        idx = columnIndex[name]
-                        if name in @columnNamesExpanded
+                        col = @columns[name]
+                        idx = columnIndex[col.dataName]
+                        if col.isExpanded
                             value: groupedRows[0][idx]
                         else
                             values = (row[idx] for row in groupedRows)
-                            value: @columnAggregation[name].func(values, groupedRows, idx, columnIndex, name)
+                            value: col.aggregation.func(values, groupedRows, idx, columnIndex, name)
                             values: values
                 grouped = mapReduce(map, red)(rows)
                 [_.values(grouped), _.keys(grouped)]
             [aggregatedRows, aggregatedGroups] = groupRowsByColumns(@results.rows)
             #log "aggregated results:", aggregatedRows
             #log "aggregated groups:", aggregatedGroups
-
             # pad aggregatedRows with missing combination of condition values
             emptyRows = []
             if @optionElements.toggleIncludeEmpty?.is(":checked")
@@ -604,14 +640,14 @@ class ResultsTable extends CompositeElement
                     unless key in aggregatedGroups
                         #log "padding empty row for #{key}"
                         emptyRows.push @columnNames.map (name) =>
-                            if name in @columnNamesExpanded
-                                value: group[@columnNamesExpanded.indexOf(name)]
+                            col = @columns[name]
+                            if col.isExpanded
+                                value: group[col.indexAmongExpanded]
                             else
-                                value: @columnAggregation[name].func(emptyValues) ? ""
+                                value: col.aggregation.func(emptyValues) ? ""
                                 values: emptyValues
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
-
         log "rendering results:", @resultsForRendering
 
         # fold any artifacts made by previous DataTables
@@ -622,28 +658,16 @@ class ResultsTable extends CompositeElement
         thead.find("tr").remove()
         columnMetadata = {}
         thead.append(ResultsTable.HEAD_SKELETON.render(
-            columns: (
-                for name,idx in @columnNames
-                    isForGrouping = name in @columnNamesExpanded
-                    # use aggregation type or the type of original data
-                    type = (@columnAggregation[name]?.type unless isForGrouping) ?
-                        @conditions.conditions[name]?.type ? @measurements.measurements[name]?.type
-                    columnMetadata[name] =
-                        name: name
-                        type: type
-                        className: "#{if name in @columnNamesMeasured        then "measurement" else "condition"
-                                   }#{if @conditions.menusInactive[name]?    then " muted"      else ""
-                                   }#{if name in @columnNamesExpanded        then " expanded"   else ""
+            columns:
+                for name in @columnNames
+                    col = @columns[name]
+                    columnMetadata[name] = _.extend {}, col,
+                        className: "#{if col.isMeasured then "measurement" else "condition"
+                                   }#{if col.isInactive then " muted"      else ""
+                                   }#{if col.isExpanded then " expanded"   else ""
                                    }"
-                        isForGrouping: isForGrouping
-                        isMeasured: name in @columnNamesMeasured
-                        isntImportant: @conditions.conditions[name]? and not isForGrouping
-                        isRunIdColumn: name == RUN_COLUMN_NAME
-                        aggregation: @columnAggregation[name]?.name unless isForGrouping
-                        formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(type, @resultsForRendering, idx)
-                        columnIndex: idx
-                        isLastColumn: idx is @columnNames.length - 1
-            )
+                        formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(col.type, @resultsForRendering, col.index)
+                        isLastColumn: col.index is @columnNames.length - 1
             , {ExpKitServiceBaseURL, isRunIdExpanded}
             ))
         # allow the column header to toggle aggregation
@@ -709,8 +733,8 @@ class ResultsTable extends CompositeElement
             bAutoWidth: false
             bScrollCollapse: true
             sScrollX: "100%"
-            sScrollXInner: "#{Math.round Math.max(computeRequireTableWidth(@columnMetadata),
-                                  @baseElement.parent().size().width)}px"
+            #sScrollXInner: "#{Math.round Math.max(computeRequireTableWidth(@columnMetadata),
+            #                      @baseElement.parent().size().width)}px"
             sScrollY: "#{Math.round Math.max(400, window.innerHeight - @baseElement.position().top - 80)}px"
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             # TODO isolate localStorage key
@@ -738,7 +762,7 @@ class ResultsTable extends CompositeElement
         return unless colOrder?.length == @columnNames.length
         isVisible =
             unless @optionElements.toggleShowHiddenConditions?.is(":checked")
-            then (name) => (not @conditions.menusInactive[name]? or name in @columnNamesMeasured)
+            then (name) => not @columns[name].isInactive
             else (name) => true
         for name,idx in @columnNames
             @dataTable.fnSetColumnVis (colOrder.indexOf idx), (isVisible name), false
@@ -753,8 +777,8 @@ displayChart = ->
     width = 960 - margin.left - margin.right
     height = 500 - margin.top - margin.bottom
 
-    xAxisLabel = ExpKit.results.columnNamesExpanded[1]
-    yAxisLabel = ExpKit.results.columnNamesMeasured[1]
+    xAxisLabel = ExpKit.results.columnNamesExpanded[0] # FIXME
+    yAxisLabel = ExpKit.results.columnNamesMeasured[0] # FIXME
     xIndex = ExpKit.results.columnNames.indexOf(xAxisLabel)
     yIndex = ExpKit.results.columnNames.indexOf(yAxisLabel)
 

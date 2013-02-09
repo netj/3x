@@ -35,7 +35,7 @@
 * `exp measure` for running newly added measures: requires partial assembly for exp.measure, and separating the running part from exp-run.
 * exp-rerun for re-running past runs: do a copy --archive --link from the run dir and simply run it again?
 
-* better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
+* SKIP better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
 
 * DONE better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
 * what if a file with same content has different perm mode? should we use name, perms, ... when archiving?
@@ -120,8 +120,8 @@
 
 * DONE Don't treat RUNID special anymore (always active)
 * Selection(Filter) on measurements
-* Show multiple columns of same measurement with diff aggregation in results table
-* Use the same checkbox as for conditions to toggle measurements in tables
+* DONE Show multiple columns of same measurement with diff aggregation in results table
+* DONE Use the same checkbox as for conditions to toggle measurements in tables
 
 * DONE Re-layout Results/Chart/Plan/Runs to minimize scrolls and make it look
   better, and look not so complicated by adding margin
