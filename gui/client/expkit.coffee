@@ -252,250 +252,170 @@ class CompositeElement
 
 
 
-class ConditionsUI extends CompositeElement
-    constructor: (@baseElement) ->
+class MenuDropdown extends CompositeElement
+    constructor: (@baseElement, @menuName) ->
         super @baseElement
-        @conditions = {}
-        @lastConditionValues = (localStorage.conditionValues ?= "{}")
-        @conditionValues = JSON.parse @lastConditionValues
-        @lastConditionsHidden = (localStorage.conditionsHidden ?= "{}")
-        @conditionsHidden = JSON.parse @lastConditionsHidden
+
+        @menuLabelItemsPrefix    = "="
+        @menuLabelItemsDelimiter = ","
+        @menuLabelItemsPostfix   = ""
+
+        @_menuDropdownSkeleton = $("""
+            <script type="text/x-jsrender">
+              <li id="#{@menuName}-{{>id}}" class="#{@menuName} dropdown">
+                <a class="dropdown-toggle" role="button" href="#"
+                  data-toggle="dropdown" data-target="##{@menuName}-{{>id}}"
+                  ><span class="caret"></span><i class="icon menu-checkbox"></i><span
+                      class="menu-label">{{>name}}</span><span class="menu-label-items"></span>&nbsp;</a>
+                <ul class="dropdown-menu" role="menu">
+                  {{for items}}
+                  <li><a href="#" class="menu-dropdown-item">{{>#data}}</a></li>
+                  {{/for}}
+                  <li class="divider"></li>
+                  <li><a href="#" class="menu-dropdown-toggle-all">All</a></li>
+                </ul>
+              </li>
+            </script>
+            """)
+
+        @lastMenuItemsSelected = (localStorage["menuDropdownSelectedItems_#{@menuName}"] ?= "{}")
+        @menuItemsSelected = JSON.parse @lastMenuItemsSelected
+        @lastMenusInactive = (localStorage["menuDropdownInactiveMenus_#{@menuName}"] ?= "{}")
+        @menusInactive = JSON.parse @lastMenusInactive
 
     persist: =>
-        # TODO isolate localStorage key
-        localStorage.conditionValues = JSON.stringify @conditionValues
-        localStorage.conditionsHidden = JSON.stringify @conditionsHidden
+        localStorage["menuDropdownSelectedItems_#{@menuName}"] = JSON.stringify @menuItemsSelected
+        localStorage["menuDropdownInactiveMenus_#{@menuName}"] = JSON.stringify @menusInactive
 
-    load: =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
-            .success(@initialize)
-
-    @SKELETON: $("""
-        <script id="condition-skeleton" type="text/x-jsrender">
-          <li id="condition-{{>id}}" class="condition dropdown">
-            <a class="dropdown-toggle" role="button" href="#"
-              data-toggle="dropdown" data-target="#condition-{{>id}}"
-              ><span class="caret"></span><i class="icon condition-hide-toggle"></i><span
-                  class="condition-name">{{>name}}</span><span class="condition-values"></span>&nbsp;</a>
-            <ul class="dropdown-menu" role="menu">
-              {{for values}}
-              <li><a href="#" class="condition-value">{{>#data}}</a></li>
-              {{/for}}
-              <li class="divider"></li>
-              <li><a href="#" class="condition-values-toggle">All</a></li>
-            </ul>
-          </li>
-        </script>
-        """)
-
-    initialize: (newConditions) =>
-        @conditions = newConditions
-        @condUI = {}
+    clearMenu: =>
         @baseElement.find("*").remove()
-        for name,{type,values} of @conditions
-            id = safeId(name)
-            # add each variable by filling the skeleton
-            @baseElement.append(ConditionsUI.SKELETON.render({name, id, type, values}, {ExpKitServiceBaseURL}))
-            condUI = @baseElement.find("#condition-#{id}")
-            # with menu items for each value
-            menu = condUI.find(".dropdown-menu")
-            isAllActive = do (menu) -> () ->
-                menu.find(".condition-value")
-                    .toArray().every (a) -> $(a).hasClass("active")
-            menu.find(".condition-value")
-                .click(@menuItemActionHandler do (isAllActive) -> ($this, condUI) ->
-                    $this.toggleClass("active")
-                    condUI.find(".condition-values-toggle")
-                        .toggleClass("active", isAllActive())
-                )
-                .each (i,menuitem) =>
-                    $this = $(menuitem)
-                    value = $this.text()
-                    $this.toggleClass("active", value in (@conditionValues[name] ? []))
-            menu.find(".condition-values-toggle")
-                .toggleClass("active", isAllActive())
-                .click(@menuItemActionHandler ($this, condUI) ->
-                    $this.toggleClass("active")
-                    condUI.find(".condition-value")
-                        .toggleClass("active", $this.hasClass("active"))
-                )
-            condUI.toggleClass("active", not @conditionsHidden[name]?)
-                .find(".condition-hide-toggle")
-                    .click(do (condUI) => (e) =>
-                        e.stopPropagation()
-                        e.preventDefault()
-                        condUI.toggleClass("active")
-                        @updateDisplay condUI
-                        do @persist
-                        do @triggerIfChanged
-                    )
-            @updateDisplay condUI
-            @condUI[name] = condUI
-            log "initCondition #{name}:#{type}=#{values.join ","}"
 
-    @ICON_CLASS_VISIBLE: "icon-check"
-    @ICON_CLASS_HIDDEN:  "icon-check-empty"
-    updateDisplay: (condUI) =>
-        name = condUI.find(".condition-name")?.text()
-        values = condUI.find(".condition-value.active").map( -> $(this).text()).get()
-        hasValues = values?.length > 0
-        isHidden = not condUI.hasClass("active")
-        @conditionValues[name] =
-            if hasValues
-                values
-        @conditionsHidden[name] =
-            if isHidden
-                true
-        condUI.find(".condition-values")
-            ?.html(if hasValues then "=#{values.joinTextsWithShy ","}" else "")
-        condUI.find(".condition-hide-toggle")
-            .removeClass("#{ConditionsUI.ICON_CLASS_VISIBLE} #{ConditionsUI.ICON_CLASS_HIDDEN}")
-            .toggleClass(ConditionsUI.ICON_CLASS_VISIBLE, not isHidden)
-            .toggleClass(ConditionsUI.ICON_CLASS_HIDDEN ,     isHidden)
+    addMenu: (name, items) =>
+        id = safeId(name)
+        @baseElement.append(@_menuDropdownSkeleton.render({name, id, items}))
+        menuAnchor = @baseElement.find("##{@menuName}-#{id}")
+        menu = menuAnchor.find(".dropdown-menu")
+        isAllItemActive = do (menu) -> () ->
+            menu.find(".menu-dropdown-item")
+                .toArray().every (a) -> $(a).hasClass("active")
+        menu.find(".menu-dropdown-item")
+            .click(@menuItemActionHandler do (isAllItemActive) -> ($this, menuAnchor) ->
+                $this.toggleClass("active")
+                menuAnchor.find(".menu-dropdown-toggle-all")
+                    .toggleClass("active", isAllItemActive())
+            )
+            .each (i,menuitem) =>
+                $this = $(menuitem)
+                item = $this.text()
+                $this.toggleClass("active", item in (@menuItemsSelected[name] ? []))
+        menu.find(".menu-dropdown-toggle-all")
+            .toggleClass("active", isAllItemActive())
+            .click(@menuItemActionHandler ($this, menuAnchor) ->
+                $this.toggleClass("active")
+                menuAnchor.find(".menu-dropdown-item")
+                    .toggleClass("active", $this.hasClass("active"))
+            )
+        menuAnchor.toggleClass("active", not @menusInactive[name]?)
+            .find(".menu-checkbox")
+                .click(do (menuAnchor) => (e) =>
+                    e.stopPropagation()
+                    e.preventDefault()
+                    menuAnchor.toggleClass("active")
+                    @updateDisplay menuAnchor
+                    do @persist
+                    do @triggerIfChanged
+                )
+        @updateDisplay menuAnchor
+        menuAnchor
 
     menuItemActionHandler: (handle) =>
-        c = @
-        (e) ->
-            e.stopPropagation()
-            e.preventDefault()
-            $this = $(this)
-            condUI = $this.closest(".condition")
-            ret = handle($this, condUI, e)
-            c.updateDisplay condUI
-            do c.persist
-            do c.triggerChangedAfterMenuBlurs
-            ret
-
-    triggerIfChanged: =>
-        thisConditionValues = JSON.stringify @conditionValues
-        if @lastConditionValues != thisConditionValues
-            @lastConditionValues = thisConditionValues
-            _.defer => @trigger "filterChange"
-        thisConditionsHidden = JSON.stringify @conditionsHidden
-        if @lastConditionsHidden != thisConditionsHidden
-            @lastConditionsHidden = thisConditionsHidden
-            _.defer => @trigger "visibilityChange"
-
-    triggerChangedAfterMenuBlurs: =>
-        ($html = $("html"))
-            .off(".conditions")
-            .on("click.conditions touchstart.conditions", ":not(##{@baseElement.id} *)", (e) =>
-                    _.delay =>
-                        return if @baseElement.find(".dropdown.open").length > 0
-                        $html.off(".conditions")
-                        do @triggerIfChanged
-                    , 100
-                )
-
-
-class MeasurementsUI extends CompositeElement
-    constructor: (@baseElement) ->
-        super @baseElement
-        @measurements = {}
-        @measurementsAggregation = try JSON.parse (localStorage.measurementsAggregation ?= "{}")
-
-    persist: =>
-        # TODO isolate localStorage key
-        localStorage.measurementsAggregation = JSON.stringify @measurementsAggregation
-
-    load: =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/measurements")
-            .success(@initialize)
-
-    @SKELETON: $("""
-        <script id="measurement-skeleton" type="text/x-jsrender">
-          <li id="measurement-{{>id}}" class="measurement dropdown">
-            <a class="dropdown-toggle" role="button" href="#"
-              data-toggle="dropdown" data-target="#measurement-{{>id}}"
-              ><span class="caret"></span><span class="measurement-name">{{>name}}</span><span
-                class="measurement-aggregation"></span></a>
-            <ul class="dropdown-menu" role="menu">
-              {{fields aggregations}}
-              <li><a href="#" class="measurement-aggregation">{{>~key}}</a></li>
-              {{/fields}}
-              <!--
-              <li class="divider"></li>
-              TODO precision slider
-              <li><a href="#" class="measurement-aggregation-toggle">All</a></li>
-              -->
-            </ul>
-          </li>
-        </script>
-        """)
-
-    initialize: (newMeasurements) =>
-        @measurements = newMeasurements
-        @baseElement.find("*").remove()
-        for name,{type} of @measurements
-            id = safeId(name)
-            aggregations = Aggregation.FOR_TYPE[type]
-            # add each measurement by filling the skeleton
-            @baseElement.append(MeasurementsUI.SKELETON.render({name, id, type, aggregations}, {ExpKitServiceBaseURL}))
-            measUI = @baseElement.find("#measurement-#{id}")
-            @run = measUI if name == RUN_COLUMN_NAME
-            # with menu items for aggregation
-            menu = measUI.find(".dropdown-menu")
-            menu.find(".measurement-aggregation")
-                .click(@menuActionHandler ($this, measUI) ->
-                    # activate or toggle the newly chosen one
-                    wasActive = $this.hasClass("active")
-                    measUI.find(".dropdown-menu .measurement-aggregation").removeClass("active")
-                    $this.toggleClass("active") unless wasActive
-                    # Or we could always use at least one
-                    # $this.addClass("active")
-                )
-                .each (i,menuitem) =>
-                    $this = $(menuitem)
-                    aggregation = $this.text()
-                    $this.toggleClass("active", aggregation == @measurementsAggregation[name])
-            @updateDisplay measUI
-            log "initMeasurement #{name}:#{type}.#{@measurementsAggregation[name]}"
-
-    updateDisplay: (measUI) =>
-        name = measUI.find(".measurement-name")?.text()
-        aggregationActive = measUI.find(".measurement-aggregation.active")
-        isActive = aggregationActive.length > 0
-        aggregation = if isActive then aggregationActive.first().text()
-        @measurementsAggregation[name] = aggregation
-        measUI.find(".dropdown-toggle .measurement-aggregation").text(if isActive then ".#{aggregation}" else "")
-        measUI.toggleClass("active", isActive)
-
-    menuActionHandler: (handle) ->
         m = @
         (e) ->
             e.stopPropagation()
             e.preventDefault()
             $this = $(this)
-            measUI = $this.closest(".measurement")
-            ret = handle($this, measUI, e)
-            m.updateDisplay measUI
+            menuAnchor = $this.closest(".dropdown")
+            ret = handle($this, menuAnchor, e)
+            m.updateDisplay menuAnchor
             do m.persist
             do m.triggerChangedAfterMenuBlurs
             ret
 
-    triggerIfChanged: (job) =>
-        thisMeasurementsAggregation = JSON.stringify @measurementsAggregation
-        if @lastMeasurementsAggregation != thisMeasurementsAggregation
-            @lastMeasurementsAggregation = thisMeasurementsAggregation
-            _.defer => @trigger "aggregationChange"
-            # special notification for changes to RUN_COLUMN_NAME
-            last = try JSON.parse @lastMeasurementsAggregation
-            runActiveHasChangedTo =
-                if @measurementsAggregation[RUN_COLUMN_NAME] != last?[RUN_COLUMN_NAME]
-                    @measurementsAggregation[RUN_COLUMN_NAME]?.length > 0
-            _.defer => @run.trigger "changed", runActiveHasChangedTo if runActiveHasChangedTo?
+    @ICON_CLASS_VISIBLE: "icon-check"
+    @ICON_CLASS_HIDDEN:  "icon-check-empty"
+
+    updateDisplay: (menuAnchor) =>
+        name = menuAnchor.find(".menu-label")?.text()
+        values = menuAnchor.find(".menu-dropdown-item.active").map( -> $(this).text()).get()
+        hasValues = values?.length > 0
+        isInactive = not menuAnchor.hasClass("active")
+        @menuItemsSelected[name] =
+            if hasValues
+                values
+        @menusInactive[name] =
+            if isInactive
+                true
+        menuAnchor.find(".menu-label-items")
+            ?.html(if hasValues then "#{@menuLabelItemsPrefix}#{
+                values.joinTextsWithShy @menuLabelItemsDelimiter}#{
+                    @menuLabelItemsPostfix}" else "")
+        menuAnchor.find(".menu-checkbox")
+            .removeClass("#{MenuDropdown.ICON_CLASS_VISIBLE} #{
+                MenuDropdown.ICON_CLASS_HIDDEN}")
+            .toggleClass(MenuDropdown.ICON_CLASS_VISIBLE, not isInactive)
+            .toggleClass(MenuDropdown.ICON_CLASS_HIDDEN ,     isInactive)
 
     triggerChangedAfterMenuBlurs: =>
         ($html = $("html"))
-            .off(".measurements")
-            .on("click.measurements touchstart.measurements", ":not(##{@baseElement.id} *)", (e) =>
+            .off(".#{@menuName}s")
+            .on("click.#{@menuName}s touchstart.#{@menuName}s", (e) =>
                     _.delay =>
                         return if @baseElement.find(".dropdown.open").length > 0
-                        $html.off(".measurements")
+                        $html.off(".#{@menuName}s")
                         do @triggerIfChanged
                     , 100
                 )
 
+    triggerIfChanged: =>
+        thisMenuItemsSelected = JSON.stringify @menuItemsSelected
+        if @lastMenuItemsSelected != thisMenuItemsSelected
+            @lastMenuItemsSelected = thisMenuItemsSelected
+            _.defer => @trigger "filterChange"
+        thisMenusInactive = JSON.stringify @menusInactive
+        if @lastMenusInactive != thisMenusInactive
+            @lastMenusInactive = thisMenusInactive
+            _.defer => @trigger "visibilityChange"
+
+
+class ConditionsUI extends MenuDropdown
+    constructor: (@baseElement) ->
+        super @baseElement, "condition"
+        @conditions = {}
+    load: =>
+        $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
+            .success(@initialize)
+    initialize: (@conditions) =>
+        do @clearMenu
+        for name,{type,values} of @conditions
+            # add each condition with menu item for each value
+            @addMenu name, values
+            log "initCondition #{name}:#{type}=#{values.join ","}"
+
+class MeasurementsUI extends MenuDropdown
+    constructor: (@baseElement) ->
+        super @baseElement, "measurement"
+        @menuLabelItemsPrefix = "."
+        @measurements = {}
+    load: =>
+        $.getJSON("#{ExpKitServiceBaseURL}/api/measurements")
+            .success(@initialize)
+    initialize: (@measurements) =>
+        do @clearMenu
+        for name,{type} of @measurements
+            aggregations = Aggregation.FOR_TYPE[type]
+            # add each measurement with menu item for each aggregation
+            @addMenu name, (name for name of aggregations)
+            log "initMeasurement #{name}:#{type}.#{(_.keys aggregations).join ","}"
 
 
 
@@ -510,7 +430,7 @@ class ResultsTable extends CompositeElement
         # TODO isolate localStorage key
         @columnsToExpand = (try JSON.parse localStorage.resultsColumnsToExpand) ? {}
         @columnNames = null
-        @columnNamesGrouping = null
+        @columnNamesExpanded = null
         @columnNamesMeasured = null
         @columnAggregation = null
         @dataTable = null
@@ -549,7 +469,7 @@ class ResultsTable extends CompositeElement
         do @display # initializing results table with empty data first
         @conditions.on("filterChange", @load)
                    .on("visibilityChange", @display)
-        @measurements.on "aggregationChange", @display
+        @measurements.on "filterChange", @display
 
     load: =>
         displayNewResults = (newResults) =>
@@ -557,12 +477,12 @@ class ResultsTable extends CompositeElement
             @results = newResults
             do @display
         (
-            if _.values(@conditions.conditionValues).some((vs) -> vs?.length > 0)
+            if _.values(@conditions.menuItemsSelected).some((vs) -> vs?.length > 0)
                 @optionElements.containerForStateDisplay?.addClass("loading")
                 $.getJSON("#{ExpKitServiceBaseURL}/api/results",
                     runs: []
                     batches: []
-                    conditions: JSON.stringify @conditions.conditionValues
+                    conditions: JSON.stringify @conditions.menuItemsSelected
                 ).success(displayNewResults)
             else
                 $.when displayNewResults(ResultsTable.EMPTY_RESULTS)
@@ -625,16 +545,16 @@ class ResultsTable extends CompositeElement
         deferred
     _display: =>
         columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
-        @columnNamesGrouping =
+        @columnNamesExpanded =
             if @optionElements.toggleShowHiddenConditions?.is(":checked")
                 (name for name,value of @columnsToExpand when value)
             else
-                (name for name,value of @columnsToExpand when value and not @conditions.conditionsHidden[name]?)
-        @columnNamesMeasured = (name for name of @measurements.measurements when @measurements.measurementsAggregation[name]?)
+                (name for name,value of @columnsToExpand when value and not @conditions.menusInactive[name]?)
+        @columnNamesMeasured = (name for name of @measurements.measurements when @measurements.menuItemsSelected[name]?)
         @columnNames = (name for name of @conditions.conditions).concat @columnNamesMeasured
         @columnAggregation = {}
 
-        isRunIdExpanded = RUN_COLUMN_NAME in @columnNamesGrouping
+        isRunIdExpanded = RUN_COLUMN_NAME in @columnNamesExpanded
 
         if isRunIdExpanded
             # present results without aggregation
@@ -649,18 +569,18 @@ class ResultsTable extends CompositeElement
             @optionElements.toggleIncludeEmpty?.prop("disabled", false)
             for name in @columnNamesMeasured
                 aggs = Aggregation.FOR_TYPE[@measurements.measurements[name].type] ? _.values(Aggregation.FOR_TYPE)[0]
-                aggName = @measurements.measurementsAggregation[name]
+                aggName = @measurements.menuItemsSelected[name]
                 aggName = _.keys(aggs)[0] unless aggs[aggName]
                 @columnAggregation[name] = aggs[aggName]
             for name of @conditions.conditions
                 @columnAggregation[name] ?= {name:"enumerate", type:"string", func:@_enumerateAll name}
             log "aggregation:", JSON.stringify @columnAggregation
             groupRowsByColumns = (rows) =>
-                map = (row) => JSON.stringify (@columnNamesGrouping.map (name) -> row[columnIndex[name]])
+                map = (row) => JSON.stringify (@columnNamesExpanded.map (name) -> row[columnIndex[name]])
                 red = (key, groupedRows) =>
                     for name in @columnNames
                         idx = columnIndex[name]
-                        if name in @columnNamesGrouping
+                        if name in @columnNamesExpanded
                             value: groupedRows[0][idx]
                         else
                             values = (row[idx] for row in groupedRows)
@@ -677,15 +597,15 @@ class ResultsTable extends CompositeElement
             if @optionElements.toggleIncludeEmpty?.is(":checked")
                 emptyValues = []
                 columnValuesForGrouping =
-                    for name in @columnNamesGrouping
-                        @conditions.conditionValues[name] ? @conditions.conditions[name].values
+                    for name in @columnNamesExpanded
+                        @conditions.menuItemsSelected[name] ? @conditions.conditions[name].values
                 forEachCombination columnValuesForGrouping, (group) =>
                     key = JSON.stringify group
                     unless key in aggregatedGroups
                         #log "padding empty row for #{key}"
                         emptyRows.push @columnNames.map (name) =>
-                            if name in @columnNamesGrouping
-                                value: group[@columnNamesGrouping.indexOf(name)]
+                            if name in @columnNamesExpanded
+                                value: group[@columnNamesExpanded.indexOf(name)]
                             else
                                 value: @columnAggregation[name].func(emptyValues) ? ""
                                 values: emptyValues
@@ -704,7 +624,7 @@ class ResultsTable extends CompositeElement
         thead.append(ResultsTable.HEAD_SKELETON.render(
             columns: (
                 for name,idx in @columnNames
-                    isForGrouping = name in @columnNamesGrouping
+                    isForGrouping = name in @columnNamesExpanded
                     # use aggregation type or the type of original data
                     type = (@columnAggregation[name]?.type unless isForGrouping) ?
                         @conditions.conditions[name]?.type ? @measurements.measurements[name]?.type
@@ -712,8 +632,8 @@ class ResultsTable extends CompositeElement
                         name: name
                         type: type
                         className: "#{if name in @columnNamesMeasured        then "measurement" else "condition"
-                                   }#{if @conditions.conditionsHidden[name]? then " muted"      else ""
-                                   }#{if name in @columnNamesGrouping        then " expanded"   else ""
+                                   }#{if @conditions.menusInactive[name]?    then " muted"      else ""
+                                   }#{if name in @columnNamesExpanded        then " expanded"   else ""
                                    }"
                         isForGrouping: isForGrouping
                         isMeasured: name in @columnNamesMeasured
@@ -818,7 +738,7 @@ class ResultsTable extends CompositeElement
         return unless colOrder?.length == @columnNames.length
         isVisible =
             unless @optionElements.toggleShowHiddenConditions?.is(":checked")
-            then (name) => (not @conditions.conditionsHidden[name]? or name in @columnNamesMeasured)
+            then (name) => (not @conditions.menusInactive[name]? or name in @columnNamesMeasured)
             else (name) => true
         for name,idx in @columnNames
             @dataTable.fnSetColumnVis (colOrder.indexOf idx), (isVisible name), false
@@ -833,7 +753,7 @@ displayChart = ->
     width = 960 - margin.left - margin.right
     height = 500 - margin.top - margin.bottom
 
-    xAxisLabel = ExpKit.results.columnNamesGrouping[1]
+    xAxisLabel = ExpKit.results.columnNamesExpanded[1]
     yAxisLabel = ExpKit.results.columnNamesMeasured[1]
     xIndex = ExpKit.results.columnNames.indexOf(xAxisLabel)
     yIndex = ExpKit.results.columnNames.indexOf(yAxisLabel)
@@ -1453,7 +1373,7 @@ class PlanTable extends PlanTableBase
                     if (i = expandedConditions[name])?
                         [$(cells[i]).text().trim()]
                     else
-                        values = @conditions.conditionValues[name]
+                        values = @conditions.menuItemsSelected[name]
                         if values?.length > 0 then values
                         else allValues?.values ? []
             # check valuesMatrix to see if we are actually generating some plans
