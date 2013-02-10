@@ -618,7 +618,7 @@ class ResultsTable extends CompositeElement
                 data-placement="{{if isLastColumn}}left{{else}}bottom{{/if}}" data-trigger="click"
                 title="{{>aggregation.name}}{{if aggregation.name != 'enumeration'}} = {{:value}}{{/if}}"
                 data-html="true" data-content='<ul>
-                  {{for values}}
+                  {{for valuesDistinct}}
                   <li>{{for #data tmpl=~CELL_SKELETON ~column=#parent.parent.data ~value=#data/}}</li>
                   {{/for}}
                 </ul>'
@@ -730,6 +730,7 @@ class ResultsTable extends CompositeElement
                             values = (row[idx] for row in groupedRows)
                             value: col.aggregation.func(values, groupedRows, idx, columnIndex, name)
                             values: values
+                            valuesDistinct: _.uniq values
                 grouped = mapReduce(map, red)(rows)
                 [_.values(grouped), _.keys(grouped)]
             [aggregatedRows, aggregatedGroups] = groupRowsByColumns(@results.rows)
@@ -754,6 +755,7 @@ class ResultsTable extends CompositeElement
                             else
                                 value: col.aggregation.func(EMPTY_VALUES, EMPTY_GROUPED_ROWS, idx, columnIndex, name) ? ""
                                 values: EMPTY_VALUES
+                                valuesDistinct: EMPTY_VALUES
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
         #log "rendering results:", @resultsForRendering
@@ -802,9 +804,10 @@ class ResultsTable extends CompositeElement
                         c = $.extend columnMetadata[name], row[idx]
                         c.formattedValue = c.formatter c.value
                         c
-                )
-                , {ExpKitServiceBaseURL, CELL_SKELETON:ResultsTable.CELL_SKELETON}
-                ))
+                ), {
+                    ExpKitServiceBaseURL
+                    CELL_SKELETON: ResultsTable.CELL_SKELETON
+                }))
         tbody.find(".aggregated")
             .popover(trigger: "manual")
             .click((e) ->
