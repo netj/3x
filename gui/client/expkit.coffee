@@ -434,7 +434,8 @@ class ConditionsUI extends MenuDropdown
 class MeasurementsUI extends MenuDropdown
     constructor: (@baseElement) ->
         super @baseElement, "measurement"
-        @menuLabelItemsPrefix = "."
+        @menuLabelItemsPrefix  = " ("
+        @menuLabelItemsPostfix = ")"
         @measurements = {}
 
         # initialize menu filter
@@ -597,8 +598,9 @@ class ResultsTable extends CompositeElement
         <script id="results-table-head-skeleton" type="text/x-jsrender">
           <tr>
             {{for columns}}
-            <th class="{{>className}}"><span>{{>name}}</span
-                >{{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
+            <th class="{{>className}}"><span class="dataName">{{>dataName}}</span>
+                {{if isMeasured && !isExpanded}}<small>(<span class="aggregationName">{{>aggregation.name}}</span>)</small>{{/if}}
+                {{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
                 icon icon-folder-{{if isExpanded}}open{{else}}close{{/if}}-alt"
                 title="{{if isExpanded}}Aggregate and fold the values of {{>name}}{{else
                 }}Expand the aggregated values of {{>name}}{{/if}}"
@@ -705,7 +707,7 @@ class ResultsTable extends CompositeElement
         columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
 
         # and preprocess data
-        isRunIdExpanded = @columns[RUN_COLUMN_NAME]?.isExpanded
+        isRunIdExpanded = @columns[RUN_COLUMN_NAME]?.isExpanded ? false
             # or we could use: @columnsToExpand[RUN_COLUMN_NAME]
             #    (it will allow unaggregated tables without run column)
         @optionElements.toggleIncludeEmpty?.prop("disabled", isRunIdExpanded)
@@ -787,7 +789,7 @@ class ResultsTable extends CompositeElement
             $this = $(this)
             th = $this.closest("th")
             th.toggleClass("expanded")
-            name = th.find("span").text()
+            name = th.find("span.dataName").text()
             t.columnsToExpand[name] = if th.hasClass("expanded") then true else null
             localStorage.resultsColumnsToExpand = JSON.stringify t.columnsToExpand
             do t.display
