@@ -458,7 +458,7 @@ class MeasurementsUI extends MenuDropdown
                 .find(".dropdown-menu li").first().before("""
                     <li><div class="filter control-group input-prepend">
                         <span class="add-on"><i class="icon icon-filter"></i></span>
-                        <input type="text" class="input-medium" placeholder="e.g., >0 or <=12.345">
+                        <input type="text" class="input-medium" placeholder="e.g., >0 & <=12.345">
                     </div></li>
                     <li class="divider"></li>
                     """)
