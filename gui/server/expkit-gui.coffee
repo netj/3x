@@ -241,14 +241,14 @@ app.get "/api/measurements", (req, res) ->
 app.get "/api/results", (req, res) ->
     args = []
     # TODO runs/batches
-    conditions =
-        try
-            JSON.parse req.param("conditions")
-        catch err
-            {}
+    conditions = (try JSON.parse req.param("conditions")) ? {}
+    measures   = (try JSON.parse req.param("measures")  ) ? {}
     for name,values of conditions
         if values?.length > 0
             args.push "#{name}=#{values.join ","}"
+    for name,exprs of measures when _.isArray exprs
+        for [rel, literal] in exprs
+            args.push "#{name}#{rel}#{literal}"
     cli(res, "exp-results", args
         , normalizeNamedColumnLines (line) ->
                 [run, columns...] = line.split /\s+/

@@ -119,7 +119,7 @@
 * Use jQuery.appear to defer loading images
 
 * DONE Don't treat RUNID special anymore (always active)
-* Selection(Filter) on measurements
+* DONE Selection(Filter) on measurements
 * DONE Show multiple columns of same measurement with diff aggregation in results table
 * DONE Use the same checkbox as for conditions to toggle measurements in tables
 

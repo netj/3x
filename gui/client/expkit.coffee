@@ -65,6 +65,34 @@ mapCombination = (nestedList, f) ->
 enumerate = (vs) -> vs.joinTextsWithShy ","
 
 
+FILTER_EXPR_REGEX = ///
+        ^ \s*
+    ( <= | >= | <> | != | = | < | > )    # comparison, membership, ...
+        \s*
+    ( (|[+-]) ( \d+(\.\d*)? | \.\d+ )
+              ([eE] (|[+-])\d+)?         # number
+    | [^<>=!]?.*                         # or string
+    )
+        \s* $
+///
+parseFilterExpr1 = (expr) ->
+    [m[1], m[2]] if m = FILTER_EXPR_REGEX.exec expr.trim()
+parseFilterExpr = (compoundExpr) ->
+    parsed = [] # XXX CoffeeScript 1.4.0 doesnt treat "for" as expr when there's a return in its body
+    for expr in compoundExpr?.split "&"
+        if (parsed1 = parseFilterExpr1 expr)?
+            parsed.push parsed1
+        else
+            return null
+    parsed
+serializeFilter = (parsedFilter) ->
+    if _.isArray parsedFilter
+        ("#{rel}#{literal}" for [rel, literal] in parsedFilter
+        ).join " & "
+    else
+        parsedFilter
+
+
 
 # different aggregation methods depending on data type or level of measurement
 class Aggregation
@@ -279,9 +307,9 @@ class MenuDropdown extends CompositeElement
             """)
 
         @lastMenuItemsSelected = (localStorage["menuDropdownSelectedItems_#{@menuName}"] ?= "{}")
-        @menuItemsSelected = JSON.parse @lastMenuItemsSelected
+        @menuItemsSelected = try JSON.parse @lastMenuItemsSelected
         @lastMenusInactive = (localStorage["menuDropdownInactiveMenus_#{@menuName}"] ?= "{}")
-        @menusInactive = JSON.parse @lastMenusInactive
+        @menusInactive = try JSON.parse @lastMenusInactive
 
     persist: =>
         localStorage["menuDropdownSelectedItems_#{@menuName}"] = JSON.stringify @menuItemsSelected
@@ -325,7 +353,6 @@ class MenuDropdown extends CompositeElement
                     do @persist
                     do @triggerIfChanged
                 )
-        @updateDisplay menuAnchor
         menuAnchor
 
     menuItemActionHandler: (handle) =>
@@ -366,25 +393,25 @@ class MenuDropdown extends CompositeElement
             .toggleClass(MenuDropdown.ICON_CLASS_HIDDEN ,     isInactive)
 
     triggerChangedAfterMenuBlurs: =>
-        ($html = $("html"))
-            .off(".#{@menuName}s")
-            .on("click.#{@menuName}s touchstart.#{@menuName}s", (e) =>
-                    _.delay =>
-                        return if @baseElement.find(".dropdown.open").length > 0
-                        $html.off(".#{@menuName}s")
-                        do @triggerIfChanged
-                    , 100
-                )
+        # avoid multiple checks scheduled
+        return if @_triggerChangedAfterMenuBlursTimeout?
+        @_triggerChangedAfterMenuBlursTimeout = setInterval =>
+            # wait until no menu stays open
+            return if @baseElement.find(".dropdown.open").length > 0
+            @_triggerChangedAfterMenuBlursTimeout = clearInterval @_triggerChangedAfterMenuBlursTimeout
+            # and detect change to trigger events
+            do @triggerIfChanged
+        , 100
 
     triggerIfChanged: =>
         thisMenuItemsSelected = JSON.stringify @menuItemsSelected
         if @lastMenuItemsSelected != thisMenuItemsSelected
             @lastMenuItemsSelected = thisMenuItemsSelected
-            _.defer => @trigger "filterChange"
+            _.defer => @trigger "activeMenuItemsChanged"
         thisMenusInactive = JSON.stringify @menusInactive
         if @lastMenusInactive != thisMenusInactive
             @lastMenusInactive = thisMenusInactive
-            _.defer => @trigger "visibilityChange"
+            _.defer => @trigger "activeMenusChanged"
 
 
 class ConditionsUI extends MenuDropdown
@@ -398,7 +425,8 @@ class ConditionsUI extends MenuDropdown
         do @clearMenu
         for name,{type,values} of @conditions
             # add each condition with menu item for each value
-            @addMenu name, values
+            menuAnchor = @addMenu name, values
+            @updateDisplay menuAnchor
             log "initCondition #{name}:#{type}=#{values.join ","}"
 
 class MeasurementsUI extends MenuDropdown
@@ -406,6 +434,14 @@ class MeasurementsUI extends MenuDropdown
         super @baseElement, "measurement"
         @menuLabelItemsPrefix = "."
         @measurements = {}
+
+        # initialize menu filter
+        @lastMenuFilter = (localStorage["menuDropdownFilter_#{@menuName}"] ?= "{}")
+        @menuFilter = try JSON.parse @lastMenuFilter
+    persist: =>
+        super()
+        localStorage["menuDropdownFilter_#{@menuName}"] = JSON.stringify @menuFilter
+
     load: =>
         $.getJSON("#{ExpKitServiceBaseURL}/api/measurements")
             .success(@initialize)
@@ -414,10 +450,63 @@ class MeasurementsUI extends MenuDropdown
         for name,{type} of @measurements
             aggregations = Aggregation.FOR_TYPE[type]
             # add each measurement with menu item for each aggregation
-            @addMenu name, (name for name of aggregations)
+            menuAnchor = @addMenu name, (aggName for aggName of aggregations)
+
+            # add input elements for filter
+            menuAnchor
+                .find(".menu-label-items").before("""<span class="menu-label-filter"></span>""").end()
+                .find(".dropdown-menu li").first().before("""
+                    <li><div class="filter control-group input-prepend">
+                        <span class="add-on"><i class="icon icon-filter"></i></span>
+                        <input type="text" class="input-medium" placeholder="e.g., >0 or <=12.345">
+                    </div></li>
+                    <li class="divider"></li>
+                    """)
+            menuAnchor.find(".filter")
+                .find("input")
+                    .val(serializeFilter(@menuFilter[name]))
+                    .change(@menuItemActionHandler ($this, menuAnchor) ->
+                        # ...
+                    )
+                    .end()
+                .click(@menuItemActionHandler ($this, menuAnchor) ->
+                    throw new Error "don't updateDisplay"
+                )
+
+            @updateDisplay menuAnchor
             log "initMeasurement #{name}:#{type}.#{(_.keys aggregations).join ","}"
 
+    # display current filter for a menu
+    updateDisplay: (menuAnchor) =>
+        super menuAnchor
+        name = menuAnchor.find(".menu-label")?.text()
+        menuFilterInput = menuAnchor.find(".filter input")
+        rawFilterExpr = menuFilterInput.val()
+        if rawFilterExpr?.length > 0
+            filterToStore = parseFilterExpr rawFilterExpr
+            # indicate error
+            menuFilterInput.closest(".control-group").toggleClass("error", not filterToStore?)
+            if filterToStore?
+                # normalize input
+                filterToShow = serializeFilter(filterToStore)
+                menuFilterInput.val(filterToShow)
+            else # otherwise, leave intact
+                filterToShow = ""
+                filterToStore = rawFilterExpr
+        else
+            filterToStore = null
+            filterToShow = ""
+        # store the filter, and display
+        @menuFilter[name] = filterToStore
+        menuAnchor.find(".menu-label-filter").text(filterToShow)
 
+    # and trigger event when it changes
+    triggerIfChanged: =>
+        super()
+        thisMenuFilter = JSON.stringify @menuFilter
+        if @lastMenuFilter isnt thisMenuFilter
+            @lastMenuFilter = thisMenuFilter
+            _.defer => @trigger "filtersChanged"
 
 
 class ResultsTable extends CompositeElement
@@ -464,14 +553,15 @@ class ResultsTable extends CompositeElement
                do e.preventDefault
                do @load
         do @display # initializing results table with empty data first
-        @conditions.on("filterChange", @load)
-                   .on("visibilityChange", @display)
-        @measurements.on("filterChange", @display)
-                   .on("visibilityChange", @display)
+        @conditions.on("activeMenuItemsChanged", @load)
+                   .on("activeMenusChanged", @display)
+        @measurements.on("activeMenuItemsChanged", @display)
+                   .on("activeMenusChanged", @display)
+                   .on("filtersChanged", @load)
 
     load: =>
         displayNewResults = (newResults) =>
-            log "got results:", newResults
+            #log "got results:", newResults
             @results = newResults
             do @display
         (
@@ -481,6 +571,7 @@ class ResultsTable extends CompositeElement
                     runs: []
                     batches: []
                     conditions: JSON.stringify @conditions.menuItemsSelected
+                    measures: JSON.stringify @measurements.menuFilter
                 ).success(displayNewResults)
             else
                 $.when displayNewResults(ResultsTable.EMPTY_RESULTS)
@@ -586,8 +677,8 @@ class ResultsTable extends CompositeElement
                             index: idx++
             @columns = columns
             @columnNames = []; @columnNames[col.index] = name for name,col of columns
-        log "column order:", @columnNames
-        log "column definitions:", @columns
+        #log "column order:", @columnNames
+        #log "column definitions:", @columns
 
         # prepare several other auxiliary structures
         idx = 0
@@ -648,7 +739,7 @@ class ResultsTable extends CompositeElement
                                 values: emptyValues
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
-        log "rendering results:", @resultsForRendering
+        #log "rendering results:", @resultsForRendering
 
         # fold any artifacts made by previous DataTables
         @dataTable?.dataTable bDestroy:true

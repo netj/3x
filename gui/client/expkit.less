@@ -99,30 +99,30 @@ body > .navbar .brand .icon {
     margin-bottom: 4px;
   }
 
-  .condition, .measurement {
-    .dropdown-toggle {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      padding-right: 14px;
-      .caret {
-        float: right;
-        margin-right: -7px;
-      }
-      .condition-values {
-        word-wrap: initial;
-        display: inline;
-      }
+  .dropdown-toggle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 14px;
+    .caret {
+      float: right;
+      margin-right: -7px;
+    }
+    .menu-label-items {
+      word-wrap: initial;
+      display: inline;
     }
   }
-
-  #conditions, #measurements {
-    .dropdown-menu a {
+  .dropdown-menu {
+    a {
       padding-left: 4ex;
       &.active:before {
         margin-left: -2ex;
         content: "✓ ";
       }
+    }
+    .filter {
+      margin: 5px 10px;
     }
   }
   .menu-checkbox {
