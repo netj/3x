@@ -653,13 +653,13 @@ class ResultsTable extends CompositeElement
                     index: idx++
             #  then, measures
             for name,measure of @measurements.measurements when not @measurements.menusInactive[name]
-                isRunIdColumn = name is RUN_COLUMN_NAME
                 col =
                     dataName: name
                     type: measure.type
                     isMeasured: yes
                     isInactive: @measurements.menusInactive[name]
                     isExpanded: @columnsToExpand[RUN_COLUMN_NAME]
+                    isRunIdColumn: name is RUN_COLUMN_NAME
                 if col.isExpanded
                     columns[name] = _.extend col,
                         name: name
