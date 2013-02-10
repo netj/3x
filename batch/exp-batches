@@ -35,7 +35,9 @@ shift $(($OPTIND - 1))
 Query=$*
 
 EXPROOT=$(exp-findroot)
-cd "$EXPROOT/run/batch"
+cd "$EXPROOT"
+mkdir -p run/batch
+cd run/batch
 
 limitOffset ls -td *"$Query"*/ 2>/dev/null |
 if $ListDetails; then

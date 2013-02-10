@@ -155,20 +155,21 @@ class Aggregation
             BASE_OPACITY = 0.05 # minimum opacity
             VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
             (imgs, rows, colIdx, colIdxs, col) ->
-                runColIdx = colIdxs[RUN_COLUMN_NAME]
-                numOverlaid = Math.min(MAX_IMAGES, rows.length)
-                sampledRows =
-                    if rows.length <= MAX_IMAGES then rows
-                    # TODO can we do a better sampling?
-                    else rows[i] for i in [0...rows.length] by Math.floor(rows.length / MAX_IMAGES)
-                divOpacity = (1 - BASE_OPACITY) / numOverlaid
-                (for row,i in sampledRows
-                    """
-                    <img class="overlay"
-                    src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
-                    style="opacity: #{BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)};">
-                    """
-                ).join ""
+                if imgs?.length > 0
+                    runColIdx = colIdxs[RUN_COLUMN_NAME]
+                    numOverlaid = Math.min(MAX_IMAGES, rows.length)
+                    sampledRows =
+                        if rows.length <= MAX_IMAGES then rows
+                        # TODO can we do a better sampling?
+                        else rows[i] for i in [0...rows.length] by Math.floor(rows.length / MAX_IMAGES)
+                    divOpacity = (1 - BASE_OPACITY) / numOverlaid
+                    (for row,i in sampledRows
+                        """
+                        <img class="overlay"
+                        src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
+                        style="opacity: #{BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)};">
+                        """
+                    ).join ""
         add "image/png": aggs "overlay", "count"
 
         # TODO allow user to plug-in their custom aggregation functions
@@ -362,11 +363,12 @@ class MenuDropdown extends CompositeElement
             e.preventDefault()
             $this = $(this)
             menuAnchor = $this.closest(".dropdown")
-            ret = handle($this, menuAnchor, e)
-            m.updateDisplay menuAnchor
-            do m.persist
-            do m.triggerChangedAfterMenuBlurs
-            ret
+            try
+                ret = handle($this, menuAnchor, e)
+                m.updateDisplay menuAnchor
+                do m.persist
+                do m.triggerChangedAfterMenuBlurs
+                ret
 
     @ICON_CLASS_VISIBLE: "icon-check"
     @ICON_CLASS_HIDDEN:  "icon-check-empty"
@@ -478,7 +480,15 @@ class MeasurementsUI extends MenuDropdown
 
     # display current filter for a menu
     updateDisplay: (menuAnchor) =>
+        # At least one menu item (aggregation) must be active all the time.
+        # To totally hide this measure, user can simply check off.
+        if menuAnchor.find(".menu-dropdown-item.active").length is 0
+            menuAnchor.find(".menu-dropdown-item:nth(0)").addClass("active")
+
+        # then do what it's supposed to
         super menuAnchor
+
+        # display for filter
         name = menuAnchor.find(".menu-label")?.text()
         menuFilterInput = menuAnchor.find(".filter input")
         rawFilterExpr = menuFilterInput.val()
@@ -565,16 +575,22 @@ class ResultsTable extends CompositeElement
             @results = newResults
             do @display
         (
-            if _.values(@conditions.menuItemsSelected).some((vs) -> vs?.length > 0)
-                @optionElements.containerForStateDisplay?.addClass("loading")
-                $.getJSON("#{ExpKitServiceBaseURL}/api/results",
-                    runs: []
-                    batches: []
-                    conditions: JSON.stringify @conditions.menuItemsSelected
-                    measures: JSON.stringify @measurements.menuFilter
-                ).success(displayNewResults)
-            else
-                $.when displayNewResults(ResultsTable.EMPTY_RESULTS)
+            @optionElements.containerForStateDisplay?.addClass("loading")
+            conditions =
+                if _.values(@conditions.menuItemsSelected).some((vs) -> vs?.length > 0)
+                    @conditions.menuItemsSelected
+            unless conditions?
+                # try to fetch the entire result when no condition is selected
+                conditions = {}
+                firstCondition = _.keys(@conditions.conditions)?[0]
+                conditions[firstCondition] = [""]
+            # ask for results data
+            $.getJSON("#{ExpKitServiceBaseURL}/api/results",
+                runs: []
+                batches: []
+                conditions: JSON.stringify conditions
+                measures: JSON.stringify @measurements.menuFilter
+            ).success(displayNewResults)
         ).done(=> @optionElements.containerForStateDisplay?.removeClass("loading"))
 
     @HEAD_SKELETON: $("""
@@ -722,7 +738,7 @@ class ResultsTable extends CompositeElement
             # pad aggregatedRows with missing combination of condition values
             emptyRows = []
             if @optionElements.toggleIncludeEmpty?.is(":checked")
-                emptyValues = []
+                EMPTY_GROUPED_ROWS = EMPTY_VALUES = []
                 columnValuesForGrouping =
                     for name in @columnNamesExpanded
                         @conditions.menuItemsSelected[name] ? @conditions.conditions[name].values
@@ -732,11 +748,12 @@ class ResultsTable extends CompositeElement
                         #log "padding empty row for #{key}"
                         emptyRows.push @columnNames.map (name) =>
                             col = @columns[name]
+                            idx = columnIndex[col.dataName]
                             if col.isExpanded
                                 value: group[col.indexAmongExpanded]
                             else
-                                value: col.aggregation.func(emptyValues) ? ""
-                                values: emptyValues
+                                value: col.aggregation.func(EMPTY_VALUES, EMPTY_GROUPED_ROWS, idx, columnIndex, name) ? ""
+                                values: EMPTY_VALUES
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
         #log "rendering results:", @resultsForRendering
@@ -1016,8 +1033,8 @@ class BatchesTable extends CompositeElement
         if @currentBatchId?
             @status.load @currentBatchId
         else
-            @dataTable.one "draw", ->
-                tbody.find("tr:nth(0)").click()
+            @dataTable.one "draw", =>
+                @baseElement.find("tbody tr:nth(0)").click()
 
     persist: =>
         # TODO isolate localStorage key

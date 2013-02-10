@@ -274,13 +274,13 @@ app.get "/api/run/batch.DataTables", (req, res) ->
                 , (lazyLines, next) ->
                     lazyLines
                         .take(1)
-                        .join ([line]) -> next (+line.trim())
+                        .join ([line]) -> next (+line?.trim())
         ,
             cli res, "exp-batches", ["-c"]
                 , (lazyLines, next) ->
                     lazyLines
                         .take(1)
-                        .join ([line]) -> next (+line.trim())
+                        .join ([line]) -> next (+line?.trim())
         ], (err, [table, filteredCount, totalCount]) ->
             unless err
                 res.json
@@ -294,7 +294,7 @@ app.get "/api/run/batch.numRUNNING", (req, res) ->
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
-                .join ([line]) -> next (+line.trim())
+                .join ([line]) -> next (+line?.trim())
     ) (err, count) ->
         res.json count unless err
 
@@ -386,7 +386,7 @@ updateRunningCount = (socket = batchSockets) ->
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
-                .join ([line]) -> next (+line.trim())
+                .join ([line]) -> next (+line?.trim())
     ) (code, err, count) ->
         socket.volatile.emit "running-count", count
 
