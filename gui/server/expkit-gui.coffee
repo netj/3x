@@ -22,8 +22,11 @@ jade = require "jade"
 marked = require "marked"
 
 
-EXPROOT = process.env.EXPROOT
-EXPGUIPORT = parseInt process.argv[2] ? 0
+EXPROOT                    = process.env.EXPROOT
+EXPGUIPORT                 = parseInt process.argv[2] ? 0
+process.env.SHLVL          = "0"
+process.env.EXPKIT_LOGLVL  = "1"
+process.env.EXPKIT_LOGMSGS = "true"
 
 
 RUN_COLUMN_NAME = "run#"
@@ -145,7 +148,11 @@ cliBare = (cmd, args
         , withErr = ((errLines, next) -> errLines.join next)
 ) -> (next) ->
     console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
-    p = child_process.spawn cmd, args
+    #console.log "  cwd:", EXPROOT
+    #console.log "  env:", process.env
+    p = child_process.spawn cmd, args,
+        cwd: EXPROOT
+        env: process.env
     _code = null; _result = null; _error = null
     tryEnd = ->
         if _code? and _error? and _result?
@@ -302,7 +309,7 @@ app.get ////api/run/batch/([^:]+):(start|stop)///, (req, res) ->
     batchId = req.params[0]
     # TODO sanitize batchId
     action = req.params[1]
-    cli(res, "sh", ["-c", "exp-#{action} run/batch/#{batchId} </dev/null &>/dev/null &"]
+    cli(res, "sh", ["-c", "SHLVL=0 exp-#{action} run/batch/#{batchId} </dev/null >>.exp/gui/log.runs 2>&1 &"]
         , (lazyLines, next) ->
             lazyLines
                 .join -> next (true)
@@ -351,7 +358,7 @@ app.post "/api/run/batch/*", (req, res) ->
     # start right away if shouldStart
     startIfNeeded = (batchId) ->
         if shouldStart
-            try cliSimple "sh", "-c", "exp-start #{batchId} </dev/null &>/dev/null &"
+            try cliSimple "sh", "-c", "SHLVL=0 exp-start #{batchId} </dev/null >>.exp/gui/log.runs 2>&1 &"
 
     mktemp.createFile "#{EXPROOT}/.exp/plan.XXXXXX", (err, planFile) ->
         andRespond = (err, [batchId]) ->

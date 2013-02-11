@@ -32,7 +32,10 @@
 #   exp findroot
 # 
 # Global OPTION is one of:
-#   -v      for increasing verbosity
+#   -v      increase verbosity
+#   -q      suppress all messages
+#   -t      force logging to non-ttys
+#           (default is to log messages to stderr only when it's a tty)
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
@@ -69,15 +72,21 @@ if [ -z "${EXPKIT_HOME:-}" ]; then
     export PATH="$TOOLSDIR:$LIBDIR/node_modules/.bin:$PATH"
     unset CDPATH
     export SHLVL=0 EXPKIT_LOGLVL=${EXPKIT_LOGLVL:-1}
+    # export EXPKIT_LOG_TO_NONTTY=
 fi
 
 
-while getopts "v" opt; do
+while getopts "vtq" opt; do
     case $opt in
         v)
-            let EXPKIT_LOGLVL++
+            let ++EXPKIT_LOGLVL
             ;;
-            # TODO quiet
+        q)
+            EXPKIT_LOGLVL=0
+            ;;
+        t)
+            export EXPKIT_LOG_TO_NONTTY=true
+            ;;
     esac
 done
 shift $(($OPTIND - 1))
