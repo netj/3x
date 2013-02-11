@@ -10,12 +10,14 @@ let $EXPROOT = $SourceRoot."/test-exp"
 lcd $SourceRoot
 exec "setlocal path+=".join(map(modules,'$SourceRoot."/".v:val'), ",")
 
+setlocal autowrite
+
 " Build with Cmd-Enter
 nmap <buffer> <D-CR> :make -C $SourceRoot install PREFIX=~<CR>
 imap <buffer> <D-CR> <C-\><C-N><D-CR><CR>gi
 
 " .module.* involves mostly local stuff
-au! BufRead,BufNewFile .module.* lcd %:h
+au! BufRead,BufNewFile .module.* try | lcd %:h | catch /.*/ | endtry
 
 " Handy command for searching strings in the source code
 command! -nargs=1 FindSource
