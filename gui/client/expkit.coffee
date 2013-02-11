@@ -1513,9 +1513,11 @@ class PlanTable extends PlanTableBase
             cells = $tr.find("td").get()
             # see which columns are the expanded conditions
             expandedConditions = {}
-            $tr.closest("table").find("thead th.condition.expanded").each ->
-                $th = $(this)
-                expandedConditions[$th.text().trim()] = $th.index()
+            $tr.closest(".dataTables_wrapper") # XXX coupling to DataTables
+                .find("th.condition.expanded .dataName").each ->
+                    $dataName = $(this)
+                    $th = $dataName.closest("th")
+                    expandedConditions[$dataName.text().trim()] = $th.index()
             log "found expanded conditions", JSON.stringify expandedConditions
             # don't proceed if no condition is expanded
             if _.size(expandedConditions) is 0
