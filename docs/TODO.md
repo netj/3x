@@ -28,7 +28,7 @@
         exp setup  VAR1=V1,V2  VAR2=V3,V4..V5 ...  'COMMAND'  MEASURE1='PATT1_FROM_OUTPUT'  MEASURE2='PATT2_FROM_OUTPUT' ...
 
 * SKIP keep links to currently running batch and/or run in a concentrated place, say `run/current/*` or so
-* record observed real/user/sys times
+* DONE record observed real/user/sys times
 
 * support exp setup --measurements pattern with more than one capture pattern
 

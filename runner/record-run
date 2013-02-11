@@ -4,21 +4,54 @@
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-05
-set -u
+set -eu
 
-eval "
-be-quiet +5 || set -x
-$(cat ./env | sed "s/'/'\\''/g; s/^/export '/; s/$/'/")
-"
+[ -n "${EXPRUN:-}" ]  || usage "$0" "EXPRUN not defined"
+[ -x workdir/run   ]  || usage "$0" "workdir/run: No executable found"
 
-eval "cmd=(
-./run
-$(cat args)
-)"
+measuring-rusage() {
+    # Look for GNU time
+    # TODO maybe we can keep a symlink somewhere to skip these redundant search/checks
+    local gnutimepath=
+    for gnutimepath in $(type -p -a gtime time); do
+        case $("$gnutimepath" --version 2>&1) in
+            "GNU time "*)
+                # and record times and rusage with it
+                exec "$gnutimepath" -v -o rusage "$@"
+                ;;
+        esac
+    done
+    # Skip recording if no GNU time is available
+    msg +1 "Skipping rusage measurement. (Install GNU time to record it!)"
+    exec "$@"
+}
 
-(
-be-quiet +1 || set -x
-cd "$EXPWD"/workdir
-"${cmd[@]}" <../stdin >../stdout 2>../stderr
+# forward signal to the process group
+for sig in HUP INT QUIT TERM
+do trap "kill -$sig -\$pid; wait" $sig
+done
+
+# now run
+set +e
+measuring-rusage \
+setsid \
+env - \
+    EXPKIT_HOME="$EXPKIT_HOME" \
+    EXPROOT="$EXPROOT" \
+    EXPWD="$PWD" \
+    EXPRUN="$EXPRUN" \
+bash -c ''"$(be-quiet +5 || echo set -x)"'
+# declare env
+'"$(sed "s/'/'\\''/g; s/^/export '/; s/$/'/" <env)"'
+# collect args
+args=(
+'"$(cat args)"'
 )
+'"$(be-quiet +1 || ! be-quiet +5 || echo set -x)"'
+# run from workdir/
+cd "$EXPWD"/workdir
+exec ./run "${args[@]}" <../stdin >../stdout 2>../stderr
+' &
+pid=$!
+wait $pid
 echo $? >exitcode
