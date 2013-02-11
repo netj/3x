@@ -30,6 +30,7 @@ trap "rm -rf $tmp" EXIT
 
 # generate a list of files first
 filelist="$tmp"/files
+executableList="$tmp"/execfiles
 find "$@" -type f >"$filelist" || true
 
 # generate a shell script that unifies all the files with the ones in the archive
@@ -52,16 +53,27 @@ find "$@" -type f >"$filelist" || true
 	    chmod a-w "\$archived"
 	}
 	PROLOGUE
+    # see which files are executables to archive separately from normal files
+    # (hardlink copies cannot have separate permission modes, so when two files
+    #  share the content but one is an executable and the other isn't, we'll
+    #  have to keep another copy with +x separately in a different name)
+    perl <"$filelist" -Mstrict -e '
+    while (my $line = <>) {
+        chomp $line;
+        printf "%s\n", (-x $line) ? "x" : "";
+    }
+    ' >"$executableList"
     # use git hash-object to compute SHA1 sum of each file
+    # and paste everything together as a script that will do the job
     git hash-object --stdin-paths <"$filelist" |
     sed 's:^....:&/:; s:^..:&/:' |
-    paste - "$filelist" |
+    paste - "$executableList" "$filelist" |
     perl -Mstrict -e '
     sub esc { my $f = shift; $f =~ s/'\''/'\''\\'\'\''/g; $f }
     while (my $line = <>) {
         chomp $line;
-        my ($sha1file, $path) = split /\t/, $line, 2;
-        printf "u %s '\''%s'\''\n", $sha1file, esc($path);
+        my ($sha1file, $executableFlag, $path) = split /\t/, $line, 3;
+        printf "u %s%s '\''%s'\''\n", $sha1file, $executableFlag, esc($path);
     }
     '
 } >"$tmp"/dedup.sh
