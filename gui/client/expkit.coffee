@@ -1458,9 +1458,11 @@ class PlanTable extends PlanTableBase
                 """).appendTo(document.body)
             # attach the popover to the results table
             #  in a somewhat complicated way to make it appear/disappear after a delay
+            POPOVER_SHOW_DELAY_INITIAL = 3000
+            POPOVER_SHOW_HIDE_DELAY    =  100
             popoverShowTimeout = null
             displayPopover = ($tr) ->
-                popover.showDelay = 100
+                popover.showDelay = POPOVER_SHOW_HIDE_DELAY
                 # TODO display only when there is an expanded condition column
                 # try to avoid attaching to the same row more than once
                 return if popover.closest("tr")?.index() is $tr.index()
@@ -1482,7 +1484,13 @@ class PlanTable extends PlanTableBase
                     popoverShowTimeout = setTimeout =>
                         displayPopover $(this).closest("tr")
                         popoverShowTimeout = null
-                    , popover.showDelay ?= 1000
+                    , popover.showDelay ?= POPOVER_SHOW_DELAY_INITIAL
+                    )
+                .on("click", "tbody tr", (e) ->
+                    popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
+                    popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
+                    popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
+                    displayPopover $(this).closest("tr")
                     )
                 .on("mouseout",  "tbody tr", (e) ->
                     popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
@@ -1491,10 +1499,10 @@ class PlanTable extends PlanTableBase
                         popover.removeClass("in").remove()
                         popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
                         popoverResetDelayTimeout = setTimeout ->
-                            popover.showDelay = 1000
-                        , 3000
+                            popover.showDelay = POPOVER_SHOW_DELAY_INITIAL
+                        , POPOVER_SHOW_DELAY_INITIAL / 3
                         popoverHideTimeout = null
-                    , 100
+                    , POPOVER_SHOW_HIDE_DELAY
                     )
                 .on("click", "tbody tr .add.btn", @addPlanFromRowHandler())
     @STATE: "REMAINING"
