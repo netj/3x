@@ -70,6 +70,7 @@
 
 * DONE Title with .exp/description or basename of the $EXPROOT and ExpKitServiceBaseURL
 * DONE ExpKitServiceBaseURL change option
+* prefix localStorage keys for conditions/measurements with exp hostname and fileSystemPath for isolation
 * DONE allow multiple instances of GUI with diff port (pid file is the singleton enforcer right now)
 
 * DONE batch page

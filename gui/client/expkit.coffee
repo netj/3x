@@ -577,20 +577,26 @@ class ResultsTable extends CompositeElement
             do @display
         (
             @optionElements.containerForStateDisplay?.addClass("loading")
-            conditions =
-                if _.values(@conditions.menuItemsSelected).some((vs) -> vs?.length > 0)
-                    @conditions.menuItemsSelected
-            unless conditions?
+            # prepare the query on conditions and measures
+            conditions = {}
+            for name,condition of @conditions.conditions
+                values = @conditions.menuItemsSelected[name]
+                if values?.length > 0
+                    conditions[name] = values
+            unless _.values(conditions).length > 0
                 # try to fetch the entire result when no condition is selected
                 conditions = {}
                 firstCondition = _.keys(@conditions.conditions)?[0]
                 conditions[firstCondition] = [""]
+            measures = {}
+            for name,measure of @measurements.measurements
+                measures[name] = @measurements.menuFilter[name]
             # ask for results data
             $.getJSON("#{ExpKitServiceBaseURL}/api/results",
                 runs: []
                 batches: []
                 conditions: JSON.stringify conditions
-                measures: JSON.stringify @measurements.menuFilter
+                measures: JSON.stringify measures
             ).success(displayNewResults)
         ).done(=> @optionElements.containerForStateDisplay?.removeClass("loading"))
 
