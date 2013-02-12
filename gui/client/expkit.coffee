@@ -231,10 +231,17 @@ initTabs = ->
         tab = $(e.target).attr("href").substring(1)
         log "showing tab", tab
         switch tab
+            when "results"
+                ExpKit.results?.dataTable?.fnDraw()
             when "plan"
                 ExpKit.planner?.dataTable?.fnDraw()
             when "runs"
                 ExpKit.status?.dataTable?.fnDraw()
+        # store last tab
+        localStorage.lastTab = tab
+    # restore last tab
+    if localStorage.lastTab?
+        $(".navbar a[href='##{localStorage.lastTab}']").click()
 
 
 

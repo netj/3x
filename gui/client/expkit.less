@@ -45,7 +45,7 @@
 }
 @media screen and (min-width: 768px) {
   #main > .row-fluid {
-    & > h2 {
+    h2 {
       visibility: hidden;
       height: 0px;
     }
@@ -205,30 +205,30 @@ body > .navbar .brand .icon {
     }
   }
 
-#results-table-progress {
-  display: none;
-}
-
-&.loading, &.displaying {
   #results-table-progress {
-    display: block;
-    position: absolute;
-    left: 50%;
-    @width: 100% * (1-.618);
-    // TODO also define these with @gridRowWidth1200 and @gridRowWidth768
-    width: @width;
-    margin-left: -@width/2;
-    z-index: 10;
-    .box-shadow(0 5px 10px rgba(0,0,0,.2));
+    display: none;
   }
-  #results-table {
-    opacity: 0.5;
-  }
-}
 
-                 h4            { display: none; }
-  &.loading    { h4.loading    { display: block; } }
-  &.displaying { h4.displaying { display: block; } }
+  &.loading, &.displaying {
+    #results-table-progress {
+      display: block;
+      position: absolute;
+      left: 50%;
+      @width: 100% * (1-.618);
+      // TODO also define these with @gridRowWidth1200 and @gridRowWidth768
+      width: @width;
+      margin-left: -@width/2;
+      z-index: 10;
+      .box-shadow(0 5px 10px rgba(0,0,0,.2));
+    }
+    #results-table {
+      opacity: 0.5;
+    }
+  }
+
+                 .alert-block h4            { display: none; }
+  &.loading    { .alert-block h4.loading    { display: block; } }
+  &.displaying { .alert-block h4.displaying { display: block; } }
 }
 
 
