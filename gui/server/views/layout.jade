@@ -1,10 +1,15 @@
 doctype 5
 html
+
   head
     meta(charset='utf-8')
-    title= title
+    title ExpKit — #{title}
+
     link(rel='stylesheet', href='/resource/expkit.css')
-  body
+    script(type='text/javascript', src='/resource/jquery.js')
+    script(type='text/javascript', src='/resource/bootstrap.js')
+
+  body(data-spy='scroll', data-target='.bs-docs-sidebar')
 
     .navbar.navbar-fixed-top
       .navbar-inner
@@ -13,19 +18,8 @@ html
             a.brand(href='http://netj.github.com/expkit/')
               i.icon-beaker.icon
               | ExpKit
-          ul.nav
-            li.active
-              a(href='/docs/tutorial')
-                i.icon.icon-question-sign
-                | Tutorial
-            li
-              a(href='/docs/reference')
-                i.icon.icon-book
-                | Reference
-            li
-              a(href='/')
-                i.icon.icon-reply
-                | Back to Experiment
+
+          block nav
 
     div.container-fluid
       div.row-fluid

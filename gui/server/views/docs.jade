@@ -3,12 +3,33 @@ extends layout
 // TODO analyze TOC from contents
 block content
   div.span2
-    ul.nav.nav-list.affix-top
-      //li
-      //  i.icon-chevron-right
-      //  a(href='#section1') Section 1
-      //li
-      //  i.icon-chevron-right
-      //  a(href='#section2') Section 2
-  div.span10
+    div.span2.bs-docs-sidebar
+      ul.nav.nav-list(data-spy='affix').bs-docs-sidenav
+        //li
+        //  a(href='#section1')
+        //    i.icon-chevron-right
+        //    Section 1
+        //li
+        //  a(href='#section2')
+        //    i.icon-chevron-right
+        //    Section 2
+  div#main.span10
     != markdown(filepath)
+
+
+block nav
+  ul.nav
+    li.active
+      a(href='/docs/tutorial')
+        i.icon.icon-question-sign
+        | Tutorial
+    //li
+    //  a(href='/docs/reference')
+    //    i.icon.icon-book
+    //    | Reference
+
+  ul.nav.pull-right
+    li
+      a(href='/')
+        i.icon.icon-reply
+        | Back to Experiment

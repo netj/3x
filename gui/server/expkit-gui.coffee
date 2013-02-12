@@ -36,7 +36,10 @@ SERIAL_COLUMN_NAME = "serial#"
 # use text/plain MIME type for ExpKit artifacts in run/
 express.static.mime.define
     "text/plain": """
-        sh
+        sh bash
+        pl py rb js coffee
+        c h cc cpp hpp cxx C i ii
+        Makefile
     """.split /\s+/
 
 ###
@@ -75,7 +78,7 @@ app.get "/docs/*", (req, res) ->
     filepath = "#{process.env.DOCSDIR}/#{path}.md"
     markdown = (filename) ->
         marked String(fs.readFileSync filename)
-    res.render "docs", {markdown, title, path, filepath}
+    res.render "docs", {title, markdown, path, filepath}
     #if filepath in docsCache
     #    respond docsCache[filepath]
     #else
@@ -91,11 +94,32 @@ app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
         res.redirect path.replace(EXPROOT, "")
 
 
+# Show an overview page for runs
+RUN_OVERVIEW_FILENAMES = """
+    condition outcome
+    stdout stderr exitcode rusage
+    env args stdin
+    assembly
+""".split(/\s+/).filter((f) -> f?.length > 0)
+app.get "/run/*/overview", (req, res) ->
+    runId = "run/#{req.params[0]}"
+    readFileIfExists = (filename, next) ->
+        console.log "read", filename
+        fs.readFile filename, (err, contents) ->
+            if err then next null, null
+            else next null, contents
+    async.map ("#{EXPROOT}/#{runId}/#{filename}" for filename in RUN_OVERVIEW_FILENAMES),
+        readFileIfExists, (err, results) ->
+            files = {}
+            for filename,i in RUN_OVERVIEW_FILENAMES
+                files[filename] = results[i]
+            res.render "run-overview", {title:runId, runId, files}
+
+
 # Override content type for run directory
 app.get "/run/*", (req, res, next) ->
     path = req.params[0]
     unless path.match ///.+(/workdir/.+|/$)///
-        console.log "text", path
         res.type "text/plain"
     do next
 

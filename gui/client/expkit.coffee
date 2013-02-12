@@ -648,7 +648,7 @@ class ResultsTable extends CompositeElement
         </script>
         """)
     @CELL_SKELETON: """
-        {{if ~column.isRunIdColumn}}<a href="{{>~ExpKitServiceBaseURL}}/{{>~value}}">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
+        {{if ~column.isRunIdColumn}}<a href="{{>~ExpKitServiceBaseURL}}/{{>~value}}/overview">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
         """
 
     _enumerateAll: (name) =>
@@ -1216,7 +1216,7 @@ class PlanTableBase extends CompositeElement
             {{if run}}
             title="Detailed Info"
             data-placement="bottom" data-html="true" data-trigger="click"
-            data-content='<a href="{{>~ExpKitServiceBaseURL}}/{{>run}}">{{>run}}</a>'
+            data-content='<a href="{{>~ExpKitServiceBaseURL}}/{{>run}}/overview">{{>run}}</a>'
             {{/if}}><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></div></td>
             {{for columns}}
             <td>{{>value}}</td>

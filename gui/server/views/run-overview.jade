@@ -1,0 +1,48 @@
+extends layout
+
+block content
+
+  div.span2
+    div.span2.bs-docs-sidebar
+      ul.nav.nav-list(data-spy='affix').bs-docs-sidenav
+        each content,file in files
+          li
+            a(href='##{file}')
+              i.icon-chevron-right
+              = " "
+              = file
+
+  div#main.span10
+
+    each content,file in files
+      div.row-fluid(id='#{file}')
+        h3
+          a(href='#{file}')
+            = file
+        pre= content
+
+
+
+
+block nav
+
+  ul.nav
+    li.active
+      a(href='overview')
+        i.icon.icon-cog
+        = runId
+    li
+      a(href='.')
+        i.icon.icon-folder-open
+        | Browse Files
+    li
+      a(href='workdir/')
+        i.icon.icon-briefcase
+        | workdir/
+
+  ul.nav.pull-right
+    li
+      a(href='/')
+        i.icon.icon-reply
+        | Back to Experiment
+

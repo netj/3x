@@ -154,8 +154,10 @@
     * update the table as new results get added
 
 * run page
+    * DONE better looking run summary page
+    * different icons for each file: condition, outcome, stdin, ...
+    * only show an excerpt from overview, and to reduce its length?
     * monitoring logs
-    * better looking run summary page
 
 * Use hash for representing GUI state as URL and using the browser history and back/forward
 
