@@ -1,9 +1,10 @@
+// requires: EXP_DESCRIPTOR, title
 doctype 5
 html
 
   head
     meta(charset='utf-8')
-    title ExpKit — #{title}
+    title ExpKit — #{title} — #{EXP_DESCRIPTOR.name} — #{EXP_DESCRIPTOR.hostname}:#{EXP_DESCRIPTOR.port}
 
     link(rel='stylesheet', href='/resource/expkit.css')
     script(type='text/javascript', src='/resource/jquery.js')

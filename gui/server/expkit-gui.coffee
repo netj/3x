@@ -42,6 +42,26 @@ express.static.mime.define
         Makefile
     """.split /\s+/
 
+RUN_OVERVIEW_FILENAMES = """
+    condition outcome
+    stdout stderr exitcode rusage
+    env args stdin
+    assembly
+""".split(/\s+/).filter((f) -> f?.length > 0)
+
+EXP_DESCRIPTOR = do ->
+    [basename] = EXPROOT.match /[^/]+$/
+    desc = String(fs.readFileSync "#{EXPROOT}/.exp/description").trim()
+    if desc == "Unnamed repository; edit this file 'description' to name the repository."
+        desc = null
+    {
+        name: basename
+        description: desc
+        fileSystemPath: EXPROOT
+        hostname: os.hostname()
+        port: EXPGUIPORT
+    }
+
 ###
 # Express.js server
 ###
@@ -78,7 +98,7 @@ app.get "/docs/*", (req, res) ->
     filepath = "#{process.env.DOCSDIR}/#{path}.md"
     markdown = (filename) ->
         marked String(fs.readFileSync filename)
-    res.render "docs", {title, markdown, path, filepath}
+    res.render "docs", {EXP_DESCRIPTOR, title, markdown, path, filepath}
     #if filepath in docsCache
     #    respond docsCache[filepath]
     #else
@@ -95,12 +115,6 @@ app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
 
 
 # Show an overview page for runs
-RUN_OVERVIEW_FILENAMES = """
-    condition outcome
-    stdout stderr exitcode rusage
-    env args stdin
-    assembly
-""".split(/\s+/).filter((f) -> f?.length > 0)
 app.get "/run/*/overview", (req, res) ->
     runId = "run/#{req.params[0]}"
     readFileIfExists = (filename, next) ->
@@ -113,7 +127,7 @@ app.get "/run/*/overview", (req, res) ->
             files = {}
             for filename,i in RUN_OVERVIEW_FILENAMES
                 files[filename] = results[i]
-            res.render "run-overview", {title:runId, runId, files}
+            res.render "run-overview", {EXP_DESCRIPTOR, title:runId, runId, files}
 
 
 # Override content type for run directory
@@ -224,16 +238,7 @@ app.all "/api/*", (req, res, next) ->
 
 
 app.get "/api/description", (req, res) ->
-    [basename] = EXPROOT.match /[^/]+$/
-    desc = String(fs.readFileSync "#{EXPROOT}/.exp/description").trim()
-    if desc == "Unnamed repository; edit this file 'description' to name the repository."
-        desc = null
-    res.json
-        name: basename
-        description: desc
-        fileSystemPath: EXPROOT
-        hostname: os.hostname()
-        port: EXPGUIPORT
+    res.json EXP_DESCRIPTOR
 
 app.get "/api/conditions", (req, res) ->
     cli(res, "exp-conditions", ["-v"]

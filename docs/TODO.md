@@ -158,6 +158,7 @@
     * different icons for each file: condition, outcome, stdin, ...
     * only show an excerpt from overview, and to reduce its length?
     * monitoring logs
+    * symlinks should redirect, as long as they point inside the run/workdir
 
 * Use hash for representing GUI state as URL and using the browser history and back/forward
 
