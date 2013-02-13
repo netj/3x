@@ -1470,12 +1470,7 @@ class PlanTable extends PlanTableBase
                 </div>
                 """).appendTo(document.body)
             # attach the popover to the results table
-            #  in a somewhat complicated way to make it appear/disappear after a delay
-            POPOVER_SHOW_DELAY_INITIAL = 3000
-            POPOVER_SHOW_HIDE_DELAY    =  100
-            popoverShowTimeout = null
             displayPopover = ($tr) ->
-                popover.showDelay = POPOVER_SHOW_HIDE_DELAY
                 # TODO display only when there is an expanded condition column
                 # try to avoid attaching to the same row more than once
                 return if popover.closest("tr")?.index() is $tr.index()
@@ -1487,32 +1482,37 @@ class PlanTable extends PlanTableBase
                         .css
                             top:  "#{pos.top  - (popover.height() - $tr.height())/2}px"
                             left: "#{pos.left -  popover.width()                   }px"
+            #  in a somewhat complicated way to make it appear/disappear after a delay
+            POPOVER_SHOW_DELAY_INITIAL = 3000
+            POPOVER_SHOW_HIDE_DELAY    =  100
+            popoverShowTimeout = null
             popoverHideTimeout = null
             popoverResetDelayTimeout = null
+            resetTimerAndDo = (next) ->
+                popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
+                popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
+                # TODO is there any simple way to detect changes in row to fire displayPopover?
+                popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
+                do next
             rt.baseElement.parent()
-                .on("mouseover", "tbody tr", (e) ->
-                    popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
-                    popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
-                    popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
+                .on("click", "tbody tr", (e) -> resetTimerAndDo =>
+                    popover.showDelay = POPOVER_SHOW_HIDE_DELAY
+                    displayPopover $(this).closest("tr")
+                    )
+                .on("mouseover", "tbody tr", (e) -> resetTimerAndDo =>
                     popoverShowTimeout = setTimeout =>
+                        popover.showDelay = POPOVER_SHOW_HIDE_DELAY
                         displayPopover $(this).closest("tr")
                         popoverShowTimeout = null
                     , popover.showDelay ?= POPOVER_SHOW_DELAY_INITIAL
                     )
-                .on("click", "tbody tr", (e) ->
-                    popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
-                    popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
-                    popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
-                    displayPopover $(this).closest("tr")
-                    )
-                .on("mouseout",  "tbody tr", (e) ->
-                    popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
-                    popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
+                .on("mouseout",  "tbody tr", (e) -> resetTimerAndDo =>
                     popoverHideTimeout = setTimeout ->
                         popover.removeClass("in").remove()
                         popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
                         popoverResetDelayTimeout = setTimeout ->
                             popover.showDelay = POPOVER_SHOW_DELAY_INITIAL
+                            popoverResetDelayTimeout = null
                         , POPOVER_SHOW_DELAY_INITIAL / 3
                         popoverHideTimeout = null
                     , POPOVER_SHOW_HIDE_DELAY
