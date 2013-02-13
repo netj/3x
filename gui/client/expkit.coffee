@@ -914,26 +914,28 @@ displayChart = ->
     width = 960 - margin.left - margin.right
     height = 500 - margin.top - margin.bottom
 
-    xAxisLabel = ExpKit.results.columnNamesExpanded[0] # FIXME
-    yAxisLabel = ExpKit.results.columnNamesMeasured[0] # FIXME
-    xIndex = ExpKit.results.columnNames.indexOf(xAxisLabel)
-    yIndex = ExpKit.results.columnNames.indexOf(yAxisLabel)
+    isAllNumeric = (vs) -> not vs.some (v) -> isNaN parseFloat v
+    xColumn = (column for name, column of ExpKit.results.columns when column.isExpanded)[0]
+    yColumn = (column for name, column of ExpKit.results.columns when column.isMeasured)[0]
+
+    xAxisLabel = xColumn.name
+    yAxisLabel = yColumn.name
 
     log "drawing chart for", xAxisLabel, yAxisLabel
 
     # collect column data from table
     data = []
     series = 0
-    resultsTableRows = $("#results-table tbody tr")
+    $trs = ExpKit.results.baseElement.find("tbody tr")
+    resultsForRendering = ExpKit.results.resultsForRendering
     # TODO find(".aggregated")
-    data[series++] = resultsTableRows.find("td:nth(#{xIndex})").toArray()
-    data[series++] = resultsTableRows.find("td:nth(#{yIndex})").toArray()
+    data[series++] = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
 
-    valueOf = (cell) -> +$(cell).attr("data-value")
-    xData = (rowIdx) -> valueOf data[0][rowIdx]
-    yData = (rowIdx) -> valueOf data[1][rowIdx]
+    valueOf = (cell) -> cell.value
+    xData = (rowIdx) -> resultsForRendering[rowIdx][xColumn.index].value
+    yData = (rowIdx) -> resultsForRendering[rowIdx][yColumn.index].value
     # TODO multi series to come
-    dataForCharting = [0 .. data[0].length-1]
+    dataForCharting = data[0]
 
 
     log "data for charting", data, dataForCharting.map(xData)
@@ -994,12 +996,12 @@ displayChart = ->
       .enter().append("circle")
         .attr("class", "dot")
         .attr("r", 3.5)
-        .attr("cx",    (d) -> x(xData(d)))
+        .attr("cx",    (d) -> x(xData(d)) + x.rangeBand()/2)
         .attr("cy",    (d) -> y(yData(d)))
         .style("fill", "red")
 
     line = d3.svg.line()
-        .x((d) -> x(xData(d)))
+        .x((d) -> x(xData(d)) + x.rangeBand()/2)
         .y((d) -> y(yData(d)))
     svg.append("path")
         .datum(dataForCharting)
