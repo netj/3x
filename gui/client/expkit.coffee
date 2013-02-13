@@ -9,6 +9,7 @@ ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL ? ""
 log   = (args...) -> console.log   args...; args[0]
 error = (args...) -> console.error args...; args[0]
 
+# See: http://stackoverflow.com/questions/1470810/wrapping-long-text-in-css
 Array::joinTextsWithShy = (delim) ->
     ($("<div/>").text(v).html() for v in @).join "&shy;#{delim}"
 
@@ -61,6 +62,15 @@ mapCombination = (nestedList, f) ->
     mapped = []
     forEachCombination nestedList, (combination) -> mapped.push (f combination)
     mapped
+
+window.choose =
+choose = (n, items) ->
+    indexes = [0...items.length]
+    indexesChosen =
+        for i in [1..n]
+            indexes.splice _.random(0, indexes.length - 1), 1
+    indexesChosen.map (i) -> items[i]
+
 
 enumerate = (vs) -> vs.joinTextsWithShy ","
 
@@ -624,7 +634,7 @@ class ResultsTable extends CompositeElement
         """)
     @ROW_SKELETON: $("""
         <script id="results-table-row-skeleton" type="text/x-jsrender">
-          <tr class="result">
+          <tr class="result" data-ordinal="{{>~ordinal}}">
             {{for columns}}
             <td class="{{>className}} {{>type}}-type" data-value="{{>value}}">
               {{if aggregation}}
@@ -812,15 +822,16 @@ class ResultsTable extends CompositeElement
         # populate table body
         @baseElement.find("tbody").remove()
         tbody = $("<tbody>").appendTo(@baseElement)
-        for row in @resultsForRendering
+        for row,ordinal in @resultsForRendering
             tbody.append(ResultsTable.ROW_SKELETON.render(
                 columns: (
                     for name,idx in @columnNames
-                        c = $.extend columnMetadata[name], row[idx]
+                        c = $.extend {}, columnMetadata[name], row[idx]
                         c.formattedValue = c.formatter c.value
                         c
                 ), {
                     ExpKitServiceBaseURL
+                    ordinal
                     CELL_SKELETON: ResultsTable.CELL_SKELETON
                 }))
         tbody.find(".aggregated")
@@ -1463,12 +1474,56 @@ class PlanTable extends PlanTableBase
                 <div class="planner popover fade left" style="display:block;">
                     <div class="arrow"></div>
                     <div class="popover-inner">
+                        <h3 class="popover-title">Add to <i class="icon icon-time"></i>Plan</h3>
                         <div class="popover-content">
-                        <a class="btn add"><i class="icon icon-plus"></i> Add runs to <i class="icon icon-time"></i> Plan</a>
+                        <ul class="nav nav-list">
+                            <li><a class="btn add add-all"><i class="icon icon-repeat"></i> <b class="num-all">0</b> Full Combinations</a></li>
+                            <li><a class="btn add add-random"><i class="icon icon-random"></i> <b class="num-random">10</b> Random Runs</a>
+                            <input class="random-percent" type="range" min="1" max="100" step="1">
+                            </li>
+                        </ul>
+                        <div>From conditions <span class="expanded-conditions"></span></div>
                         </div>
                     </div>
                 </div>
                 """).appendTo(document.body)
+            popover.find(".random-percent")
+                .val(localStorage["#{@planTableId}_randomPercent"] ? 10)
+                .change((e) =>
+                    randomPercent = localStorage["#{@planTableId}_randomPercent"] =
+                        popover.find(".random-percent").val()
+                    numRandom = Math.max(1, Math.round(popover.numAllRuns * randomPercent/100))
+                    popover
+                        .find(".num-random").text(numRandom).end()
+                        .find(".add-random").toggleClass("disabled", popover.numAllRuns == numRandom)
+                )
+            # update popover configuration
+            updatePopoverContent = ($tr) =>
+                # TODO check if we can skip this
+                # prepare a values array for adding to plan later
+                currentDataRow = rt.resultsForRendering[+$tr.attr("data-ordinal")]
+                resultsTableColumns = rt.columns
+                conditionNames = []
+                popover.valuesArray =
+                    for name,allValues of @conditions.conditions
+                        conditionNames.push name
+                        column = resultsTableColumns[name]
+                        if column.isExpanded
+                            [currentDataRow[column.index].value]
+                        else
+                            values = @conditions.menuItemsSelected[name]
+                            if values?.length > 0 then values
+                            else allValues?.values ? [] # XXX latter should not happen in any case
+                popover.numAllRuns = _.foldr popover.valuesArray.map((vs) -> vs.length), (a,b) -> a*b
+                popover
+                    .find(".num-all").text(popover.numAllRuns).end()
+                    .find(".random-percent").change().end()
+                    .find(".expanded-conditions").find("*").remove().end().append(
+                        for name,i in conditionNames
+                            $("<span>").addClass("label label-info")
+                                .html("#{name}=#{popover.valuesArray[i].joinTextsWithShy(",")}")
+                                .after(" ")
+                    )
             # attach the popover to the results table
             displayPopover = ($tr) ->
                 # TODO display only when there is an expanded condition column
@@ -1476,12 +1531,15 @@ class PlanTable extends PlanTableBase
                 return if popover.closest("tr")?.index() is $tr.index()
                 popover.removeClass("in")
                 _.defer ->
+                    updatePopoverContent $tr
+                    # attach to the current row
                     $tr.find("td:nth(0)").append(popover)
                     pos = $tr.position()
                     popover.addClass("in")
                         .css
                             top:  "#{pos.top  - (popover.height() - $tr.height())/2}px"
                             left: "#{pos.left -  popover.width()                   }px"
+                            "z-index": 1000
             #  in a somewhat complicated way to make it appear/disappear after a delay
             POPOVER_SHOW_DELAY_INITIAL = 3000
             POPOVER_SHOW_HIDE_DELAY    =  100
@@ -1508,7 +1566,9 @@ class PlanTable extends PlanTableBase
                     )
                 .on("mouseout",  "tbody tr", (e) -> resetTimerAndDo =>
                     popoverHideTimeout = setTimeout ->
-                        popover.removeClass("in").remove()
+                        popover.removeClass("in")
+                            .css("z-index": -1000).appendTo(document.body)
+                            # XXX .remove() will break all attached event handlers, so send it away somewhere
                         popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
                         popoverResetDelayTimeout = setTimeout ->
                             popover.showDelay = POPOVER_SHOW_DELAY_INITIAL
@@ -1518,44 +1578,28 @@ class PlanTable extends PlanTableBase
                     , POPOVER_SHOW_HIDE_DELAY
                     )
                 .on("click", "tbody tr .add.btn", @addPlanFromRowHandler())
+
     @STATE: "REMAINING"
     addPlanFromRowHandler: =>
-        add = ($tr) =>
-            # first, remove our popover to prevent its content being mixed to the values
-            $tr.find(".planner.popover").remove()
-            cells = $tr.find("td").get()
-            # see which columns are the expanded conditions
-            expandedConditions = {}
-            $tr.closest(".dataTables_wrapper") # XXX coupling to DataTables
-                .find("th.condition.expanded .dataName").each ->
-                    $dataName = $(this)
-                    $th = $dataName.closest("th")
-                    expandedConditions[$dataName.text().trim()] = $th.index()
-            log "found expanded conditions", JSON.stringify expandedConditions
+        add = (strategy) =>
+            popover = @resultsActionPopover
             # don't proceed if no condition is expanded
-            if _.size(expandedConditions) is 0
+            if popover.numAllRuns is 0
                 error "Cannot add anything to plan: no expanded condition"
                 return
-            # TODO estimate size and confirm before adding to plan if too big
-            # and prepare the list of values
-            valuesMatrix =
-                for name,allValues of @conditions.conditions
-                    if (i = expandedConditions[name])?
-                        [$(cells[i]).text().trim()]
-                    else
-                        values = @conditions.menuItemsSelected[name]
-                        if values?.length > 0 then values
-                        else allValues?.values ? []
-            # check valuesMatrix to see if we are actually generating some plans
-            for values,idx in valuesMatrix when not values? or values.length is 0
+            valuesArray = popover.valuesArray
+            # check valuesArray to see if we are actually generating some plans
+            for values,idx in valuesArray when not values? or values.length is 0
                 name = (name of @conditions.conditions)[idx]
                 error "Cannot add anything to plan: no values for condition #{name}"
                 return
             # add generated combinations to the current plan
-            log "adding plans for", valuesMatrix
+            log "adding #{strategy} plans for", valuesArray
             rows = @plan.rows
             prevSerialLength = String(rows.length).length
-            forEachCombination valuesMatrix, (comb) => rows.push [++@plan.lastSerial, PlanTable.STATE, comb...]
+            # add to plans using the given strategy
+            PlanTable.PLAN_ADDITION_STRATEGY[strategy](popover) valuesArray, (comb) =>
+                rows.push [++@plan.lastSerial, PlanTable.STATE, comb...]
             # rewrite serial numbers if needed
             serialLength = String(rows.length).length
             if serialLength > prevSerialLength
@@ -1566,8 +1610,20 @@ class PlanTable extends PlanTableBase
                     row[serialIdx] = rewriteSerial row[serialIdx]
             @updatePlan @plan
         (e) ->
-            # find out from which row we're going to extract values
-            add $(e.srcElement).closest("tr")
+            # find which btn was pressed
+            for c in $(this).closest(".add").attr("class")?.split(/\s+/)
+                if m = c.match /^add-(.+)$/
+                    return add m[1]
+
+    @PLAN_ADDITION_STRATEGY:
+
+        all: (popover) -> forEachCombination
+
+        random: (popover) -> (valuesArray, addCombination) ->
+            allCombos = []
+            forEachCombination valuesArray, (comb) -> allCombos.push comb
+            numRandom = +popover.find(".num-random").text()
+            choose(numRandom, allCombos).forEach addCombination
 
 
 
