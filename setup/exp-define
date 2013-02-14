@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # exp-define -- Define element of the experiment
 # Usage: exp define WHAT NAME HOW...
-#        exp define condition NAME VALUE1 [VALUE2]...
-#        exp define program   NAME COMMAND
-#        exp define measure   NAME REGEXP_BEFORE  REGEXP  REGEXP_AFTER
+#        exp define program   NAME COMMAND...
+#        exp define condition NAME[:TYPE] VALUE1 [VALUE2]...
+#        exp define measure   NAME[:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
+#        exp define measure   NAME:TYPE   file     FILENAME
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
@@ -25,21 +26,6 @@ Name=$1; shift
 cd "$EXPROOT"
 
 case $What in
-    condition)
-        dir="condition/$Name="
-        checkIfNameIsSane "$Name" "$dir"
-        for Value; do
-            checkIfValueIsSane "$Value" "$Name" "$dir/$Value"
-        done
-        for Value; do
-            checkIfNameIsSane "$Name" "$Name"
-            vdir="$dir/$Value"
-            mkdir -p "$vdir"
-            touch "$vdir/env"
-        done
-        # TODO decide what to do with the other ones not mentioned
-        ;;
-
     program)
         dir="program/$Name"
         checkIfValueIsSane "$Name" program "$dir"
@@ -54,15 +40,53 @@ case $What in
         chmod +x "$dir"/run
         ;;
 
+    condition)
+        extractTypeFromName nominal # TODO default is nominal, but may we can try recognition
+        dir="condition/$Name="
+        checkIfNameIsSane "$Name" "$dir"
+        for Value; do
+            checkIfValueIsSane "$Value" "$Name" "$dir/$Value"
+        done
+        for Value; do
+            checkIfNameIsSane "$Name" "$Name"
+            vdir="$dir/$Value"
+            mkdir -p "$vdir"
+            touch "$vdir"/env
+        done
+        echo "$Type" >"$dir"/datatype
+        # TODO decide what to do with the other ones not mentioned
+        ;;
+
     measure)
+        measureType=${1:-}; shift || true
+        extractTypeFromName ratio # default is ratio
         dir="measure/$Name"
         checkIfNameIsSane "$Name" "$dir"
-        mkdir -p "$dir"
-        {
-            echo "#!/usr/bin/env bash"
-            echo "cat stdout stderr |"
-            echo -n "extract-regexp "; escape-args-for-shell "$@"
-        } >"$dir"/measure
+        case $measureType in 
+            extract)
+                [ $# -gt 0 ] || usage "$0" "Missing REGEXP_BEFORE"
+                [ $# -gt 1 ] || usage "$0" "Missing REGEXP"
+                [ $# -eq 3 ] || usage "$0" "Missing REGEXP_AFTER"
+                mkdir -p "$dir"
+                {
+                    echo "#!/usr/bin/env bash"
+                    echo "cat stdout stderr |"
+                    echo -n "extract-regexp "; escape-args-for-shell "$@"
+                } >"$dir"/measure
+                ;;
+            file)
+                [ $# -eq 1 ] || usage "$0" "Missing FILENAME"
+                mkdir -p "$dir"
+                {
+                    echo "#!/bin/sh"
+                    echo -n "echo "; escape-args-for-shell "$1"
+                } >"$dir"/measure
+                ;;
+            *)
+                usage "$0" "Unknown measure type $measureType"
+                ;;
+        esac
         chmod +x "$dir"/measure
+        echo "$Type" >"$dir"/datatype
         ;;
 esac

@@ -37,3 +37,16 @@ checkIfValueIsSane() {
             ;;
     esac
 }
+
+extractTypeFromName() {
+    local ty=${1:-}
+    case $Name in
+        *:*)
+            Type=${Name#*:}
+            Name=${Name%:$Type}
+            ;;
+        *) # assign default type when not found
+            Type=$ty
+            ;;
+    esac
+}

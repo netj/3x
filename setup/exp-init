@@ -20,7 +20,7 @@ if [ -d "$EXPROOT" ]; then
 fi
 
 # initialize the EXPROOT
-mkdir -p "$EXPROOT"
+mkdir -p -- "$EXPROOT"
 cd "$EXPROOT"
 
 # create the skeleton directories

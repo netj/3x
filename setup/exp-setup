@@ -1,18 +1,47 @@
 #!/usr/bin/env bash
 # exp-setup -- Setup a new computational experiment
 # Usage:
-#   exp-setup EXPROOT \
-#      --conditions [NAME=VALUE1[,VALUE2]]...   \
-#      --programs   [NAME='COMMAND']...         \
-#      --measures   ['...{{NAME =~ REGEXP}}...']...
+#   exp setup EXPROOT \
+#      --programs   [ NAME='COMMAND' ]...                                \
+#      --conditions [ NAME[:TYPE]=VALUE1[,VALUE2] ]...                   \
+#      --measures   [ --extract '...{{NAME[:TYPE] =~ REGEXP}}...' ]...   \
+#                   [ --file NAME:TYPE=FILENAME ]...
+# 
+# Example:
+#   # setup the experiment
+#   exp setup sorting-benchmark \
+#       --programs \
+#              sort='./gen-input | sort' \
+#              perl="./gen-input | perl -e 'print \$_ foreach sort <>;'" \
+#            python="./gen-input | python -c ' \
+#                      import sys; sys.stdout.writelines(
+#                                      sorted(sys.stdin.readlines()))' \
+#       --conditions N=1000,10000,100000,1000000 \
+#       --measures --extract 'Elapsed.*time.*: {{time =~ [0-9:.]+}}' \
+#       #
+#   # add some files
+#   echo 'seq $N | shuf' >condition/N=/gen-input
+#   chmod +x condition/N=/gen-input
+#   # then, start the GUI
+#   cd sorting-benchmark
+#   exp gui
+# 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
 set -eu
+shopt -s extglob
 
 [ $# -gt 0 ] || usage "$0" "EXPROOT is missing"
 
 EXPROOT=$1; shift
+
+# check if EXPROOT was sane
+case $EXPROOT in
+    --@(program|condition|measure)s)
+        usage "$0" "EXPROOT is missing"
+        ;;
+esac
 
 # prepare a script
 tmp=$(mktemp -d "${TMPDIR:-/tmp}"/exp-setup.XXXXXX)
@@ -21,64 +50,98 @@ trap "rm -rf $tmp" EXIT
 # generate a experiment setup script
 {
     echo "set -eu"
-    shopt -s extglob
+    be-quiet +1 || echo "set -x"
     . "$TOOLSDIR"/sanity-checks.sh
     # create the EXPROOT directory
     escape-args-for-shell exp-init "$EXPROOT"
     escape-args-for-shell cd "$EXPROOT"
     # map command line args to exp-define commands
+    generate-definition() { escape-args-for-shell exp define $what "$Name${Type:+:$Type}" "${how[@]}"; }
     what=
     for arg; do
+        how=()
         # detect section leader arguments
         case $arg in
-            --conditions|--programs|--measures)
-                what=${arg#--}
-                what=${what%s}
-                continue
-                ;;
             --*)
-                error "Unknown argument $arg"
-                ;;
+                a=${arg#--}
+                case $a in
+                    programs|conditions|measures)
+                        what=${a%s}
+                        whatMeasure=
+                        continue
+                        ;;
+                    extract|file)
+                        if [[ $what = measure ]]; then
+                            whatMeasure=$a
+                            continue
+                        fi
+                        ;;
+                esac
+                usage "$0" "Unknown argument $arg"
         esac
         if [ -z "$what" ]; then
-            msg +1 "Assuming --conditions for $arg"
-            what=condition
+            msg +1 "Assuming --programs for $arg"
+            what=program
         fi
         # translate $arg to the appropriate command
         case $what in
-            condition)
-                name=${arg%%=*}
-                checkIfNameIsSane "$name" "$name"
-                IFS=, how=(${arg#$name=})
-                for value in "${how[@]}"
-                do checkIfValueIsSane "$value" "$name" "--conditions $name=$value"
-                done
+            program)
+                Name=${arg%%=*}
+                how=("${arg#$Name=}")
+                Type= # no type for programs
+                checkIfValueIsSane "$Name" program "--programs $Name"
+                generate-definition
                 ;;
 
-            program)
-                name=${arg%%=*}
-                how=("${arg#$name=}")
-                checkIfValueIsSane "$name" program "--programs $name"
+            condition)
+                Name=${arg%%=*}
+                IFS=, how=(${arg#$Name=})
+                extractTypeFromName
+                checkIfNameIsSane "$Name" "$Name"
+                for value in "${how[@]}"
+                do checkIfValueIsSane "$value" "$Name" "--conditions $Name=$value"
+                done
+                generate-definition
                 ;;
 
             measure)
-                WHITESPACE=$'[ \t]'
-                LDELIM='{{' MDELIM='=~' RDELIM='}}'
-                regexpBefore=${arg%%$LDELIM*}
-                rest=${arg#$regexpBefore$LDELIM}
-                rest=${rest/#+([ 	])/}
-                name=${rest%%$MDELIM*}
-                rest=${rest#$name$MDELIM}
-                rest=${rest/#+([ 	])/}
-                name=${name/%+([ 	])/}
-                regexp=${rest%%$RDELIM*}
-                regexp=${regexp/%+([ 	])/}
-                regexpAfter=${rest#*$RDELIM}
-                how=("$regexpBefore" "$regexp" "$regexpAfter")
-                checkIfNameIsSane "$name" "--measures $name"
+                how=("$whatMeasure") 
+                case $whatMeasure in
+                    extract)
+                        WHITESPACE=$'[ \t]'
+                        LDELIM='{{' MDELIM='=~' RDELIM='}}'
+                        regexpBefore=${arg%%$LDELIM*}
+                        rest=${arg#$regexpBefore$LDELIM}
+                        rest=${rest/#+([ 	])/}
+                        Name=${rest%%$MDELIM*}
+                        rest=${rest#$Name$MDELIM}
+                        rest=${rest/#+([ 	])/}
+                        Name=${Name/%+([ 	])/}
+                        regexp=${rest%%$RDELIM*}
+                        regexp=${regexp/%+([ 	])/}
+                        regexpAfter=${rest#*$RDELIM}
+                        how+=("$regexpBefore" "$regexp" "$regexpAfter")
+                        # TODO support multiple Names in a single extract pattern
+                        extractTypeFromName
+                        checkIfNameIsSane "$Name" "--measures $Name"
+                        generate-definition
+                        ;;
+
+                    file)
+                        Name=${arg%%=*}
+                        how+=("${arg#$Name=}")
+                        extractTypeFromName
+                        [ -n "$Type" ] || usage "$0" "Missing TYPE for --measures $Name"
+                        checkIfNameIsSane "$Name" "--measures $Name"
+                        generate-definition
+                        ;;
+
+                    *)
+                        usage "$0" "Missing --measures type for $arg"
+                        ;;
+                esac
                 ;;
         esac
-        escape-args-for-shell exp define $what "$name" "${how[@]}"
     done
 } >"$tmp"/setup-script
 
