@@ -174,7 +174,7 @@ class DataRenderer
         # resolve type aliases
         type = DataRenderer.TYPE_ALIASES[type] ? type
         DataRenderer.FOR_TYPE[type] ? DataRenderer.DEFAULT_RENDERER
-    @htmlGeneratorForTypeAndData: (type, rows, colIdx) -> log(type); DataRenderer.forType(type).html rows, colIdx
+    @htmlGeneratorForTypeAndData: (type, rows, colIdx) -> DataRenderer.forType(type).html rows, colIdx
     @domManipulatorForTypeAndData: (type, rows, colIdx) -> DataRenderer.forType(type).dom rows, colIdx
 do ->
     new DataRenderer "string"
@@ -661,7 +661,7 @@ class ResultsTable extends CompositeElement
         """)
     @ROW_SKELETON: $("""
         <script type="text/x-jsrender">
-          <tr class="result" data-ordinal="{{>~ordinal}}">
+          <tr class="result" data-ordinal="{{>ordinal}}">
             {{for columns}}
             <td class="{{>className}} {{>type}}-type{{if aggregation
                 }} aggregated {{>aggregation.name}}{{/if}}"
@@ -751,7 +751,7 @@ class ResultsTable extends CompositeElement
         @optionElements.toggleIncludeEmpty?.prop("disabled", isRunIdExpanded)
         if isRunIdExpanded
             # present results without aggregation
-            log "no aggregation"
+            #log "no aggregation"
             @resultsForRendering =
                 for row,rowIdx in @results.rows
                     for name in @columnNames
@@ -1529,7 +1529,6 @@ class PlanTable extends PlanTableBase
                     .find(".random-percent").change().end()
                     .find(".conditions").find("*").remove().end().append(
                         for name,i in conditionNames
-                            log name, columns[name].isExpanded
                             $("<span>").addClass("label label-info")
                                 .toggleClass("expanded", columns[name].isExpanded is true)
                                 .html("#{name}=#{popover.valuesArray[i].joinTextsWithShy(",")}")
