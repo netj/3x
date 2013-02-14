@@ -43,10 +43,16 @@ case $cmd in
         url="http://$host:$port/"
         if $launchNew; then
             # fail if port is already in use
-            if nc -z $host $port; then
+            if nc -z localhost $port; then
                 [ $# -eq 0 ] ||
                     error "Cannot start GUI at port $port: already in use"
-                # TODO determine unused port automatically
+                # determine unused port automatically, by keep incrementing it
+                let ++port
+                while nc -z localhost $port; do
+                    let ++port
+                    # but never exceed the max port
+                    [[ $port -lt 65536 ]] || error "Cannot start GUI, specify an available port number"
+                done
             fi
             # launch server
             python_site_dir="$GUIDIR"/server/python-packages
@@ -66,7 +72,7 @@ case $cmd in
         # and launch web browser on known platforms
         case $(uname) in
             Darwin) # Mac
-                until nc -z $host $port; do sleep 0.1; done
+                until nc -z localhost $port; do sleep 0.1; done
                 open "$url"
                 ;;
         esac
