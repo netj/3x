@@ -57,6 +57,7 @@ trap "rm -rf $tmp" EXIT
     escape-args-for-shell cd "$EXPROOT"
     # map command line args to exp-define commands
     generate-definition() { escape-args-for-shell exp define $what "$Name${Type:+:$Type}" "${how[@]}"; }
+    conditionArgs=()
     what=
     for arg; do
         how=()
@@ -94,14 +95,8 @@ trap "rm -rf $tmp" EXIT
                 ;;
 
             condition)
-                Name=${arg%%=*}
-                IFS=, how=(${arg#$Name=})
-                extractTypeFromName
-                checkIfNameIsSane "$Name" "$Name"
-                for value in "${how[@]}"
-                do checkIfValueIsSane "$value" "$Name" "--conditions $Name=$value"
-                done
-                generate-definition
+                # process conditions later after coalescing values by name
+                conditionArgs+=("$arg")
                 ;;
 
             measure)
@@ -142,6 +137,19 @@ trap "rm -rf $tmp" EXIT
                 esac
                 ;;
         esac
+    done
+    # coalesce --conditions  x=a,b  y=c,d  x=e,f,g  -->  x=a,b,e,f,g  y=c,d
+    what=condition
+    eval "set -- $(coalesce-values-by-name = , "${conditionArgs[@]}")"
+    for arg; do
+        Name=${arg%%=*}
+        IFS=, how=(${arg#$Name=})
+        extractTypeFromName
+        checkIfNameIsSane "$Name" "$Name"
+        for value in "${how[@]}"
+        do checkIfValueIsSane "$value" "$Name" "--conditions $Name=$value"
+        done
+        generate-definition
     done
 } >"$tmp"/setup-script
 

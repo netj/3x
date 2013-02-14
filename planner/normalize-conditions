@@ -114,22 +114,7 @@ done
 [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
 # group by var names
-#  e.g., program=f program=g x=1 x=2 y=abcd z=
-#     -> program=f,g x=1,2 y=abcd z
-set -- $(coffee -e '
-[_,_,_,_, args...] = process.argv
-ordering = []
-values = {}
-for arg in args
-    [name,vs] = arg.split "=", 2
-    ordering.push name unless name in ordering
-    values[name] ?= []
-    if vs?
-        for v in vs.split ","
-            values[name].push v unless v in values[name]
-for name in ordering
-    console.log "#{name}=#{values[name].join ","}"
-' "$@")
+eval "set -- $(coalesce-values-by-name = , "$@")"
 
 # all the variables must be there, so prefix them
 if $fillNames; then
@@ -143,7 +128,7 @@ if $fillNames; then
     }
     args=()
     for name in $(exp-conditions); do
-        arg-has "$name(=*)?" "$@" || args+=("$name"=)
+        arg-has "^$name(=.*)?$" "$@" || args+=("$name"=)
     done
     [ ${#args[@]} -eq 0 ] || set -- "${args[@]}" "$@"
 fi
