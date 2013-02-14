@@ -154,8 +154,9 @@ normalizeNamedColumnLines = (
         .map((columns) ->
             row = []
             for column in columns
-                [name, value] = column.split "=", 2
-                continue unless name and value?
+                m = /^([^=]+)=(.*)$/.exec column
+                continue unless m
+                [__, name, value] = m
                 idx = columnIndex[name]
                 unless idx?
                     idx = columnNames.length
@@ -245,8 +246,8 @@ app.get "/api/conditions", (req, res) ->
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
-                        [name, value] = line.split "=", 2
-                        if name and value
+                        if m = /^([^=]+)=(.*)$/.exec line
+                            [__, name, value] = m
                             [name,
                                 values: value?.split ","
                                 type: "nominal" # FIXME extend exp-conditions to output datatype as well (-t?)
@@ -261,8 +262,8 @@ app.get "/api/measurements", (req, res) ->
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
-                    [name, type] = line.split ":", 2
-                    if name?
+                    if m = /^([^:]+):(.*)$/.exec line
+                        [__, name, type] = m
                         [name,
                             type: type
                         ]
@@ -450,10 +451,10 @@ p = child_process.spawn "watchmedo", [
     'shell-command'
     '--recursive'
     '--patterns=*'
-    '--command=echo ${watch_event_type} ${watch_src_path}'
+    '--command=echo ${watch_event_type} "${watch_src_path}"'
     batchRootDir
 ]
 splitter = p.stdout.pipe(StreamSplitter("\n"))
 splitter.on "token", (line) ->
-    [event, path] = String(line).split " ", 2
+    [__, event, path] = /^(\S+) (.*)$/.exec(line) ? []
     batchNotifyChange event, path
