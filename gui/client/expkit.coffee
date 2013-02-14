@@ -1484,7 +1484,7 @@ class PlanTable extends PlanTableBase
                             <input class="random-percent" type="range" min="1" max="100" step="1">
                             </li>
                         </ul>
-                        <div>From conditions <span class="expanded-conditions"></span></div>
+                        <div>From conditions <span class="conditions"></span></div>
                         </div>
                     </div>
                 </div>
@@ -1504,12 +1504,12 @@ class PlanTable extends PlanTableBase
                 # TODO check if we can skip this
                 # prepare a values array for adding to plan later
                 currentDataRow = rt.resultsForRendering[+$tr.attr("data-ordinal")]
-                resultsTableColumns = rt.columns
+                columns = rt.columns
                 conditionNames = []
                 popover.valuesArray =
                     for name,allValues of @conditions.conditions
                         conditionNames.push name
-                        column = resultsTableColumns[name]
+                        column = columns[name]
                         if column.isExpanded
                             [currentDataRow[column.index].value]
                         else
@@ -1520,9 +1520,11 @@ class PlanTable extends PlanTableBase
                 popover
                     .find(".num-all").text(popover.numAllRuns).end()
                     .find(".random-percent").change().end()
-                    .find(".expanded-conditions").find("*").remove().end().append(
+                    .find(".conditions").find("*").remove().end().append(
                         for name,i in conditionNames
+                            log name, columns[name].isExpanded
                             $("<span>").addClass("label label-info")
+                                .toggleClass("expanded", columns[name].isExpanded is true)
                                 .html("#{name}=#{popover.valuesArray[i].joinTextsWithShy(",")}")
                                 .after(" ")
                     )
