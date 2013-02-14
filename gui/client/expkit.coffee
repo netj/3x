@@ -205,6 +205,14 @@ do ->
 
 # More complex types
 do ->
+    new DataRenderer "hyperlink", (allRows, colIdx) ->
+        (v, rowIdxs, data, col, runColIdx) ->
+            if typeof rowIdxs is "number"
+                """
+                <a href="#{ExpKitServiceBaseURL}/#{v}/overview">#{v}</a>
+                """
+            else
+                v
     # aggregation/rendering for images
     new Aggregation "overlay", "image", Aggregation.FOR_NAME.count.func
     Aggregation.registerForType "image/png", "overlay", "count"
@@ -704,7 +712,7 @@ class ResultsTable extends CompositeElement
                 col =
                     dataName: name
                     dataIndex: columnIndex[name]
-                    type: measure.type
+                    type: if name is RUN_COLUMN_NAME then "hyperlink" else measure.type
                     isMeasured: yes
                     isInactive: @measurements.menusInactive[name]
                     isExpanded: @columnsToExpand[RUN_COLUMN_NAME]
