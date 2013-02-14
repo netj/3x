@@ -108,14 +108,11 @@ serializeFilter = (parsedFilter) ->
 class Aggregation
     constructor: (@name, @type, @func) ->
         Aggregation.FOR_NAME[@name] = @
-
     @FOR_NAME: {}
-
-    @FOR_TYPE: do ->
-        typesToAgg = {}
-        add = (maps...) -> _.extend typesToAgg, maps...
-        aggs = (names...) -> _.pick Aggregation.FOR_NAME, names...
-
+    @FOR_TYPE: {}
+    @registerForType: (type, names...) ->
+        _.extend (Aggregation.FOR_TYPE[type] ?= {}), (_.pick Aggregation.FOR_NAME, names...)
+    do ->
         # aggregation for standard measurement types N/O/I/R
         withNumbersIn = (vs) -> v for v in vs.map parseFloat when not isNaN v
         new Aggregation "count",    "number", (vs) -> vs?.length
@@ -154,64 +151,89 @@ class Aggregation
                     n++
                 (Math.sqrt(dsqsum / n))
             else null
-        add nominal  : aggs "count"  , "mode"  , "enumeration"
-        add ordinal  : aggs "median" , "mode"  , "min"       , "max"  , "count" , "enumeration"
-        add interval : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
-        add ratio    : aggs "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
+        Aggregation.registerForType "nominal"  , "count"  , "mode"  , "enumeration"
+        Aggregation.registerForType "ordinal"  , "median" , "mode"  , "min"       , "max"  , "count" , "enumeration"
+        Aggregation.registerForType "interval" , "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
+        Aggregation.registerForType "ratio"    , "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
 
-        # aggregation for images
-        new Aggregation "overlay", "object", do ->
-            MAX_IMAGES = 20 # TODO Chrome is sluggish at rendering many translucent images
-            BASE_OPACITY = 0.05 # minimum opacity
-            VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
-            (imgs, rows, colIdx, colIdxs, col) ->
-                if imgs?.length > 0
-                    runColIdx = colIdxs[RUN_COLUMN_NAME]
-                    numOverlaid = Math.min(MAX_IMAGES, rows.length)
-                    sampledRows =
-                        if rows.length <= MAX_IMAGES then rows
-                        # TODO can we do a better sampling?
-                        else rows[i] for i in [0...rows.length] by Math.floor(rows.length / MAX_IMAGES)
-                    divOpacity = (1 - BASE_OPACITY) / numOverlaid
-                    (for row,i in sampledRows
-                        """
-                        <img class="overlay"
-                        src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
-                        style="opacity: #{BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)};">
-                        """
-                    ).join ""
-        add "image/png": aggs "overlay", "count"
 
-        # TODO allow user to plug-in their custom aggregation functions
+# different rendering methods depending on data type
+class DataRenderer
+    # HTML generator, or DOM manipulator, or both can be used
+    @_ID:   (v,   rowIdxs, data, col, runColIdx) -> v
+    @_NOOP: ($td, rowIdxs, data, col, runColIdx) -> null
+    @ID:    (allRows, colIdx) -> DataRenderer._ID
+    @NOOP:  (allRows, colIdx) -> DataRenderer._NOOP
+    @FOR_TYPE: {}
+    constructor: (@type, @html = DataRenderer.ID, @dom = DataRenderer.NOOP) ->
+        DataRenderer.FOR_TYPE[@type] = @
+    @DEFAULT_RENDERER: new DataRenderer ""
+    @TYPE_ALIASES: {}
+    @addAliases: (ty, tys...) -> DataRenderer.TYPE_ALIASES[t] = ty for t in tys
+    @forType: (type) ->
+        # resolve type aliases
+        type = DataRenderer.TYPE_ALIASES[type] ? type
+        DataRenderer.FOR_TYPE[type] ? DataRenderer.DEFAULT_RENDERER
+    @htmlGeneratorForTypeAndData: (type, rows, colIdx) -> log(type); DataRenderer.forType(type).html rows, colIdx
+    @domManipulatorForTypeAndData: (type, rows, colIdx) -> DataRenderer.forType(type).dom rows, colIdx
+do ->
+    new DataRenderer "string"
+    DataRenderer.addAliases "string", "nominal"
+    new DataRenderer "number", (allRows, colIdx) ->
+        #when "number", "ordinal", "interval", "ratio"
+        # go through all the values of allRows at colIdx and determine precision
+        sumIntegral   = 0; maxIntegral   = 0; minIntegral   = 0
+        sumFractional = 0; maxFractional = 0; minFractional = 0
+        count = 0
+        for row in allRows
+            v = "#{row[colIdx].value}."
+            f = v.length - 1 - v.indexOf(".")
+            #i = v.length - 1 - f
+            #minIntegral    = Math.min minIntegral, i
+            #maxIntegral    = Math.max maxIntegral, i
+            #sumIntegral   += i
+            #maxFractional  = Math.max maxFractional, f
+            #minFractional  = Math.min maxFractional, f
+            sumFractional += f
+            count++
+        prec = Math.ceil(sumFractional / count)
+        do (prec) -> (v) ->
+            parseFloat(v).toFixed(prec) if v? and v != ""
+    DataRenderer.addAliases "number", "ratio", "interval", "ordinal"
+    # TODO ordinals could be or not be numbers, how about trying to detect them first?
 
-        typesToAgg
 
-    @DATA_FORMATTER_FOR_TYPE: (type, rows, colIdx) ->
-        switch type
-            when "string", "nominal"
-                _.identity
-            when "number", "ordinal", "interval", "ratio"
-                # go through all the values of rows at colIdx and determine precision
-                sumIntegral   = 0; maxIntegral   = 0; minIntegral   = 0
-                sumFractional = 0; maxFractional = 0; minFractional = 0
-                count = 0
-                for row in rows
-                    v = "#{row[colIdx].value}."
-                    f = v.length - 1 - v.indexOf(".")
-                    #i = v.length - 1 - f
-                    #minIntegral    = Math.min minIntegral, i
-                    #maxIntegral    = Math.max maxIntegral, i
-                    #sumIntegral   += i
-                    #maxFractional  = Math.max maxFractional, f
-                    #minFractional  = Math.min maxFractional, f
-                    sumFractional += f
-                    count++
-                prec = Math.ceil(sumFractional / count)
-                do (prec) ->
-                    (v) ->
-                        parseFloat(v).toFixed(prec) if v? and v != ""
-            else
-                _.identity
+# More complex types
+do ->
+    # aggregation/rendering for images
+    new Aggregation "overlay", "image", Aggregation.FOR_NAME.count.func
+    Aggregation.registerForType "image/png", "overlay", "count"
+    new DataRenderer "image", (allRows, colIdx) ->
+        MAX_IMAGES = 20 # TODO Chrome is sluggish at rendering many translucent images
+        BASE_OPACITY = 0.05 # minimum opacity
+        VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
+        (v, rowIdxs, data, col, runColIdx) ->
+            rowIdxs = [rowIdxs] if typeof rowIdxs is "number"
+            if rowIdxs?.length > 0
+                rows = (data.rows[rowIdx] for rowIdx in rowIdxs)
+                colIdx = col.dataIndex
+                numOverlaid = Math.min(MAX_IMAGES, rows.length)
+                sampledRows =
+                    if rows.length <= MAX_IMAGES then rows
+                    # TODO can we do a better sampling?
+                    else rows[i] for i in [0...rows.length] by Math.floor(rows.length / MAX_IMAGES)
+                divOpacity = (1 - BASE_OPACITY) / numOverlaid
+                """<span class="overlay-frame">"""+
+                (for row,i in sampledRows
+                    """
+                    <img class="overlay"
+                    src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
+                    style="opacity: #{BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)};">
+                    """
+                ).join("") + """</span>"""
+    DataRenderer.addAliases "image", "image/png", "image/jpeg", "image/gif" #, TODO ...
+
+
 
 
 simplifyURL = (url) ->
@@ -551,9 +573,6 @@ class ResultsTable extends CompositeElement
         @results = ResultsTable.EMPTY_RESULTS
         @resultsForRendering = null
         t = @
-        $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
-                @baseElement.find(".aggregated").popover("hide")
-            )
         @optionElements.toggleIncludeEmpty
            ?.prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
             .change((e) ->
@@ -618,7 +637,7 @@ class ResultsTable extends CompositeElement
         ).done(=> @optionElements.containerForStateDisplay?.removeClass("loading"))
 
     @HEAD_SKELETON: $("""
-        <script id="results-table-head-skeleton" type="text/x-jsrender">
+        <script type="text/x-jsrender">
           <tr>
             {{for columns}}
             <th class="{{>className}}"><span class="dataName">{{>dataName}}</span>
@@ -633,26 +652,12 @@ class ResultsTable extends CompositeElement
         </script>
         """)
     @ROW_SKELETON: $("""
-        <script id="results-table-row-skeleton" type="text/x-jsrender">
+        <script type="text/x-jsrender">
           <tr class="result" data-ordinal="{{>~ordinal}}">
             {{for columns}}
-            <td class="{{>className}} {{>type}}-type" data-value="{{>value}}">
-              {{if aggregation}}
-              <div class="aggregated {{>aggregation.name}}"
-                {{if type != "object" && values}}
-                data-placement="{{if isLastColumn}}left{{else}}bottom{{/if}}" data-trigger="click"
-                title="{{>aggregation.name}}{{if aggregation.name != 'enumeration'}} = {{:value}}{{/if}}"
-                data-html="true" data-content='<ul>
-                  {{for valuesDistinct}}
-                  <li>{{for #data tmpl=~CELL_SKELETON ~column=#parent.parent.data ~value=#data/}}</li>
-                  {{/for}}
-                </ul>'
-                {{/if}}
-                >{{:formattedValue}}</div>
-              {{else}}
-              {{for #data tmpl=~CELL_SKELETON ~column=#data ~value=value/}}
-              {{/if}}
-            </td>
+            <td class="{{>className}} {{>type}}-type{{if aggregation
+                }} aggregated {{>aggregation.name}}{{/if}}"
+                data-value="{{>value}}">{{:valueFormatted}}</td>
             {{/for}}
           </tr>
         </script>
@@ -674,6 +679,7 @@ class ResultsTable extends CompositeElement
         _.delay (=> do @_display; deferred.resolve()), 10
         deferred
     _display: =>
+        columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
         do =>
             # construct column definitions
             columns = {}
@@ -686,6 +692,7 @@ class ResultsTable extends CompositeElement
                 columns[name] =
                     name: name
                     dataName: name
+                    dataIndex: columnIndex[name]
                     type: if isExpanded then condition.type else "string"
                     isMeasured: no
                     isInactive: @conditions.menusInactive[name]
@@ -696,6 +703,7 @@ class ResultsTable extends CompositeElement
             for name,measure of @measurements.measurements when not @measurements.menusInactive[name]
                 col =
                     dataName: name
+                    dataIndex: columnIndex[name]
                     type: measure.type
                     isMeasured: yes
                     isInactive: @measurements.menusInactive[name]
@@ -727,7 +735,6 @@ class ResultsTable extends CompositeElement
             for name in @columnNames when @columns[name].isExpanded
                 @columns[name].indexAmongExpanded = idx++
                 name
-        columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
 
         # and preprocess data
         isRunIdExpanded = @columns[RUN_COLUMN_NAME]?.isExpanded ? false
@@ -738,25 +745,25 @@ class ResultsTable extends CompositeElement
             # present results without aggregation
             log "no aggregation"
             @resultsForRendering =
-                for row in @results.rows
+                for row,rowIdx in @results.rows
                     for name in @columnNames
                         value: row[columnIndex[name]]
+                        origin: rowIdx
         else
             # aggregate data
             groupRowsByColumns = (rows) =>
-                map = (row) => JSON.stringify (@columnNamesExpanded.map (name) -> row[columnIndex[name]])
-                red = (key, groupedRows) =>
+                idxs = [0...rows.length]
+                map = (rowIdx) => JSON.stringify (@columnNamesExpanded.map (name) -> rows[rowIdx][columnIndex[name]])
+                red = (key, groupedRowIdxs) =>
                     for name in @columnNames
                         col = @columns[name]
-                        idx = columnIndex[col.dataName]
+                        colIdx = col.dataIndex
                         if col.isExpanded
-                            value: groupedRows[0][idx]
+                            value: rows[groupedRowIdxs[0]][colIdx]
                         else
-                            values = (row[idx] for row in groupedRows)
-                            value: col.aggregation.func(values, groupedRows, idx, columnIndex, name)
-                            values: values
-                            valuesDistinct: _.uniq values
-                grouped = mapReduce(map, red)(rows)
+                            value: col.aggregation.func(rows[rowIdx][colIdx] for rowIdx in groupedRowIdxs)
+                            origin: _.sortBy(groupedRowIdxs, (rowIdx) -> rows[rowIdx][colIdx])
+                grouped = mapReduce(map, red)(idxs)
                 [_.values(grouped), _.keys(grouped)]
             [aggregatedRows, aggregatedGroups] = groupRowsByColumns(@results.rows)
             #log "aggregated results:", aggregatedRows
@@ -764,7 +771,7 @@ class ResultsTable extends CompositeElement
             # pad aggregatedRows with missing combination of condition values
             emptyRows = []
             if @optionElements.toggleIncludeEmpty?.is(":checked")
-                EMPTY_GROUPED_ROWS = EMPTY_VALUES = []
+                EMPTY_VALUES = []
                 columnValuesForGrouping =
                     for name in @columnNamesExpanded
                         @conditions.menuItemsSelected[name] ? @conditions.conditions[name].values
@@ -774,13 +781,10 @@ class ResultsTable extends CompositeElement
                         #log "padding empty row for #{key}"
                         emptyRows.push @columnNames.map (name) =>
                             col = @columns[name]
-                            idx = columnIndex[col.dataName]
                             if col.isExpanded
                                 value: group[col.indexAmongExpanded]
                             else
-                                value: col.aggregation.func(EMPTY_VALUES, EMPTY_GROUPED_ROWS, idx, columnIndex, name) ? ""
-                                values: EMPTY_VALUES
-                                valuesDistinct: EMPTY_VALUES
+                                value: col.aggregation.func(EMPTY_VALUES) ? ""
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
         #log "rendering results:", @resultsForRendering
@@ -791,17 +795,18 @@ class ResultsTable extends CompositeElement
         # populate table head
         thead = @baseElement.find("thead")
         thead.find("tr").remove()
-        columnMetadata = {}
+        columnMetadata = []
         thead.append(ResultsTable.HEAD_SKELETON.render(
             columns:
-                for name in @columnNames
+                for name,idx in @columnNames
                     col = @columns[name]
-                    columnMetadata[name] = _.extend {}, col,
+                    columnMetadata[idx] = _.extend {}, col,
                         className: "#{if col.isMeasured then "measurement" else "condition"
                                    }#{if col.isInactive then " muted"      else ""
                                    }#{if col.isExpanded then " expanded"   else ""
                                    }"
-                        formatter: Aggregation.DATA_FORMATTER_FOR_TYPE?(col.type, @resultsForRendering, col.index)
+                        # renderer can't be defined earlier because it needs to see the data
+                        renderer: DataRenderer.htmlGeneratorForTypeAndData(col.type, @resultsForRendering, col.index)
                         isLastColumn: col.index is @columnNames.length - 1
             , {ExpKitServiceBaseURL, isRunIdExpanded}
             ))
@@ -821,27 +826,21 @@ class ResultsTable extends CompositeElement
 
         # populate table body
         @baseElement.find("tbody").remove()
-        tbody = $("<tbody>").appendTo(@baseElement)
-        for row,ordinal in @resultsForRendering
-            tbody.append(ResultsTable.ROW_SKELETON.render(
-                columns: (
-                    for name,idx in @columnNames
-                        c = $.extend {}, columnMetadata[name], row[idx]
-                        c.formattedValue = c.formatter c.value
-                        c
-                ), {
-                    ExpKitServiceBaseURL
-                    ordinal
-                    CELL_SKELETON: ResultsTable.CELL_SKELETON
-                }))
-        tbody.find(".aggregated")
-            .popover(trigger: "manual")
-            .click((e) ->
-                tbody.find(".aggregated").not(this).popover("hide")
-                $(this).popover("show")
-                e.stopPropagation()
-                e.preventDefault()
-            )
+        tbody = $("<tbody>").append(
+            runColIdx = columnIndex[RUN_COLUMN_NAME]
+            for row,ordinal in @resultsForRendering
+                ResultsTable.ROW_SKELETON.render {
+                        ordinal
+                        columns:
+                            for c,idx in columnMetadata
+                                $.extend {}, c, row[idx],
+                                    valueFormatted: c.renderer(row[idx].value,
+                                            row[idx].origin, @results, c, runColIdx)
+                    }, {
+                        ExpKitServiceBaseURL
+                    }
+        ).appendTo(@baseElement)
+        # TODO apply DataRenderer dom mainpulator
 
         computeRequireTableWidth = (columnMetadata) ->
             width = 0

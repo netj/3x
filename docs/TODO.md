@@ -101,7 +101,7 @@
 * toggle results table's refresh button depending on new data
 
 * An infrastructure for interactive aggregated data display/inspection/provenance
-    * Refactor current table cell construction
+    * DONE Refactor current table cell construction
         * aggregated value display
         * popover data generation
     * To support interactive data inspection of aggregated cells
