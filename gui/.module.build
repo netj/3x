@@ -21,7 +21,7 @@ coffee -c -o . ../../server/*.coffee
 #  server depends on some python packages, e.g., watchdog
 [ -d python-packages -a python-packages -nt "$Self" ] || {
     export PYTHONPATH="$PWD/python-packages"
-    mkdir -p "$PYTHONPATH"
+    mkdir -p -- "$PYTHONPATH"
     easy_install --install-dir "$PYTHONPATH" --always-copy \
         watchdog \
         #

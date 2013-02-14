@@ -24,7 +24,7 @@ set -eu
 REPO=$1; shift
 
 # prepare some dirs for archive
-mkdir -p "$REPO"
+mkdir -p -- "$REPO"
 tmp=$(mktemp -d "${TMPDIR:-/tmp}"/archive.XXXXXX)
 trap "rm -rf $tmp" EXIT
 

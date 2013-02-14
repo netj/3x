@@ -22,7 +22,7 @@ copyFilesTo() {
     # rest are find predicates for matching excluded children of $src
     [ $# -eq 0 ] || set -- -o "$@"
     # prepare destination and copy files
-    mkdir -p "$dst"
+    mkdir -p -- "$dst"
     find "$src"/{,.}*  -maxdepth 0 ! \( \
             -type d \( -name '.' -o -name '..' \
                     -o -name '?*=*' -o -path '*=/*' \) "$@" \

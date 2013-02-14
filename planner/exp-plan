@@ -39,7 +39,7 @@ update-assembly-script >/dev/null
 # create the batch directory
 tmp="$EXPROOT/$EXPBATCH"
 trap "rm -rf $tmp" EXIT
-mkdir -p "$tmp"
+mkdir -p -- "$tmp"
 
 # knowing how to generate combinations is important
 permute() {

@@ -13,7 +13,7 @@ EXPWD=$1; shift
 EXPROOT=$(exp-findroot)
 
 # create the OUTPUTDIR with a working directory
-mkdir -p "$EXPWD"/workdir
+mkdir -p -- "$EXPWD"/workdir
 
 # decide some important environment values
 EXPWD=$(readlink -f "$EXPWD")

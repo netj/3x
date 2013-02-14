@@ -38,7 +38,7 @@ while read -r f; do
     g=`sed "$subst" <<<"$f"`
     h="$Dest/$g"
     d=`dirname "$h"`
-    [ -d "$d" ] || mkdir -p "$d"
+    [ -d "$d" ] || mkdir -p -- "$d"
     # customize contents
     sed "$subst" <"$f" >"$h.$$~"
     ! [ -x "$f" ] || chmod +x "$h.$$~"
