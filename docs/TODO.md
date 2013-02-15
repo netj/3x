@@ -104,19 +104,20 @@
     * DONE Refactor current table cell construction
         * aggregated value display
         * popover data generation
-    * To support interactive data inspection of aggregated cells
-        * Events mouseover/mouseout toggles it.
-        * As user hovers horizontally, the cell should display concrete value
+    * DONE To support interactive data inspection of aggregated cells
+        * DONE Events mouseover/mouseout toggles it. + SHIFT
+        * DONE As user hovers horizontally, the cell should display concrete value
           at the corresponding relative position of the mouse cursor to the
           width of the cell.
-        * ExpKit should provide the relative position of interest along with
+        * DONE ExpKit should provide the relative position of interest along with
           the cell, data row, position & all data rows in the group, aggregated
           value (summary) in the cell, so the data type handler can manipulate
           the cell's DOM to present the most appropriate thing.
-        * When user clicks, it should freeze and a popover with a link to the
+        * Run popover to open the originating run:
+          When user clicks, it should freeze and a popover with a link to the
           run (provenance) should appear.
     * Andreas' feedback
-        * some slider / mouse hover to vary one variable, to see what happens
+        * DONE some slider / mouse hover to vary one variable, to see what happens
           in other ones.
 * Use jQuery.appear to defer loading images
 

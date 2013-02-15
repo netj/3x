@@ -614,6 +614,8 @@ class ResultsTable extends CompositeElement
                    .on("activeMenusChanged", @display)
                    .on("filtersChanged", @load)
 
+        do @initBrushing
+
     load: =>
         displayNewResults = (newResults) =>
             #log "got results:", newResults
@@ -648,7 +650,7 @@ class ResultsTable extends CompositeElement
         <script type="text/x-jsrender">
           <tr>
             {{for columns}}
-            <th class="{{>className}}"><span class="dataName">{{>dataName}}</span>
+            <th class="{{>className}}" data-index="{{>index}}" data-dataIndex="{{>dataIndex}}"><span class="dataName">{{>dataName}}</span>
                 {{if isMeasured && !isExpanded}}<small>(<span class="aggregationName">{{>aggregation.name}}</span>)</small>{{/if}}
                 {{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
                 icon icon-folder-{{if isExpanded}}open{{else}}close{{/if}}-alt"
@@ -701,6 +703,7 @@ class ResultsTable extends CompositeElement
                     name: name
                     dataName: name
                     dataIndex: columnIndex[name]
+                    dataType: condition.type
                     type: if isExpanded then condition.type else "string"
                     isMeasured: no
                     isInactive: @conditions.menusInactive[name]
@@ -709,10 +712,12 @@ class ResultsTable extends CompositeElement
                     index: idx++
             #  then, measures
             for name,measure of @measurements.measurements when not @measurements.menusInactive[name]
+                type = if name is RUN_COLUMN_NAME then "hyperlink" else measure.type
                 col =
                     dataName: name
                     dataIndex: columnIndex[name]
-                    type: if name is RUN_COLUMN_NAME then "hyperlink" else measure.type
+                    dataType: type
+                    type: type
                     isMeasured: yes
                     isInactive: @measurements.menusInactive[name]
                     isExpanded: @columnsToExpand[RUN_COLUMN_NAME]
@@ -808,7 +813,7 @@ class ResultsTable extends CompositeElement
             columns:
                 for name,idx in @columnNames
                     col = @columns[name]
-                    columnMetadata[idx] = _.extend {}, col,
+                    columnMetadata[idx] = _.extend col,
                         className: "#{if col.isMeasured then "measurement" else "condition"
                                    }#{if col.isInactive then " muted"      else ""
                                    }#{if col.isExpanded then " expanded"   else ""
@@ -864,7 +869,6 @@ class ResultsTable extends CompositeElement
                             100
             width
 
-
         # finally, make the table interactive with DataTable
         @dataTable = $(@baseElement).dataTable
             # XXX @baseElement must be enclosed by a $() before .dataTable(),
@@ -886,11 +890,25 @@ class ResultsTable extends CompositeElement
             fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.resultsDataTablesState
             bStateSave: true
             oColReorder:
-                fnReorderCallback: => @optionElements.buttonResetColumnOrder?.toggleClass("disabled", @isColumnReordered())
+                fnReorderCallback: =>
+                    @optionElements.buttonResetColumnOrder?.toggleClass("disabled", @isColumnReordered())
+                    do @updateColumnIndexMappings
         do @updateColumnVisibility
+        do @updateColumnIndexMappings
 
         # trigger event for others
         _.defer => @trigger("changed", @resultsForRendering)
+
+    updateColumnIndexMappings: =>
+        # Construct column index mappings for others to build functions on top of it.
+        # Mapping the observed DOM index to the actual column index for either
+        # @resultsForRendering or @results.rows is hard because DataTables'
+        # ColReorder and fnSetColumnVis significantly changes the DOM.
+        $ths = @dataTable.find("thead:nth(0)").find("th")
+        @columnsRenderedToProcessed = $ths.map((i,th) -> +$(th).attr("data-index")    ).toArray()
+        @columnsRenderedToData      = $ths.map((i,th) -> +$(th).attr("data-dataIndex")).toArray()
+        @columnsRendered            = (@columns[@columnNames[i]] for i in @columnsRenderedToProcessed)
+        log "updateColumnIndexMappings", @columnsRenderedToProcessed, @columnsRenderedToProcessed, @columnsRendered
 
     isColumnReordered: =>
         colOrder = @getColumnOrdering()
@@ -913,6 +931,150 @@ class ResultsTable extends CompositeElement
         do @dataTable.fnDraw
 
 
+    initBrushing: =>
+        # setup brushing table cells, so as we hover over a td element, the
+        # cell as well as others will be displaying the raw data value
+        rt = @
+        brushingMode = off
+        brushingIsPossible = no
+        endBrushingTimeout = null
+        brushingRowProcessed = null
+        brushingLastRowIdx = null
+        brushingSetupRow = null
+        brushingCellRenderer = null
+        brushingTDs = null
+        brushingTDsOrigContent = null
+        brushingTDsAll = null
+        brushingTDsOrigCSSText = null
+        # cached
+        brushingTHs = null
+        runColIdx = null
+        @on "changed", => # precompute frequently used info every once the table changes
+            runColIdx = @results.names.indexOf RUN_COLUMN_NAME
+            brushingTHs = @dataTable.find("thead").eq(0).find("th")
+        updateBrushing = ($td, e) =>
+            return unless brushingIsPossible
+            colIdxRendered = $td.index()
+            return if @columnsRendered[colIdxRendered].isExpanded or not brushingTDs?
+            colIdxProcessed = @columnsRenderedToProcessed[colIdxRendered]
+            brushingCell = brushingRowProcessed[colIdxProcessed]
+            return unless brushingCell?.origin?.length > 0
+            # find out the relative position we're brushing
+            cursorRelPos = e.offsetX / $td[0].offsetWidth
+            n = brushingCell.origin.length - 1
+            brushingPos = Math.max(0, Math.min(n, Math.round(n * cursorRelPos)))
+            rowIdxData  = brushingCell.origin[brushingPos]
+            return if brushingLastRowIdx is rowIdxData # update only when there's change, o.w. flickering happens
+            brushingLastRowIdx = rowIdxData
+            do => # XXX debug
+                window.status = "#{@columnsRendered[colIdxRendered].name}: #{brushingPos}/#{brushingCell.origin.length-1} = #{cursorRelPos}"
+                log "updateBrushing", @columnsRendered[colIdxRendered].name, brushingSetupRow, rowIdxData, brushingPos, brushingCell.origin.length-1
+            # then, update the cells to corresponding values
+            brushingTDs.each (i,td) =>
+                colIdxRendered = $(td).index()
+                colIdxProcessed = @columnsRenderedToProcessed[colIdxRendered]
+                colIdxData      = @columnsRenderedToData[colIdxRendered]
+                # use DataRenderer to show them
+                c = @columnsRendered[colIdxRendered]
+                $(td).html(
+                    brushingCellRenderer[i](@results.rows[rowIdxData][colIdxData],
+                            rowIdxData, @results, c, runColIdx)
+                )
+        endBrushing = =>
+            # restore DOM of previous TR
+            if brushingSetupRow?
+                log "endBrushing", brushingSetupRow #, brushingTDs, brushingTDsOrigContent
+                brushingTDs.removeClass("brushing").each (i,td) =>
+                    $(td).contents().remove().end().append(brushingTDsOrigContent[i])
+                brushingTDsAll.each (i,td) =>
+                    td.style.cssText = brushingTDsOrigCSSText[i]
+                brushingRowProcessed = brushingSetupRow = brushingLastRowIdx =
+                    brushingCellRenderer =
+                    brushingTDs = brushingTDsOrigContent =
+                    brushingTDsAll = brushingTDsOrigCSSText =
+                        null
+        startBrushing = ($td, e) =>
+            # find which row we're brushing
+            $tr = $td.closest("tr")
+            rowIdxProcessed = $tr.attr("data-ordinal")
+            brushingIsPossible = not @columnsRendered[$td.index()].isExpanded and rowIdxProcessed?
+            if brushingIsPossible
+                rowIdxProcessed = +rowIdxProcessed
+                log "startBrushing", rowIdxProcessed
+                # setup the cells to start brushing
+                unless brushingSetupRow is rowIdxProcessed
+                    do endBrushing
+                    log "setting up row #{rowIdxProcessed} for brushing"
+                    brushingSetupRow = rowIdxProcessed
+                    brushingRowProcessed = @resultsForRendering[brushingSetupRow]
+                    brushingTDsAll = $tr.find("td")
+                    brushingTDs = brushingTDsAll.filter((i,td) => not @columnsRendered[i].isExpanded)
+                    groupedRowIdxs = brushingRowProcessed[@columnsRenderedToProcessed[brushingTDs.index()]]?.origin
+                    unless groupedRowIdxs?
+                        # filled empty row, makes no sense to brush here
+                        brushingRowProcessed = brushingSetupRow =
+                            brushingTDs = brushingTDsAll =
+                                null
+                        brushingIsPossible = no
+                        return
+                    brushingTDsOrigCSSText = []
+                    brushingTDsAll.each (i,td) =>
+                        # fix width of each cell we're going to touch
+                        brushingTDsOrigCSSText[i] = td.style.cssText
+                        # copy from thead
+                        $th = brushingTHs.eq(i)
+                        td.style.cssText += """;
+                            width: #{$th.css("width")} !important;
+                            min-height: #{td.offsetHeight}px !important;
+                            word-break: break-all;
+                            word-wrap: break-word;
+                        """ # XXX .style.cssText is the only way to give !important :S
+                    brushingTDsOrigContent = []
+                    brushingTDs.addClass("brushing").each (i,td) =>
+                        # detach the contents DOM and keep it safe
+                        brushingTDsOrigContent[i] = $(td).contents().detach()
+                    # prepare DataRenderer for each cell
+                    brushingCellRenderer = []
+                    processedForThisRow =
+                        for rowIdx in groupedRowIdxs
+                            for col in @results.rows[rowIdx]
+                                value: col
+                    log "DataRenderer", brushingRowProcessed, processedForThisRow
+                    brushingTDs.each (i,td) =>
+                        # derive a renderer using only the values within this row
+                        col = @columnsRendered[$(td).index()]
+                        brushingCellRenderer[i] =
+                            DataRenderer.htmlGeneratorForTypeAndData(col.dataType, processedForThisRow, col.dataIndex)
+                updateBrushing $td, e
+            else
+                # not on a brushable cell
+                do endBrushing
+        @baseElement.parent()
+            .on("mouseover", "tbody td", (e) ->
+                brushingMode = e.shiftKey
+                return unless brushingMode
+                endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
+                startBrushing $(@), e
+            )
+            .on("mousemove", "tbody td", _.throttle (e) ->
+                    # we can let Shift key immediately toggle the brushingMode,
+                    # but it seems not doing so gives better usability, e.g., when dragging
+                    unless brushingMode
+                        if e.shiftKey
+                            brushingMode = on
+                            startBrushing $(@), e
+                    #else
+                    #    unless e.shiftKey
+                    #        brushingMode = off
+                    #        do endBrushing
+                    updateBrushing $(@), e if brushingMode
+                , 100
+            )
+            .on("mouseout", "tbody td", (e) ->
+                endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
+                endBrushingTimeout = setTimeout endBrushing, 100
+                #do endBrushing
+            )
 
 
 displayChart = ->
