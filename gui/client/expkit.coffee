@@ -276,7 +276,7 @@ initTabs = ->
     # re-render some tables since it could be in bad shape while the tab wasn't active
     $(".navbar a[data-toggle='tab']").on "shown", (e) ->
         tab = $(e.target).attr("href").substring(1)
-        log "showing tab", tab
+        #log "showing tab", tab
         switch tab
             when "results"
                 ExpKit.results?.dataTable?.fnDraw()
@@ -920,7 +920,7 @@ class ResultsTable extends CompositeElement
         @columnsRenderedToProcessed = $ths.map((i,th) -> +$(th).attr("data-index")    ).toArray()
         @columnsRenderedToData      = $ths.map((i,th) -> +$(th).attr("data-dataIndex")).toArray()
         @columnsRendered            = (@columns[@columnNames[i]] for i in @columnsRenderedToProcessed)
-        log "updateColumnIndexMappings", @columnsRenderedToProcessed, @columnsRenderedToProcessed, @columnsRendered
+        #log "updateColumnIndexMappings", @columnsRenderedToProcessed, @columnsRenderedToProcessed, @columnsRendered
 
     isColumnReordered: =>
         colOrder = @getColumnOrdering()
@@ -978,9 +978,9 @@ class ResultsTable extends CompositeElement
             rowIdxData  = brushingCell.origin[brushingPos]
             return if brushingLastRowIdx is rowIdxData # update only when there's change, o.w. flickering happens
             brushingLastRowIdx = rowIdxData
-            do => # XXX debug
-                window.status = "#{@columnsRendered[colIdxRendered].name}: #{brushingPos}/#{brushingCell.origin.length-1} = #{cursorRelPos}"
-                log "updateBrushing", @columnsRendered[colIdxRendered].name, brushingSetupRow, rowIdxData, brushingPos, brushingCell.origin.length-1
+            #do => # XXX debug
+            #    window.status = "#{@columnsRendered[colIdxRendered].name}: #{brushingPos}/#{brushingCell.origin.length-1} = #{cursorRelPos}"
+            #    log "updateBrushing", @columnsRendered[colIdxRendered].name, brushingSetupRow, rowIdxData, brushingPos, brushingCell.origin.length-1
             # then, update the cells to corresponding values
             brushingTDs.each (i,td) =>
                 colIdxRendered = $(td).index()
@@ -995,7 +995,7 @@ class ResultsTable extends CompositeElement
         endBrushing = =>
             # restore DOM of previous TR
             if brushingSetupRow?
-                log "endBrushing", brushingSetupRow #, brushingTDs, brushingTDsOrigContent
+                #log "endBrushing", brushingSetupRow #, brushingTDs, brushingTDsOrigContent
                 brushingTDs.removeClass("brushing").each (i,td) =>
                     $(td).contents().remove().end().append(brushingTDsOrigContent[i])
                 brushingTDsAll.each (i,td) =>
@@ -1012,11 +1012,11 @@ class ResultsTable extends CompositeElement
             brushingIsPossible = not @columnsRendered[$td.index()].isExpanded and rowIdxProcessed?
             if brushingIsPossible
                 rowIdxProcessed = +rowIdxProcessed
-                log "startBrushing", rowIdxProcessed
+                #log "startBrushing", rowIdxProcessed
                 # setup the cells to start brushing
                 unless brushingSetupRow is rowIdxProcessed
                     do endBrushing
-                    log "setting up row #{rowIdxProcessed} for brushing"
+                    #log "setting up row #{rowIdxProcessed} for brushing"
                     brushingSetupRow = rowIdxProcessed
                     brushingRowProcessed = @resultsForRendering[brushingSetupRow]
                     brushingTDsAll = $tr.find("td")
@@ -1051,7 +1051,7 @@ class ResultsTable extends CompositeElement
                         for rowIdx in groupedRowIdxs
                             for col in @results.rows[rowIdx]
                                 value: col
-                    log "DataRenderer", brushingRowProcessed, processedForThisRow
+                    #log "DataRenderer", brushingRowProcessed, processedForThisRow
                     brushingTDs.each (i,td) =>
                         # derive a renderer using only the values within this row
                         col = @columnsRendered[$(td).index()]
@@ -1603,7 +1603,7 @@ class PlanTable extends PlanTableBase
         do @updateCountDisplay
 
     persist: =>
-        log "saving plan for later", @plan
+        #log "saving plan for later", @plan
         do @updateCountDisplay
         # persist in localStorage
         localStorage[@planTableId] = JSON.stringify @plan
@@ -1777,7 +1777,7 @@ class PlanTable extends PlanTableBase
                 error "Cannot add anything to plan: no values for condition #{name}"
                 return
             # add generated combinations to the current plan
-            log "adding #{strategy} plans for", valuesArray
+            #log "adding #{strategy} plans for", valuesArray
             rows = @plan.rows
             prevSerialLength = String(rows.length).length
             # add to plans using the given strategy
@@ -1809,14 +1809,6 @@ class PlanTable extends PlanTableBase
             choose(numRandom, allCombos).forEach addCombination
 
 
-
-## notifications via Socket.IO
-initSocketIO = ->
-    socket = io.connect ExpKitServiceBaseURL
-    # TODO move /api/description to here?
-    socket.on "news", (data) ->
-        log data
-        socket.emit "my other event", my: "data"
 
 # initialize UI
 $ ->
@@ -1855,6 +1847,5 @@ $ ->
     do initTitle
     do initChartUI
     do initBaseURLControl
-    do initSocketIO
     do initTabs
 
