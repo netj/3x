@@ -2,17 +2,17 @@
 # exp-plan -- plan experiments with given variables
 # Usage: exp plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
 # 
-# Use `exp conditions -v` to list available condition variables.
+# Use `exp inputs -v` to list available input variables.
 # 
 # 
 # Usage: exp plan results RESULTS_QUERY
 #        exp plan skip    RESULTS_QUERY
 # 
 # Another way to plan experiments is based on the results.  You can narrow
-# down the list of results and use the same set of conditions to plan more
-# experiments.  If you want to run conditions complementary to a set of
+# down the list of results and use the same set of inputs to plan more
+# experiments.  If you want to run inputs complementary to a set of
 # results, that is also possible with `exp plan skip`.  In this alternative
-# usage, you can plan more runs conditioning on the measurements so far.
+# usage, you can plan more runs conditioning on the outputs so far.
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
@@ -20,11 +20,11 @@
 set -eu
 
 [ $# -ge 1 ] || {
-    usage "$0" "At least program or one condition variable must be given" || true
+    usage "$0" "At least program or one input variable must be given" || true
     # show available variables
     echo
-    echo "For full combination of conditions, run: "
-    echo "  exp plan "$(exp-conditions)
+    echo "For full combination of inputs, run: "
+    echo "  exp plan "$(exp-inputs)
     false
 }
 
@@ -85,25 +85,25 @@ case $1 in
         exp-results "$@" >"$tmp"/plan.$results
 
         # transform the results into a batch plan
-        cut -f$(( 1 + $(exp-measures | wc -l) + 1 ))- <"$tmp"/plan.$results |
+        cut -f$(( 1 + $(exp-outputs | wc -l) + 1 ))- <"$tmp"/plan.$results |
         if $invertResults; then # TODO invert from the combination
             excl="$tmp"/plan.skipped
             sort | column -t >"$excl"
-            permute "" $(normalize-conditions -v \
+            permute "" $(normalize-inputs -v \
                 $(tr ' \t' '\n' <"$excl" | sed -n 's/=.*//p' | sort -u)) |
                 sort | column -t |
             comm -13 "$excl" -
-        else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate conditions
+        else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate inputs
         fi |
         sed 's/^/exp run /' | column -t >"$tmp"/plan.editing
         ;;
-    *) # by editing combinations generated from given condition values
+    *) # by editing combinations generated from given input values
         # normalize command-line arguments
-        args=($(normalize-conditions -nv "$@"))
+        args=($(normalize-inputs -nv "$@"))
         [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
         # permute the arguments and generate a batch plan
-        msg "Permuting conditions for ${@%%=*}..."
+        msg "Permuting inputs for ${@%%=*}..."
         permute "exp run" "$@" | column -t >"$tmp"/plan.editing
         ;;
 esac
@@ -122,7 +122,7 @@ if edit plan.editing plan.in-progress; then
         # Skip checks of serials at the end of each line, since this is exp-starts' job
         #! grep -E -v '\s+#\d+$' "$o" ||
         #    error "$EXPBATCH/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
-        # TODO check whether all condition values are sane
+        # TODO check whether all input values are sane
     }
     mv -f plan.editing plan.editing.orig
     sanitize plan.editing.orig plan.editing || {

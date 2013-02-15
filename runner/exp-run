@@ -21,14 +21,14 @@ cleanup() {
     set -e
     cd "$EXPWD" 2>/dev/null
     msg +2 "Archiving $EXPRUN to .exp/files/"
-    chmod a-w outcome stdout stderr 2>/dev/null || true
-    archive "$EXPARCHIVE" . ! -path ./outcome ! -path ./stdout ! -path ./stderr
+    chmod a-w output stdout stderr 2>/dev/null || true
+    archive "$EXPARCHIVE" . ! -path ./output ! -path ./stdout ! -path ./stderr
     )
     exit $c
 }
 trap cleanup EXIT
 
-# assemble it for running and measurement
+# assemble it for running and measuring outputs
 exp-assemble "$EXPWD" "$@"
 
 # run it
@@ -56,13 +56,13 @@ else
     exit $exitcode
 fi
 
-# run measurements
-for mx in measure/*/measure; do
+# run output measurements
+for mx in measures/*/measure; do
     m=$(basename "$(dirname "$mx")")
     if [ -x "$mx" ]; then
         # TODO under the same env
         echo "$m=$("$mx")"
     fi
-done >outcome
+done >output
 
 exit $exitcode

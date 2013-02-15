@@ -475,7 +475,7 @@ class ConditionsUI extends MenuDropdown
         super @baseElement, "condition"
         @conditions = {}
     load: =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/conditions")
+        $.getJSON("#{ExpKitServiceBaseURL}/api/inputs")
             .success(@initialize)
     initialize: (@conditions) =>
         do @clearMenu
@@ -500,7 +500,7 @@ class MeasurementsUI extends MenuDropdown
         localStorage["menuDropdownFilter_#{@menuName}"] = JSON.stringify @menuFilter
 
     load: =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/measurements")
+        $.getJSON("#{ExpKitServiceBaseURL}/api/outputs")
             .success(@initialize)
     initialize: (@measurements) =>
         do @clearMenu
@@ -648,8 +648,8 @@ class ResultsTable extends CompositeElement
             $.getJSON("#{ExpKitServiceBaseURL}/api/results",
                 runs: []
                 batches: []
-                conditions: JSON.stringify conditions
-                measures: JSON.stringify measures
+                inputs: JSON.stringify conditions
+                outputs: JSON.stringify measures
             ).success(displayNewResults)
         ).done(=> @optionElements.containerForStateDisplay?.removeClass("loading"))
 
@@ -1664,7 +1664,7 @@ class PlanTable extends PlanTableBase
                             <input class="random-percent" type="range" min="1" max="100" step="1">
                             </li>
                         </ul>
-                        <div>From conditions <span class="conditions"></span></div>
+                        <div>From inputs <span class="conditions"></span></div>
                         </div>
                     </div>
                 </div>
@@ -1768,13 +1768,13 @@ class PlanTable extends PlanTableBase
             popover = @resultsActionPopover
             # don't proceed if no condition is expanded
             if popover.numAllRuns is 0
-                error "Cannot add anything to plan: no expanded condition"
+                error "Cannot add anything to plan: no expanded inputs"
                 return
             valuesArray = popover.valuesArray
             # check valuesArray to see if we are actually generating some plans
             for values,idx in valuesArray when not values? or values.length is 0
                 name = (name of @conditions.conditions)[idx]
-                error "Cannot add anything to plan: no values for condition #{name}"
+                error "Cannot add anything to plan: no values for inputs variable #{name}"
                 return
             # add generated combinations to the current plan
             #log "adding #{strategy} plans for", valuesArray

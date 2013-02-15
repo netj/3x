@@ -20,9 +20,9 @@ codeForPatternDirs() {
         [ -d "$pattDir" ] || continue
         echo "# $pattDir"
         case $pattDir in
-            # measurements themselves need not any guards
-            measure/+([^/]))
-                name=${pattDir#measure/}
+            # outputs themselves need not any guards
+            output/+([^/]))
+                name=${pattDir#output/}
                 checkIfNameIsSane "$name" "$pattDir"
                 codeForMatchedPatternDir "$pattDir"
                 continue

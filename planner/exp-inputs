@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# exp-conditions -- enumerate condition variables
-# Usage: exp conditions [-v] [NAME]...
+# exp-inputs -- enumerate input variables
+# Usage: exp inputs [-v] [NAME]...
 # 
-# Enumerates all available condition variables.  If a NAME is given, it checks
+# Enumerates all available input variables.  If a NAME is given, it checks
 # if the variable is defined and enumerates.
 # 
 # Specify -v if you want to enumerate the possible values for each name as well.
@@ -30,18 +30,18 @@ cd "$EXPROOT"
 
 # prepare pattern directories to show
 if [ $# -eq 0 ]; then
-    # default is to show all condition variables
-    set -- program condition/*=*
+    # default is to show all input variables
+    set -- program input/*=*
 else
-    # map each condition name to pattern directory
+    # map each input name to pattern directory
     args=()
     for name in "$@"; do
         if [[ $name == "program" ]]; then
             path=program
         else
-            path=condition/$name=
+            path=input/$name=
         fi
-        [ -d "$path" ] || error "Undefined condition: $name"
+        [ -d "$path" ] || error "Undefined input: $name"
         args+=("$path")
     done
     set -- "${args[@]}"
@@ -49,7 +49,7 @@ fi
 
 # finally, show them with values when necessary
 if $enumValues; then
-    showCondition() {
+    showInput() {
         local name=$1
         local pattDir=$2
         local values=$(
@@ -64,11 +64,11 @@ if $enumValues; then
         echo "$name=$values"
     }
 else
-    showCondition() { echo "$1"; }
+    showInput() { echo "$1"; }
 fi
 for path in "$@"; do
     [ -e "$path" ] || continue
     name=$(basename "$path")
     name=${name%%=*}
-    showCondition $name "$path"
+    showInput $name "$path"
 done

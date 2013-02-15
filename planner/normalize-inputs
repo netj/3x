@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# normalize-conditions -- normalize condition specification
-# Usage: normalize-conditions -[nvp] [NAME[=VALUE[,VALUE]...]]...
-#        normalize-conditions -[nvp] DIR...
+# normalize-inputs -- normalize input specification
+# Usage: normalize-inputs -[nvp] [NAME[=VALUE[,VALUE]...]]...
+#        normalize-inputs -[nvp] DIR...
 # 
 # In addition to the obvious NAME=VALUE pairs, this also understands paths both
-# relative and absolute to either condition variables or values of condition
+# relative and absolute to either input variables or values of input
 # variables under the $EXPROOT, so you can rely on shell's file path completion.
 # 
 # Specify -n option to prepend any missing NAME.
@@ -12,7 +12,7 @@
 # Specify -p to pass thru any unrecognized argument. Otherwise, it will cause an error.
 # 
 # For processing arguments to a script, use as follows:
-#   args=($(normalize-conditions "$@"))
+#   args=($(normalize-inputs "$@"))
 #   [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 # 
 #
@@ -47,23 +47,23 @@ EXPROOT=$(exp-findroot)
 args=()
 restArgs=()
 for cond in "$@"; do
-    if [ -e "$cond" ]; then # infer condition name/value from path names
-        # e.g., program/f/ condition/x=/1 condition/x=/2.env condition/y=abcd condition/z=/
+    if [ -e "$cond" ]; then # infer input name/value from path names
+        # e.g., program/f/ input/x=/1 input/x=/2.env input/y=abcd input/z=/
         #    -> program=f x={1,2} y=abcd z
         cond=$(readlink -f "$cond")
         [ -d "$cond" ] || cond=${cond%.env}
         cond=${cond#$EXPROOT/}
         case $cond in
-            program|condition)
+            program|input)
                 args+=("$cond"=)
                 ;;
             program/*)
                 args+=(program="$(basename "$cond")")
                 ;;
-            condition/*=*)
-                name=${cond#condition/}
+            input/*=*)
+                name=${cond#input/}
                 name=${name%%=*}
-                value=${cond#condition/$name=}
+                value=${cond#input/$name=}
                 value=$(basename "$value")
                 args+=("$name=$value")
                 ;;
@@ -78,12 +78,12 @@ for cond in "$@"; do
                 fi
                 ;;
         esac
-        # then see if it's a valid condition
+        # then see if it's a valid input
         name=${cond%%=*}
         if [[ $name == "program" ]]; then
             pattDir="$EXPROOT"/program
         else
-            pattDir="$EXPROOT"/condition/$name=
+            pattDir="$EXPROOT"/input/$name=
         fi
         if ! [ -d "$pattDir" ]; then
             if $passUnrecognized; then
@@ -91,7 +91,7 @@ for cond in "$@"; do
                 restArgs+=("$cond")
                 continue
             else
-                error "Undefined condition $cond"
+                error "Undefined input $cond"
             fi
         fi
         valuePart=${cond#$name}
@@ -104,7 +104,7 @@ for cond in "$@"; do
             IFS=$OIFS
             for value in "${values[@]}"; do
                 [ -e "$pattDir/$value" -o -e "$pattDir/$value.env" ] ||
-                    error "Undefined condition: $name=$value"
+                    error "Undefined input: $name=$value"
             done
         fi
         args+=("$name=$valuePart")
@@ -127,7 +127,7 @@ if $fillNames; then
         return 1
     }
     args=()
-    for name in $(exp-conditions); do
+    for name in $(exp-inputs); do
         arg-has "^$name(=.*)?$" "$@" || args+=("$name"=)
     done
     [ ${#args[@]} -eq 0 ] || set -- "${args[@]}" "$@"
@@ -139,7 +139,7 @@ if $fillValues; then
     for cond in "$@"; do
         name=${cond%%=*}
         values=${cond#$name=}
-        [ -n "$values" ] || cond=$(exp-conditions -v "$name")
+        [ -n "$values" ] || cond=$(exp-inputs -v "$name")
         args+=("$cond")
     done
     [ ${#args[@]} -gt 0 -o ${#restArgs[0]} -gt 0 ] || exit 0
@@ -150,7 +150,7 @@ fi
 ! $passUnrecognized || [ ${#restArgs[@]} -eq 0 ] || set -- "$@" "" "${restArgs[@]}"
 
 # output the normalized arguments, so it can be used in the following manner:
-#   set -- $(normalize-conditions "$@")
+#   set -- $(normalize-inputs "$@")
 for arg in "$@"; do
     # TODO escape whitespace?
     echo "$arg"

@@ -42,7 +42,7 @@ for path in "$@"; do
         if [ -d "$path" ]; then
             # a directory containing files and nested patterns
             case $path in
-                @(condition|program)/*)
+                @(input|program)/*)
                     # copy files
                     copyFilesTo "$EXPWDabbrev"/workdir/ "$path" \
                         -type f \( -name 'env' \
@@ -81,12 +81,12 @@ for path in "$@"; do
                         fi
                     done
                     ;;
-                measure/*)
+                output/*)
                     m=$path
-                    m=${m#measure/}
+                    m=${m#output/}
                     m=${m%%/*}
-                    # copy files of measure
-                    copyFilesTo "$EXPWDabbrev"/measure/"$m" "$path" \
+                    # copy files of output
+                    copyFilesTo "$EXPWDabbrev"/measures/"$m" "$path" \
                         # nothing to exclude
                         #
                     ;;

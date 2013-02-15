@@ -24,7 +24,7 @@ mkdir -p -- "$EXPROOT"
 cd "$EXPROOT"
 
 # create the skeleton directories
-mkdir -p .exp/{files,gui} condition measure program run/batch
+mkdir -p .exp/{files,gui} input output program run/batch
 
 # copy some default files
 customize "$DATADIR"/exp.template <<RULES

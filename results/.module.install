@@ -1,4 +1,4 @@
 exp-results             $TOOLSDIR/
 compile-filter          $TOOLSDIR/
 
-exp-measures            $TOOLSDIR/
+exp-outputs             $TOOLSDIR/

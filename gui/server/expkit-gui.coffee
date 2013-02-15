@@ -43,7 +43,7 @@ express.static.mime.define
     """.split /\s+/
 
 RUN_OVERVIEW_FILENAMES = """
-    condition outcome
+    input output
     stdout stderr exitcode rusage
     env args stdin
     assembly
@@ -241,8 +241,8 @@ app.all "/api/*", (req, res, next) ->
 app.get "/api/description", (req, res) ->
     res.json EXP_DESCRIPTOR
 
-app.get "/api/conditions", (req, res) ->
-    cli(res, "exp-conditions", ["-v"]
+app.get "/api/inputs", (req, res) ->
+    cli(res, "exp-inputs", ["-v"]
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
@@ -250,15 +250,15 @@ app.get "/api/conditions", (req, res) ->
                             [__, name, value] = m
                             [name,
                                 values: value?.split ","
-                                type: "nominal" # FIXME extend exp-conditions to output datatype as well (-t?)
+                                type: "nominal" # FIXME extend exp-inputs to output datatype as well (-t?)
                             ]
                     )
                 .join (pairs) -> next (_.object pairs)
-    ) (err, conditions) ->
-        res.json conditions unless err
+    ) (err, inputs) ->
+        res.json inputs unless err
 
-app.get "/api/measurements", (req, res) ->
-    cli(res, "exp-measures", []
+app.get "/api/outputs", (req, res) ->
+    cli(res, "exp-outputs", []
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
@@ -269,21 +269,21 @@ app.get "/api/measurements", (req, res) ->
                         ]
                 )
                 .join (pairs) -> next (_.object pairs)
-    ) (err, measurements) ->
+    ) (err, outputs) ->
         unless err
-            measurements[RUN_COLUMN_NAME] =
+            outputs[RUN_COLUMN_NAME] =
                 type: "nominal"
-            res.json measurements
+            res.json outputs
 
 app.get "/api/results", (req, res) ->
     args = []
     # TODO runs/batches
-    conditions = (try JSON.parse req.param("conditions")) ? {}
-    measures   = (try JSON.parse req.param("measures")  ) ? {}
-    for name,values of conditions
+    inputs  = (try JSON.parse req.param("inputs") ) ? {}
+    outputs = (try JSON.parse req.param("outputs")) ? {}
+    for name,values of inputs
         if values?.length > 0
             args.push "#{name}=#{values.join ","}"
-    for name,exprs of measures when _.isArray exprs
+    for name,exprs of outputs when _.isArray exprs
         for [rel, literal] in exprs
             args.push "#{name}#{rel}#{literal}"
     cli(res, "exp-results", args

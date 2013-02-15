@@ -169,6 +169,9 @@
 
 * DONE add right margin to icons in h2 instead of space
 
+* substitute condition -> input
+* substitute measure/measurement -> output
+
 ## Wild ideas
 * temporal trends in runs
 * approximation/prediction of measurements, i.e., measures without actual runs

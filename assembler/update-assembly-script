@@ -13,7 +13,7 @@ let SHLVL--
 update-assembly-script() {
     local scpt=$1; shift
     if ! [ -s "$scpt" ] ||
-        [ condition -nt "$scpt" -o measure -nt "$scpt" -o program -nt "$scpt" ] ||
+        [ input -nt "$scpt" -o output -nt "$scpt" -o program -nt "$scpt" ] ||
         find "$0" $(type -p generate-assembly-script) "$@" -newer "$scpt" | read; then
         msg "Updating $scpt"
         local tmp=$(mktemp "$scpt".XXXXXX)
@@ -30,5 +30,5 @@ update-assembly-script() {
     fi
 }
 assembleScript=.exp/assemble.sh
-update-assembly-script $assembleScript program condition/?*=* measure/*
+update-assembly-script $assembleScript program input/?*=* output/*
 echo $assembleScript

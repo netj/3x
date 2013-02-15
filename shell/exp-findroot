@@ -6,7 +6,7 @@
 # Created: 2012-11-01
 set -eu
 
-is-root() { [ -d .exp -a -d condition -a -d program ]; }
+is-root() { [ -d .exp -a -d program -a -d input -a -d output ]; }
 
 if [ -n "${EXPROOT:-}" ]; then
     if [ -d "$EXPROOT" ] && cd "$EXPROOT" && is-root; then

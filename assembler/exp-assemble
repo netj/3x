@@ -24,7 +24,7 @@ cd "$EXPROOT"
 # prepare the assemble script
 assembleScript=$(update-assembly-script)
 
-# assemble the conditions for experiment
+# assemble the inputs for experiment
 msg "Assembling $EXPRUN for $*"
 : >"$EXPWD"/assembly
 (
@@ -50,7 +50,7 @@ msg "Assembling $EXPRUN for $*"
     }
 
     # record environment variables
-    envFiles=(condition/env.default)
+    envFiles=(input/env.default)
     if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
         envVarNames=$(list-var-names "${envFiles[@]}")
         msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
@@ -61,7 +61,7 @@ msg "Assembling $EXPRUN for $*"
         } >/dev/null
     fi
 
-    # record condition variables, so they can populate the environment
+    # record input variables, so they can populate the environment
     for param in "$@"; do echo "$param"; done >>"$EXPWD"/env
     be-quiet +3 || set -x
     declare -r "$@"
@@ -82,8 +82,8 @@ if ! [ -x "$EXPWD"/workdir/run ]; then
     error "Assembly failed for $EXPRUN: No executable \`run' exists"
 fi
 
-# record all condition parameters again in a separate file
-for param in "$@"; do echo "$param"; done >"$EXPWD"/condition
+# record all input parameters again in a separate file
+for param in "$@"; do echo "$param"; done >"$EXPWD"/input
 
 # make sure some files exist
 cp -af "$assembleScript" "$EXPWD"/assemble.sh

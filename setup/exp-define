@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # exp-define -- Define element of the experiment
 # Usage: exp define WHAT NAME HOW...
-#        exp define program   NAME COMMAND...
-#        exp define condition NAME[:TYPE] VALUE1 [VALUE2]...
-#        exp define measure   NAME[:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
-#        exp define measure   NAME:TYPE   file     FILENAME
+#        exp define program  NAME COMMAND...
+#        exp define input    NAME[:TYPE] VALUE1 [VALUE2]...
+#        exp define output   NAME[:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
+#        exp define output   NAME:TYPE   file     FILENAME
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
@@ -40,9 +40,9 @@ case $What in
         chmod +x "$dir"/run
         ;;
 
-    condition)
+    input)
         extractTypeFromName nominal # TODO default is nominal, but may we can try recognition
-        dir="condition/$Name="
+        dir="input/$Name="
         checkIfNameIsSane "$Name" "$dir"
         for Value; do
             checkIfValueIsSane "$Value" "$Name" "$dir/$Value"
@@ -57,12 +57,12 @@ case $What in
         # TODO decide what to do with the other ones not mentioned
         ;;
 
-    measure)
-        measureType=${1:-}; shift || true
+    output)
+        outputType=${1:-}; shift || true
         extractTypeFromName ratio # default is ratio
-        dir="measure/$Name"
+        dir="output/$Name"
         checkIfNameIsSane "$Name" "$dir"
-        case $measureType in 
+        case $outputType in 
             extract)
                 [ $# -gt 0 ] || usage "$0" "Missing REGEXP_BEFORE"
                 [ $# -gt 1 ] || usage "$0" "Missing REGEXP"
@@ -83,7 +83,7 @@ case $What in
                 } >"$dir"/measure
                 ;;
             *)
-                usage "$0" "Unknown measure type $measureType"
+                usage "$0" "Unknown output type $outputType"
                 ;;
         esac
         chmod +x "$dir"/measure

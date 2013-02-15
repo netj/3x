@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# exp-results -- enumerate experiment outcomes
+# exp-results -- enumerate experiment outputs with inputs
 # Usage: exp results [BATCH | RUN]... [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]...
 # 
 # You can specify from which BATCH or RUNs you want to enumerate the results.
@@ -8,17 +8,17 @@
 # 
 #     exp results run
 # 
-# Furthermore, if you specify conditions after the BATCH and RUNs, only the
-# results satisfying them will be listed.  Use `exp conditions -v` to see
-# available condition variables and values.  For the defined measurements,
-# use `exp measures` to see their names and types.
+# Furthermore, if you specify inputs after the BATCH and RUNs, only the
+# results satisfying them will be listed.  Use `exp inputs -v` to see
+# available input variables and values.  For the defined output variables,
+# use `exp outputs` to see their names and types.
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07
 set -eu
 
-[ $# -gt 0 ] || usage "$0" "At least a RUN/BATCH directory or condition variable must be given"
+[ $# -gt 0 ] || usage "$0" "At least a RUN/BATCH directory or input variable must be given"
 
 EXPROOT=$(exp-findroot)
 export EXPROOT
@@ -58,7 +58,7 @@ msg +1 "Considering runs under ${runs[*]}"
 
 ## normalize rest of the command-line arguments
 msg +2 "Normalizing filter $*"
-args=($(normalize-conditions -p "$@" | grep -v '=$' || true))
+args=($(normalize-inputs -p "$@" | grep -v '=$' || true))
 [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
 msg +2 "Compiling filter $*"
@@ -72,15 +72,15 @@ else
     findPredicate=(-true)
 fi
 
-## find matching conditions to get outcomes
+## find matching inputs to get outputs
 msg +1 "Filtering results with $*"
-find "${runs[@]}" -name outcome \
+find "${runs[@]}" -name output \
     "${findPredicate[@]}" -print |
-while read -r outcome; do
-    run=${outcome%/outcome}
+while read -r output; do
+    run=${output%/output}
     run=$(cd "$run" && pwd -P); run=${run#$EXPROOT/}
-    condition=$run/condition
-    [ -r "$outcome" ] || continue
-    echo "$run"$'\t'"$(tr '\n' '\t' <"$outcome")$((sort | tr '\n' '\t') <"$condition")"
+    input=$run/input
+    [ -r "$output" ] || continue
+    echo "$run"$'\t'"$(tr '\n' '\t' <"$output")$((sort | tr '\n' '\t') <"$input")"
 done |
 if [ -t 1 ]; then column -t; else cat; fi

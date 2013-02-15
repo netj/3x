@@ -2,10 +2,10 @@
 # exp-setup -- Setup a new computational experiment
 # Usage:
 #   exp setup EXPROOT \
-#      --programs   [ NAME='COMMAND' ]...                                \
-#      --conditions [ NAME[:TYPE]=VALUE1[,VALUE2] ]...                   \
-#      --measures   [ --extract '...{{NAME[:TYPE] =~ REGEXP}}...' ]...   \
-#                   [ --file NAME:TYPE=FILENAME ]...
+#      --programs [ NAME='COMMAND' ]...                                \
+#      --inputs   [ NAME[:TYPE]=VALUE1[,VALUE2] ]...                   \
+#      --outputs  [ --extract '...{{NAME[:TYPE] =~ REGEXP}}...' ]...   \
+#                 [ --file NAME:TYPE=FILENAME ]...
 # 
 # Example:
 #   # setup the experiment
@@ -16,12 +16,12 @@
 #            python="./gen-input | python -c ' \
 #                      import sys; sys.stdout.writelines(
 #                                      sorted(sys.stdin.readlines()))' \
-#       --conditions N=1000,10000,100000,1000000 \
-#       --measures --extract 'Elapsed.*time.*: {{time =~ [0-9:.]+}}' \
+#       --inputs N=1000,10000,100000,1000000 \
+#       --outputs --extract 'Elapsed.*time.*: {{time =~ [0-9:.]+}}' \
 #       #
 #   # add some files
-#   echo 'seq $N | shuf' >condition/N=/gen-input
-#   chmod +x condition/N=/gen-input
+#   echo 'seq $N | shuf' >input/N=/gen-input
+#   chmod +x input/N=/gen-input
 #   # then, start the GUI
 #   cd sorting-benchmark
 #   exp gui
@@ -38,7 +38,7 @@ EXPROOT=$1; shift
 
 # check if EXPROOT was sane
 case $EXPROOT in
-    --@(program|condition|measure)s)
+    --@(program|input|output)s)
         usage "$0" "EXPROOT is missing"
         ;;
 esac
@@ -57,7 +57,7 @@ trap "rm -rf $tmp" EXIT
     escape-args-for-shell cd "$EXPROOT"
     # map command line args to exp-define commands
     generate-definition() { escape-args-for-shell exp define $what "$Name${Type:+:$Type}" "${how[@]}"; }
-    conditionArgs=()
+    inputArgs=()
     what=
     for arg; do
         how=()
@@ -66,14 +66,14 @@ trap "rm -rf $tmp" EXIT
             --*)
                 a=${arg#--}
                 case $a in
-                    programs|conditions|measures)
+                    programs|inputs|outputs)
                         what=${a%s}
-                        whatMeasure=
+                        whatOutput=
                         continue
                         ;;
                     extract|file)
-                        if [[ $what = measure ]]; then
-                            whatMeasure=$a
+                        if [[ $what = output ]]; then
+                            whatOutput=$a
                             continue
                         fi
                         ;;
@@ -94,14 +94,14 @@ trap "rm -rf $tmp" EXIT
                 generate-definition
                 ;;
 
-            condition)
-                # process conditions later after coalescing values by name
-                conditionArgs+=("$arg")
+            input)
+                # process inputs later after coalescing values by name
+                inputArgs+=("$arg")
                 ;;
 
-            measure)
-                how=("$whatMeasure") 
-                case $whatMeasure in
+            output)
+                how=("$whatOutput") 
+                case $whatOutput in
                     extract)
                         WHITESPACE=$'[ \t]'
                         LDELIM='{{' MDELIM='=~' RDELIM='}}'
@@ -118,7 +118,7 @@ trap "rm -rf $tmp" EXIT
                         how+=("$regexpBefore" "$regexp" "$regexpAfter")
                         # TODO support multiple Names in a single extract pattern
                         extractTypeFromName
-                        checkIfNameIsSane "$Name" "--measures $Name"
+                        checkIfNameIsSane "$Name" "--outputs $Name"
                         generate-definition
                         ;;
 
@@ -126,28 +126,28 @@ trap "rm -rf $tmp" EXIT
                         Name=${arg%%=*}
                         how+=("${arg#$Name=}")
                         extractTypeFromName
-                        [ -n "$Type" ] || usage "$0" "Missing TYPE for --measures $Name"
-                        checkIfNameIsSane "$Name" "--measures $Name"
+                        [ -n "$Type" ] || usage "$0" "Missing TYPE for --outputs $Name"
+                        checkIfNameIsSane "$Name" "--outputs $Name"
                         generate-definition
                         ;;
 
                     *)
-                        usage "$0" "Missing --measures type for $arg"
+                        usage "$0" "Missing --outputs type for $arg"
                         ;;
                 esac
                 ;;
         esac
     done
-    # coalesce --conditions  x=a,b  y=c,d  x=e,f,g  -->  x=a,b,e,f,g  y=c,d
-    what=condition
-    eval "set -- $(coalesce-values-by-name = , "${conditionArgs[@]}")"
+    # coalesce --inputs  x=a,b  y=c,d  x=e,f,g  -->  x=a,b,e,f,g  y=c,d
+    what=input
+    eval "set -- $(coalesce-values-by-name = , "${inputArgs[@]}")"
     for arg; do
         Name=${arg%%=*}
         IFS=, how=(${arg#$Name=})
         extractTypeFromName
         checkIfNameIsSane "$Name" "$Name"
         for value in "${how[@]}"
-        do checkIfValueIsSane "$value" "$Name" "--conditions $Name=$value"
+        do checkIfValueIsSane "$value" "$Name" "--inputs $Name=$value"
         done
         generate-definition
     done
