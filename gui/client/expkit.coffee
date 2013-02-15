@@ -970,7 +970,6 @@ class ResultsTable extends CompositeElement
         detachProvenancePopoverTimeout = null
         endBrushingTimeout = null
         detachProvenancePopover = =>
-            log "detach"
             detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
             detachProvenancePopoverTimeout = setTimeout ->
                     provenancePopover.removeClass("in").css("z-index": -1000)
@@ -982,7 +981,6 @@ class ResultsTable extends CompositeElement
                 do detachProvenancePopover
             )
             .on("mouseover", (e) ->
-                log "cancel"
                 endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
                 detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
             )
@@ -1110,9 +1108,8 @@ class ResultsTable extends CompositeElement
             )
             .on("mousemove", "tbody td", _.throttle (e) ->
                     # changing the shift key immediately toggles the brushingMode.
-                    # might not be so good for usability, e.g., when dragging,
-                    # but dragging conflicts with mousemove anyway, so it may be fine.
-                    # TODO how about release of shift key pausing the brushing, until mouseout?
+                    # releasing shift key pauses the brushing, until mouseout,
+                    # and resumes when shift is pressed back
                     unless brushingMode
                         if e.shiftKey
                             brushingMode = on
@@ -1121,8 +1118,6 @@ class ResultsTable extends CompositeElement
                     else
                         unless e.shiftKey
                             brushingMode = off
-                            do endBrushing
-                            return
                     updateBrushing $(@), e if brushingMode
                 , 100
             )
