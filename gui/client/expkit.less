@@ -298,6 +298,12 @@ body > .navbar .brand .icon {
 .provenance.popover {
   width: auto;
 }
+.popover {
+  z-index: -1000;
+  &.in {
+    z-index: 1010;
+  }
+}
 
 #run-count, #plan-count {
   font-size: 10px;
