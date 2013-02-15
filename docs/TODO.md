@@ -113,7 +113,7 @@
           the cell, data row, position & all data rows in the group, aggregated
           value (summary) in the cell, so the data type handler can manipulate
           the cell's DOM to present the most appropriate thing.
-        * Run popover to open the originating run:
+        * DONE Run popover to open the originating run:
           When user clicks, it should freeze and a popover with a link to the
           run (provenance) should appear.
     * Andreas' feedback

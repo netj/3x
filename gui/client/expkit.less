@@ -275,23 +275,28 @@ body > .navbar .brand .icon {
     tr.ui-sortable-helper td.order { visibility: hidden; }
   }
 }
-#results-table .planner.popover {
-  max-width: 2 * 100%/12;
+#results-table .popover {
   .box-shadow(0 5px 20px rgba(0, 0, 0, 0.8));
-  .nav-list li { margin-bottom: 5px; }
-  .btn.add { text-align: left; }
-  .random-percent { width: 100%; }
-  .conditions {
-    .label {
-      opacity: 0.5;
-      white-space: normal;
-      word-wrap: break-word;
-      word-break: break-all;
-    }
-    .label.expanded {
-      opacity: initial;
+  &.planner {
+    max-width: 2 * 100%/12;
+    .nav-list li { margin-bottom: 5px; }
+    .btn.add { text-align: left; }
+    .random-percent { width: 100%; }
+    .conditions {
+      .label {
+        opacity: 0.5;
+        white-space: normal;
+        word-wrap: break-word;
+        word-break: break-all;
+      }
+      .label.expanded {
+        opacity: initial;
+      }
     }
   }
+}
+.provenance.popover {
+  width: auto;
 }
 
 #run-count, #plan-count {

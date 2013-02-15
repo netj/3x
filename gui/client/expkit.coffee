@@ -946,10 +946,48 @@ class ResultsTable extends CompositeElement
     initBrushing: =>
         # setup brushing table cells, so as we hover over a td element, the
         # cell as well as others will be displaying the raw data value
-        rt = @
+        provenancePopover = @brushingProvenancePopover = $("""
+            <div class="provenance popover fade top" style="display:block;">
+                <div class="arrow"></div>
+                <div class="popover-inner">
+                    <div class="popover-content">
+                        <a class="provenance-link"></a>
+                    </div>
+                </div>
+            </div>
+            """).appendTo(document.body)
+        attachProvenancePopover = ($td, e, cursorRelPos, runId) =>
+            detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
+            pos = $td.position()
+            provenancePopover
+                .find(".provenance-link").text(runId)
+                    .attr(href:"#{ExpKitServiceBaseURL}/#{runId}/overview").end()
+                .addClass("in")
+                .css
+                    top:  "#{pos.top              - (provenancePopover.height())}px"
+                    left: "#{pos.left + e.offsetX - (provenancePopover.width()/2)}px"
+                    "z-index": 1000
+        detachProvenancePopoverTimeout = null
+        endBrushingTimeout = null
+        detachProvenancePopover = =>
+            log "detach"
+            detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
+            detachProvenancePopoverTimeout = setTimeout ->
+                    provenancePopover.removeClass("in").css("z-index": -1000)
+                , 100
+        provenancePopover
+            .on("mouseout", (e) ->
+                endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
+                endBrushingTimeout = setTimeout endBrushing, 100
+                do detachProvenancePopover
+            )
+            .on("mouseover", (e) ->
+                log "cancel"
+                endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
+                detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
+            )
         brushingMode = off
         brushingIsPossible = no
-        endBrushingTimeout = null
         brushingRowProcessed = null
         brushingLastRowIdx = null
         brushingSetupRow = null
@@ -976,6 +1014,7 @@ class ResultsTable extends CompositeElement
             n = brushingCell.origin.length - 1
             brushingPos = Math.max(0, Math.min(n, Math.round(n * cursorRelPos)))
             rowIdxData  = brushingCell.origin[brushingPos]
+            attachProvenancePopover $td, e, brushingPos, @results.rows[rowIdxData][runColIdx]
             return if brushingLastRowIdx is rowIdxData # update only when there's change, o.w. flickering happens
             brushingLastRowIdx = rowIdxData
             #do => # XXX debug
@@ -989,7 +1028,7 @@ class ResultsTable extends CompositeElement
                 # use DataRenderer to show them
                 c = @columnsRendered[colIdxRendered]
                 $(td).html(
-                    brushingCellRenderer[i](@results.rows[rowIdxData][colIdxData],
+                    brushingCellRenderer[i]?(@results.rows[rowIdxData][colIdxData],
                             rowIdxData, @results, c, runColIdx)
                 )
         endBrushing = =>
@@ -1000,6 +1039,7 @@ class ResultsTable extends CompositeElement
                     $(td).contents().remove().end().append(brushingTDsOrigContent[i])
                 brushingTDsAll?.each (i,td) =>
                     td.style.cssText = brushingTDsOrigCSSText[i]
+                do detachProvenancePopover
                 brushingRowProcessed = brushingSetupRow = brushingLastRowIdx =
                     brushingCellRenderer =
                     brushingTDs = brushingTDsOrigContent =
@@ -1056,7 +1096,7 @@ class ResultsTable extends CompositeElement
                         # derive a renderer using only the values within this row
                         col = @columnsRendered[$(td).index()]
                         brushingCellRenderer[i] =
-                            DataRenderer.htmlGeneratorForTypeAndData(col.dataType, processedForThisRow, col.dataIndex)
+                            try DataRenderer.htmlGeneratorForTypeAndData(col.dataType, processedForThisRow, col.dataIndex)
                 updateBrushing $td, e
             else
                 # not on a brushable cell
@@ -1075,6 +1115,7 @@ class ResultsTable extends CompositeElement
                         if e.shiftKey
                             brushingMode = on
                             startBrushing $(@), e
+                            return
                     #else
                     #    unless e.shiftKey
                     #        brushingMode = off
@@ -1087,6 +1128,7 @@ class ResultsTable extends CompositeElement
                 endBrushingTimeout = setTimeout endBrushing, 100
                 #do endBrushing
             )
+
 
 
 displayChart = ->
