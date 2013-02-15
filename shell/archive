@@ -47,7 +47,7 @@ find "$@" -type f >"$filelist" || true
 	            ln -fn "\$archived" "\$file"
 	        fi
 	    else
-	        mkdir -p \$(dirname "\$archived")
+	        mkdir -p "\$(dirname "\$archived")"
 	        cp --archive --link --force "\$file" "\$archived"
 	    fi
 	    chmod a-w "\$archived"
