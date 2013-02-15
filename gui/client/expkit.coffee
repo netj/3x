@@ -1109,17 +1109,20 @@ class ResultsTable extends CompositeElement
                 startBrushing $(@), e
             )
             .on("mousemove", "tbody td", _.throttle (e) ->
-                    # we can let Shift key immediately toggle the brushingMode,
-                    # but it seems not doing so gives better usability, e.g., when dragging
+                    # changing the shift key immediately toggles the brushingMode.
+                    # might not be so good for usability, e.g., when dragging,
+                    # but dragging conflicts with mousemove anyway, so it may be fine.
+                    # TODO how about release of shift key pausing the brushing, until mouseout?
                     unless brushingMode
                         if e.shiftKey
                             brushingMode = on
                             startBrushing $(@), e
                             return
-                    #else
-                    #    unless e.shiftKey
-                    #        brushingMode = off
-                    #        do endBrushing
+                    else
+                        unless e.shiftKey
+                            brushingMode = off
+                            do endBrushing
+                            return
                     updateBrushing $(@), e if brushingMode
                 , 100
             )
@@ -1767,7 +1770,7 @@ class PlanTable extends PlanTableBase
                             left: "#{pos.left -  popover.width()                   }px"
                             "z-index": 1000
             #  in a somewhat complicated way to make it appear/disappear after a delay
-            POPOVER_SHOW_DELAY_INITIAL = 3000
+            POPOVER_SHOW_DELAY_INITIAL = 7000
             POPOVER_SHOW_HIDE_DELAY    =  100
             popoverShowTimeout = null
             popoverHideTimeout = null
