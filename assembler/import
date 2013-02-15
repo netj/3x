@@ -22,11 +22,17 @@ copyFilesTo() {
     # rest are find predicates for matching excluded children of $src
     [ $# -eq 0 ] || set -- -o "$@"
     # prepare destination and copy files
-    mkdir -p -- "$dst"
+    findcmd=(
     find "$src"/{,.}*  -maxdepth 0 ! \( \
             -type d \( -name '.' -o -name '..' \
                     -o -name '?*=*' -o -path '*=/*' \) "$@" \
-        \) -print0 |
+        \)
+    )
+    # check if there are files to copy
+    [[ $("${findcmd[@]}" 2>&1 | wc -l) -gt 0 ]] || return 0
+    # and only invoke cp when necessary
+    mkdir -p -- "$dst"
+    "${findcmd[@]}" -print0 |
     {
         set -o pipefail
         xargs -0  cp $cpopts --archive --target-directory="$dst" |
