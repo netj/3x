@@ -1802,6 +1802,11 @@ class PlanTable extends PlanTableBase
                     , POPOVER_SHOW_HIDE_DELAY
                     )
                 .on("click", "tbody tr .add.btn", @addPlanFromRowHandler())
+        $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
+            if rt.baseElement.has(e.srcElement).length is 0
+                popover.showDelay = POPOVER_SHOW_DELAY_INITIAL
+        )
+
 
     @STATE: "REMAINING"
     addPlanFromRowHandler: =>
