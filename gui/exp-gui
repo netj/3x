@@ -2,10 +2,12 @@
 # exp-gui -- start ExpKit GUI
 # Usage: exp gui [start [PORT]]
 #        exp gui stop
+#        exp gui watch
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-11
 set -eu
+shopt -s extglob
 
 defaultPort=38917
 host=$(hostname -f)
@@ -40,9 +42,8 @@ case $cmd in
                 launchNew=true
             fi
         fi
-        url="http://$host:$port/"
         if $launchNew; then
-            # fail if port is already in use
+            # fail or find unused one if port is already in use
             if nc -z localhost $port; then
                 [ $# -eq 0 ] ||
                     error "Cannot start GUI at port $port: already in use"
@@ -54,6 +55,7 @@ case $cmd in
                     [[ $port -lt 65536 ]] || error "Cannot start GUI, specify an available port number"
                 done
             fi
+            url="http://$host:$port/"
             # launch server
             python_site_dir="$GUIDIR"/server/python-packages
             PATH="$python_site_dir:$PATH" \
@@ -66,6 +68,8 @@ case $cmd in
             echo $pids >$pidfile
             echo $port >$portfile
             msg "ExpKit GUI started at $url"
+        else
+            url="http://$host:$port/"
         fi
         # watch log if requested
         be-quiet +1 || exp-gui watch &
@@ -93,5 +97,14 @@ case $cmd in
         mv -f $logfile $logfile.0
         rm -f $pidfile
         msg "ExpKit GUI stopped"
+        ;;
+
+    # when it looks like a port number, do start instead of complaining
+    +([0-9]))
+        exec exp-gui start $cmd "$@"
+        ;;
+
+    *)
+        usage "$0" "$cmd: Unknown command"
         ;;
 esac
