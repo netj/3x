@@ -996,9 +996,9 @@ class ResultsTable extends CompositeElement
             # restore DOM of previous TR
             if brushingSetupRow?
                 #log "endBrushing", brushingSetupRow #, brushingTDs, brushingTDsOrigContent
-                brushingTDs.removeClass("brushing").each (i,td) =>
+                brushingTDs?.removeClass("brushing").each (i,td) =>
                     $(td).contents().remove().end().append(brushingTDsOrigContent[i])
-                brushingTDsAll.each (i,td) =>
+                brushingTDsAll?.each (i,td) =>
                     td.style.cssText = brushingTDsOrigCSSText[i]
                 brushingRowProcessed = brushingSetupRow = brushingLastRowIdx =
                     brushingCellRenderer =
@@ -1196,7 +1196,8 @@ initChartUI = ->
         do displayChart
     )
     $("#results-table").bind("changed", (e) ->
-        do displayChart
+        try
+            do displayChart
     )
 
 
