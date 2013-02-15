@@ -161,6 +161,10 @@
     * monitoring logs
     * symlinks should redirect, as long as they point inside the run/workdir
 
+* Try to avoid popover overflowing the page boundary by placing it smartly
+
+* Restructure with Backbone.js
+
 * Use hash for representing GUI state as URL and using the browser history and back/forward
 
 * DONE add right margin to icons in h2 instead of space
