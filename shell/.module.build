@@ -12,6 +12,6 @@ PARAMS
 chmod +x .build/exp.sh
 
 cd .build
-ln -f ../package.json .
+ln -sf ../package.json .
 date >README.md
 npm install

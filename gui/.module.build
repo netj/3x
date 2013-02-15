@@ -6,7 +6,7 @@ Self=$(readlink -f "$0")
 # bootstrap .build
 mkdir -p .build/{server,client}
 cd .build
-ln -f ../package.json
+ln -sf ../package.json
 echo >README.md
 npm install
 PATH="$PWD/node_modules/.bin:$PATH"
@@ -14,7 +14,7 @@ PATH="$PWD/node_modules/.bin:$PATH"
 
 # server
 cd server
-ln -f ../../server/package.json
+ln -sf ../../server/package.json
 echo >README.md
 npm install
 coffee -c -o . ../../server/*.coffee
@@ -53,7 +53,7 @@ coffee -c -o . $clientSrc/*.coffee
 [ -d bootstrap/less ] || {
     rm -rf bootstrap
     mkdir -p bootstrap/
-    cp -alf $clientSrc/../bootstrap/less bootstrap/
+    cp -af $clientSrc/../bootstrap/less bootstrap/
     # remove sprites.less in favor of Font-Awesome
     rm -f bootstrap/less/sprites.less
     echo "//" >bootstrap/less/sprites.less
