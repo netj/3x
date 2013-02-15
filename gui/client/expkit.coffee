@@ -63,7 +63,6 @@ mapCombination = (nestedList, f) ->
     forEachCombination nestedList, (combination) -> mapped.push (f combination)
     mapped
 
-window.choose =
 choose = (n, items) ->
     indexes = [0...items.length]
     indexesChosen =
@@ -73,6 +72,14 @@ choose = (n, items) ->
 
 
 enumerate = (vs) -> vs.joinTextsWithShy ","
+
+
+isAllNumeric = (vs) -> not vs.some (v) -> isNaN parseFloat v
+tryConvertingToNumbers = (vs) ->
+    if isAllNumeric vs
+        vs.map (v) -> +v
+    else
+        vs
 
 
 FILTER_EXPR_REGEX = ///
@@ -775,7 +782,12 @@ class ResultsTable extends CompositeElement
                             value: rows[groupedRowIdxs[0]][colIdx]
                         else
                             value: col.aggregation.func(rows[rowIdx][colIdx] for rowIdx in groupedRowIdxs)
-                            origin: _.sortBy(groupedRowIdxs, (rowIdx) -> rows[rowIdx][colIdx])
+                            origin: _.sortBy(groupedRowIdxs,
+                                    if isAllNumeric (groupedRowIdxs.map (rowIdx) -> rows[rowIdx][colIdx])
+                                        (rowIdx) -> +rows[rowIdx][colIdx]
+                                    else
+                                        (rowIdx) ->  rows[rowIdx][colIdx]
+                                )
                 grouped = mapReduce(map, red)(idxs)
                 [_.values(grouped), _.keys(grouped)]
             [aggregatedRows, aggregatedGroups] = groupRowsByColumns(@results.rows)
@@ -1083,7 +1095,6 @@ displayChart = ->
     width = 960 - margin.left - margin.right
     height = 500 - margin.top - margin.bottom
 
-    isAllNumeric = (vs) -> not vs.some (v) -> isNaN parseFloat v
     xColumn = (column for name, column of ExpKit.results.columns when column.isExpanded)[0]
     yColumn = (column for name, column of ExpKit.results.columns when column.isMeasured)[0]
 
