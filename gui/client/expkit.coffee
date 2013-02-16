@@ -995,11 +995,9 @@ class ResultsTable extends CompositeElement
         brushingTDsAll = null
         brushingTDsOrigCSSText = null
         # cached
-        brushingTHs = null
         runColIdx = null
         @on "changed", => # precompute frequently used info every once the table changes
             runColIdx = @results.names.indexOf RUN_COLUMN_NAME
-            brushingTHs = @dataTable.find("thead").eq(0).find("th")
         updateBrushing = ($td, e) =>
             return unless brushingIsPossible
             colIdxRendered = $td.index()
@@ -1072,7 +1070,7 @@ class ResultsTable extends CompositeElement
                         # fix width of each cell we're going to touch
                         brushingTDsOrigCSSText[i] = td.style.cssText
                         # copy from thead
-                        $th = brushingTHs.eq(i)
+                        $th = @dataTable.find("thead").eq(0).find("th").eq(i)
                         td.style.cssText += """;
                             width: #{$th.css("width")} !important;
                             min-height: #{td.offsetHeight}px !important;
