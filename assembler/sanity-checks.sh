@@ -27,12 +27,12 @@ checkIfValueIsSane() {
     local name=$1; shift
     local src=$1; shift
     case $value in
-        +([A-Za-z0-9@%:.+=_-])) ;;
+        +([A-Za-z0-9@%:.+_-])) ;;
         *)
             error "$src: Invalid character in pattern value $value for $name." "" \
                 "Values can only contain alphanumeric characters," \
                 "underscore (_), dot/period (.), hyphen (-), colon (:)," \
-                "plus (+), equals (=), at (@), and percent (%) signs." \
+                "plus (+), at (@), and percent (%) signs." \
                 #
             ;;
     esac

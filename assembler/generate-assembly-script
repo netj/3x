@@ -23,7 +23,7 @@ codeForPatternDirs() {
             # outputs themselves need not any guards
             output/+([^/]))
                 name=${pattDir#output/}
-                checkIfNameIsSane "$name" "$pattDir"
+                checkIfNameIsSane "$name" "$pattDir" || continue
                 codeForMatchedPatternDir "$pattDir"
                 continue
                 ;;
@@ -32,21 +32,22 @@ codeForPatternDirs() {
         case $patt in
             *=?*)
                 name=${patt%%=*}
-                checkIfNameIsSane "$name" "$pattDir"
-                echo "if [ x\"\${$name:-}\" = x'${patt#*=}' ]; then"
+                checkIfNameIsSane "$name" "$pattDir" || continue
+                echo "if [ x\"\${$name:-}\" = x'${patt#*=}' ]; then" # NOTE no need to escape since it's a sane value
                 codeForMatchedPatternDir "$pattDir"
                 echo "fi"
                 ;;
             *) # or *=)
                 name=${patt%%=}
-                checkIfNameIsSane "$name" "$pattDir"
+                checkIfNameIsSane "$name" "$pattDir" || continue
                 echo "case \${$name:-} in"
                 for pattCaseDirOrig in "$pattDir"/*/; do
                     [ -d "$pattCaseDirOrig" ] || continue
-                    pattCase=$(basename "$pattCaseDirOrig" .env)
+                    pattCase=$(basename "$pattCaseDirOrig")
                     pattCaseDir=${pattCaseDirOrig%/}
-                    checkIfValueIsSane "$pattCase" "$name" "$pattCaseDirOrig"
-                    echo "\"$pattCase\")"
+                    case $pattCase in *=*) continue ;; esac # skip nested pattern dirs
+                    checkIfValueIsSane "$pattCase" "$name" "$pattCaseDirOrig" || continue
+                    echo "'$pattCase')" # NOTE no need to escape since it's a sane value
                     codeForMatchedPatternDir "$pattDir"
                     codeForMatchedPatternDir "$pattCaseDir"
                     echo ";;"
@@ -67,7 +68,7 @@ codeForMatchedPatternDir() {
     codeForSourcing "$f"/env
     echo import "$f"
     # look for nested pattern directories and generate code for them too
-    codeForPatternDirs "$f"/?*=*
+    codeForPatternDirs "$f"/+([A-Za-z0-9@%:.+_-])=*
 }
 
 codeForSourcing() {
