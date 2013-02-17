@@ -38,9 +38,7 @@ record-run &
 runpid=$!
 
 # watch stdout and stderr
-for sig in HUP INT QUIT TERM
-do trap "kill -$sig $runpid; wait" $sig
-done
+trap "kill -TERM $runpid; wait $runpid" INT QUIT TERM
 be-quiet +1 || {
 tail -qF stdout --pid=$runpid      2>/dev/null &
 tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &

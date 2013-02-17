@@ -17,24 +17,23 @@ measuring-rusage() {
         case $("$gnutimepath" --version 2>&1) in
             "GNU time "*)
                 # and record times and rusage with it
-                exec "$gnutimepath" -v -o rusage "$@"
+                exec setsid "$gnutimepath" -v -o rusage "$@"
                 ;;
         esac
     done
     # Skip recording if no GNU time is available
     msg +1 "Skipping rusage measurement. (Install GNU time to record it!)"
-    exec "$@"
+    exec setsid "$@"
 }
 
 # forward signal to the process group
-for sig in HUP INT QUIT TERM
-do trap "kill -$sig -\$pid; wait" $sig
+for sig in HUP INT QUIT ABRT USR1 USR2 TERM
+do trap "kill -$sig -\$pid; wait \$pid" $sig
 done
 
 # now run
 set +e
 measuring-rusage \
-setsid \
 env - \
     EXPKIT_HOME="$EXPKIT_HOME" \
     EXPROOT="$EXPROOT" \

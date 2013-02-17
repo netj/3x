@@ -55,7 +55,7 @@ synchronized workers.lock register-pid
 msg "Starting $EXPBATCH"
 count=$(cat count || wc -l <plan)
 abort=false
-trap "abort=true" TERM INT
+trap "abort=true" INT QUIT TERM
 while [ -s remaining ] && ! $abort; do
     run=
     pick-next() {
