@@ -52,7 +52,9 @@ for path in "$@"; do
                     # copy files
                     copyFilesTo "$EXPWDabbrev"/workdir/ "$path" \
                         -type f \( -name 'env' \
-                                -o -name 'args' -o -name '+args' -o -name 'args+' \) \
+                                -o -name 'args' -o -name '+args' -o -name 'args+' \
+                                -o -name 'datatype' \
+                                \) \
                         #
                     # environment variables
                     for f in env; do
@@ -93,7 +95,8 @@ for path in "$@"; do
                     m=${m%%/*}
                     # copy files of output
                     copyFilesTo "$EXPWDabbrev"/measures/"$m" "$path" \
-                        # nothing to exclude
+                        -type f \( -name 'datatype' \
+                                \) \
                         #
                     ;;
             esac
