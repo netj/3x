@@ -14,7 +14,7 @@ shopt -s extglob
 set -o braceexpand
 
 codeForPatternDirs() {
-    local nestingLevel=$((${depth:--1} + 1))
+    local nestingLevel=$((${nestingLevel:--1} + 1))
     local pattDir= patt= name=
     for pattDir; do
         [ -d "$pattDir" ] || continue
@@ -43,8 +43,8 @@ codeForPatternDirs() {
                 echo "case \${$name:-} in"
                 for pattCaseDirOrig in "$pattDir"/*/; do
                     [ -d "$pattCaseDirOrig" ] || continue
-                    pattCase=$(basename "$pattCaseDirOrig")
-                    pattCaseDir=${pattCaseDirOrig%/}
+                    local pattCase=$(basename "$pattCaseDirOrig")
+                    local pattCaseDir=${pattCaseDirOrig%/}
                     case $pattCase in *=*) continue ;; esac # skip nested pattern dirs
                     checkIfValueIsSane "$pattCase" "$name" "$pattCaseDirOrig" || continue
                     echo "'$pattCase')" # NOTE no need to escape since it's a sane value
