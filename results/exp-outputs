@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # exp-outputs -- enumerate experiment outputs
-# Usage: exp outputs
+# Usage: exp outputs [NAME]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07
 set -eu
+shopt -s extglob
 
 EXPROOT=$(exp-findroot)
 export EXPROOT
 
 cd "$EXPROOT"
 cd output
-for name in */; do
-    [ -e "$name" ] || continue
+
+[ $# -gt 0 ] || set -- [A-Za-z_]*([A-Za-z0-9_])/
+
+for name; do
+    [ -e "$name" ] || error "$name: No such output variable"
     name=${name%/}
     typefile="$name/datatype"
     type=$(cat "$typefile" 2>/dev/null || echo)

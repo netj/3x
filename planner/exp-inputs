@@ -10,6 +10,7 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07
 set -eu
+shopt -s extglob
 
 # process options
 enumValues=false
@@ -31,7 +32,7 @@ cd "$EXPROOT"
 # prepare pattern directories to show
 if [ $# -eq 0 ]; then
     # default is to show all input variables
-    set -- program input/*=*
+    set -- program input/[A-Za-z_]*([A-Za-z0-9_])=
 else
     # map each input name to pattern directory
     args=()
@@ -54,10 +55,10 @@ if $enumValues; then
         local pattDir=$2
         local values=$(
             cd "$pattDir"
-            find *{/,.env} -maxdepth 0 2>/dev/null | sort -g |
+            find +([A-Za-z0-9@%:.+_-])/env -maxdepth 0 2>/dev/null | sort -g |
             while read -r path; do
                 [ -e "$path" ] || continue
-                echo -n ",$(basename "${path%.env}")"
+                echo -n ",$(basename "${path%/env}")"
             done
         )
         values=${values#,}
