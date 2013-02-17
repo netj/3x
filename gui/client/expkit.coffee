@@ -851,7 +851,7 @@ class ResultsTable extends CompositeElement
 
         # populate table body
         @baseElement.find("tbody").remove()
-        tbody = $("<tbody>").append(
+        tbody = $("<tbody>").append(do =>
             runColIdx = columnIndex[RUN_COLUMN_NAME]
             for row,ordinal in @resultsForRendering
                 ResultsTable.ROW_SKELETON.render {
