@@ -350,8 +350,8 @@ app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId
     batchPath = "run/batch/#{batchId}"
-    fs.exists "#{EXPROOT}/#{batchPath}", (exists) ->
-        return res.send 404, "Not found: #{batchPath}" unless exists
+    fs.stat "#{EXPROOT}/#{batchPath}", (err, stat) ->
+        return res.send 404, "Not found: #{batchPath}" if err?
         cli(res, "exp-status", [batchPath]
             , normalizeNamedColumnLines (line) ->
                     [state, columns..., serial, runId] = line.split /\s+/
