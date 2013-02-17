@@ -986,6 +986,7 @@ class ResultsTable extends CompositeElement
             )
         brushingMode = off
         brushingIsPossible = no
+        brushingTRIndex = null
         brushingRowProcessed = null
         brushingLastRowIdx = null
         brushingSetupRow = null
@@ -1013,6 +1014,7 @@ class ResultsTable extends CompositeElement
             attachProvenancePopover $td, e, brushingPos, @results.rows[rowIdxData][runColIdx]
             return if brushingLastRowIdx is rowIdxData # update only when there's change, o.w. flickering happens
             brushingLastRowIdx = rowIdxData
+            #log "updating", brushingLastRowIdx
             #do => # XXX debug
             #    window.status = "#{@columnsRendered[colIdxRendered].name}: #{brushingPos}/#{brushingCell.origin.length-1} = #{cursorRelPos}"
             #    log "updateBrushing", @columnsRendered[colIdxRendered].name, brushingSetupRow, rowIdxData, brushingPos, brushingCell.origin.length-1
@@ -1024,8 +1026,10 @@ class ResultsTable extends CompositeElement
                 # use DataRenderer to show them
                 c = @columnsRendered[colIdxRendered]
                 $(td).html(
+                    # XXX somehow, the first row isn't refreshing even though correct html is being set
+                    (if brushingTRIndex is 0 then "<span></span>" else "") +
                     brushingCellRenderer[i]?(@results.rows[rowIdxData][colIdxData],
-                            rowIdxData, @results, c, runColIdx)
+                            rowIdxData, @results, c, runColIdx) ? ""
                 )
         endBrushing = =>
             # restore DOM of previous TR
@@ -1054,6 +1058,7 @@ class ResultsTable extends CompositeElement
                     do endBrushing
                     #log "setting up row #{rowIdxProcessed} for brushing"
                     brushingSetupRow = rowIdxProcessed
+                    brushingTRIndex = $tr.index()
                     brushingRowProcessed = @resultsForRendering[brushingSetupRow]
                     brushingTDsAll = $tr.find("td")
                     brushingTDs = brushingTDsAll.filter((i,td) => not @columnsRendered[i].isExpanded)
