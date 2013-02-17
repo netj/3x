@@ -31,6 +31,7 @@
   }
   #main {
     padding-bottom: @navbarHeight;
+    &.tab-content { padding-bottom: 0px; }
     // adjust margins/paddings to avoid occlusion of the URL-referenced parts by navbar
     margin-top: -@navbarHeight;
     & > :first-child, & > [id] { padding-top: @navbarHeight; }

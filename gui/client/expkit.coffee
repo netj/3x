@@ -615,6 +615,7 @@ class ResultsTable extends CompositeElement
                do e.preventDefault
                do @load
         do @display # initializing results table with empty data first
+        $(window).resize(_.throttle @maximizeDataTable, 100)
         @conditions.on("activeMenuItemsChanged", @load)
                    .on("activeMenusChanged", @display)
         @measurements.on("activeMenuItemsChanged", @display)
@@ -895,7 +896,7 @@ class ResultsTable extends CompositeElement
             sScrollX: "100%"
             #sScrollXInner: "#{Math.round Math.max(computeRequireTableWidth(@columnMetadata),
             #                      @baseElement.parent().size().width)}px"
-            sScrollY: "#{Math.round Math.max(400, window.innerHeight - @baseElement.position().top - 80)}px"
+            sScrollY: "#{window.innerHeight - @baseElement.position().top}px"
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             # TODO isolate localStorage key
             fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
@@ -907,9 +908,14 @@ class ResultsTable extends CompositeElement
                     do @updateColumnIndexMappings
         do @updateColumnVisibility
         do @updateColumnIndexMappings
+        do @maximizeDataTable
 
         # trigger event for others
         _.defer => @trigger("changed", @resultsForRendering)
+
+    maximizeDataTable: =>
+        @dataTable.fnSettings().oScroll.sY = "#{window.innerHeight - @baseElement.position().top}px"
+        @dataTable.fnDraw()
 
     updateColumnIndexMappings: =>
         # Construct column index mappings for others to build functions on top of it.
