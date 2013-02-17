@@ -38,7 +38,7 @@
 * DONE better messaging: let exp.sh dup terminal fds, so all msg can still reach the term
 
 * DONE better hardlinking: first create a copy if necessary in .exp/ and hardlink that one so that user can modify anything outside run/ without worrying about overwriting all the snapshots.
-* what if a file with same content has different perm mode? should we use name, perms, ... when archiving?
+* DONE what if a file with same content has different perm mode? should we use name, perms, ... when archiving?
 
 * enumerate dependencies, improve portability: readlink -f
     * column -t: bsdmainutils, http://www.cs.indiana.edu/~kinzler/align/
@@ -87,7 +87,7 @@
 * DONE Handy way to generate condition combinations from the result table and add them to plan table
     * DONE minor: append the popover in the first or run# column to avoid glitches
     * DONE minor: scroll to bottom of plan after adding
-    * Show hints on combinations of what will be added to plans from the
+    * DONE Show hints on combinations of what will be added to plans from the
       popover, and only display when it will actuall add ones.
 
 * DONE bug of plan table -> create batch -> 1 line less batch
@@ -180,7 +180,7 @@
 * concise way to specify parallel execution order in the plan
 * automatic suggestion of representative condition values given a range, based
   on how each varies output (Ashish)
-* Think about what's a good way to present measurement datum which is
+* DONE Think about what's a good way to present measurement datum which is
   multi-dimensional itself, e.g., instead of summarizing the result of a run as
   a scalar value (N/O/I/R), there can be an image file of some scatterplot
   generated for each combination of condition params.  Maybe ExpKit can show
