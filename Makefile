@@ -18,6 +18,10 @@ STAGEDIR := @prefix@
 MODULES := shell setup assembler batch planner runner results gui docs
 include buildkit/modules.mk
 
+buildkit/modules.mk:
+	git submodule init
+	git submodule update
+
 gui-test-loop:
 	while sleep .1; do EXPROOT="$(PWD)/test-exp"  exp -v gui; done
 
