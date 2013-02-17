@@ -25,11 +25,65 @@ set -eu
 LockArg=$1; shift
 
 # use target if lock is a symlink
-Lock=`readlink -f "$LockArg"`
+Lock=$(readlink -f "$LockArg")
 : ${Lock:=lock}
 
+
+# look for existing file locking primitives
+has() { type "$@" &>/dev/null; }
+if has lockfile-create && has lockfile-remove; then
+    # lockfile-create(1) and others in lockfile-progs Debian package
+    lockfile-acquire() {
+        lockfile-create --lock-name --retry 3 "$1"
+        # XXX We won't bother touching the timestamp, since we check the owner process anyway
+        #lockfile-touch "$1" &
+        #echo $! >"$1".keeper.pid
+    }
+    lockfile-release() {
+        # XXX no timestamp keeper
+        #local pidf="$1".keeper.pid
+        #local pid=$(cat "$pidf" 2>/dev/null || echo)
+        #[ -z "$pid" ] || kill -TERM $pid || true
+        #rm -f "$pidf"
+        lockfile-remove --lock-name "$1"
+    }
+
+elif has dotlockfile; then
+    # dotlockfile(1) in liblockfile
+    lockfile-acquire() {
+        dotlockfile -l -r3 "$1"
+        # XXX We won't bother touching the timestamp, since we check the owner process anyway
+        #while sleep 5; [[ $(cat "$1".keeper.pid 2>/dev/null) = $BASHPID ]]; do
+        #    dotlockfile -t "$1"
+        #done &
+        #echo $! >"$1".keeper.pid
+    }
+    lockfile-release() {
+        # XXX no timestamp keeper
+        #local pidf="$1".keeper.pid
+        #local pid=$(cat "$pidf" 2>/dev/null || echo)
+        #[ -z "$pid" ] || kill -TERM $pid || true
+        #rm -f "$pidf"
+        dotlockfile -u "$1"
+    }
+
+elif has lockfile; then
+    # lockfile(1) in procmail
+    lockfile-acquire() { lockfile -r3 "$1" 2>/dev/null; }
+    lockfile-release() { rm -f "$1"; }
+
+else
+    {
+    echo "lockproc: No file locking primitive available!"
+    echo "          You must install one of the followings:"
+    echo "            liblockfile or liblockfile-bin, or"
+    echo "            procmail, or lockfile-progs."
+    exit 127
+    } >&2
+fi
+
 lock-is-modifiable() {
-    if [ -w "$Lock" -o -w "`dirname "$Lock"`" ]; then
+    if [ -w "$Lock" -o -w "$(dirname "$Lock")" ]; then
         true
     else
         echo "$LockArg: Permission denied" >&2
@@ -37,18 +91,32 @@ lock-is-modifiable() {
     fi
 }
 
+# remote shell
+use-remote-shell-when-needed() {
+    local host=$1
+    [ -z "$host" -o x"$host" = x"$HOSTNAME" ] ||
+        rsh="ssh -o BatchMode=yes -o PasswordAuthentication=no -o ChallengeResponseAuthentication=no $host"
+}
+test-remote-shell() {
+    [ $# -gt 0 ] || set -- uptime
+    [ -z "$rsh" ] || $rsh "$@" >/dev/null
+}
+
 lockproc() {
     local Cmd=$1; shift || true
     case "$Cmd" in
         grab)
-        local pgid=${1:-`ps -o pgid= -p $$`}
+        local pgid=${1:-$(ps -o pgid= -p $$)}
         if lock-is-modifiable; then
             # clean dead lock
             lockproc alive || lockproc clean
             # use lockfile(1) included in procmail(1)
-            if lockfile -r3 "$Lock" 2>/dev/null; then
-                # record owner info
-                echo "$HOSTNAME:$(echo -n $pgid)" >"$Lock".owner
+            if lockfile-acquire "$Lock"; then
+                # record owner process info
+                {
+                    echo "$HOSTNAME:$(echo -n $pgid)"
+                    ps -o pid=,pgid=,command= -p $pgid 2>/dev/null | sha1sum | awk '{print $1}'
+                } >"$Lock".owner
             else
                 false
             fi
@@ -67,14 +135,17 @@ lockproc() {
         ;;
 
         clean)
-        rm -f "$Lock" "$Lock".*
+        lockfile-release "$Lock"
+        rm -f "$Lock".*
         ;;
 
         owner)
-        if owner=`cat "$Lock".owner 2>/dev/null`; then
+        local owner= signature=
+        if [ -r "$Lock".owner ] && { read owner; read signature; } <"$Lock".owner; then
             echo owner=\'"$owner"\'
             echo host=\'$(echo -n ${owner%:*})\'
             echo pgrp=\'$(echo -n ${owner#*:})\'
+            echo signature=\'$(echo -n ${signature})\'
         else
             echo false
         fi
@@ -82,13 +153,15 @@ lockproc() {
 
         alive)
         if [ -e "$Lock" ]; then
-            local owner= host= pgrp=
-            eval `lockproc owner`
-            local rsh=
-            if [ -n "$host" -a "$host" != "$HOSTNAME" ]; then
-                rsh="ssh $host"
-            fi
-            $rsh ps -p $pgrp &>/dev/null
+            local owner= host= pgrp= signature=
+            eval $(lockproc owner)
+            [ -n "$pgrp" ]
+            # use remote shell when necessary,
+            local rsh=; use-remote-shell-when-needed "$host"
+            # XXX assuming lock is alive when remote shell is broken
+            test-remote-shell ps || return 0
+            newSignature=$($rsh ps -o pid=,pgid=,command= -p $pgrp 2>/dev/null | sha1sum | awk '{print $1}')
+            [ x"$newSignature" = x"$signature" ]
         else
             false
         fi
@@ -102,12 +175,11 @@ lockproc() {
         # we will send KILL until all processes disappear
         case $sig in KILL) retries=yes ;; esac
         local owner= host= pgrp=
-        eval `lockproc owner`
+        eval $(lockproc owner)
         if [ -n "$owner" ]; then
-            local rsh=
-            if [ -n "$host" -a "$host" != "$HOSTNAME" ]; then
-                rsh="ssh $host"
-            fi
+            # use remote shell, but don't proceed if broken
+            local rsh=; use-remote-shell-when-needed "$host"
+            test-remote-shell kill -l || return 127
             # send signal
             $retries | while read; do
                 lockproc alive || break
