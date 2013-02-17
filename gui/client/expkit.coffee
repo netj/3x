@@ -946,8 +946,9 @@ class ResultsTable extends CompositeElement
     initBrushing: =>
         # setup brushing table cells, so as we hover over a td element, the
         # cell as well as others will be displaying the raw data value
+        provenancePopoverParent = @baseElement.parent()
         provenancePopover = @brushingProvenancePopover = $("""
-            <div class="provenance popover fade top" style="display:block;">
+            <div class="provenance popover fade top">
                 <div class="arrow"></div>
                 <div class="popover-inner">
                     <div class="popover-content">
@@ -955,34 +956,40 @@ class ResultsTable extends CompositeElement
                     </div>
                 </div>
             </div>
-            """).appendTo(document.body)
+            """).appendTo(provenancePopoverParent)
+        # TODO clean these popover code with https://github.com/jakesgordon/javascript-state-machine
+        hideTimeout = null
+        detachProvenancePopoverTimeout = null
         attachProvenancePopover = ($td, e, cursorRelPos, runId) =>
             detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
+            hideTimeout = clearTimeout hideTimeout if hideTimeout?
             pos = $td.position()
             provenancePopover
                 .find(".provenance-link").text(runId)
                     .attr(href:"#{ExpKitServiceBaseURL}/#{runId}/overview").end()
-                .addClass("in")
+                .removeClass("hide")
                 .css
                     top:  "#{pos.top              - (provenancePopover.height())}px"
                     left: "#{pos.left + e.offsetX - (provenancePopover.width()/2)}px"
-                    "z-index": 1000
-        detachProvenancePopoverTimeout = null
+            _.defer => provenancePopover.addClass("in")
         endBrushingTimeout = null
         detachProvenancePopover = =>
             detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
+            hideTimeout = clearTimeout hideTimeout if hideTimeout?
             detachProvenancePopoverTimeout = setTimeout ->
-                    provenancePopover.removeClass("in").css("z-index": -1000)
+                    provenancePopover.removeClass("in")
+                    hideTimeout = clearTimeout hideTimeout if hideTimeout?
+                    hideTimeout = setTimeout (=> provenancePopover.addClass("hide")), 150
                 , 100
         provenancePopover
+            .on("mouseover", (e) ->
+                endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
+                detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
+            )
             .on("mouseout", (e) ->
                 endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
                 endBrushingTimeout = setTimeout endBrushing, 100
                 do detachProvenancePopover
-            )
-            .on("mouseover", (e) ->
-                endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
-                detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
             )
         brushingMode = off
         brushingIsPossible = no
@@ -1109,7 +1116,8 @@ class ResultsTable extends CompositeElement
                 endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
                 startBrushing $(@), e
             )
-            .on("mousemove", "tbody td", _.throttle (e) ->
+            .on("mousemove", "tbody td", # XXX throttling mousemove significantly degrades the experience. _.throttle , 100
+                (e) ->
                     # changing the shift key immediately toggles the brushingMode.
                     # releasing shift key pauses the brushing, until mouseout,
                     # and resumes when shift is pressed back
@@ -1122,12 +1130,10 @@ class ResultsTable extends CompositeElement
                         unless e.shiftKey
                             brushingMode = off
                     updateBrushing $(@), e if brushingMode
-                , 100
             )
             .on("mouseout", "tbody td", (e) ->
                 endBrushingTimeout = clearTimeout endBrushingTimeout if endBrushingTimeout?
                 endBrushingTimeout = setTimeout endBrushing, 100
-                #do endBrushing
             )
 
 
@@ -1696,8 +1702,9 @@ class PlanTable extends PlanTableBase
     attachToResultsTable: =>
         # add a popover to the attached results table
         if (rt = @optionElements.resultsTable)?
+            popoverParent = rt.baseElement.parent()
             popover = @resultsActionPopover = $("""
-                <div class="planner popover fade left" style="display:block;">
+                <div class="planner popover fade left">
                     <div class="arrow"></div>
                     <div class="popover-inner">
                         <h3 class="popover-title">Add to <i class="icon icon-time"></i>Plan</h3>
@@ -1712,7 +1719,7 @@ class PlanTable extends PlanTableBase
                         </div>
                     </div>
                 </div>
-                """).appendTo(document.body)
+                """).appendTo(popoverParent)
             popover.find(".random-percent")
                 .val(localStorage["#{@planTableId}_randomPercent"] ? 10)
                 .change((e) =>
@@ -1752,59 +1759,67 @@ class PlanTable extends PlanTableBase
                                 .after(" ")
                     )
             # attach the popover to the results table
-            displayPopover = ($tr) ->
+            attachPopover = ($tr) ->
                 # TODO display only when there is an expanded condition column
                 # try to avoid attaching to the same row more than once
-                return if popover.closest("tr")?.index() is $tr.index()
-                popover.removeClass("in")
+                return if popover.currentTR?.index() is $tr.index()
+                popover.currentTR = $tr
+                popover.removeClass("hide in")
                 _.defer ->
                     updatePopoverContent $tr
                     # attach to the current row
-                    $tr.find("td:nth(0)").append(popover)
                     pos = $tr.position()
                     popover.addClass("in")
                         .css
                             top:  "#{pos.top  - (popover.height() - $tr.height())/2}px"
                             left: "#{pos.left -  popover.width()                   }px"
-                            "z-index": 1000
+            popoverHideTimeout = null
+            detachPopover = ->
+                popover.currentTR = null
+                popover.removeClass("in")
+                popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
+                popoverHideTimeout = setTimeout (-> popover.addClass("hide")), 100
+                # XXX .remove() will break all attached event handlers, so send it away somewhere
             #  in a somewhat complicated way to make it appear/disappear after a delay
+            # TODO this needs to be cleaned up with https://github.com/jakesgordon/javascript-state-machine
             POPOVER_SHOW_DELAY_INITIAL = 7000
             POPOVER_SHOW_HIDE_DELAY    =  100
-            popoverShowTimeout = null
-            popoverHideTimeout = null
+            popoverAttachTimeout = null
+            popoverDetachTimeout = null
             popoverResetDelayTimeout = null
             resetTimerAndDo = (next) ->
                 popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
                 popoverHideTimeout = clearTimeout popoverHideTimeout if popoverHideTimeout?
-                # TODO is there any simple way to detect changes in row to fire displayPopover?
-                popoverShowTimeout = clearTimeout popoverShowTimeout if popoverShowTimeout?
+                popoverDetachTimeout = clearTimeout popoverDetachTimeout if popoverDetachTimeout?
+                # TODO is there any simple way to detect changes in row to fire attachPopover?
+                popoverAttachTimeout = clearTimeout popoverAttachTimeout if popoverAttachTimeout?
                 do next
-            rt.baseElement.parent()
+            popoverParent
                 .on("click", "tbody tr", (e) -> resetTimerAndDo =>
                     popover.showDelay = POPOVER_SHOW_HIDE_DELAY
-                    displayPopover $(this).closest("tr")
+                    attachPopover $(this).closest("tr")
                     )
                 .on("mouseover", "tbody tr", (e) -> resetTimerAndDo =>
-                    popoverShowTimeout = setTimeout =>
+                    popoverAttachTimeout = setTimeout =>
                         popover.showDelay = POPOVER_SHOW_HIDE_DELAY
-                        displayPopover $(this).closest("tr")
-                        popoverShowTimeout = null
+                        attachPopover $(this).closest("tr")
+                        popoverAttachTimeout = null
                     , popover.showDelay ?= POPOVER_SHOW_DELAY_INITIAL
                     )
-                .on("mouseout",  "tbody tr", (e) -> resetTimerAndDo =>
-                    popoverHideTimeout = setTimeout ->
-                        popover.removeClass("in")
-                            .css("z-index": -1000).appendTo(document.body)
-                            # XXX .remove() will break all attached event handlers, so send it away somewhere
+                .on("mouseover", ".planner.popover", (e) -> resetTimerAndDo =>
+                    )
+                .on("mouseout",  "tbody tr, .planner.popover", (e) -> resetTimerAndDo =>
+                    popoverDetachTimeout = setTimeout ->
+                        do detachPopover
                         popoverResetDelayTimeout = clearTimeout popoverResetDelayTimeout if popoverResetDelayTimeout?
                         popoverResetDelayTimeout = setTimeout ->
                             popover.showDelay = POPOVER_SHOW_DELAY_INITIAL
                             popoverResetDelayTimeout = null
                         , POPOVER_SHOW_DELAY_INITIAL / 3
-                        popoverHideTimeout = null
+                        popoverDetachTimeout = null
                     , POPOVER_SHOW_HIDE_DELAY
                     )
-                .on("click", "tbody tr .add.btn", @addPlanFromRowHandler())
+                .on("click", ".planner.popover .add.btn", @addPlanFromRowHandler())
         $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
             if rt.baseElement.has(e.srcElement).length is 0
                 popover.showDelay = POPOVER_SHOW_DELAY_INITIAL

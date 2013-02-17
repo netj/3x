@@ -275,9 +275,19 @@ body > .navbar .brand .icon {
     tr.ui-sortable-helper td.order { visibility: hidden; }
   }
 }
-#results-table .popover {
-  .box-shadow(0 5px 20px rgba(0, 0, 0, 0.8));
+.popover {
+  display: block;
+  &.hide {
+    display: none;
+  }
+
+  &.provenance {
+    width: auto;
+    z-index: @zindexPopover + 1;
+  }
+
   &.planner {
+    .box-shadow(0 5px 20px rgba(0, 0, 0, 0.8));
     max-width: 2 * 100%/12;
     .nav-list li { margin-bottom: 5px; }
     .btn.add { text-align: left; }
@@ -293,15 +303,6 @@ body > .navbar .brand .icon {
         opacity: initial;
       }
     }
-  }
-}
-.provenance.popover {
-  width: auto;
-}
-.popover {
-  z-index: -1000;
-  &.in {
-    z-index: 1010;
   }
 }
 
