@@ -141,7 +141,7 @@ lockproc() {
 
         owner)
         local owner= signature=
-        if [ -r "$Lock".owner ] && { read owner; read signature; } <"$Lock".owner; then
+        if [ -r "$Lock".owner ] && { read owner; read signature || true; } <"$Lock".owner; then
             echo owner=\'"$owner"\'
             echo host=\'$(echo -n ${owner%:*})\'
             echo pgrp=\'$(echo -n ${owner#*:})\'
@@ -160,8 +160,13 @@ lockproc() {
             local rsh=; use-remote-shell-when-needed "$host"
             # XXX assuming lock is alive when remote shell is broken
             test-remote-shell ps || return 0
-            newSignature=$($rsh ps -o pid=,pgid=,command= -p $pgrp 2>/dev/null | sha1sum | awk '{print $1}')
-            [ x"$newSignature" = x"$signature" ]
+            pscmd=($rsh ps -o pid=,pgid=,command= -p $pgrp)
+            if [ -n "$signature" ]; then
+                newSignature=$("${pscmd[@]}" 2>/dev/null | sha1sum | awk '{print $1}')
+                [ x"$newSignature" = x"$signature" ]
+            else
+                "${pscmd[@]}" &>/dev/null
+            fi
         else
             false
         fi
