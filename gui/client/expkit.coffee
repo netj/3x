@@ -1368,7 +1368,7 @@ class BatchesTable extends CompositeElement
                     .each((i,td) => value[@headerNames[i]] = $(td).text())
                     .remove()
                 totalRuns = (+value.done) + (+value.running) + (+value.remaining)
-                percentage = (100 * (+value.done) / totalRuns).toFixed(0)
+                percentage = (100 * ((+value.done) + (+value.running)) / totalRuns).toFixed(0)
                 $row.append("""
                     <td class="action"></td>
                     <td>#{totalRuns}</td>
