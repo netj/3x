@@ -81,7 +81,7 @@ if $ListDetails; then
                 let ++numRemaining
             fi
         done
-        [ $numRemaining -gt 0 ] || state=DONE
+        [ $numRemaining -gt 0 -o $numRunning -gt 0 ] || state=DONE
         # output in tab-separated columns
         tsvline \
             "run/batch/$batch" \
