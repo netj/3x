@@ -75,6 +75,12 @@ case $1 in
             cat "$@"
             echo
         } >"$tmp"/plan.editing
+        # clean up any temporary file
+        case $(readlink -f "$1") in
+            "$EXPROOT/.exp/plan.editing".*)
+                rm -f "$1"
+                ;;
+        esac
         ;;
     results|skip) # based on query over results
         results=$1; shift
@@ -115,24 +121,28 @@ if edit plan.editing plan.in-progress; then
     trap - EXIT
     sanitize() {
         local i=$1 o=$2
-        grep -E -v '^[[:space:]]*$' <"$i" >"$o"
         # check if every line starts with `exp run '
-        ! grep -Hn -E -v '^exp[[:space:]]+run[[:space:]]+' "$o" ||
-            error "Syntax Error: All plan lines must start with \`exp run '"
+        ! grep -Hn -E -v '^exp[[:space:]]+run[[:space:]]+|^[[:space:]]*$' "$i" ||
+            error "Syntax Error: All plan lines must start with \`exp run '" || return $?
+        # discard empty lines
+        grep -E -v '^[[:space:]]*$' <"$i" >"$o"
         # Skip checks of serials at the end of each line, since this is exp-starts' job
         #! grep -E -v '[[:space:]]+#[[:digit:]]+$' "$o" ||
         #    error "$EXPBATCH/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
         # TODO check whether all input values are sane
     }
-    mv -f plan.editing plan.editing.orig
-    sanitize plan.editing.orig plan.editing || {
-        mv -f plan.editing.orig plan.editing
+    sanitize plan.editing plan.editing.sanitized || {
+        cd "$EXPROOT"
+        # do not leave a bogus EXPBATCH, but clean it up
+        tmp=$(mktemp .exp/plan.editing.XXX)
+        cat "$EXPBATCH"/plan.editing >$tmp
+        rm -rf "$EXPBATCH"
         msg "Edit the file and retry with the following command:"
-        msg "  exp plan with $EXPBATCH/plan.editing"
+        msg "  exp plan with $tmp"
         false
     }
-    rm -f plan.editing.orig
-    mv -f plan.editing plan
+    rm -f plan.editing
+    mv -f plan.editing.sanitized plan
 else
     error "Aborted planning"
 fi
