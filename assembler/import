@@ -42,7 +42,7 @@ copyFilesTo() {
 }
 
 for path in "$@"; do
-    if ! grep -q "^$path$" "$EXPWD"/assembly; then
+    if ! grep -qF "$path" "$EXPWD"/assembly; then
         msg " importing $path"
         echo "$path" >>"$EXPWD"/assembly
         if [ -d "$path" ]; then

@@ -16,7 +16,7 @@ cd "$EXPROOT/$Batch"
 {
     hasProgress=false
 
-    PREFIXPATT='^exp[ 	]*run[ 	]*'
+    PREFIXPATT='^exp[[:space:]][[:space:]]*run[[:space:]][[:space:]]*'
     # runs already finished
     if [ -r done ]; then
         sed "s:$PREFIXPATT:DONE :" <"done" |

@@ -4,4 +4,4 @@
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-05
-cat "$@" 2>/dev/null | sed 's/ *#.*//; /^ *$/d'
+cat "$@" 2>/dev/null | sed 's/[[:space:]]*#.*//; /^[[:space:]]*$/d'

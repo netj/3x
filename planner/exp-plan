@@ -95,7 +95,7 @@ case $1 in
             comm -13 "$excl" -
         else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate inputs
         fi |
-        sed 's/^/exp run /' | column -t >"$tmp"/plan.editing
+        sed 's/^/exp[[:space:]][[:space:]]*run[[:space:]][[:space:]]*/' | column -t >"$tmp"/plan.editing
         ;;
     *) # by editing combinations generated from given input values
         # normalize command-line arguments
@@ -115,12 +115,12 @@ if edit plan.editing plan.in-progress; then
     trap - EXIT
     sanitize() {
         local i=$1 o=$2
-        grep -E -v '^\s*$' <"$i" >"$o"
+        grep -E -v '^[[:space:]]*$' <"$i" >"$o"
         # check if every line starts with `exp run '
-        ! grep -Hn -E -v '^exp\s+run\s+' "$o" ||
+        ! grep -Hn -E -v '^exp[[:space:]]+run[[:space:]]+' "$o" ||
             error "Syntax Error: All plan lines must start with \`exp run '"
         # Skip checks of serials at the end of each line, since this is exp-starts' job
-        #! grep -E -v '\s+#\d+$' "$o" ||
+        #! grep -E -v '[[:space:]]+#[[:digit:]]+$' "$o" ||
         #    error "$EXPBATCH/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
         # TODO check whether all input values are sane
     }

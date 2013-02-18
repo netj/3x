@@ -18,9 +18,9 @@ if ! [ -e remaining -a -s count -a -d runs ]; then
     initialize() {
         msg "Initializing $EXPBATCH"
         # append serial numbers to each line unless all lines already have one
-        if grep -q -v '#[0-9]+$' <plan; then
+        if grep -q -E -v '#[0-9]+$' <plan; then
             mv -f plan plan.orig
-            sed 's/#.*//' <plan.orig >plan
+            sed 's/#[0-9][0-9]*$//' <plan.orig >plan
             serialOnEachLine plan >remaining
         else
             cat plan >remaining

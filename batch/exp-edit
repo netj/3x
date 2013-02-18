@@ -27,7 +27,7 @@ if ! [ -e "$newPlan" ]; then
         EDITOR=true
     else
         exp-status "$EXPBATCH" | grep REMAINING |
-        sed 's/^[^ ]* */exp run  /; s/ *[^ ]*$//' >"$EXPROOT/$EXPBATCH/$newPlan"
+        sed 's/^[^[:space:]]*[[:space:]]*/exp run  /; s/[[:space:]]*[^[:space:]]*$//' >"$EXPROOT/$EXPBATCH/$newPlan"
     fi
 fi
 
@@ -41,9 +41,9 @@ if edit $newPlan $newPlan.in-progress; then
     trap "lockproc remaining.lock release" EXIT
     # find out the serials of runs which are still REMAINING
     exp-status "$EXPBATCH" | grep REMAINING |
-    sed 's/ *[^ ]*$//; s/^.*#/#/' >$newPlan.serials
+    sed 's/[[:space:]]*[^[:space:]]*$//; s/^.*#/#/' >$newPlan.serials
     # replace the remaining file with newly planned runs still REMAINING
-    grep -f $newPlan.serials <$newPlan >remaining
+    grep -F -f $newPlan.serials <$newPlan >remaining
     rm -f $newPlan.serials
     # TODO having dedup of serials in the remaining might be a good idea
     # clean up any running.* that's not actually RUNNING, therefore REMAINING,
