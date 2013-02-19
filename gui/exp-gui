@@ -44,12 +44,12 @@ case $cmd in
         fi
         if $launchNew; then
             # fail or find unused one if port is already in use
-            if nc -z localhost $port; then
+            if nc -z localhost $port &>/dev/null; then
                 [ $# -eq 0 ] ||
                     error "Cannot start GUI at port $port: already in use"
                 # determine unused port automatically, by keep incrementing it
                 let ++port
-                while nc -z localhost $port; do
+                while nc -z localhost $port &>/dev/null; do
                     let ++port
                     # but never exceed the max port
                     [[ $port -lt 65536 ]] || error "Cannot start GUI, specify an available port number"
@@ -76,7 +76,7 @@ case $cmd in
         # and launch web browser on known platforms
         case $(uname) in
             Darwin) # Mac
-                until nc -z localhost $port; do sleep 0.1; done
+                until nc -z localhost $port &>/dev/null; do sleep 0.1; done
                 open "$url"
                 ;;
         esac
