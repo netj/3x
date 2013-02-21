@@ -95,7 +95,7 @@ lock-is-modifiable() {
 use-remote-shell-when-needed() {
     local host=$1
     [ -z "$host" -o x"$host" = x"$HOSTNAME" ] ||
-        rsh="ssh -o BatchMode=yes -o PasswordAuthentication=no -o ChallengeResponseAuthentication=no $host"
+        rsh="ssh -o BatchMode=yes -o PasswordAuthentication=no -o ChallengeResponseAuthentication=no -o ConnectTimeout=5 $host"
 }
 test-remote-shell() {
     [ $# -gt 0 ] || set -- uptime
@@ -158,8 +158,8 @@ lockproc() {
             [ -n "$pgrp" ]
             # use remote shell when necessary,
             local rsh=; use-remote-shell-when-needed "$host"
-            # XXX assuming lock is alive when remote shell is broken
-            test-remote-shell ps || return 0
+            # XXX assuming lock is not alive when remote shell isn't responding, hence nothing must be running there
+            test-remote-shell ps || { c=$?; lockproc clean; exit $c; }
             pscmd=($rsh ps -o pid=,pgid=,command= -p $pgrp)
             if [ -n "$signature" ]; then
                 newSignature=$("${pscmd[@]}" 2>/dev/null | sha1sum | awk '{print $1}')
