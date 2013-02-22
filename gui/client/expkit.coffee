@@ -1144,116 +1144,203 @@ class ResultsTable extends CompositeElement
 
 
 
-displayChart = ->
-    chartBody = d3.select("#chart-body")
-    margin = {top: 20, right: 20, bottom: 50, left: 100}
-    width = 960 - margin.left - margin.right
-    height = 500 - margin.top - margin.bottom
+class ResultsChart extends CompositeElement
+    constructor: (@baseElement, @typeSelection, @axesControl, @table, @optionElements = {}) ->
+        super @baseElement
 
-    xColumn = (column for name, column of ExpKit.results.columns when column.isExpanded)[0]
-    yColumn = (column for name, column of ExpKit.results.columns when column.isMeasured)[0]
+        @axes = try JSON.parse localStorage["chartAxes"]
 
-    xAxisLabel = xColumn.name
-    yAxisLabel = yColumn.name
+        @table.on "changed", @initializeControls
 
-    log "drawing chart for", xAxisLabel, yAxisLabel
+    persist: =>
+        localStorage["chartAxes"] = JSON.stringify @axes
 
-    # collect column data from table
-    data = []
-    series = 0
-    $trs = ExpKit.results.baseElement.find("tbody tr")
-    resultsForRendering = ExpKit.results.resultsForRendering
-    # TODO find(".aggregated")
-    data[series++] = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
+    @AXIS_PICK_CONTROL_SKELETON: $("""
+        <script type="text/x-jsrender">
+          <div data-order="{{>ord}}" class="axis-control btn-group">
+            <a class="btn dropdown-toggle" data-toggle="dropdown"
+              href="#"><span class="axis-name">{{>axis.name}}</span>
+                  <span class="caret"></span></a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+              {{for variables}}
+                <li><a href="#">{{>name}}</a></li>
+              {{/for}}
+              {{if isOptional}}
+              <li class="divider"></li>
+              <li><a href="#">Remove</a></li>
+              {{/if}}
+            </ul>
+          </div>
+        </script>
+        """)
+    @AXIS_ADD_CONTROL_SKELETON: $("""
+        <script type="text/x-jsrender">
+          <div class="axis-add axis-control btn-group">
+            <a class="btn dropdown-toggle" data-toggle="dropdown"
+              href="#"><i class="icon icon-plus"></i> <span class="caret"></span></a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+              {{for variables}}
+                <li><a href="#">{{>name}}:{{>type}}</a></li>
+              {{/for}}
+            </ul>
+          </div>
+        </script>
+        """)
 
-    valueOf = (cell) -> cell.value
-    xData = (rowIdx) -> resultsForRendering[rowIdx][xColumn.index].value
-    yData = (rowIdx) -> resultsForRendering[rowIdx][yColumn.index].value
-    # TODO multi series to come
-    dataForCharting = data[0]
+    initializeControls: =>
+        # collect candidate variables for chart axes from ResultsTable
+        axisCandidates =
+            # only the expanded input variables or output variables can be charted
+            (col for col in @table.columnsRendered when col.isExpanded or col.isMeasured)
+        nominalVariables =
+            (axisCand for axisCand in axisCandidates when axisCand.type in ["string","nominal"])
+        ratioVariables =
+            (axisCand for axisCand in axisCandidates when axisCand.type in ["number","ratio"])
+        # choose the axes
+        defaultAxes = [ nominalVariables[0].name, ratioVariables[0].name ]
+        if not @axes?
+            # default axes if some 
+            @axes = defaultAxes
+        else
+            # find if all names in axes are valid, or make them default
+            for name,ord in @axes
+                @axes[ord] = defaultAxes[ord] unless axisCandidates.some (col) => col.name is name
+            # discard any null/undefined elements
+            @axes = @axes.filter (name) => name?
+        # TODO validation of each axis type with the chart type
+        # render the controls
+        @axesControl
+            .find(".axis-control").remove().end()
+            .append(
+                for name,ord in @axes
+                    ResultsChart.AXIS_PICK_CONTROL_SKELETON.render({
+                        ord: ord
+                        axis: @table.columns[name]
+                        # the second axis (Y) must be of ratio type
+                        variables: (if ord is 1 then ratioVariables else axisCandidates)
+                        isOptional: (ord > 1) # first two aren't optional
+                    })
+            )
+            .append(
+                ResultsChart.AXIS_ADD_CONTROL_SKELETON.render(
+                    variables: axisCandidates
+                )
+            )
+            .find(".axis-control .dropdown-menu li").on("click", @handleAxisChange)
+            # TODO add more axes
 
+        do @display
 
-    log "data for charting", data, dataForCharting.map(xData)
-
-    chartBody.select("svg").remove()
-    svg = chartBody.append("svg")
-        .attr("width",  width  + margin.left + margin.right )
-        .attr("height", height + margin.top  + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(#{margin.left},#{margin.top})")
-
-    x = d3.scale.ordinal()
-        .rangeRoundBands([0, width], .1)
-    # TODO see the type for x-axis, and decide
-    #x = d3.scale.linear()
-    #    .range([0, width])
-    y = d3.scale.linear()
-        .range([height, 0])
-    xAxis = d3.svg.axis()
-        .scale(x)
-        .orient("bottom")
-    yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left")
-
-    console.log "ydomain", d3.extent(dataForCharting, yData)
-
-    #x.domain(d3.extent(dataForCharting, xData))
-    x.domain(dataForCharting.map(xData))
-    extent = d3.extent(dataForCharting, yData)
-    extent = d3.extent(extent.concat([0])) # TODO if ratio type only
-    y.domain(extent)
-
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0,#{height})")
-        .call(xAxis)
-      .append("text")
-        .attr("y", -3)
-        .attr("x", width)
-        .attr("dy", "-.71em")
-        .style("text-anchor", "end")
-        .text(xAxisLabel)
-
-    svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis)
-      .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text(yAxisLabel)
-
-        
-    svg.selectAll(".dot")
-        .data(dataForCharting)
-      .enter().append("circle")
-        .attr("class", "dot")
-        .attr("r", 3.5)
-        .attr("cx",    (d) -> x(xData(d)) + x.rangeBand()/2)
-        .attr("cy",    (d) -> y(yData(d)))
-        .style("fill", "red")
-
-    line = d3.svg.line()
-        .x((d) -> x(xData(d)) + x.rangeBand()/2)
-        .y((d) -> y(yData(d)))
-    svg.append("path")
-        .datum(dataForCharting)
-        .attr("class", "line")
-        .attr("d", line)
-
-initChartUI = ->
-    # TODO listen to table changes?
-    $("#chart .btn-primary").click((e) ->
+    handleAxisChange: (e) =>
         e.preventDefault()
-        e.stopPropagation()
-        do displayChart
-    )
-    $("#results-table").bind("changed", (e) ->
-        try
-            do displayChart
-    )
+        $newVar = $(e.srcElement)
+        axisControl = $newVar.closest(".axis-control")
+        ord = +axisControl.attr("data-order")
+        name = $newVar.text()
+        axisControl.find(".axis-name").text(name)
+        @axes[ord] = name
+        # TODO proceed only when something actually changes
+        do @persist
+        do @display
+
+    display: =>
+        chartBody = d3.select("#chart-body")
+        margin = {top: 20, right: 20, bottom: 50, left: 100}
+        width = 960 - margin.left - margin.right
+        height = 500 - margin.top - margin.bottom
+
+        xColumn = @table.columns[@axes[0]]
+        yColumn = @table.columns[@axes[1]]
+
+        xAxisLabel = xColumn.name
+        yAxisLabel = yColumn.name
+
+        log "drawing chart for", xAxisLabel, yAxisLabel
+
+        # collect column data from table
+        data = []
+        series = 0
+        $trs = ExpKit.results.baseElement.find("tbody tr")
+        resultsForRendering = ExpKit.results.resultsForRendering
+        # TODO find(".aggregated")
+        data[series++] = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
+
+        valueOf = (cell) -> cell.value
+        xData = (rowIdx) -> resultsForRendering[rowIdx][xColumn.index].value
+        yData = (rowIdx) -> resultsForRendering[rowIdx][yColumn.index].value
+        # TODO multi series to come
+        dataForCharting = data[0]
+
+
+        log "data for charting", data, dataForCharting.map(xData)
+
+        chartBody.select("svg").remove()
+        svg = chartBody.append("svg")
+            .attr("width",  width  + margin.left + margin.right )
+            .attr("height", height + margin.top  + margin.bottom)
+          .append("g")
+            .attr("transform", "translate(#{margin.left},#{margin.top})")
+
+        x = d3.scale.ordinal()
+            .rangeRoundBands([0, width], .1)
+        # TODO see the type for x-axis, and decide
+        #x = d3.scale.linear()
+        #    .range([0, width])
+        y = d3.scale.linear()
+            .range([height, 0])
+        xAxis = d3.svg.axis()
+            .scale(x)
+            .orient("bottom")
+        yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left")
+
+        console.log "ydomain", d3.extent(dataForCharting, yData)
+
+        #x.domain(d3.extent(dataForCharting, xData))
+        x.domain(dataForCharting.map(xData))
+        extent = d3.extent(dataForCharting, yData)
+        extent = d3.extent(extent.concat([0])) # TODO if ratio type only
+        y.domain(extent)
+
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0,#{height})")
+            .call(xAxis)
+          .append("text")
+            .attr("y", -3)
+            .attr("x", width)
+            .attr("dy", "-.71em")
+            .style("text-anchor", "end")
+            .text(xAxisLabel)
+
+        svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis)
+          .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text(yAxisLabel)
+
+            
+        svg.selectAll(".dot")
+            .data(dataForCharting)
+          .enter().append("circle")
+            .attr("class", "dot")
+            .attr("r", 3.5)
+            .attr("cx",    (d) -> x(xData(d)) + x.rangeBand()/2)
+            .attr("cy",    (d) -> y(yData(d)))
+            .style("fill", "red")
+
+        line = d3.svg.line()
+            .x((d) -> x(xData(d)) + x.rangeBand()/2)
+            .y((d) -> y(yData(d)))
+        svg.append("path")
+            .datum(dataForCharting)
+            .attr("class", "line")
+            .attr("d", line)
 
 
 
@@ -1898,6 +1985,9 @@ $ ->
                 containerForStateDisplay    : $("#results")
                 buttonRefresh               : $("#results-refresh")
             ExpKit.results.load()
+            # chart
+            ExpKit.chart = new ResultsChart $("#chart-body"),
+                $("#chart-type"), $("#chart-axis-controls"), ExpKit.results
             # plan
             ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
                 ExpKit.conditions,
@@ -1915,7 +2005,6 @@ $ ->
             toggleShouldStart: $("#status-start-after-create")
         ExpKit.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), ExpKit.status
     do initTitle
-    do initChartUI
     do initBaseURLControl
     do initTabs
 

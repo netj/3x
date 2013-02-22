@@ -108,7 +108,24 @@
 
       <div id="chart" class="tab-pane row-fluid">
         <h2><i class="icon-bar-chart icon"></i>Chart</h2>
-        <a href="#" class="btn btn-primary">Display</a>
+
+        <form class="form-inline clear-fix">
+          <div class="btn-group pull-right" data-toggle="buttons-radio">
+            <button type="button" class="btn active" title="Single chart with multiple series overlaid"><i class="icon icon-sign-blank"></i> Single</button>
+            <button type="button" class="btn"        title="Small multiple of individual chart in series"><i class="icon icon-th"></i> Small Multiple</button>
+          </div>
+          <div id="chart-type" class="btn-group">
+            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">Chart Type <span class="caret"></span></a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+              <li><a href="#line-chart">Line Chart</a></li>
+              <li><a href="#bar-chart">Bar Chart</a></li>
+              <li><a href="#area-chart">Area Chart</a></li>
+              <li><a href="#scatter-plot">Scatter Plot</a></li>
+            </ul>
+          </div>
+          <div id="chart-axis-controls" class="btn-group"></div>
+        </form>
+
         <style>
           .axis path,
           .axis line {
@@ -127,6 +144,7 @@
             stroke-width: 1.5px;
           }
         </style>
+
         <div id="chart-body" style="height: 500px;"></div>
       </div>
 
