@@ -15,6 +15,9 @@ host=$(hostname -f)
 EXPROOT=$(exp-findroot)
 export EXPROOT
 
+# make sure we don't go into an editor
+export EDITOR=true VISUAL=true
+
 cd "$EXPROOT"
 
 mkdir -p .exp/gui

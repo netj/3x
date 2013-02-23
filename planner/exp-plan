@@ -70,7 +70,7 @@ case $1 in
             path=$1; shift
             set -- "$EXPROOT/$path" "$@"
         }
-        [ -t 0 ] || EDITOR=true
+        [ -t 1 ] || EDITOR=true
         {
             cat "$@"
             echo
