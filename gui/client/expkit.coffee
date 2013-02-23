@@ -912,6 +912,7 @@ class ResultsTable extends CompositeElement
 
         # trigger event for others
         _.defer => @trigger("changed", @resultsForRendering)
+        @dataTable.on "draw", => try @trigger("updated")
 
     maximizeDataTable: =>
         @dataTable.fnSettings().oScroll.sY = "#{window.innerHeight - @baseElement.position().top}px"
