@@ -73,6 +73,8 @@ choose = (n, items) ->
 
 enumerate = (vs) -> vs.joinTextsWithShy ","
 
+isNominal = (type) -> type in ["string", "nominal"]
+isRatio   = (type) -> type in ["number","ratio"]
 
 isAllNumeric = (vs) -> not vs.some (v) -> isNaN parseFloat v
 tryConvertingToNumbers = (vs) ->
@@ -1220,8 +1222,6 @@ class ResultsChart extends CompositeElement
         axisCandidates =
             # only the expanded input variables or output variables can be charted
             (col for col in @table.columnsRendered when col.isExpanded or col.isMeasured)
-        isNominal = (type) -> type in ["string", "nominal"]
-        isRatio   = (type) -> type in ["number","ratio"]
         nominalVariables =
             (axisCand for axisCand in axisCandidates when isNominal axisCand.type)
         ratioVariables =
@@ -1269,35 +1269,10 @@ class ResultsChart extends CompositeElement
         do @display
 
     display: =>
-        chartBody = d3.select("#chart-body")
+        chartBody = d3.select(@baseElement[0])
         margin = {top: 20, right: 20, bottom: 50, left: 100}
         width = 960 - margin.left - margin.right
         height = 500 - margin.top - margin.bottom
-
-        yColumn = @table.columns[@axes[0]]
-        xColumn = @table.columns[@axes[1]]
-
-        xAxisLabel = xColumn.name
-        yAxisLabel = yColumn.name
-
-        log "drawing chart for", xAxisLabel, yAxisLabel
-
-        # collect column data from table
-        data = []
-        series = 0
-        $trs = ExpKit.results.baseElement.find("tbody tr")
-        resultsForRendering = ExpKit.results.resultsForRendering
-        # TODO find(".aggregated")
-        data[series++] = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
-
-        valueOf = (cell) -> cell.value
-        xData = (rowIdx) -> resultsForRendering[rowIdx][xColumn.index].value
-        yData = (rowIdx) -> resultsForRendering[rowIdx][yColumn.index].value
-        # TODO multi series to come
-        dataForCharting = data[0]
-
-
-        log "data for charting", data, dataForCharting.map(xData)
 
         chartBody.select("svg").remove()
         svg = chartBody.append("svg")
@@ -1306,28 +1281,38 @@ class ResultsChart extends CompositeElement
           .append("g")
             .attr("transform", "translate(#{margin.left},#{margin.top})")
 
+        xVar = @table.columns[@axes[1]]
+        yVars = [@axes[0], @axes[2..].filter((name) => isRatio @table.columns[name].type)...].map (name) => @table.columns[name]
+        pivotVars = @axes[2..].filter((name) => isNominal @table.columns[name].type).map (name) => @table.columns[name]
+
+        xAxisLabel = xVar.name
+
+        log "drawing chart for", xAxisLabel, yAxisLabel
+
+        # collect column data from table
+        dataSeries = []
+        $trs = @table.baseElement.find("tbody tr")
+        entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
+        resultsForRendering = @table.resultsForRendering
+        dataSeries = _.groupBy entireRowIndexes, (rowIdx) ->
+            pivotVars.map((pvVar) -> resultsForRendering[rowIdx][pvVar.index].value).join(", ")
+
+        xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
+
+        # X axis
         x = d3.scale.ordinal()
             .rangeRoundBands([0, width], .1)
-        # TODO see the type for x-axis, and decide
-        #x = d3.scale.linear()
-        #    .range([0, width])
         y = d3.scale.linear()
             .range([height, 0])
+
         xAxis = d3.svg.axis()
             .scale(x)
             .orient("bottom")
-        yAxis = d3.svg.axis()
-            .scale(y)
-            .orient("left")
-
-        console.log "ydomain", d3.extent(dataForCharting, yData)
-
+        # TODO see the type for x-axis, and decide
+        #x = d3.scale.linear()
+        #    .range([0, width])
         #x.domain(d3.extent(dataForCharting, xData))
-        x.domain(dataForCharting.map(xData))
-        extent = d3.extent(dataForCharting, yData)
-        extent = d3.extent(extent.concat([0])) # TODO if ratio type only
-        y.domain(extent)
-
+        x.domain(entireRowIndexes.map(xData))
         svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0,#{height})")
@@ -1339,33 +1324,50 @@ class ResultsChart extends CompositeElement
             .style("text-anchor", "end")
             .text(xAxisLabel)
 
-        svg.append("g")
-            .attr("class", "y axis")
-            .call(yAxis)
-          .append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 6)
-            .attr("dy", ".71em")
-            .style("text-anchor", "end")
-            .text(yAxisLabel)
+        log "data for charting", dataSeries
 
-            
-        svg.selectAll(".dot")
-            .data(dataForCharting)
-          .enter().append("circle")
-            .attr("class", "dot")
-            .attr("r", 3.5)
-            .attr("cx",    (d) -> x(xData(d)) + x.rangeBand()/2)
-            .attr("cy",    (d) -> y(yData(d)))
-            .style("fill", "red")
+        for seriesLabel,dataForCharting of dataSeries
+            for yVar in yVars
+                yAxisLabel = yVar.name
+                yData = (rowIdx) -> resultsForRendering[rowIdx][yVar.index].value
 
-        line = d3.svg.line()
-            .x((d) -> x(xData(d)) + x.rangeBand()/2)
-            .y((d) -> y(yData(d)))
-        svg.append("path")
-            .datum(dataForCharting)
-            .attr("class", "line")
-            .attr("d", line)
+                yAxis = d3.svg.axis()
+                    .scale(y)
+                    .orient("left")
+
+                console.log "ydomain", d3.extent(dataForCharting, yData)
+
+                extent = d3.extent(dataForCharting, yData)
+                extent = d3.extent(extent.concat([0])) # TODO if ratio type only
+                y.domain(extent)
+
+                svg.append("g")
+                    .attr("class", "y axis")
+                    .call(yAxis)
+                  .append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 6)
+                    .attr("dy", ".71em")
+                    .style("text-anchor", "end")
+                    .text(yAxisLabel)
+
+                    
+                svg.selectAll(".dot")
+                    .data(dataForCharting)
+                  .enter().append("circle")
+                    .attr("class", "dot")
+                    .attr("r", 3.5)
+                    .attr("cx",    (d) -> x(xData(d)) + x.rangeBand()/2)
+                    .attr("cy",    (d) -> y(yData(d)))
+                    .style("fill", "red")
+
+                line = d3.svg.line()
+                    .x((d) -> x(xData(d)) + x.rangeBand()/2)
+                    .y((d) -> y(yData(d)))
+                svg.append("path")
+                    .datum(dataForCharting)
+                    .attr("class", "line")
+                    .attr("d", line)
 
 
 
