@@ -1149,25 +1149,30 @@ class ResultsChart extends CompositeElement
         super @baseElement
 
         @axes = try JSON.parse localStorage["chartAxes"]
+        @axesControl
+            .on("click", ".axis-add    .axis-var", @actionHandlerForAxisControl @handleAxisAddition)
+            .on("click", ".axis-change .axis-var", @actionHandlerForAxisControl @handleAxisChange)
+            .on("click", ".axis-change .axis-remove", @actionHandlerForAxisControl @handleAxisRemoval)
 
-        @table.on "changed", @initializeControls
+        @table.on "changed", @initializeAxes
+        @table.on "updated", @display # TODO make ResultsTable emit the event when it's redrawn
 
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axes
 
     @AXIS_PICK_CONTROL_SKELETON: $("""
         <script type="text/x-jsrender">
-          <div data-order="{{>ord}}" class="axis-control btn-group">
+          <div data-order="{{>ord}}" class="axis-control axis-change btn-group">
             <a class="btn dropdown-toggle" data-toggle="dropdown"
               href="#"><span class="axis-name">{{>axis.name}}</span>
                   <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
-                <li><a href="#">{{>name}}</a></li>
+                <li class="axis-var" data-name="{{>name}}"><a href="#">{{>name}}</a></li>
               {{/for}}
               {{if isOptional}}
               <li class="divider"></li>
-              <li><a href="#">Remove</a></li>
+              <li class="axis-remove"><a href="#">Remove</a></li>
               {{/if}}
             </ul>
           </div>
@@ -1175,39 +1180,73 @@ class ResultsChart extends CompositeElement
         """)
     @AXIS_ADD_CONTROL_SKELETON: $("""
         <script type="text/x-jsrender">
-          <div class="axis-add axis-control btn-group">
+          <div class="axis-control axis-add btn-group">
             <a class="btn dropdown-toggle" data-toggle="dropdown"
               href="#"><i class="icon icon-plus"></i> <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
-                <li><a href="#">{{>name}}:{{>type}}</a></li>
+                <li class="axis-var" data-name="{{>name}}"><a href="#">{{>name}}:{{>type}}</a></li>
               {{/for}}
             </ul>
           </div>
         </script>
         """)
 
-    initializeControls: =>
+    actionHandlerForAxisControl: (action) => (e) =>
+        e.preventDefault()
+        $this = $(e.srcElement)
+        $axisControl = $this.closest(".axis-control")
+        ord = +$axisControl.attr("data-order")
+        name = $this.closest(".axis-var").attr("data-name")
+        action ord, name, $axisControl, $this, e
+    handleAxisChange: (ord, name, $axisControl) =>
+        $axisControl.find(".axis-name").text(name)
+        @axes[ord] = name
+        # TODO proceed only when something actually changes
+        do @persist
+        do @initializeAxes
+    handleAxisAddition: (ord, name, $axisControl) =>
+        @axes.push name
+        do @persist
+        do @initializeAxes
+    handleAxisRemoval: (ord, name, $axisControl) =>
+        @axes.splice ord, 1
+        do @persist
+        do @initializeAxes
+
+    initializeAxes: =>
         # collect candidate variables for chart axes from ResultsTable
         axisCandidates =
             # only the expanded input variables or output variables can be charted
             (col for col in @table.columnsRendered when col.isExpanded or col.isMeasured)
+        isNominal = (type) -> type in ["string", "nominal"]
+        isRatio   = (type) -> type in ["number","ratio"]
         nominalVariables =
-            (axisCand for axisCand in axisCandidates when axisCand.type in ["string","nominal"])
+            (axisCand for axisCand in axisCandidates when isNominal axisCand.type)
         ratioVariables =
-            (axisCand for axisCand in axisCandidates when axisCand.type in ["number","ratio"])
-        # choose the axes
+            (axisCand for axisCand in axisCandidates when isRatio axisCand.type)
+        # validate the variables chosen for axes
         defaultAxes = [ nominalVariables[0].name, ratioVariables[0].name ]
-        if not @axes?
-            # default axes if some 
-            @axes = defaultAxes
-        else
-            # find if all names in axes are valid, or make them default
-            for name,ord in @axes
-                @axes[ord] = defaultAxes[ord] unless axisCandidates.some (col) => col.name is name
+        if @axes?
+            # find if all names in axes are valid, don't appear already, or make them default
+            for name,ord in @axes when (@axes.indexOf(name) isnt ord or
+                    not axisCandidates.some (col) => col.name is name)
+                @axes[ord] = defaultAxes[ord] ? null
             # discard any null/undefined elements
             @axes = @axes.filter (name) => name?
+        else
+            # default axes
+            @axes = defaultAxes
         # TODO validation of each axis type with the chart type
+        # find out remaining variables
+        remainingVariables = (
+                if @axes.length < 3
+                    axisCandidates
+                else if isRatio @table.columns[@axes[2]].type
+                    ratioVariables
+                else
+                    nominalVariables
+            ).filter((col) => col.name not in @axes)
         # render the controls
         @axesControl
             .find(".axis-control").remove().end()
@@ -1216,31 +1255,16 @@ class ResultsChart extends CompositeElement
                     ResultsChart.AXIS_PICK_CONTROL_SKELETON.render({
                         ord: ord
                         axis: @table.columns[name]
-                        # the second axis (Y) must be of ratio type
-                        variables: (if ord is 1 then ratioVariables else axisCandidates)
-                        isOptional: (ord > 1) # first two aren't optional
+                        variables: (if ord is 0 then ratioVariables else axisCandidates)
+                                    # the first axis (Y) must always be of ratio type
+                            .filter((col) => col.name not in @axes[0..ord]) # and without the current one
+                        isOptional: (ord > 1) # there has to be at least two axes
                     })
             )
-            .append(
-                ResultsChart.AXIS_ADD_CONTROL_SKELETON.render(
-                    variables: axisCandidates
-                )
-            )
-            .find(".axis-control .dropdown-menu li").on("click", @handleAxisChange)
-            # TODO add more axes
+        @axesControl.append(ResultsChart.AXIS_ADD_CONTROL_SKELETON.render(
+            variables: remainingVariables
+        )) if remainingVariables.length > 0
 
-        do @display
-
-    handleAxisChange: (e) =>
-        e.preventDefault()
-        $newVar = $(e.srcElement)
-        axisControl = $newVar.closest(".axis-control")
-        ord = +axisControl.attr("data-order")
-        name = $newVar.text()
-        axisControl.find(".axis-name").text(name)
-        @axes[ord] = name
-        # TODO proceed only when something actually changes
-        do @persist
         do @display
 
     display: =>
@@ -1249,8 +1273,8 @@ class ResultsChart extends CompositeElement
         width = 960 - margin.left - margin.right
         height = 500 - margin.top - margin.bottom
 
-        xColumn = @table.columns[@axes[0]]
-        yColumn = @table.columns[@axes[1]]
+        yColumn = @table.columns[@axes[0]]
+        xColumn = @table.columns[@axes[1]]
 
         xAxisLabel = xColumn.name
         yAxisLabel = yColumn.name
@@ -2008,3 +2032,5 @@ $ ->
     do initBaseURLControl
     do initTabs
 
+
+# vim:undofile
