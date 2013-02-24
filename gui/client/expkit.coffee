@@ -1184,7 +1184,7 @@ class ResultsChart extends CompositeElement
     @AXIS_PICK_CONTROL_SKELETON: $("""
         <script type="text/x-jsrender">
           <div data-order="{{>ord}}" class="axis-control axis-change btn-group">
-            <a class="btn dropdown-toggle" data-toggle="dropdown"
+            <a class="btn btn-small dropdown-toggle" data-toggle="dropdown"
               href="#"><span class="axis-name">{{>axis.name}}</span>
                   <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
@@ -1202,7 +1202,7 @@ class ResultsChart extends CompositeElement
     @AXIS_ADD_CONTROL_SKELETON: $("""
         <script type="text/x-jsrender">
           <div class="axis-control axis-add btn-group">
-            <a class="btn dropdown-toggle" data-toggle="dropdown"
+            <a class="btn btn-small dropdown-toggle" data-toggle="dropdown"
               href="#"><i class="icon icon-plus"></i> <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
@@ -1287,7 +1287,7 @@ class ResultsChart extends CompositeElement
                 if @axisNames.length < 3 or (_.size @varsYbyUnit) < 2
                     axisCandidates
                 else # filter variables in a third unit when there're already two axes
-                    ax for ax in axisCandidates when isNominal ax.type or @varsYbyUnit[ax.unit]?
+                    ax for ax in axisCandidates when @varsYbyUnit[ax.unit]? or isNominal ax.type
             ).filter((col) => col.name not in @axisNames)
         # render the controls
         @axesControl
