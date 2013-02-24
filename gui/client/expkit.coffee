@@ -1326,7 +1326,7 @@ class ResultsChart extends CompositeElement
         color = d3.scale.category10()
 
         ## Analyze the extent of Y axes data (single or dual unit)
-        yExtents = []
+        yUnitsOrder = []
         yExtentsByUnit = {}
         for yVar in yVars
             unit = yVar.unit
@@ -1338,7 +1338,7 @@ class ResultsChart extends CompositeElement
                     resultsForRendering[rowIdx][ax.index].value)))
             extent = d3.extent(extent.concat([0])) # include origin # TODO make this controllable
             yExtentsByUnit[unit] = extent
-            yExtents.push extent
+            yUnitsOrder.push unit
 
         ## Determine the chart dimension and initialize the SVG root
         chartBody = d3.select(@baseElement[0])
@@ -1349,11 +1349,17 @@ class ResultsChart extends CompositeElement
             height: "#{chartHeight}px"
         margin =
             top: 20, bottom: 50
-            right: 20, left: 20
-        for extent,i in yExtents
-            numDigits = Math.max (Math.ceil(Math.log(Math.abs(e)) / Math.log(10)) for e in extent)...
-            numDigits = Math.floor (numDigits * 4/3) # take commas into account
-            log extent, numDigits
+            right: 40, left: 40
+        # Adjust margins while we prepare the Y scales
+        ys = {}
+        yAxes = {}
+        for unit,i in yUnitsOrder
+            y = ys[unit] =
+                d3.scale.linear()
+                    .domain(yExtentsByUnit[unit])
+            yAxis = yAxes[unit] = d3.svg.axis()
+                .scale(y)
+            numDigits = Math.max _.pluck(y.ticks(yAxis.ticks()).map(y.tickFormat()), "length")...
             tickWidth = Math.ceil(numDigits * 6.5) #px per digit
             if i is 0
                 margin.left += tickWidth
@@ -1361,7 +1367,6 @@ class ResultsChart extends CompositeElement
                 margin.right += tickWidth
         width = chartWidth - margin.left - margin.right
         height = chartHeight - margin.top - margin.bottom
-        log chartWidth, chartHeight, width, height, JSON.stringify margin
         chartBody.select("svg").remove()
         svg = chartBody.append("svg")
             .attr("width",  chartWidth)
@@ -1394,41 +1399,39 @@ class ResultsChart extends CompositeElement
             .attr("transform", "translate(0,#{height})")
             .call(xAxis)
           .append("text")
-            .attr("y", -3)
-            .attr("x", width)
-            .attr("dx", "-.35em")
-            .attr("dy", "-.35em")
-            .style("text-anchor", "end")
+            #.attr("y", 0)
+            .attr("x", width/2)
+            #.attr("dx", "-.35em")
+            .attr("dy", "3em")
+            .style("text-anchor", "middle")
             .text(xAxisLabel)
         log "drawing chart by", xAxisLabel
 
         ## Setup and draw Y axis
-        ys = {}
-        ysOrdered = []
         yAxisDrawn = {}
         for yVar in yVars
             unit = yVar.unit
             continue if yAxisDrawn[unit]?
-            y = ys[unit] =
-                d3.scale.linear()
-                    .domain(yExtentsByUnit[unit])
-                    .range([height, 0])
+            y = ys[unit]
+            y.range([height, 0])
             yAxisLabel = formatAxisLabel (if @varsYbyUnit[unit].length is 1 then yVar.name), unit
-            try log "y #{yAxisLabel} =", y.domain()
             # draw axis
             orientation = if _.size(yAxisDrawn) is 0 then "left" else "right"
-            yAxis = d3.svg.axis()
-                .scale(y)
+            yAxis = yAxes[unit]
                 .orient(orientation)
+            window.yAxis = yAxis
+            window.y = y
             svg.append("g")
                 .attr("class", "y axis")
                 .attr("transform", if orientation isnt "left" then "translate(#{width},0)")
                 .call(yAxis)
               .append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 3)
-                .attr("dy", "#{if orientation is "left" then "" else "-"}.71em")
-                .style("text-anchor", "end")
+                .attr("transform", "translate(#{
+                        if orientation is "left" then -margin.left else margin.right
+                    },#{height/2}), rotate(-90)")
+                #.attr("y", 0)
+                .attr("dy", if orientation is "left" then "1em" else "-.3em")
+                .style("text-anchor", "middle")
                 .text(yAxisLabel)
             yAxisDrawn[unit] = true
 
