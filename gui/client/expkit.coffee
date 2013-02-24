@@ -281,7 +281,9 @@ initTabs = ->
         #log "showing tab", tab
         switch tab
             when "results"
-                ExpKit.results?.dataTable?.fnDraw()
+                # XXX workaround to make table use the full width of window for the first time
+                _.defer ExpKit.results?.display, 10 unless ExpKit.results?.__tabHasBeenClicked
+                ExpKit.results?.__tabHasBeenClicked = yes
             when "chart"
                 do ExpKit.chart?.display
             when "plan"
@@ -293,6 +295,7 @@ initTabs = ->
     # restore last tab
     if localStorage.lastTab?
         $(".navbar a[href='##{localStorage.lastTab}']").click()
+        ExpKit.results?.__tabHasBeenClicked = yes if localStorage.lastTab is "results"
 
 
 
@@ -879,20 +882,6 @@ class ResultsTable extends CompositeElement
         ).appendTo(@baseElement)
         # TODO apply DataRenderer dom mainpulator
 
-        computeRequireTableWidth = (columnMetadata) ->
-            width = 0
-            for name,col of columnMetadata
-                width +=
-                    # TODO be more precise
-                    switch col.type
-                        when "object"
-                            300
-                        when "number", "string"
-                            150
-                        else
-                            100
-            width
-
         # finally, make the table interactive with DataTable
         @dataTable = $(@baseElement).dataTable
             # XXX @baseElement must be enclosed by a $() before .dataTable(),
@@ -902,11 +891,9 @@ class ResultsTable extends CompositeElement
             bDestroy: true
             bLengthChange: false
             bPaginate: false
-            bAutoWidth: false
+            bAutoWidth: true
             bScrollCollapse: true
             sScrollX: "100%"
-            #sScrollXInner: "#{Math.round Math.max(computeRequireTableWidth(@columnMetadata),
-            #                      @baseElement.parent().size().width)}px"
             sScrollY: "#{window.innerHeight - @baseElement.position().top}px"
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             # TODO isolate localStorage key
