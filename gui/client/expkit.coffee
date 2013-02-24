@@ -115,7 +115,7 @@ serializeFilter = (parsedFilter) ->
 
 # different aggregation methods depending on data type or level of measurement
 class Aggregation
-    constructor: (@name, @type, @func) ->
+    constructor: (@name, @type, @func, @transUnit = _.identity) ->
         Aggregation.FOR_NAME[@name] = @
     @FOR_NAME: {}
     @FOR_TYPE: {}
@@ -485,13 +485,13 @@ class ConditionsUI extends MenuDropdown
             # add each condition with menu item for each value
             menuAnchor = @addMenu name, values
             @updateDisplay menuAnchor
-            log "initCondition #{name}:#{type}=#{values.join ","}"
+            try log "initCondition #{name}:#{type}=#{values.join ","}"
 
 class MeasurementsUI extends MenuDropdown
     constructor: (@baseElement) ->
         super @baseElement, "measurement"
-        @menuLabelItemsPrefix  = " ("
-        @menuLabelItemsPostfix = ")"
+        @menuLabelItemsPrefix  = " ["
+        @menuLabelItemsPostfix = "]"
         @measurements = {}
 
         # initialize menu filter
@@ -533,7 +533,7 @@ class MeasurementsUI extends MenuDropdown
                 )
 
             @updateDisplay menuAnchor
-            log "initMeasurement #{name}:#{type}.#{(_.keys aggregations).join ","}"
+            try log "initMeasurement #{name}:#{type}.#{(_.keys aggregations).join ","}"
 
     # display current filter for a menu
     updateDisplay: (menuAnchor) =>
@@ -661,7 +661,8 @@ class ResultsTable extends CompositeElement
           <tr>
             {{for columns}}
             <th class="{{>className}}" data-index="{{>index}}" data-dataIndex="{{>dataIndex}}"><span class="dataName">{{>dataName}}</span>
-                {{if isMeasured && !isExpanded}}<small>(<span class="aggregationName">{{>aggregation.name}}</span>)</small>{{/if}}
+                {{if unit}}(<span class="unit">{{>unit}}</span>){{/if}}
+                {{if isMeasured && !isExpanded}}<small>[<span class="aggregationName">{{>aggregation.name}}</span>]</small>{{/if}}
                 {{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
                 icon icon-folder-{{if isExpanded}}open{{else}}close{{/if}}-alt"
                 title="{{if isExpanded}}Aggregate and fold the values of {{>name}}{{else
@@ -714,6 +715,8 @@ class ResultsTable extends CompositeElement
                     dataName: name
                     dataIndex: columnIndex[name]
                     dataType: condition.type
+                    dataUnit: condition.unit
+                    unit: if isExpanded then condition.unit
                     type: if isExpanded then condition.type else "string"
                     isMeasured: no
                     isInactive: @conditions.menusInactive[name]
@@ -723,11 +726,14 @@ class ResultsTable extends CompositeElement
             #  then, measures
             for name,measure of @measurements.measurements when not @measurements.menusInactive[name]
                 type = if name is RUN_COLUMN_NAME then "hyperlink" else measure.type
+                unit = if name is RUN_COLUMN_NAME then null        else measure.unit
                 col =
                     dataName: name
                     dataIndex: columnIndex[name]
                     dataType: type
+                    dataUnit: unit
                     type: type
+                    unit: unit
                     isMeasured: yes
                     isInactive: @measurements.menusInactive[name]
                     isExpanded: @columnsToExpand[RUN_COLUMN_NAME]
@@ -745,6 +751,7 @@ class ResultsTable extends CompositeElement
                         columns[colName] = _.extend {}, col,
                             name: colName
                             type: agg.type
+                            unit: agg.transUnit(unit)
                             aggregation: agg
                             index: idx++
             @columns = columns
