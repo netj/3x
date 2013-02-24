@@ -278,19 +278,10 @@ initTabs = ->
     # re-render some tables since it could be in bad shape while the tab wasn't active
     $(".navbar a[data-toggle='tab']").on "shown", (e) ->
         tab = $(e.target).attr("href").substring(1)
-        #log "showing tab", tab
-        switch tab
-            when "results"
-                do ExpKit.results?.displayIfDeferred
-            when "chart"
-                do ExpKit.chart?.displayIfDeferred
-            when "plan"
-                do ExpKit.planner?.displayIfDeferred
-            when "runs"
-                do ExpKit.batches?.displayIfDeferred
-                do ExpKit.status?.displayIfDeferred
-        # store last tab
+        # store as last tab
         localStorage.lastTab = tab
+        #log "showing tab", tab
+        do CompositeElement.displayDeferredInstances
     # restore last tab
     if localStorage.lastTab?
         $(".navbar a[href='##{localStorage.lastTab}']").click()
@@ -332,7 +323,13 @@ initBaseURLControl = ->
 
 # TODO find a cleaner way to do this, i.e., leveraging jQuery
 class CompositeElement
+    @INSTANCES: []
+    @displayDeferredInstances: ->
+        for e in CompositeElement.INSTANCES
+            do e.displayIfDeferred
+
     constructor: (@baseElement) ->
+        CompositeElement.INSTANCES.push @
         @on      = $.proxy @baseElement.on     , @baseElement
         @off     = $.proxy @baseElement.off    , @baseElement
         @one     = $.proxy @baseElement.one    , @baseElement
