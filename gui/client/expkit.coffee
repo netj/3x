@@ -623,6 +623,7 @@ class ResultsTable extends CompositeElement
                do @load
         do @display # initializing results table with empty data first
         $(window).resize(_.throttle @maximizeDataTable, 100)
+            .resize(_.debounce @display, 500)
         @conditions.on("activeMenuItemsChanged", @load)
                    .on("activeMenusChanged", @display)
         @measurements.on("activeMenuItemsChanged", @display)
