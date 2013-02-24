@@ -1458,6 +1458,7 @@ class ResultsChart extends CompositeElement
                     .style("fill", seriesColor)
 
                 line = d3.svg.line().x(xCoord).y(yCoord)
+                    .interpolate("basis")
                 svg.append("path")
                     .datum(dataForCharting)
                     .attr("class", "line")
