@@ -281,21 +281,19 @@ initTabs = ->
         #log "showing tab", tab
         switch tab
             when "results"
-                # XXX workaround to make table use the full width of window for the first time
-                _.defer ExpKit.results?.display, 10 unless ExpKit.results?.__tabHasBeenClicked
-                ExpKit.results?.__tabHasBeenClicked = yes
+                do ExpKit.results?.displayIfDeferred
             when "chart"
-                do ExpKit.chart?.display
+                do ExpKit.chart?.displayIfDeferred
             when "plan"
-                ExpKit.planner?.dataTable?.fnDraw()
+                do ExpKit.planner?.displayIfDeferred
             when "runs"
-                ExpKit.status?.dataTable?.fnDraw()
+                do ExpKit.batches?.displayIfDeferred
+                do ExpKit.status?.displayIfDeferred
         # store last tab
         localStorage.lastTab = tab
     # restore last tab
     if localStorage.lastTab?
         $(".navbar a[href='##{localStorage.lastTab}']").click()
-        ExpKit.results?.__tabHasBeenClicked = yes if localStorage.lastTab is "results"
 
 
 
@@ -340,6 +338,31 @@ class CompositeElement
         @one     = $.proxy @baseElement.one    , @baseElement
         @trigger = $.proxy @baseElement.trigger, @baseElement
 
+    display: (args...) =>
+        # NOTE by checking @deferredDisplay, we can tell if this element had to be rendered or not
+        @deferredDisplay ?= $.Deferred()
+        @deferredDisplayArgs = args if args.length > 0
+        if @baseElement.is(":visible")
+            unless @isRendering
+                _.defer =>
+                    log "#{@baseElement.prop("id")}: renderBegan"
+                    @isRendering = yes
+                    try @trigger "renderBegan"
+                    _.delay =>
+                        try @render (@deferredDisplayArgs ? [])...
+                        _.defer =>
+                            try @deferredDisplay.resolve()
+                            try @trigger "renderEnded"
+                            @isRendering = no
+                            @deferredDisplay = @deferredDisplayArgs = null
+                            log "#{@baseElement.prop("id")}: renderEnded"
+                    , 1
+        else
+            log "#{@baseElement.prop("id")}: rendering deferred..."
+        @deferredDisplay.promise()
+    displayIfDeferred: => do @display if @deferredDisplay?
+    render: =>
+        error "CompositeElement::render() not implemented"
 
 
 class MenuDropdown extends CompositeElement
@@ -621,6 +644,9 @@ class ResultsTable extends CompositeElement
             .click (e) =>
                do e.preventDefault
                do @load
+        if @optionElements.containerForStateDisplay?
+            @on "renderBegan", => @optionElements.containerForStateDisplay?.addClass("displaying")
+            @on "renderEnded", => @optionElements.containerForStateDisplay?.removeClass("displaying")
         do @display # initializing results table with empty data first
         $(window).resize(_.throttle @maximizeDataTable, 100)
             .resize(_.debounce @display, 500)
@@ -699,13 +725,7 @@ class ResultsTable extends CompositeElement
         else
             enumerate
 
-    display: =>
-        @optionElements.containerForStateDisplay?.addClass("displaying")
-        deferred = $.Deferred()
-            .done(=> @optionElements.containerForStateDisplay?.removeClass("displaying"))
-        _.delay (=> do @_display; deferred.resolve()), 10
-        deferred
-    _display: =>
+    render: =>
         columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
         do =>
             # construct column definitions
@@ -829,6 +849,7 @@ class ResultsTable extends CompositeElement
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
         #log "rendering results:", @resultsForRendering
+        _.defer => @trigger "changed", @resultsForRendering
 
         # fold any artifacts made by previous DataTables
         @dataTable?.dataTable bDestroy:true
@@ -910,7 +931,6 @@ class ResultsTable extends CompositeElement
         do @maximizeDataTable
 
         # trigger event for others
-        _.defer => @trigger("changed", @resultsForRendering)
         @dataTable.on "draw", => try @trigger("updated")
 
     maximizeDataTable: =>
@@ -1155,7 +1175,7 @@ class ResultsChart extends CompositeElement
             .on("click", ".axis-change .axis-remove", @actionHandlerForAxisControl @handleAxisRemoval)
 
         @table.on "changed", @initializeAxes
-        @table.on "updated", @display # TODO make ResultsTable emit the event when it's redrawn
+        @table.on "updated", @display
 
         $(window).resize(_.throttle @display, 100)
 
@@ -1218,8 +1238,7 @@ class ResultsChart extends CompositeElement
 
     @X_AXIS_ORDINAL: 1 # second variable is X
     @Y_AXIS_ORDINAL: 0 # first variable is Y
-    initializeAxes: =>
-        # initialize @axes from @axisNames
+    initializeAxes: => # initialize @axes from @axisNames
         # collect candidate variables for chart axes from ResultsTable
         axisCandidates =
             # only the expanded input variables or output variables can be charted
@@ -1288,7 +1307,7 @@ class ResultsChart extends CompositeElement
 
         do @display
 
-    display: =>
+    render: =>
         xVar = @varX
         yVars = @varsY
         pivotVars = @varsPivot
@@ -1516,7 +1535,7 @@ class BatchesTable extends CompositeElement
         # TODO isolate localStorage key
         localStorage.lastBatchId = @currentBatchId
 
-    display: =>
+    render: =>
         bt = @
         unless @dataTable?
             # clone original thead row
@@ -1683,7 +1702,7 @@ class PlanTableBase extends CompositeElement
         </script>
         """)
 
-    display: (@plan) =>
+    render: (@plan) =>
         # prepare to distinguish metadata from condition columns
         columnIndex = {}; columnIndex[name] = idx for name,idx in @plan.names
         columnNames = (name for name of @conditions.conditions)
@@ -1828,7 +1847,7 @@ class StatusTable extends PlanTableBase
         $.getJSON("#{ExpKitServiceBaseURL}/api/#{@batchId}")
             .success(@display)
 
-    display: (args...) =>
+    render: (args...) =>
         # display the name of the batch
         @optionElements.nameDisplay?.text(@batchId)
         # render table
@@ -1873,7 +1892,7 @@ class PlanTable extends PlanTableBase
         # persist in localStorage
         localStorage[@planTableId] = JSON.stringify @plan
 
-    display: (args...) =>
+    render: (args...) =>
         super args...
         # scroll to the last row
         if (lastRow = @dataTable.find("tbody tr").last()[0])?
