@@ -13,11 +13,19 @@ set -eu
 shopt -s extglob
 
 # process options
+showUnit=false
+showType=false
 enumValues=false
-while getopts "v" opt; do
+while getopts "utv" opt; do
     case $opt in
         v)
             enumValues=true
+            ;;
+        t)
+            showType=true
+            ;;
+        u)
+            showUnit=true
             ;;
     esac
 done
@@ -49,6 +57,14 @@ else
 fi
 
 # finally, show them with values when necessary
+showInputNamePart() {
+    local name=$1; shift
+    local pattDir=$1; shift
+    unit=; ! $showUnit || unit=$({ cat "$name"/unit     2>/dev/null || echo; } | tr -d '\n')
+    type=; ! $showType || type=$({ cat "$name"/datatype 2>/dev/null || echo; } | tr -d '\n')
+    ! $showType || [ -n "$type" ] || type=nominal
+    echo "$name${unit:+($unit)}${type:+:$type}$*"
+}
 if $enumValues; then
     showInput() {
         local name=$1
@@ -62,10 +78,10 @@ if $enumValues; then
             done
         )
         values=${values#,}
-        echo "$name=$values"
+        showInputNamePart "$@" "=$values"
     }
 else
-    showInput() { echo "$1"; }
+    showInput() { showInputNamePart "$@"; }
 fi
 for path in "$@"; do
     [ -e "$path" ] || continue

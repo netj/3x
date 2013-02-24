@@ -242,15 +242,16 @@ app.get "/api/description", (req, res) ->
     res.json EXP_DESCRIPTOR
 
 app.get "/api/inputs", (req, res) ->
-    cli(res, "exp-inputs", ["-v"]
+    cli(res, "exp-inputs", ["-utv"]
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
-                        if m = /^([^=]+)=(.*)$/.exec line
-                            [__, name, value] = m
+                        if m = /^([^=:(]+)(\(([^)]+)\))?:([^=]+)=(.*)$/.exec line
+                            [__, name, __, unit, type, value] = m
                             [name,
                                 values: value?.split ","
-                                type: "nominal" # FIXME extend exp-inputs to output datatype as well (-t?)
+                                type: type
+                                unit: unit
                             ]
                     )
                 .join (pairs) -> next (_.object pairs)
@@ -258,14 +259,15 @@ app.get "/api/inputs", (req, res) ->
         res.json inputs unless err
 
 app.get "/api/outputs", (req, res) ->
-    cli(res, "exp-outputs", []
+    cli(res, "exp-outputs", ["-ut"]
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
-                    if m = /^([^:]+):(.*)$/.exec line
-                        [__, name, type] = m
+                    if m = /^([^:(]+)(\(([^)]+)\))?:(.*)$/.exec line
+                        [__, name, __, unit, type] = m
                         [name,
                             type: type
+                            unit: unit
                         ]
                 )
                 .join (pairs) -> next (_.object pairs)

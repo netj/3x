@@ -2,9 +2,9 @@
 # exp-define -- Define element of the experiment
 # Usage: exp define WHAT NAME HOW...
 #        exp define program  NAME COMMAND...
-#        exp define input    NAME[:TYPE] VALUE1 [VALUE2]...
-#        exp define output   NAME[:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
-#        exp define output   NAME:TYPE   file     FILENAME
+#        exp define input    NAME[(UNIT)][:TYPE] VALUE1 [VALUE2]...
+#        exp define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
+#        exp define output   NAME:MIMETYPE       file     FILENAME
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
@@ -41,32 +41,37 @@ case $What in
         ;;
 
     input)
+        extractUnitFromName
         extractTypeFromName nominal # TODO default is nominal, but may we can try recognition
         dir="input/$Name="
         checkIfNameIsSane "$Name" "$dir"
         for Value; do
             checkIfValueIsSane "$Value" "$Name" "$dir/$Value"
         done
+        # TODO check validity of $Unit, $Type
         for Value; do
-            checkIfNameIsSane "$Name" "$Name"
             vdir="$dir/$Value"
             mkdir -p "$vdir"
             touch "$vdir"/env
         done
+        [ -z "$Unit" ] || echo "$Unit" >"$dir"/unit
         echo "$Type" >"$dir"/datatype
         # TODO decide what to do with the other ones not mentioned
         ;;
 
     output)
         outputType=${1:-}; shift || true
-        extractTypeFromName ratio # default is ratio
+        extractUnitFromName
+        extractTypeFromName
         dir="output/$Name"
         checkIfNameIsSane "$Name" "$dir"
+        # TODO check validity of $Unit, $Type
         case $outputType in 
             extract)
                 [ $# -gt 0 ] || usage "$0" "Missing REGEXP_BEFORE"
                 [ $# -gt 1 ] || usage "$0" "Missing REGEXP"
                 [ $# -eq 3 ] || usage "$0" "Missing REGEXP_AFTER"
+                : ${Type:=ratio} # default type is ratio
                 mkdir -p "$dir"
                 {
                     echo "#!/usr/bin/env bash"
@@ -75,18 +80,28 @@ case $What in
                 } >"$dir"/measure
                 ;;
             file)
-                [ $# -eq 1 ] || usage "$0" "Missing FILENAME"
+                [ $# -gt 0 ] || usage "$0" "Missing FILENAME"
+                [ $# -eq 1 ] || usage "$0" "Too many FILENAMEs"
+                [ -n "$Type" ] || usage "$0" "Missing MIMETYPE"
+                checkIfMimeTypeIsValid "$Type" "$Type"
+                [ -z "$Unit" ] || usage "$0" "($Unit): file output variables cannot have UNIT defined"
                 mkdir -p "$dir"
                 {
                     echo "#!/bin/sh"
-                    echo -n "echo "; escape-args-for-shell "$1"
+                    f=$(escape-args-for-shell "$1")
+                    echo "[ -e $f ] && echo $f"
                 } >"$dir"/measure
                 ;;
             *)
-                usage "$0" "Unknown output type $outputType"
+                usage "$0" "Unknown output type $outputType: must be \`file' or \`output'"
                 ;;
         esac
         chmod +x "$dir"/measure
+        if [ -n "$Unit" ]; then
+            echo "$Unit" >"$dir"/unit
+        else
+            rm -f "$dir"/unit
+        fi
         echo "$Type" >"$dir"/datatype
         ;;
 esac

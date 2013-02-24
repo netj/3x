@@ -38,6 +38,34 @@ checkIfValueIsSane() {
     esac
 }
 
+checkIfMimeTypeIsValid() {
+    local mimetype=$1; shift
+    local src=$1; shift
+    case $mimetype in
+        */*)
+            # TODO elaborate this part, based on RFC 2046 (http://tools.ietf.org/html/rfc2046)
+            ;;
+        *)
+            usage "$0" "$src: Invalid MIME media type"
+            ;;
+    esac
+}
+
+extractUnitFromName() {
+    local un=${1:-}
+    case $Name in
+        *"("*")"*)
+            local afterUnit=${Name#*)}
+            Unit=${Name#*"("}
+            Unit=${Unit%%")"*}
+            Name="${Name%%(*}$afterUnit"
+            ;;
+        *) # assign default unit when not found
+            Unit=$un
+            ;;
+    esac
+}
+
 extractTypeFromName() {
     local ty=${1:-}
     case $Name in

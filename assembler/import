@@ -53,7 +53,7 @@ for path in "$@"; do
                     copyFilesTo "$EXPWDabbrev"/workdir/ "$path" \
                         -type f \( -name 'env' \
                                 -o -name 'args' -o -name '+args' -o -name 'args+' \
-                                -o -name 'datatype' \
+                                -o -name 'unit' -o -name 'datatype' \
                                 \) \
                         #
                     # environment variables

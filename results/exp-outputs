@@ -10,6 +10,20 @@ shopt -s extglob
 EXPROOT=$(exp-findroot)
 export EXPROOT
 
+showType=false
+showUnit=false
+while getopts "utv" opt; do
+    case $opt in
+        t)
+            showType=true
+            ;;
+        u)
+            showUnit=true
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
 cd "$EXPROOT"
 cd output
 
@@ -18,9 +32,9 @@ cd output
 for name; do
     [ -e "$name" ] || error "$name: No such output variable"
     name=${name%/}
-    typefile="$name/datatype"
-    type=$(cat "$typefile" 2>/dev/null || echo)
-    case $type in
+    unit=; ! $showUnit || unit=$({ cat "$name"/unit     2>/dev/null || echo; } | tr -d '\n')
+    type=; ! $showType || type=$({ cat "$name"/datatype 2>/dev/null || echo; } | tr -d '\n')
+    ! $showType || case $type in
         nominal|ordinal|interval|ratio)
             # Stanley Stevens' theory of scale types
             # http://en.wikipedia.org/wiki/Level_of_measurement
@@ -32,5 +46,5 @@ for name; do
             # user defined data type
             ;;
     esac
-    echo "$name:$type"
+    echo "$name${unit:+($unit)}${type:+:$type}"
 done

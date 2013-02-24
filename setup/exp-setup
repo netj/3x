@@ -2,9 +2,9 @@
 # exp-setup -- Setup a new computational experiment
 # Usage:
 #   exp setup EXPROOT \
-#      --programs [ NAME='COMMAND' ]...                                \
-#      --inputs   [ NAME[:TYPE]=VALUE1[,VALUE2] ]...                   \
-#      --outputs  [ --extract '...{{NAME[:TYPE] =~ REGEXP}}...' ]...   \
+#      --programs [ NAME='COMMAND' ]...                                      \
+#      --inputs   [ NAME[:TYPE]=VALUE1[,VALUE2] ]...                         \
+#      --outputs  [ --extract '...{{NAME[(UNIT)][:TYPE] =~ REGEXP}}...' ]... \
 #                 [ --file NAME:TYPE=FILENAME ]...
 # 
 # Example:
@@ -17,7 +17,7 @@
 #                      import sys; sys.stdout.writelines(
 #                                      sorted(sys.stdin.readlines()))' \
 #       --inputs N=1000,10000,100000,1000000 \
-#       --outputs --extract 'Elapsed.*time.*: {{time =~ [0-9:.]+}}' \
+#       --outputs --extract 'Elapsed.*time.*: {{time(s) =~ [0-9:.]+}}' \
 #       #
 #   # add some files
 #   echo 'seq $N | shuf' >input/N=/gen-input
@@ -56,7 +56,7 @@ trap "rm -rf $tmp" EXIT
     escape-args-for-shell exp-init "$EXPROOT"
     escape-args-for-shell cd "$EXPROOT"
     # map command line args to exp-define commands
-    generate-definition() { escape-args-for-shell exp define $what "$Name${Type:+:$Type}" "${how[@]}"; }
+    generate-definition() { escape-args-for-shell exp define $what "$Name${Unit:+($Unit)}${Type:+:$Type}" "${how[@]}"; }
     inputArgs=()
     what=
     for arg; do
@@ -89,6 +89,7 @@ trap "rm -rf $tmp" EXIT
             program)
                 Name=${arg%%=*}
                 how=("${arg#$Name=}")
+                Unit= # no unit for programs
                 Type= # no type for programs
                 checkIfValueIsSane "$Name" program "--programs $Name"
                 generate-definition
@@ -117,6 +118,7 @@ trap "rm -rf $tmp" EXIT
                         regexpAfter=${rest#*$RDELIM}
                         how+=("$regexpBefore" "$regexp" "$regexpAfter")
                         # TODO support multiple Names in a single extract pattern
+                        extractUnitFromName
                         extractTypeFromName
                         checkIfNameIsSane "$Name" "--outputs $Name"
                         generate-definition
@@ -125,14 +127,17 @@ trap "rm -rf $tmp" EXIT
                     file)
                         Name=${arg%%=*}
                         how+=("${arg#$Name=}")
+                        extractUnitFromName
                         extractTypeFromName
-                        [ -n "$Type" ] || usage "$0" "Missing TYPE for --outputs $Name"
                         checkIfNameIsSane "$Name" "--outputs $Name"
+                        [ -n "$Type" ] || usage "$0" "Missing MIMETYPE for --outputs --file $Name"
+                        checkIfMimeTypeIsValid "$Type" "--outputs $Name:$Type"
+                        [ -z "$Unit" ] || usage "$0" "--outputs --file $Name cannot have UNIT defined"
                         generate-definition
                         ;;
 
                     *)
-                        usage "$0" "Missing --outputs type for $arg"
+                        usage "$0" "Missing type of --outputs for $arg: must be either --extract or --file"
                         ;;
                 esac
                 ;;
@@ -144,6 +149,7 @@ trap "rm -rf $tmp" EXIT
     for arg; do
         Name=${arg%%=*}
         IFS=, how=(${arg#$Name=})
+        extractUnitFromName
         extractTypeFromName
         checkIfNameIsSane "$Name" "$Name"
         for value in "${how[@]}"
