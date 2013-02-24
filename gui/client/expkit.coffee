@@ -642,7 +642,7 @@ class ResultsTable extends CompositeElement
                do e.preventDefault
                do @load
         if @optionElements.containerForStateDisplay?
-            @on "renderBegan", => @optionElements.containerForStateDisplay?.addClass("displaying")
+            @on "renderBegan processingBegan", => @optionElements.containerForStateDisplay?.addClass("displaying")
             @on "renderEnded", => @optionElements.containerForStateDisplay?.removeClass("displaying")
         do @displayProcessed # initializing results table with empty data first
         $(window).resize(_.throttle @maximizeDataTable, 100)
@@ -727,6 +727,7 @@ class ResultsTable extends CompositeElement
         do @display
 
     processData: =>
+        @trigger "processingBegan"
         columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
         @resultsRunIdIndex = columnIndex[RUN_COLUMN_NAME]
         do =>
@@ -851,7 +852,7 @@ class ResultsTable extends CompositeElement
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
         #log "rendering results:", @resultsForRendering
-        _.defer => @trigger "changed"; log "ResultsTable changed"
+        _.defer => @trigger "changed" #; log "ResultsTable changed"
 
     render: => # render the table based on what @processData has prepared
         # fold any artifacts made by previous DataTables
@@ -1178,6 +1179,16 @@ class ResultsChart extends CompositeElement
 
         $(window).resize(_.throttle @display, 100)
 
+        @chartOptions =
+            interpolateLines: try JSON.parse localStorage["chartInterpolateLines"]
+        @optionElements.toggleInterpolateLines
+           ?.prop("checked", @chartOptions.interpolateLines)
+            .click (e) =>
+                localStorage["chartInterpolateLines"] =
+                    @chartOptions.interpolateLines =
+                        $(e.srcElement).is(":checked")
+                do @display
+
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axisNames
 
@@ -1470,7 +1481,7 @@ class ResultsChart extends CompositeElement
                     .style("fill", seriesColor)
 
                 line = d3.svg.line().x(xCoord).y(yCoord)
-                    .interpolate("basis")
+                line.interpolate("basis") if @chartOptions.interpolateLines
                 svg.append("path")
                     .datum(dataForCharting)
                     .attr("class", "line")
@@ -2133,7 +2144,8 @@ $ ->
             ExpKit.results.load()
             # chart
             ExpKit.chart = new ResultsChart $("#chart-body"),
-                $("#chart-type"), $("#chart-axis-controls"), ExpKit.results
+                $("#chart-type"), $("#chart-axis-controls"), ExpKit.results,
+                toggleInterpolateLines: $("#chart-toggle-interpolate-lines")
             # plan
             ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
                 ExpKit.conditions,
