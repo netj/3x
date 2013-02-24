@@ -1158,7 +1158,7 @@ class ResultsChart extends CompositeElement
     constructor: (@baseElement, @typeSelection, @axesControl, @table, @optionElements = {}) ->
         super @baseElement
 
-        @axes = try JSON.parse localStorage["chartAxes"]
+        @axisNames = try JSON.parse localStorage["chartAxes"]
         @axesControl
             .on("click", ".axis-add    .axis-var", @actionHandlerForAxisControl @handleAxisAddition)
             .on("click", ".axis-change .axis-var", @actionHandlerForAxisControl @handleAxisChange)
@@ -1168,7 +1168,7 @@ class ResultsChart extends CompositeElement
         @table.on "updated", @display # TODO make ResultsTable emit the event when it's redrawn
 
     persist: =>
-        localStorage["chartAxes"] = JSON.stringify @axes
+        localStorage["chartAxes"] = JSON.stringify @axisNames
 
     @AXIS_PICK_CONTROL_SKELETON: $("""
         <script type="text/x-jsrender">
@@ -1211,20 +1211,23 @@ class ResultsChart extends CompositeElement
         action ord, name, $axisControl, $this, e
     handleAxisChange: (ord, name, $axisControl) =>
         $axisControl.find(".axis-name").text(name)
-        @axes[ord] = name
+        @axisNames[ord] = name
         # TODO proceed only when something actually changes
         do @persist
         do @initializeAxes
     handleAxisAddition: (ord, name, $axisControl) =>
-        @axes.push name
+        @axisNames.push name
         do @persist
         do @initializeAxes
     handleAxisRemoval: (ord, name, $axisControl) =>
-        @axes.splice ord, 1
+        @axisNames.splice ord, 1
         do @persist
         do @initializeAxes
 
+    @X_AXIS_ORDINAL: 1 # second variable is X
+    @Y_AXIS_ORDINAL: 0 # first variable is Y
     initializeAxes: =>
+        # initialize @axes from @axisNames
         # collect candidate variables for chart axes from ResultsTable
         axisCandidates =
             # only the expanded input variables or output variables can be charted
@@ -1235,38 +1238,56 @@ class ResultsChart extends CompositeElement
             (axisCand for axisCand in axisCandidates when isRatio axisCand.type)
         # validate the variables chosen for axes
         defaultAxes = [ nominalVariables[0].name, ratioVariables[0].name ]
-        if @axes?
-            # find if all names in axes are valid, don't appear already, or make them default
-            for name,ord in @axes when (@axes.indexOf(name) isnt ord or
+        if @axisNames?
+            # find if all axisNames are valid, don't appear more than once, or make them default
+            for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or
                     not axisCandidates.some (col) => col.name is name)
-                @axes[ord] = defaultAxes[ord] ? null
+                @axisNames[ord] = defaultAxes[ord] ? null
             # discard any null/undefined elements
-            @axes = @axes.filter (name) => name?
+            @axisNames = @axisNames.filter (name) => name?
         else
             # default axes
-            @axes = defaultAxes
+            @axisNames = defaultAxes
+        # collect ResultsTable columns that corresponds to the @axisNames
+        @axes = @axisNames.map (name) => @table.columns[name]
+        @varX      = @axes[ResultsChart.X_AXIS_ORDINAL]
+        @varsPivot = (ax for ax,ord in @axes when ord isnt ResultsChart.X_AXIS_ORDINAL and isNominal ax.type)
+        @varsY     = (ax for ax,ord in @axes when ord isnt ResultsChart.X_AXIS_ORDINAL and isRatio   ax.type)
+        # check if there are more than two units for Y-axis, and discard any variables that violates it
+        @varsYbyUnit = _.groupBy @varsY, (col) => col.unit
+        if (_.size @varsYbyUnit) > 2
+            @varsYbyUnit = {}
+            for ax,ord in @varsY
+                u = ax.unit
+                (@varsYbyUnit[u] ?= []).push ax
+                # remove Y axis variable if it uses a third unit
+                if (_.size @varsYbyUnit) > 2
+                    delete @varsYbyUnit[u]
+                    @varsY[ord] = null
+                    ord2 = @axes.indexOf ax
+                    @axes.splice ord2, 1
+                    @axisNames.splice ord2, 1
+            @varsY = @varsY.filter (v) => v?
         # TODO validation of each axis type with the chart type
         # find out remaining variables
         remainingVariables = (
-                if @axes.length < 3
+                if @axisNames.length < 3 or (_.size @varsYbyUnit) < 2
                     axisCandidates
-                else if isRatio @table.columns[@axes[2]].type
-                    ratioVariables
-                else
-                    nominalVariables
-            ).filter((col) => col.name not in @axes)
+                else # filter variables in a third unit when there're already two axes
+                    ax for ax in axisCandidates when isNominal ax.type or @varsYbyUnit[ax.unit]?
+            ).filter((col) => col.name not in @axisNames)
         # render the controls
         @axesControl
             .find(".axis-control").remove().end()
             .append(
-                for name,ord in @axes
+                for ax,ord in @axes
                     ResultsChart.AXIS_PICK_CONTROL_SKELETON.render({
                         ord: ord
-                        axis: @table.columns[name]
-                        variables: (if ord is 0 then ratioVariables else axisCandidates)
+                        axis: ax
+                        variables: (if ord is ResultsChart.Y_AXIS_ORDINAL then ratioVariables else axisCandidates)
                                     # the first axis (Y) must always be of ratio type
-                            .filter((col) => col.name not in @axes[0..ord]) # and without the current one
-                        isOptional: (ord > 1) # there has to be at least two axes
+                            .filter((col) => col not in @axes[0..ord]) # and without the current one
+                        isOptional: (ord > 1) # there always has to be at least two axes
                     })
             )
         @axesControl.append(ResultsChart.AXIS_ADD_CONTROL_SKELETON.render(
@@ -1288,9 +1309,9 @@ class ResultsChart extends CompositeElement
           .append("g")
             .attr("transform", "translate(#{margin.left},#{margin.top})")
 
-        xVar = @table.columns[@axes[1]]
-        yVars = [@axes[0], @axes[2..].filter((name) => isRatio @table.columns[name].type)...].map (name) => @table.columns[name]
-        pivotVars = @axes[2..].filter((name) => isNominal @table.columns[name].type).map (name) => @table.columns[name]
+        xVar = @varX
+        yVars = @varsY
+        pivotVars = @varsPivot
 
         xAxisLabel = xVar.name
 
@@ -1303,8 +1324,8 @@ class ResultsChart extends CompositeElement
         resultsForRendering = @table.resultsForRendering
         dataSeries = _.groupBy entireRowIndexes, (rowIdx) ->
             pivotVars.map((pvVar) -> resultsForRendering[rowIdx][pvVar.index].value).join(", ")
-        #TODO @decideColors
         # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
+        #TODO @decideColors
         color = d3.scale.category10()
 
         xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
@@ -1312,8 +1333,6 @@ class ResultsChart extends CompositeElement
         # X axis
         x = d3.scale.ordinal()
             .rangeRoundBands([0, width], .1)
-        y = d3.scale.linear()
-            .range([height, 0])
         # TODO see the type for x-axis, and decide
         #x = d3.scale.linear()
         #    .range([0, width])
@@ -1333,6 +1352,10 @@ class ResultsChart extends CompositeElement
             .attr("dy", "-.35em")
             .style("text-anchor", "end")
             .text(xAxisLabel)
+
+        # Y axes (single or dual)
+        y = d3.scale.linear()
+            .range([height, 0])
 
         log "data for charting", dataSeries
 
