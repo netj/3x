@@ -620,14 +620,14 @@ class ResultsTable extends CompositeElement
             .change((e) ->
                 # TODO isolate localStorage key
                 localStorage.resultsIncludeEmpty = JSON.stringify this.checked
-                do t.display
+                do t.displayProcessed
             )
         @optionElements.toggleShowHiddenConditions
            ?.prop("checked", (try JSON.parse localStorage.resultsShowHiddenConditions) ? false)
             .change((e) ->
                 # TODO isolate localStorage key
                 localStorage.resultsShowHiddenConditions = JSON.stringify this.checked
-                do t.display
+                do t.displayProcessed
             )
         @optionElements.buttonResetColumnOrder
            ?.toggleClass("disabled", @isColumnReordered())
@@ -644,22 +644,18 @@ class ResultsTable extends CompositeElement
         if @optionElements.containerForStateDisplay?
             @on "renderBegan", => @optionElements.containerForStateDisplay?.addClass("displaying")
             @on "renderEnded", => @optionElements.containerForStateDisplay?.removeClass("displaying")
-        do @display # initializing results table with empty data first
+        do @displayProcessed # initializing results table with empty data first
         $(window).resize(_.throttle @maximizeDataTable, 100)
             .resize(_.debounce @display, 500)
         @conditions.on("activeMenuItemsChanged", @load)
-                   .on("activeMenusChanged", @display)
-        @measurements.on("activeMenuItemsChanged", @display)
-                   .on("activeMenusChanged", @display)
+                   .on("activeMenusChanged", @displayProcessedHandler)
+        @measurements.on("activeMenuItemsChanged", @displayProcessedHandler)
+                   .on("activeMenusChanged", @displayProcessedHandler)
                    .on("filtersChanged", @load)
 
         do @initBrushing
 
     load: =>
-        displayNewResults = (newResults) =>
-            #log "got results:", newResults
-            @results = newResults
-            do @display
         (
             @optionElements.containerForStateDisplay?.addClass("loading")
             # prepare the query on conditions and measures
@@ -682,7 +678,7 @@ class ResultsTable extends CompositeElement
                 batches: []
                 inputs: JSON.stringify conditions
                 outputs: JSON.stringify measures
-            ).success(displayNewResults)
+            ).success(@displayProcessed)
         ).done(=> @optionElements.containerForStateDisplay?.removeClass("loading"))
 
     @HEAD_SKELETON: $("""
@@ -722,8 +718,17 @@ class ResultsTable extends CompositeElement
         else
             enumerate
 
-    render: =>
+    displayProcessedHandler: (e) => do @displayProcessed
+    displayProcessed: (newResults) =>
+        if newResults?
+            @results = newResults
+            log "got results:", @results
+        do @processData
+        do @display
+
+    processData: =>
         columnIndex = {}; columnIndex[name] = idx for name,idx in @results.names
+        @resultsRunIdIndex = columnIndex[RUN_COLUMN_NAME]
         do =>
             # construct column definitions
             columns = {}
@@ -790,11 +795,11 @@ class ResultsTable extends CompositeElement
                 name
 
         # and preprocess data
-        isRunIdExpanded = @columns[RUN_COLUMN_NAME]?.isExpanded ? false
+        @isRunIdExpanded = @columns[RUN_COLUMN_NAME]?.isExpanded ? false
             # or we could use: @columnsToExpand[RUN_COLUMN_NAME]
             #    (it will allow unaggregated tables without run column)
-        @optionElements.toggleIncludeEmpty?.prop("disabled", isRunIdExpanded)
-        if isRunIdExpanded
+        @optionElements.toggleIncludeEmpty?.prop("disabled", @isRunIdExpanded)
+        if @isRunIdExpanded
             # present results without aggregation
             #log "no aggregation"
             @resultsForRendering =
@@ -846,8 +851,9 @@ class ResultsTable extends CompositeElement
                 #log "padded empty groups:", emptyRows
             @resultsForRendering = aggregatedRows.concat emptyRows
         #log "rendering results:", @resultsForRendering
-        _.defer => @trigger "changed", @resultsForRendering
+        _.defer => @trigger "changed"; log "ResultsTable changed"
 
+    render: => # render the table based on what @processData has prepared
         # fold any artifacts made by previous DataTables
         @dataTable?.dataTable bDestroy:true
 
@@ -867,7 +873,7 @@ class ResultsTable extends CompositeElement
                         # renderer can't be defined earlier because it needs to see the data
                         renderer: DataRenderer.htmlGeneratorForTypeAndData(col.type, @resultsForRendering, col.index)
                         isLastColumn: col.index is @columnNames.length - 1
-            , {ExpKitServiceBaseURL, isRunIdExpanded}
+            , {ExpKitServiceBaseURL, @isRunIdExpanded}
             ))
         # allow the column header to toggle aggregation
         t = @
@@ -879,14 +885,13 @@ class ResultsTable extends CompositeElement
             name = th.find("span.dataName").text()
             t.columnsToExpand[name] = if th.hasClass("expanded") then true else null
             localStorage.resultsColumnsToExpand = JSON.stringify t.columnsToExpand
-            do t.display
+            do t.displayProcessed
             do e.stopPropagation
         )
 
         # populate table body
         @baseElement.find("tbody").remove()
         tbody = $("<tbody>").append(do =>
-            runColIdx = columnIndex[RUN_COLUMN_NAME]
             for row,ordinal in @resultsForRendering
                 ResultsTable.ROW_SKELETON.render {
                         ordinal
@@ -894,7 +899,7 @@ class ResultsTable extends CompositeElement
                             for c,idx in columnMetadata
                                 $.extend {}, c, row[idx],
                                     valueFormatted: c.renderer(row[idx].value,
-                                            row[idx].origin, @results, c, runColIdx)
+                                            row[idx].origin, @results, c, @resultsRunIdIndex)
                     }, {
                         ExpKitServiceBaseURL
                     }
@@ -928,7 +933,8 @@ class ResultsTable extends CompositeElement
         do @maximizeDataTable
 
         # trigger event for others
-        @dataTable.on "draw", => try @trigger("updated")
+        @dataTable.off "draw.ResultsTable"
+        @dataTable.on "draw.ResultsTable", => @trigger "updated"
 
     maximizeDataTable: =>
         @dataTable.fnSettings().oScroll.sY = "#{window.innerHeight - @baseElement.position().top}px"
@@ -1025,10 +1031,6 @@ class ResultsTable extends CompositeElement
         brushingTDsOrigContent = null
         brushingTDsAll = null
         brushingTDsOrigCSSText = null
-        # cached
-        runColIdx = null
-        @on "changed", => # precompute frequently used info every once the table changes
-            runColIdx = @results.names.indexOf RUN_COLUMN_NAME
         updateBrushing = ($td, e) =>
             return unless brushingIsPossible
             colIdxRendered = $td.index()
@@ -1041,7 +1043,7 @@ class ResultsTable extends CompositeElement
             n = brushingCell.origin.length - 1
             brushingPos = Math.max(0, Math.min(n, Math.round(n * cursorRelPos)))
             rowIdxData  = brushingCell.origin[brushingPos]
-            attachProvenancePopover $td, e, brushingPos, @results.rows[rowIdxData][runColIdx]
+            attachProvenancePopover $td, e, brushingPos, @results.rows[rowIdxData][@resultsRunIdIndex]
             return if brushingLastRowIdx is rowIdxData # update only when there's change, o.w. flickering happens
             brushingLastRowIdx = rowIdxData
             #log "updating", brushingLastRowIdx
@@ -1059,7 +1061,7 @@ class ResultsTable extends CompositeElement
                     # XXX somehow, the first row isn't refreshing even though correct html is being set
                     (if brushingTRIndex is 0 then "<span></span>" else "") +
                     brushingCellRenderer[i]?(@results.rows[rowIdxData][colIdxData],
-                            rowIdxData, @results, c, runColIdx) ? ""
+                            rowIdxData, @results, c, @resultsRunIdIndex) ? ""
                 )
         endBrushing = =>
             # restore DOM of previous TR
@@ -1236,6 +1238,9 @@ class ResultsChart extends CompositeElement
     @X_AXIS_ORDINAL: 1 # second variable is X
     @Y_AXIS_ORDINAL: 0 # first variable is Y
     initializeAxes: => # initialize @axes from @axisNames
+        if @table.deferredDisplay?
+            do @table.render # XXX charting heavily depends on the rendered table, so force rendering
+        return unless @table.columnsRendered?.length
         # collect candidate variables for chart axes from ResultsTable
         axisCandidates =
             # only the expanded input variables or output variables can be charted
