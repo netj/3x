@@ -1301,28 +1301,11 @@ class ResultsChart extends CompositeElement
         do @display
 
     display: =>
-        chartBody = d3.select(@baseElement[0])
-        margin = {top: 20, right: 20, bottom: 50, left: 100}
-        chartWidth  = window.innerWidth  - @baseElement.position().left * 2
-        chartHeight = window.innerHeight - @baseElement.position().top
-        @baseElement.css
-            width:  "#{chartWidth }px"
-            height: "#{chartHeight}px"
-        width = chartWidth - margin.left - margin.right
-        height = chartHeight - margin.top - margin.bottom
-
-        chartBody.select("svg").remove()
-        svg = chartBody.append("svg")
-            .attr("width",  chartWidth)
-            .attr("height", chartHeight)
-          .append("g")
-            .attr("transform", "translate(#{margin.left},#{margin.top})")
-
         xVar = @varX
         yVars = @varsY
         pivotVars = @varsPivot
 
-        # collect column data from table
+        ## Collect data to plot from @table
         dataSeries = []
         $trs = @table.baseElement.find("tbody tr")
         entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
@@ -1333,6 +1316,50 @@ class ResultsChart extends CompositeElement
         #TODO @decideColors
         color = d3.scale.category10()
 
+        ## Analyze the extent of Y axes data (single or dual unit)
+        yExtents = []
+        yExtentsByUnit = {}
+        for yVar in yVars
+            unit = yVar.unit
+            continue if yExtentsByUnit[unit]?
+            # figure out the extent for this axis
+            extent = []
+            for ax in @varsYbyUnit[unit]
+                extent = d3.extent(extent.concat(d3.extent(entireRowIndexes, (rowIdx) ->
+                    resultsForRendering[rowIdx][ax.index].value)))
+            extent = d3.extent(extent.concat([0])) # include origin # TODO make this controllable
+            yExtentsByUnit[unit] = extent
+            yExtents.push extent
+
+        ## Determine the chart dimension and initialize the SVG root
+        chartBody = d3.select(@baseElement[0])
+        chartWidth  = window.innerWidth  - @baseElement.position().left * 2
+        chartHeight = window.innerHeight - @baseElement.position().top - 20
+        @baseElement.css
+            width:  "#{chartWidth }px"
+            height: "#{chartHeight}px"
+        margin =
+            top: 20, bottom: 50
+            right: 20, left: 20
+        for extent,i in yExtents
+            numDigits = Math.max (Math.ceil(Math.log(Math.abs(e)) / Math.log(10)) for e in extent)...
+            numDigits = Math.floor (numDigits * 4/3) # take commas into account
+            log extent, numDigits
+            tickWidth = Math.ceil(numDigits * 6.5) #px per digit
+            if i is 0
+                margin.left += tickWidth
+            else
+                margin.right += tickWidth
+        width = chartWidth - margin.left - margin.right
+        height = chartHeight - margin.top - margin.bottom
+        log chartWidth, chartHeight, width, height, JSON.stringify margin
+        chartBody.select("svg").remove()
+        svg = chartBody.append("svg")
+            .attr("width",  chartWidth)
+            .attr("height", chartHeight)
+          .append("g")
+            .attr("transform", "translate(#{margin.left},#{margin.top})")
+
         formatAxisLabel = (name, unit) ->
             unitStr = if unit then "(#{unit})" else ""
             if name?
@@ -1340,8 +1367,7 @@ class ResultsChart extends CompositeElement
             else
                 unitStr
 
-        # X axis
-        xAxisLabel = formatAxisLabel xVar.name, xVar.unit
+        ## Setup and draw X axis
         xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
         x = d3.scale.ordinal()
             .rangeRoundBands([0, width], .1)
@@ -1350,6 +1376,7 @@ class ResultsChart extends CompositeElement
         #    .range([0, width])
         #x.domain(d3.extent(dataForCharting, xData))
         x.domain(entireRowIndexes.map(xData))
+        xAxisLabel = formatAxisLabel xVar.name, xVar.unit
         xAxis = d3.svg.axis()
             .scale(x)
             .orient("bottom")
@@ -1366,25 +1393,21 @@ class ResultsChart extends CompositeElement
             .text(xAxisLabel)
         log "drawing chart by", xAxisLabel
 
-        # Y axes (single or dual unit)
+        ## Setup and draw Y axis
         ys = {}
+        ysOrdered = []
+        yAxisDrawn = {}
         for yVar in yVars
             unit = yVar.unit
-            continue if ys[unit]?
+            continue if yAxisDrawn[unit]?
             y = ys[unit] =
                 d3.scale.linear()
+                    .domain(yExtentsByUnit[unit])
                     .range([height, 0])
-            # figure out the extent for this axis
-            extent = []
-            for v in @varsYbyUnit[unit]
-                extent = d3.extent(extent.concat(d3.extent(entireRowIndexes, (rowIdx) ->
-                    resultsForRendering[rowIdx][v.index].value)))
-            extent = d3.extent(extent.concat([0])) # include origin # TODO make this controllable
-            y.domain(extent)
             yAxisLabel = formatAxisLabel (if @varsYbyUnit[unit].length is 1 then yVar.name), unit
-            try log "y #{yAxisLabel} =", extent
+            try log "y #{yAxisLabel} =", y.domain()
             # draw axis
-            orientation = if _.size(ys) is 1 then "left" else "right"
+            orientation = if _.size(yAxisDrawn) is 0 then "left" else "right"
             yAxis = d3.svg.axis()
                 .scale(y)
                 .orient(orientation)
@@ -1398,6 +1421,7 @@ class ResultsChart extends CompositeElement
                 .attr("dy", "#{if orientation is "left" then "" else "-"}.71em")
                 .style("text-anchor", "end")
                 .text(yAxisLabel)
+            yAxisDrawn[unit] = true
 
         log "data for charting", dataSeries
 
