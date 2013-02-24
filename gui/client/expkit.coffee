@@ -1313,10 +1313,6 @@ class ResultsChart extends CompositeElement
         yVars = @varsY
         pivotVars = @varsPivot
 
-        xAxisLabel = xVar.name
-
-        log "drawing chart by", xAxisLabel
-
         # collect column data from table
         dataSeries = []
         $trs = @table.baseElement.find("tbody tr")
@@ -1328,9 +1324,16 @@ class ResultsChart extends CompositeElement
         #TODO @decideColors
         color = d3.scale.category10()
 
-        xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
+        formatAxisLabel = (name, unit) ->
+            unitStr = if unit then "(#{unit})" else ""
+            if name?
+                "#{name}#{if unitStr then " " else ""}#{unitStr}"
+            else
+                unitStr
 
         # X axis
+        xAxisLabel = formatAxisLabel xVar.name, xVar.unit
+        xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
         x = d3.scale.ordinal()
             .rangeRoundBands([0, width], .1)
         # TODO see the type for x-axis, and decide
@@ -1338,7 +1341,6 @@ class ResultsChart extends CompositeElement
         #    .range([0, width])
         #x.domain(d3.extent(dataForCharting, xData))
         x.domain(entireRowIndexes.map(xData))
-
         xAxis = d3.svg.axis()
             .scale(x)
             .orient("bottom")
@@ -1349,39 +1351,53 @@ class ResultsChart extends CompositeElement
           .append("text")
             .attr("y", -3)
             .attr("x", width)
+            .attr("dx", "-.35em")
             .attr("dy", "-.35em")
             .style("text-anchor", "end")
             .text(xAxisLabel)
+        log "drawing chart by", xAxisLabel
 
-        # Y axes (single or dual)
-        y = d3.scale.linear()
-            .range([height, 0])
+        # Y axes (single or dual unit)
+        ys = {}
+        for yVar in yVars
+            unit = yVar.unit
+            continue if ys[unit]?
+            y = ys[unit] =
+                d3.scale.linear()
+                    .range([height, 0])
+            # figure out the extent for this axis
+            extent = []
+            for v in @varsYbyUnit[unit]
+                extent = d3.extent(extent.concat(d3.extent(entireRowIndexes, (rowIdx) ->
+                    resultsForRendering[rowIdx][v.index].value)))
+            extent = d3.extent(extent.concat([0])) # include origin # TODO make this controllable
+            y.domain(extent)
+            yAxisLabel = formatAxisLabel (if @varsYbyUnit[unit].length is 1 then yVar.name), unit
+            try log "y #{yAxisLabel} =", extent
+            # draw axis
+            orientation = if _.size(ys) is 1 then "left" else "right"
+            yAxis = d3.svg.axis()
+                .scale(y)
+                .orient(orientation)
+            svg.append("g")
+                .attr("class", "y axis")
+                .attr("transform", if orientation isnt "left" then "translate(#{width},0)")
+                .call(yAxis)
+              .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 3)
+                .attr("dy", "#{if orientation is "left" then "" else "-"}.71em")
+                .style("text-anchor", "end")
+                .text(yAxisLabel)
 
         log "data for charting", dataSeries
 
         series = 0
 
         for yVar in yVars
-            yData = (rowIdx) -> resultsForRendering[rowIdx][yVar.index].value
-            extent = d3.extent(entireRowIndexes, yData)
-            extent = d3.extent(extent.concat([0])) # TODO if ratio type only
-            y.domain(extent)
-            log "ydomain", extent
-
+            y = ys[yVar.unit]
             yAxisLabel = yVar.name
-            yAxis = d3.svg.axis()
-                .scale(y)
-                .orient("left")
-            svg.append("g")
-                .attr("class", "y axis")
-                .call(yAxis)
-              .append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 6)
-                .attr("dy", ".71em")
-                .style("text-anchor", "end")
-                .text(yAxisLabel)
-
+            yData = (rowIdx) -> resultsForRendering[rowIdx][yVar.index].value
             log "drawing chart of", yAxisLabel
 
             for seriesLabel,dataForCharting of dataSeries
@@ -1418,7 +1434,7 @@ class ResultsChart extends CompositeElement
                 svg.append("text")
                     .datum(dataForCharting[dataForCharting.length-1])
                     .attr("transform", (d) ->
-                        "translate(" + xCoord(d) + "," + yCoord(d) + ")")
+                        "translate(#{xCoord(d)},#{yCoord(d)})")
                     .attr("x", -5).attr("dy", "-.35em")
                     .style("text-anchor", "end")
                     .style("fill", seriesColor)
