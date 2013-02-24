@@ -1287,7 +1287,7 @@ class ResultsChart extends CompositeElement
 
         xAxisLabel = xVar.name
 
-        log "drawing chart for", xAxisLabel, yAxisLabel
+        log "drawing chart by", xAxisLabel
 
         # collect column data from table
         dataSeries = []
@@ -1296,6 +1296,9 @@ class ResultsChart extends CompositeElement
         resultsForRendering = @table.resultsForRendering
         dataSeries = _.groupBy entireRowIndexes, (rowIdx) ->
             pivotVars.map((pvVar) -> resultsForRendering[rowIdx][pvVar.index].value).join(", ")
+        #TODO @decideColors
+        # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
+        color = d3.scale.category10()
 
         xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
 
@@ -1304,15 +1307,15 @@ class ResultsChart extends CompositeElement
             .rangeRoundBands([0, width], .1)
         y = d3.scale.linear()
             .range([height, 0])
-
-        xAxis = d3.svg.axis()
-            .scale(x)
-            .orient("bottom")
         # TODO see the type for x-axis, and decide
         #x = d3.scale.linear()
         #    .range([0, width])
         #x.domain(d3.extent(dataForCharting, xData))
         x.domain(entireRowIndexes.map(xData))
+
+        xAxis = d3.svg.axis()
+            .scale(x)
+            .orient("bottom")
         svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0,#{height})")
@@ -1320,54 +1323,78 @@ class ResultsChart extends CompositeElement
           .append("text")
             .attr("y", -3)
             .attr("x", width)
-            .attr("dy", "-.71em")
+            .attr("dy", "-.35em")
             .style("text-anchor", "end")
             .text(xAxisLabel)
 
         log "data for charting", dataSeries
 
-        for seriesLabel,dataForCharting of dataSeries
-            for yVar in yVars
-                yAxisLabel = yVar.name
-                yData = (rowIdx) -> resultsForRendering[rowIdx][yVar.index].value
+        series = 0
 
-                yAxis = d3.svg.axis()
-                    .scale(y)
-                    .orient("left")
+        for yVar in yVars
+            yData = (rowIdx) -> resultsForRendering[rowIdx][yVar.index].value
+            extent = d3.extent(entireRowIndexes, yData)
+            extent = d3.extent(extent.concat([0])) # TODO if ratio type only
+            y.domain(extent)
+            log "ydomain", extent
 
-                console.log "ydomain", d3.extent(dataForCharting, yData)
+            yAxisLabel = yVar.name
+            yAxis = d3.svg.axis()
+                .scale(y)
+                .orient("left")
+            svg.append("g")
+                .attr("class", "y axis")
+                .call(yAxis)
+              .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end")
+                .text(yAxisLabel)
 
-                extent = d3.extent(dataForCharting, yData)
-                extent = d3.extent(extent.concat([0])) # TODO if ratio type only
-                y.domain(extent)
+            log "drawing chart of", yAxisLabel
 
-                svg.append("g")
-                    .attr("class", "y axis")
-                    .call(yAxis)
-                  .append("text")
-                    .attr("transform", "rotate(-90)")
-                    .attr("y", 6)
-                    .attr("dy", ".71em")
-                    .style("text-anchor", "end")
-                    .text(yAxisLabel)
+            for seriesLabel,dataForCharting of dataSeries
 
-                    
-                svg.selectAll(".dot")
+                if yVars.length > 1
+                    if seriesLabel
+                        seriesLabel = "#{seriesLabel} (#{yAxisLabel})"
+                    else
+                        seriesLabel = yAxisLabel
+                else
+                    unless seriesLabel
+                        seriesLabel = yAxisLabel
+                seriesColor = (d) -> color(series)
+
+                xCoord = (d) -> x(xData(d)) + x.rangeBand()/2
+                yCoord = (d) -> y(yData(d))
+
+                svg.selectAll(".dot.series-#{series}")
                     .data(dataForCharting)
                   .enter().append("circle")
-                    .attr("class", "dot")
+                    .attr("class", "dot series-#{series}")
                     .attr("r", 3.5)
                     .attr("cx",    (d) -> x(xData(d)) + x.rangeBand()/2)
                     .attr("cy",    (d) -> y(yData(d)))
-                    .style("fill", "red")
+                    .style("fill", seriesColor)
 
-                line = d3.svg.line()
-                    .x((d) -> x(xData(d)) + x.rangeBand()/2)
-                    .y((d) -> y(yData(d)))
+                line = d3.svg.line().x(xCoord).y(yCoord)
                 svg.append("path")
                     .datum(dataForCharting)
                     .attr("class", "line")
                     .attr("d", line)
+                    .style("stroke", seriesColor)
+                # legend
+                svg.append("text")
+                    .datum(dataForCharting[dataForCharting.length-1])
+                    .attr("transform", (d) ->
+                        "translate(" + xCoord(d) + "," + yCoord(d) + ")")
+                    .attr("x", -5).attr("dy", "-.35em")
+                    .style("text-anchor", "end")
+                    .style("fill", seriesColor)
+                    .text((d) -> seriesLabel)
+
+                series++
 
 
 
