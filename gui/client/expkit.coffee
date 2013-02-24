@@ -1394,13 +1394,19 @@ class ResultsChart extends CompositeElement
 
         ## Setup and draw X axis
         xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
-        x = d3.scale.ordinal()
-            .rangeRoundBands([0, width], .1)
-        # TODO see the type for x-axis, and decide
-        #x = d3.scale.linear()
-        #    .range([0, width])
-        #x.domain(d3.extent(dataForCharting, xData))
-        x.domain(entireRowIndexes.map(xData))
+        # based on the X axis type, decide its scale
+        if isNominal xVar.type
+            x = d3.scale.ordinal()
+                .domain(entireRowIndexes.map(xData))
+                .rangeRoundBands([0, width], .1)
+            xCoord = (d) -> x(xData(d)) + x.rangeBand()/2
+            @chartType = "lineChart"
+        else if isRatio xVar.type
+            x = d3.scale.linear()
+                .domain(d3.extent(entireRowIndexes.map(xData)))
+                .range([0, width])
+            xCoord = (d) -> x(xData(d))
+            @chartType = "scatterPlot"
         xAxisLabel = formatAxisLabel xVar.name, xVar.unit
         xAxis = d3.svg.axis()
             .scale(x)
@@ -1410,9 +1416,7 @@ class ResultsChart extends CompositeElement
             .attr("transform", "translate(0,#{height})")
             .call(xAxis)
           .append("text")
-            #.attr("y", 0)
             .attr("x", width/2)
-            #.attr("dx", "-.35em")
             .attr("dy", "3em")
             .style("text-anchor", "middle")
             .text(xAxisLabel)
@@ -1440,7 +1444,6 @@ class ResultsChart extends CompositeElement
                 .attr("transform", "translate(#{
                         if orientation is "left" then -margin.left else margin.right
                     },#{height/2}), rotate(-90)")
-                #.attr("y", 0)
                 .attr("dy", if orientation is "left" then "1em" else "-.3em")
                 .style("text-anchor", "middle")
                 .text(yAxisLabel)
@@ -1458,7 +1461,7 @@ class ResultsChart extends CompositeElement
 
             for seriesLabel,dataForCharting of dataSeries
 
-                if yVars.length > 1
+                if _.size(yVars) > 1
                     if seriesLabel
                         seriesLabel = "#{seriesLabel} (#{yAxisLabel})"
                     else
@@ -1466,9 +1469,12 @@ class ResultsChart extends CompositeElement
                 else
                     unless seriesLabel
                         seriesLabel = yAxisLabel
+
+                if _.size(yVars) is 1 and _.size(dataSeries) is 1
+                    seriesLabel = null
+
                 seriesColor = (d) -> color(series)
 
-                xCoord = (d) -> x(xData(d)) + x.rangeBand()/2
                 yCoord = (d) -> y(yData(d))
 
                 svg.selectAll(".dot.series-#{series}")
@@ -1476,29 +1482,34 @@ class ResultsChart extends CompositeElement
                   .enter().append("circle")
                     .attr("class", "dot series-#{series}")
                     .attr("r", 3.5)
-                    .attr("cx",    (d) -> x(xData(d)) + x.rangeBand()/2)
-                    .attr("cy",    (d) -> y(yData(d)))
+                    .attr("cx", xCoord)
+                    .attr("cy", yCoord)
                     .style("fill", seriesColor)
 
-                line = d3.svg.line().x(xCoord).y(yCoord)
-                line.interpolate("basis") if @chartOptions.interpolateLines
-                svg.append("path")
-                    .datum(dataForCharting)
-                    .attr("class", "line")
-                    .attr("d", line)
-                    .style("stroke", seriesColor)
+                switch @chartType
+                    when "lineChart"
+                        line = d3.svg.line().x(xCoord).y(yCoord)
+                        line.interpolate("basis") if @chartOptions.interpolateLines
+                        svg.append("path")
+                            .datum(dataForCharting)
+                            .attr("class", "line")
+                            .attr("d", line)
+                            .style("stroke", seriesColor)
+
                 # legend
-                svg.append("text")
-                    .datum(dataForCharting[dataForCharting.length-1])
-                    .attr("transform", (d) ->
-                        "translate(#{xCoord(d)},#{yCoord(d)})")
-                    .attr("x", -5).attr("dy", "-.35em")
-                    .style("text-anchor", "end")
-                    .style("fill", seriesColor)
-                    .text((d) -> seriesLabel)
+                if seriesLabel?
+                    svg.append("text")
+                        .datum(dataForCharting[dataForCharting.length-1])
+                        .attr("transform", (d) ->
+                            "translate(#{xCoord(d)},#{yCoord(d)})")
+                        .attr("x", -5).attr("dy", "-.35em")
+                        .style("text-anchor", "end")
+                        .style("fill", seriesColor)
+                        .text((d) -> seriesLabel)
 
                 series++
 
+        @optionElements.toggleInterpolateLines?.prop("disabled", @chartType isnt "lineChart")
 
 
 
