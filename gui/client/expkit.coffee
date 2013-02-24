@@ -282,6 +282,8 @@ initTabs = ->
         switch tab
             when "results"
                 ExpKit.results?.dataTable?.fnDraw()
+            when "chart"
+                do ExpKit.chart?.display
             when "plan"
                 ExpKit.planner?.dataTable?.fnDraw()
             when "runs"
@@ -1167,6 +1169,8 @@ class ResultsChart extends CompositeElement
         @table.on "changed", @initializeAxes
         @table.on "updated", @display # TODO make ResultsTable emit the event when it's redrawn
 
+        $(window).resize(_.throttle @display, 100)
+
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axisNames
 
@@ -1299,13 +1303,18 @@ class ResultsChart extends CompositeElement
     display: =>
         chartBody = d3.select(@baseElement[0])
         margin = {top: 20, right: 20, bottom: 50, left: 100}
-        width = 960 - margin.left - margin.right
-        height = 500 - margin.top - margin.bottom
+        chartWidth  = window.innerWidth  - @baseElement.position().left * 2
+        chartHeight = window.innerHeight - @baseElement.position().top
+        @baseElement.css
+            width:  "#{chartWidth }px"
+            height: "#{chartHeight}px"
+        width = chartWidth - margin.left - margin.right
+        height = chartHeight - margin.top - margin.bottom
 
         chartBody.select("svg").remove()
         svg = chartBody.append("svg")
-            .attr("width",  width  + margin.left + margin.right )
-            .attr("height", height + margin.top  + margin.bottom)
+            .attr("width",  chartWidth)
+            .attr("height", chartHeight)
           .append("g")
             .attr("transform", "translate(#{margin.left},#{margin.top})")
 
