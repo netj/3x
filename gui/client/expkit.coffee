@@ -1183,29 +1183,31 @@ class ResultsChart extends CompositeElement
 
         $(window).resize(_.throttle @display, 100)
 
-        @chartOptions =
-            interpolateLines: try JSON.parse localStorage["chartInterpolateLines"]
-        @optionElements.toggleInterpolateLines
-           ?.prop("checked", @chartOptions.interpolateLines)
-            .click (e) =>
-                localStorage["chartInterpolateLines"] =
-                    @chartOptions.interpolateLines =
-                        $(e.srcElement).is(":checked")
-                do @display
+        @chartOptions = (try JSON.parse localStorage["chartOptions"]) ? {}
+        persistOptions = => localStorage["chartOptions"] = JSON.stringify @chartOptions
+
+        installToggleHandler = (chartOption, chkbox) =>
+            chkbox
+               ?.prop("checked", @chartOptions[chartOption])
+                .click (e) =>
+                    @chartOptions[chartOption] = chkbox.is(":checked")
+                    do persistOptions
+                    do @display
+        installToggleHandler "interpolateLines", @optionElements.toggleInterpolateLines
+        installToggleHandler "hideLines",        @optionElements.toggleHideLines
 
         # vocabularies for axis options
         forEachAxisOptionElement = (prefix, chartOptionPrefix, job) =>
             for axisName in ResultsChart.AXIS_NAMES
                 optionKey = chartOptionPrefix+axisName
-                persistKey = "chart#{optionKey}"
-                optionVal = @chartOptions[optionKey] = (try JSON.parse localStorage[persistKey]) ? false
-                job @optionElements["#{prefix}#{axisName}"], axisName, optionKey, optionVal, persistKey
+                optionVal = @chartOptions[optionKey] ? false
+                job @optionElements["#{prefix}#{axisName}"], axisName, optionKey, optionVal
         installAxisOptionToggleHandler = (btn, key, optionKey, optionVal, persistKey) =>
             btn?.toggleClass("active", optionVal)
                 .click (e) =>
                     return e.preventDefault() if btn.hasClass("disabled")
-                    localStorage[persistKey] = @chartOptions[optionKey] = not btn.hasClass("active")
-                    log btn.id, persistKey, optionKey, @chartOptions[optionKey]
+                    @chartOptions[optionKey] = not btn.hasClass("active")
+                    do persistOptions
                     do @display
         # log scale
         @optionElements.toggleLogScale =
@@ -1543,13 +1545,14 @@ class ResultsChart extends CompositeElement
 
                 switch @chartType
                     when "lineChart"
-                        line = d3.svg.line().x(xCoord).y(yCoord)
-                        line.interpolate("basis") if @chartOptions.interpolateLines
-                        @svg.append("path")
-                            .datum(dataForCharting)
-                            .attr("class", "line")
-                            .attr("d", line)
-                            .style("stroke", seriesColor)
+                        unless @chartOptions.hideLines
+                            line = d3.svg.line().x(xCoord).y(yCoord)
+                            line.interpolate("basis") if @chartOptions.interpolateLines
+                            @svg.append("path")
+                                .datum(dataForCharting)
+                                .attr("class", "line")
+                                .attr("d", line)
+                                .style("stroke", seriesColor)
 
                 # legend
                 if seriesLabel?
@@ -1574,11 +1577,13 @@ class ResultsChart extends CompositeElement
             @optionElements["toggleOrigin#{axis.name}"]
                ?.toggleClass("disabled", axis.type isnt "ratio" or intervalContains axis.domain, 0)
 
-        isInterpolateLinesDisabled = @chartType isnt "lineChart"
-        @optionElements.toggleInterpolateLines
-           ?.prop("disabled", isInterpolateLinesDisabled)
-            .closest("label").toggleClass("hide", isInterpolateLinesDisabled)
-
+        isLineChartDisabled = @chartType isnt "lineChart"
+        $(@optionElements.toggleHideLines)
+           ?.prop("disabled", isLineChartDisabled)
+            .closest("label").toggleClass("hide", isLineChartDisabled)
+        $(@optionElements.toggleInterpolateLines)
+           ?.prop("disabled", isLineChartDisabled or @chartOptions.hideLines)
+            .closest("label").toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
 
 
 class BatchesTable extends CompositeElement
@@ -2224,13 +2229,14 @@ $ ->
             # chart
             ExpKit.chart = new ResultsChart $("#chart-body"),
                 $("#chart-type"), $("#chart-axis-controls"), ExpKit.results,
-                toggleInterpolateLines: $("#chart-toggle-interpolate-lines")
-                toggleLogScaleX : $("#chart-toggle-log-scale-x")
-                toggleLogScaleY1: $("#chart-toggle-log-scale-y1")
-                toggleLogScaleY2: $("#chart-toggle-log-scale-y2")
-                toggleOriginX   : $("#chart-toggle-origin-x")
-                toggleOriginY1  : $("#chart-toggle-origin-y1")
-                toggleOriginY2  : $("#chart-toggle-origin-y2")
+                toggleInterpolateLines  : $("#chart-toggle-interpolate-lines")
+                toggleHideLines         : $("#chart-toggle-hide-lines")
+                toggleLogScaleX         : $("#chart-toggle-log-scale-x")
+                toggleLogScaleY1        : $("#chart-toggle-log-scale-y1")
+                toggleLogScaleY2        : $("#chart-toggle-log-scale-y2")
+                toggleOriginX           : $("#chart-toggle-origin-x")
+                toggleOriginY1          : $("#chart-toggle-origin-y1")
+                toggleOriginY2          : $("#chart-toggle-origin-y2")
             # plan
             ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
                 ExpKit.conditions,
