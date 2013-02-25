@@ -84,6 +84,10 @@ tryConvertingToNumbers = (vs) ->
         vs
 
 
+intervalContains = (lu, xs...) ->
+    (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
+
+
 FILTER_EXPR_REGEX = ///
         ^ \s*
     ( <= | >= | <> | != | = | < | > )    # comparison, membership, ...
@@ -344,12 +348,12 @@ class CompositeElement
                 _.defer =>
                     log "#{@baseElement.prop("id")}: renderBegan"
                     @isRendering = yes
-                    try @trigger "renderBegan"
+                    @trigger "renderBegan"
                     _.delay =>
-                        try @render (@deferredDisplayArgs ? [])...
+                        @render (@deferredDisplayArgs ? [])...
                         _.defer =>
-                            try @deferredDisplay.resolve()
-                            try @trigger "renderEnded"
+                            @deferredDisplay.resolve()
+                            @trigger "renderEnded"
                             @isRendering = no
                             @deferredDisplay = @deferredDisplayArgs = null
                             log "#{@baseElement.prop("id")}: renderEnded"
@@ -1189,6 +1193,26 @@ class ResultsChart extends CompositeElement
                         $(e.srcElement).is(":checked")
                 do @display
 
+        initLogScaleToggler = (btn, key) =>
+            persistKey = "chart#{key}"
+            @chartOptions[key] = (try JSON.parse localStorage[persistKey]) ? false
+            btn?.toggleClass("active", @chartOptions[key])
+                .click (e) =>
+                    if btn.hasClass("disabled")
+                        e.preventDefault()
+                        return
+                    localStorage[persistKey] = @chartOptions[key] = not btn.hasClass("active")
+                    log persistKey, key, @chartOptions[key]
+                    do @display
+        initLogScaleToggler @optionElements.toggleLogScaleX,  "logScaleX"
+        initLogScaleToggler @optionElements.toggleLogScaleY1, "logScaleY1"
+        initLogScaleToggler @optionElements.toggleLogScaleY2, "logScaleY2"
+        @optionElements.toggleLogScale = $([
+            @optionElements.toggleLogScaleX
+            @optionElements.toggleLogScaleY1
+            @optionElements.toggleLogScaleY2
+        ]).toggleClass("disabled", true)
+
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axisNames
 
@@ -1217,7 +1241,7 @@ class ResultsChart extends CompositeElement
               href="#"><i class="icon icon-plus"></i> <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
-                <li class="axis-var" data-name="{{>name}}"><a href="#">{{>name}}:{{>type}}</a></li>
+                <li class="axis-var" data-name="{{>name}}"><a href="#">{{>name}}</a></li>
               {{/for}}
             </ul>
           </div>
@@ -1330,11 +1354,28 @@ class ResultsChart extends CompositeElement
         $trs = @table.baseElement.find("tbody tr")
         entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
         resultsForRendering = @table.resultsForRendering
+        return unless resultsForRendering?.length > 0
         dataSeries = _.groupBy entireRowIndexes, (rowIdx) ->
             pivotVars.map((pvVar) -> resultsForRendering[rowIdx][pvVar.index].value).join(", ")
         # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
         #TODO @decideColors
         color = d3.scale.category10()
+
+        disableLogScaleFor = (axis) =>
+            @chartOptions["logScale#{axis}"] = off
+            @optionElements["toggleLogScale#{axis}"].removeClass("active").addClass("disabled")
+        isLogScaleEnabled = (axis) => @chartOptions["logScale#{axis}"]
+        pickScale = (axis, dom) => (
+                if isLogScaleEnabled axis
+                    unless intervalContains dom, 0
+                        d3.scale.log()
+                    else # log scales don't work when there are zeros in the domain
+                        error "log scale does not work for domains including zero", axis, dom
+                        disableLogScaleFor axis
+                        d3.scale.linear()
+                else
+                    d3.scale.linear()
+            ).domain(dom)
 
         ## Analyze the extent of Y axes data (single or dual unit)
         yUnitsOrder = []
@@ -1346,8 +1387,9 @@ class ResultsChart extends CompositeElement
             extent = []
             for ax in @varsYbyUnit[unit]
                 extent = d3.extent(extent.concat(d3.extent(entireRowIndexes, (rowIdx) ->
-                    resultsForRendering[rowIdx][ax.index].value)))
-            extent = d3.extent(extent.concat([0])) # include origin # TODO make this controllable
+                    resultsForRendering[rowIdx][ax.index]?.value)))
+            unless isLogScaleEnabled "Y#{yUnitsOrder.length+1}"
+                extent = d3.extent(extent.concat([0])) # include origin # TODO make this controllable
             yExtentsByUnit[unit] = extent
             yUnitsOrder.push unit
 
@@ -1363,12 +1405,12 @@ class ResultsChart extends CompositeElement
             right: 40, left: 40
         # Adjust margins while we prepare the Y scales
         ys = {}
-        yAxes = {}
+        yAxisByUnit = {}
         for unit,i in yUnitsOrder
             y = ys[unit] =
-                d3.scale.linear()
-                    .domain(yExtentsByUnit[unit])
-            yAxis = yAxes[unit] = d3.svg.axis()
+                (pickScale "Y#{i+1}", yExtentsByUnit[unit])
+                    .nice()
+            yAxis = yAxisByUnit[unit] = d3.svg.axis()
                 .scale(y)
             numDigits = Math.max _.pluck(y.ticks(yAxis.ticks()).map(y.tickFormat()), "length")...
             tickWidth = Math.ceil(numDigits * 6.5) #px per digit
@@ -1394,19 +1436,22 @@ class ResultsChart extends CompositeElement
 
         ## Setup and draw X axis
         xData = (rowIdx) -> resultsForRendering[rowIdx][xVar.index].value
+        xDomain = entireRowIndexes.map(xData)
         # based on the X axis type, decide its scale
         if isNominal xVar.type
             x = d3.scale.ordinal()
-                .domain(entireRowIndexes.map(xData))
+                .domain(xDomain)
                 .rangeRoundBands([0, width], .1)
             xCoord = (d) -> x(xData(d)) + x.rangeBand()/2
             @chartType = "lineChart"
         else if isRatio xVar.type
-            x = d3.scale.linear()
-                .domain(d3.extent(entireRowIndexes.map(xData)))
+            x = (pickScale "X", d3.extent(xDomain))
                 .range([0, width])
+                .nice()
             xCoord = (d) -> x(xData(d))
             @chartType = "scatterPlot"
+        else
+            error xVar.type, "Unsupported variable type for X axis", xVar
         xAxisLabel = formatAxisLabel xVar.name, xVar.unit
         xAxis = d3.svg.axis()
             .scale(x)
@@ -1432,7 +1477,7 @@ class ResultsChart extends CompositeElement
             yAxisLabel = formatAxisLabel (if @varsYbyUnit[unit].length is 1 then yVar.name), unit
             # draw axis
             orientation = if _.size(yAxisDrawn) is 0 then "left" else "right"
-            yAxis = yAxes[unit]
+            yAxis = yAxisByUnit[unit]
                 .orient(orientation)
             window.yAxis = yAxis
             window.y = y
@@ -1457,6 +1502,7 @@ class ResultsChart extends CompositeElement
             y = ys[yVar.unit]
             yAxisLabel = yVar.name
             yData = (rowIdx) -> resultsForRendering[rowIdx][yVar.index].value
+            yCoord = (d) -> y(yData(d))
             log "drawing chart of", yAxisLabel
 
             for seriesLabel,dataForCharting of dataSeries
@@ -1474,8 +1520,6 @@ class ResultsChart extends CompositeElement
                     seriesLabel = null
 
                 seriesColor = (d) -> color(series)
-
-                yCoord = (d) -> y(yData(d))
 
                 svg.selectAll(".dot.series-#{series}")
                     .data(dataForCharting)
@@ -1500,8 +1544,7 @@ class ResultsChart extends CompositeElement
                 if seriesLabel?
                     svg.append("text")
                         .datum(dataForCharting[dataForCharting.length-1])
-                        .attr("transform", (d) ->
-                            "translate(#{xCoord(d)},#{yCoord(d)})")
+                        .attr("transform", (d) -> "translate(#{xCoord(d)},#{yCoord(d)})")
                         .attr("x", -5).attr("dy", "-.35em")
                         .style("text-anchor", "end")
                         .style("fill", seriesColor)
@@ -1509,7 +1552,13 @@ class ResultsChart extends CompositeElement
 
                 series++
 
-        @optionElements.toggleInterpolateLines?.prop("disabled", @chartType isnt "lineChart")
+        @optionElements.toggleLogScale   .toggleClass("disabled", false)
+        @optionElements.toggleLogScaleX ?.toggleClass("disabled", @chartType isnt "scatterPlot" or intervalContains d3.extent(xDomain), 0)
+        @optionElements.toggleLogScaleY2?.toggleClass("disabled", _.size(@varsYbyUnit) < 2)
+        isInterpolateLinesDisabled = @chartType isnt "lineChart"
+        @optionElements.toggleInterpolateLines
+           ?.prop("disabled", isInterpolateLinesDisabled)
+            .closest("label").toggleClass("hide", isInterpolateLinesDisabled)
 
 
 
@@ -2157,6 +2206,9 @@ $ ->
             ExpKit.chart = new ResultsChart $("#chart-body"),
                 $("#chart-type"), $("#chart-axis-controls"), ExpKit.results,
                 toggleInterpolateLines: $("#chart-toggle-interpolate-lines")
+                toggleLogScaleX : $("#chart-toggle-log-scale-axis-x")
+                toggleLogScaleY1: $("#chart-toggle-log-scale-axis-y")
+                toggleLogScaleY2: $("#chart-toggle-log-scale-axis-y2")
             # plan
             ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
                 ExpKit.conditions,
