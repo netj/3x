@@ -269,7 +269,7 @@ initTitle = ->
                 if exp.hostname? and exp.port? then "#{exp.hostname}:#{exp.port}"
                 else simplifyURL ExpKitServiceBaseURL
             document.title = "ExpKit — #{exp.name} — #{hostport}"
-            $("#url").text("#{hostport}")
+            $("#title").text("#{exp.name} — #{hostport}")
                 .attr
                     title: "#{exp.fileSystemPath}#{
                         unless exp.description? then ""
@@ -293,7 +293,7 @@ initTabs = ->
 
 
 initBaseURLControl = ->
-    urlModalToggler = $("#url")
+    urlModalToggler = $("#title")
     urlModal = $("#url-switch")
     inputHost = urlModal.find(".url-input-host")
     inputPort = urlModal.find(".url-input-port")
@@ -319,7 +319,7 @@ initBaseURLControl = ->
     btnPrimary.click (e) ->
         url = "http://#{inputHost.val()}:#{inputPort.val()}"
         if url isnt ExpKitServiceBaseURL
-            $("#url").text(simplifyURL url)
+            $("#title").text(simplifyURL url)
             ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL = url
             do location.reload # TODO find a nice way to avoid reload?
         urlModal.modal "hide"
