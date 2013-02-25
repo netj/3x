@@ -1562,13 +1562,19 @@ class ResultsChart extends CompositeElement
 
                 # legend
                 if seriesLabel?
+                    i = dataForCharting.length - 1
+                    #i = Math.round(Math.random() * i) # TODO find a better way to place labels
+                    d = dataForCharting[i]
+                    x = xCoord(d)
+                    leftHandSide = x < @width/2
+                    inTheMiddle = false # @width/4 < x < @width*3/4
                     @svg.append("text")
-                        .datum(dataForCharting[dataForCharting.length-1])
-                        .attr("transform", (d) -> "translate(#{xCoord(d)},#{yCoord(d)})")
-                        .attr("x", -5).attr("dy", "-.35em")
-                        .style("text-anchor", "end")
+                        .datum(d)
+                        .attr("transform", "translate(#{xCoord(d)},#{yCoord(d)})")
+                        .attr("x", if leftHandSide then 5 else -5).attr("dy", "-.5em")
+                        .style("text-anchor", if inTheMiddle then "middle" else if leftHandSide then "start" else "end")
                         .style("fill", seriesColor)
-                        .text((d) -> seriesLabel)
+                        .text(seriesLabel)
 
                 series++
 
