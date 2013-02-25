@@ -1193,25 +1193,30 @@ class ResultsChart extends CompositeElement
                         $(e.srcElement).is(":checked")
                 do @display
 
-        initLogScaleToggler = (btn, key) =>
-            persistKey = "chart#{key}"
-            @chartOptions[key] = (try JSON.parse localStorage[persistKey]) ? false
-            btn?.toggleClass("active", @chartOptions[key])
+        # vocabularies for axis options
+        forEachAxisOptionElement = (prefix, chartOptionPrefix, job) =>
+            for axisName in ResultsChart.AXIS_NAMES
+                optionKey = chartOptionPrefix+axisName
+                persistKey = "chart#{optionKey}"
+                optionVal = @chartOptions[optionKey] = (try JSON.parse localStorage[persistKey]) ? false
+                job @optionElements["#{prefix}#{axisName}"], axisName, optionKey, optionVal, persistKey
+        installAxisOptionToggleHandler = (btn, key, optionKey, optionVal, persistKey) =>
+            btn?.toggleClass("active", optionVal)
                 .click (e) =>
-                    if btn.hasClass("disabled")
-                        e.preventDefault()
-                        return
-                    localStorage[persistKey] = @chartOptions[key] = not btn.hasClass("active")
-                    log persistKey, key, @chartOptions[key]
+                    return e.preventDefault() if btn.hasClass("disabled")
+                    localStorage[persistKey] = @chartOptions[optionKey] = not btn.hasClass("active")
+                    log btn.id, persistKey, optionKey, @chartOptions[optionKey]
                     do @display
-        initLogScaleToggler @optionElements.toggleLogScaleX,  "logScaleX"
-        initLogScaleToggler @optionElements.toggleLogScaleY1, "logScaleY1"
-        initLogScaleToggler @optionElements.toggleLogScaleY2, "logScaleY2"
-        @optionElements.toggleLogScale = $([
-            @optionElements.toggleLogScaleX
-            @optionElements.toggleLogScaleY1
-            @optionElements.toggleLogScaleY2
-        ]).toggleClass("disabled", true)
+        # log scale
+        @optionElements.toggleLogScale =
+            $(forEachAxisOptionElement "toggleLogScale", "logScale", installAxisOptionToggleHandler)
+                .toggleClass("disabled", true)
+        # origin
+        @optionElements.toggleOrigin =
+            $(forEachAxisOptionElement "toggleOrigin", "origin", installAxisOptionToggleHandler)
+                .toggleClass("disabled", true)
+
+    @AXIS_NAMES: "X Y1 Y2".trim().split(/\s+/)
 
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axisNames
@@ -1365,11 +1370,11 @@ class ResultsChart extends CompositeElement
                 "#{axis.columns[0].name}#{if unitStr then " " else ""}#{unitStr}"
             else
                 unitStr
-        isLogScaleEnabled = (axis) => @chartOptions["logScale#{axis}"]
         pickScale = (axis) =>
             dom = d3.extent(axis.domain)
+            dom = d3.extent(dom.concat([0])) if @chartOptions["origin#{axis.name}"]
             axis.isLogScalePossible = not intervalContains dom, 0
-            axis.isLogScaleEnabled = isLogScaleEnabled axis.name
+            axis.isLogScaleEnabled = @chartOptions["logScale#{axis.name}"]
             if axis.isLogScaleEnabled and not axis.isLogScalePossible
                 error "log scale does not work for domains including zero", axis, dom
                 axis.isLogScaleEnabled = no
@@ -1400,8 +1405,6 @@ class ResultsChart extends CompositeElement
                 extent = []
                 for col in axisY.columns
                     extent = d3.extent(extent.concat(d3.extent(entireRowIndexes, accessorFor(col))))
-                #unless isLogScaleEnabled axisY.name
-                #    extent = d3.extent(extent.concat([0])) # include origin # TODO make this controllable
                 axisY.domain = extent
         do => ## Determine the chart dimension and initialize the SVG root as @svg
             chartBody = d3.select(@baseElement[0])
@@ -1452,7 +1455,6 @@ class ResultsChart extends CompositeElement
                     @chartType = "scatterPlot"
                 else
                     error "Unsupported variable type (#{axis.type}) for X axis", axisX.column
-            log x.domain()
             axisX.label = formatAxisLabel axisX
             axisX.axis = d3.svg.axis()
                 .scale(axisX.scale)
@@ -1495,7 +1497,6 @@ class ResultsChart extends CompositeElement
             axisY = @axisByUnit[yVar.unit]
             y = axisY.scale; yData = accessorFor(yVar)
             yCoord = (d) -> y(yData(d))
-            log "drawing chart of", axisY
 
             for seriesLabel,dataForCharting of @dataBySeries
                 if _.size(@varsY) > 1
@@ -1547,7 +1548,11 @@ class ResultsChart extends CompositeElement
         for axis in @axes
             @optionElements["toggleLogScale#{axis.name}"]
                ?.toggleClass("disabled", not axis.isLogScalePossible)
-                .toggleClass("active", axis.isLogScaleEnabled)
+
+        @optionElements.toggleOrigin.toggleClass("disabled", true)
+        for axis in @axes
+            @optionElements["toggleOrigin#{axis.name}"]
+               ?.toggleClass("disabled", axis.type isnt "ratio" or intervalContains axis.domain, 0)
 
         isInterpolateLinesDisabled = @chartType isnt "lineChart"
         @optionElements.toggleInterpolateLines
@@ -2200,9 +2205,12 @@ $ ->
             ExpKit.chart = new ResultsChart $("#chart-body"),
                 $("#chart-type"), $("#chart-axis-controls"), ExpKit.results,
                 toggleInterpolateLines: $("#chart-toggle-interpolate-lines")
-                toggleLogScaleX : $("#chart-toggle-log-scale-axis-x")
-                toggleLogScaleY1: $("#chart-toggle-log-scale-axis-y")
-                toggleLogScaleY2: $("#chart-toggle-log-scale-axis-y2")
+                toggleLogScaleX : $("#chart-toggle-log-scale-x")
+                toggleLogScaleY1: $("#chart-toggle-log-scale-y1")
+                toggleLogScaleY2: $("#chart-toggle-log-scale-y2")
+                toggleOriginX   : $("#chart-toggle-origin-x")
+                toggleOriginY1  : $("#chart-toggle-origin-y1")
+                toggleOriginY2  : $("#chart-toggle-origin-y2")
             # plan
             ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
                 ExpKit.conditions,
