@@ -1296,7 +1296,9 @@ class ResultsChart extends CompositeElement
         ratioVariables =
             (axisCand for axisCand in axisCandidates when isRatio axisCand.type)
         # validate the variables chosen for axes
-        defaultAxes = [ nominalVariables[0].name, ratioVariables[0].name ]
+        defaultAxes = []
+        defaultAxes[ResultsChart.X_AXIS_ORDINAL] = nominalVariables[0].name
+        defaultAxes[ResultsChart.Y_AXIS_ORDINAL] = ratioVariables[0].name
         if @axisNames?
             # find if all axisNames are valid, don't appear more than once, or make them default
             for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or
