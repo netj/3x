@@ -982,7 +982,7 @@ class ResultsTable extends CompositeElement
         # cell as well as others will be displaying the raw data value
         provenancePopoverParent = @baseElement.parent()
         provenancePopover = @brushingProvenancePopover = $("""
-            <div class="provenance popover fade top">
+            <div class="provenance popover hide fade top">
                 <div class="arrow"></div>
                 <div class="popover-inner">
                     <div class="popover-content">
@@ -2050,7 +2050,7 @@ class PlanTable extends PlanTableBase
         if (rt = @optionElements.resultsTable)?
             popoverParent = rt.baseElement.parent()
             popover = @resultsActionPopover = $("""
-                <div class="planner popover fade left">
+                <div class="planner popover hide fade left">
                     <div class="arrow"></div>
                     <div class="popover-inner">
                         <h3 class="popover-title">Add to <i class="icon icon-time"></i>Plan</h3>
