@@ -1231,7 +1231,9 @@ class ResultsChart extends CompositeElement
                   <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
-                <li class="axis-var" data-name="{{>name}}"><a href="#">{{>name}}</a></li>
+              <li class="axis-var" data-name="{{>name}}"><a href="#"><i
+                  class="icon icon-{{if isMeasured}}dashboard{{else}}tasks{{/if}}"></i>
+                      {{>name}}</a></li>
               {{/for}}
               {{if isOptional}}
               <li class="divider"></li>
@@ -1248,7 +1250,9 @@ class ResultsChart extends CompositeElement
               href="#"><i class="icon icon-plus"></i> <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
-                <li class="axis-var" data-name="{{>name}}"><a href="#">{{>name}}</a></li>
+                <li class="axis-var" data-name="{{>name}}"><a href="#"><i
+                    class="icon icon-{{if isMeasured}}dashboard{{else}}tasks{{/if}}"></i>
+                    {{>name}}</a></li>
               {{/for}}
             </ul>
           </div>
