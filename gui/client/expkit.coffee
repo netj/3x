@@ -1349,6 +1349,25 @@ class ResultsChart extends CompositeElement
 
         do @display
 
+    @SVG_STYLE_SHEET: """
+        <style>
+          .axis path,
+          .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+          }
+
+          .dot {
+            stroke: #000;
+          }
+
+          .line {
+            fill: none;
+            stroke-width: 1.5px;
+          }
+        </style>
+        """
     render: =>
         ## Collect data to plot from @table
         $trs = @table.baseElement.find("tbody tr")
@@ -1408,6 +1427,7 @@ class ResultsChart extends CompositeElement
                 axisY.domain = extent
         do => ## Determine the chart dimension and initialize the SVG root as @svg
             chartBody = d3.select(@baseElement[0])
+            @baseElement.find("style").remove().end().append(ResultsChart.SVG_STYLE_SHEET)
             chartWidth  = window.innerWidth  - @baseElement.position().left * 2
             chartHeight = window.innerHeight - @baseElement.position().top - 20
             @baseElement.css
