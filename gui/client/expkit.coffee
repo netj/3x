@@ -1421,7 +1421,7 @@ class ResultsChart extends CompositeElement
                 accessor: accessorFor(@varX)
             # Y axes: analyze the extent of Y axes data (single or dual unit)
             for vY in @varsY
-                continue if vY.unit is @axes[1]?.unit
+                continue if @axes.length > 1 and vY.unit is @axes[1].unit
                 i = @axes.length
                 @axes.push axisY =
                     name: "Y#{i}"
