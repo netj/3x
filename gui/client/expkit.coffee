@@ -1231,13 +1231,13 @@ class ResultsChart extends CompositeElement
                   <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
-              <li class="axis-var" data-name="{{>name}}"><a href="#"><i
-                  class="icon icon-{{if isMeasured}}dashboard{{else}}tasks{{/if}}"></i>
-                      {{>name}}</a></li>
+                <li class="axis-var" data-name="{{>name}}"><a href="#"><i
+                    class="icon icon-{{if isMeasured}}dashboard{{else}}tasks{{/if}}"></i>
+                        {{>name}}</a></li>
               {{/for}}
               {{if isOptional}}
-              <li class="divider"></li>
-              <li class="axis-remove"><a href="#">Remove</a></li>
+                {{if variables.length > 0}}<li class="divider"></li>{{/if}}
+                <li class="axis-remove"><a href="#"><i class="icon icon-remove"></i> Remove</a></li>
               {{/if}}
             </ul>
           </div>
@@ -1247,7 +1247,7 @@ class ResultsChart extends CompositeElement
         <script type="text/x-jsrender">
           <div class="axis-control axis-add btn-group">
             <a class="btn btn-small dropdown-toggle" data-toggle="dropdown"
-              href="#"><i class="icon icon-plus"></i> <span class="caret"></span></a>
+              href="#">… <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
               {{for variables}}
                 <li class="axis-var" data-name="{{>name}}"><a href="#"><i
