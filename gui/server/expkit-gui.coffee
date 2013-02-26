@@ -227,12 +227,15 @@ cliSimple = (cmd, args...) ->
 
 
 # Allow Cross Origin AJAX Requests
-app.options "/api/*", (req, res) ->
+# Cross Origin Resource Sharing (CORS)
+# See: http://en.wikipedia.org/wiki/Cross-Origin_Resource_Sharing
+# See: https://developer.mozilla.org/en-US/docs/HTML/CORS_Enabled_Image
+app.options "/*", (req, res) ->
     res.set
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
         "Access-Control-Allow-Headers": req.get("access-control-request-headers")
     res.send(200)
-app.all "/api/*", (req, res, next) ->
+app.all "/*", (req, res, next) ->
     res.set
         "Access-Control-Allow-Origin": "*"
     next()
