@@ -2085,7 +2085,7 @@ class PlanTable extends PlanTableBase
                     for name,allValues of @conditions.conditions
                         conditionNames.push name
                         column = columns[name]
-                        if column.isExpanded
+                        if currentDataRow? and column.isExpanded
                             [currentDataRow[column.index].value]
                         else
                             values = @conditions.menuItemsSelected[name]
