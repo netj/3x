@@ -9,6 +9,7 @@ http = require "http"
 socketIO = require "socket.io"
 StreamSplitter = require "stream-splitter"
 
+util = require "util"
 fs = require "fs"
 os = require "os"
 child_process = require "child_process"
@@ -83,9 +84,11 @@ app.configure ->
 
 app.configure "development", ->
     app.use express.errorHandler({ dumpExceptions: true, showStack: true })
+    io.set "log level", 1
 
 app.configure "production", ->
     app.use express.errorHandler()
+    io.set "log level", 0
 
 ###
 # Some routes
@@ -118,7 +121,6 @@ app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
 app.get "/run/*/overview", (req, res) ->
     runId = "run/#{req.params[0]}"
     readFileIfExists = (filename, next) ->
-        console.log "read", filename
         fs.readFile filename, (err, contents) ->
             if err then next null, null
             else next null, contents
@@ -205,9 +207,9 @@ cliBare = (cmd, args
         , withOut = ((outLines, next) -> outLines.join next)
         , withErr = ((errLines, next) -> errLines.join next)
 ) -> (next) ->
-    console.log "CLI running:", cmd, args.map((x) -> "'#{x}'").join " "
-    #console.log "  cwd:", EXPROOT
-    #console.log "  env:", process.env
+    util.log "CLI running: #{cmd} #{args.map((x) -> "'#{x}'").join " "}"
+    #util.log "  cwd: #{EXPROOT}"
+    #util.log "  env: #{process.env}"
     p = child_process.spawn cmd, args,
         cwd: EXPROOT
         env: process.env
@@ -215,7 +217,9 @@ cliBare = (cmd, args
     tryEnd = ->
         if _code? and _error? and _result?
             _error = null unless _error?.length > 0
-            next _code, _error, _result...
+            try next _code, _error, _result...
+            catch err
+                util.log err
     withOut Lazy(p.stdout).lines.map(String), (result...) -> _result = result; do tryEnd
     withErr Lazy(p.stderr).lines.map(String), (error)     -> _error  = error ; do tryEnd
     p.on "exit",                              (code)      -> _code   = code  ; do tryEnd
@@ -242,7 +246,7 @@ respondJSON = (res) -> (err, result) ->
 
 cliSimple = (cmd, args...) ->
     cliBare(cmd, args) (code, err, out) ->
-        console.error err unless code is 0
+        util.log err unless code is 0
 
 
 # Allow Cross Origin AJAX Requests
@@ -434,7 +438,7 @@ app.post "/api/run/batch/*", (req, res) ->
 
 
 server.listen EXPGUIPORT, ->
-    #console.log "ExpKit GUI started at http://localhost:%d/", EXPGUIPORT
+    #util.log "ExpKit GUI started at http://localhost:#{EXPGUIPORT}/"
 
 
 
@@ -461,7 +465,7 @@ batchNotifyChange = (event, fullpath) ->
     filename = fullpath?.substring((batchRootDir + batchIdProper).length)
     return unless batchIdProper?
     batchId = "run/batch/#{batchIdProper}"
-    console.log "WATCH #{batchId} #{event} #{filename}"
+    util.log "WATCH #{batchId} #{event} #{filename}"
     if filename is "/plan"
         batchSockets.volatile.emit "listing-update", [batchId, event]
     else if filename.match /// ^/( worker-\d+\.lock )$ ///
