@@ -12,7 +12,40 @@ block content
               = " "
               = file
 
-  div#main.span10
+  div#main.span10.run-overview
+
+    div.row-fluid(id='input')
+      h3
+        a(href='input') input
+      table.table.table-bordered.table-striped
+        tbody
+          each i in input
+            tr
+              td= i.name
+              th
+                span.value= i.value
+                if i.unit
+                  small.unit  (#{i.unit})
+
+    div.row-fluid(id='output')
+      h3
+        a(href='output') output
+      table.table.table-bordered.table-striped
+        tbody
+          each o in output
+            tr
+              td= o.name
+              th
+                case o.presentation
+                  when "image"
+                    img(src='workdir/#{o.value}', alt='#{o.value}')
+                  when "file"
+                    a(href='workdir/#{o.value}')= o.value
+                  // when "scalar"
+                  default
+                    span.value= o.value
+                    if o.unit
+                      small.unit  (#{o.unit})
 
     each content,file in files
       div.row-fluid(id='#{file}')

@@ -122,12 +122,31 @@ app.get "/run/*/overview", (req, res) ->
         fs.readFile filename, (err, contents) ->
             if err then next null, null
             else next null, contents
-    async.map ("#{EXPROOT}/#{runId}/#{filename}" for filename in RUN_OVERVIEW_FILENAMES),
-        readFileIfExists, (err, results) ->
-            files = {}
-            for filename,i in RUN_OVERVIEW_FILENAMES
-                files[filename] = results[i]
-            res.render "run-overview", {EXP_DESCRIPTOR, title:runId, runId, files}
+    async.parallel [
+        (next) -> async.map ("#{EXPROOT}/#{runId}/#{filename}" for filename in RUN_OVERVIEW_FILENAMES), readFileIfExists, next
+        getInputs  res, "-ut"
+        getOutputs res, "-ut"
+    ], (err, [results, inputs, outputs]) ->
+        files = {}
+        for filename,i in RUN_OVERVIEW_FILENAMES
+            files[filename] = results[i]
+        parseKeyValuePairs = (lines, map) ->
+            for kvp in String(lines).split /\n+/ when (m = /// ([^=]+) = (.*) ///.exec kvp)?
+                ty = map[m[1]]?.type
+                name: m[1]
+                value: m[2]
+                type: ty
+                unit: map[m[1]]?.unit
+                presentation: (
+                    if /// ^image/.* ///.test ty then "image"
+                    else if /// .* / .* ///.test ty then "file"
+                    else "scalar"
+                )
+        input  = parseKeyValuePairs files.input,  inputs
+        output = parseKeyValuePairs files.output, outputs
+        delete files.input
+        delete files.output
+        res.render "run-overview", {EXP_DESCRIPTOR, title:runId, runId, files, input, output}
 
 
 # Override content type for run directory
@@ -245,29 +264,32 @@ app.get "/api/description", (req, res) ->
     res.json EXP_DESCRIPTOR
 
 app.get "/api/inputs", (req, res) ->
-    cli(res, "exp-inputs", ["-utv"]
+    (getInputs res) (err, inputs) -> res.json inputs unless err
+getInputs = (res, opts = "-utv") -> (next) ->
+    cli(res, "exp-inputs", [opts]
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
-                        if m = /^([^=:(]+)(\(([^)]+)\))?:([^=]+)=(.*)$/.exec line
-                            [__, name, __, unit, type, value] = m
+                        if m = /^([^=:(]+)(\(([^)]+)\))?(:([^=]+))?(=(.*))?$/.exec line
+                            [__, name, __, unit, __, type, __, values] = m
                             [name,
-                                values: value?.split ","
+                                values: values?.split ","
                                 type: type
                                 unit: unit
                             ]
                     )
                 .join (pairs) -> next (_.object pairs)
-    ) (err, inputs) ->
-        res.json inputs unless err
+    ) next
 
 app.get "/api/outputs", (req, res) ->
-    cli(res, "exp-outputs", ["-ut"]
+    (getOutputs res) (err, outputs) -> res.json outputs unless err
+getOutputs = (res, opts = "-ut") -> (next) ->
+    cli(res, "exp-outputs", [opts]
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
-                    if m = /^([^:(]+)(\(([^)]+)\))?:(.*)$/.exec line
-                        [__, name, __, unit, type] = m
+                    if m = /^([^:(]+)(\(([^)]+)\))?(:(.*))?$/.exec line
+                        [__, name, __, unit, __, type] = m
                         [name,
                             type: type
                             unit: unit
@@ -278,7 +300,7 @@ app.get "/api/outputs", (req, res) ->
         unless err
             outputs[RUN_COLUMN_NAME] =
                 type: "nominal"
-            res.json outputs
+        next err, outputs
 
 app.get "/api/results", (req, res) ->
     args = []
