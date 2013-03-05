@@ -478,14 +478,32 @@ batchNotifyChange = (event, fullpath) ->
         ]
 
 # Use Python watchdog to monitor filesystem changes
-p = child_process.spawn "watchmedo", [
-    'shell-command'
-    '--recursive'
-    '--patterns=*'
-    '--command=echo ${watch_event_type} "${watch_src_path}"'
-    batchRootDir
-]
-splitter = p.stdout.pipe(StreamSplitter("\n"))
-splitter.on "token", (line) ->
-    [__, event, path] = /^(\S+) (.*)$/.exec(line) ? []
-    batchNotifyChange event, path
+fsMonitor = null
+do startFSMonitor = ->
+    util.log "starting filesystem monitor"
+    fsMonitor =
+    p = child_process.spawn "watchmedo", [
+        'shell-command'
+        '--recursive'
+        '--patterns=*'
+        '--command=echo ${watch_event_type} "${watch_src_path}"'
+        batchRootDir
+    ]
+    splitter = p.stdout.pipe(StreamSplitter("\n"))
+    splitter.on "token", (line) ->
+        [__, event, path] = /^(\S+) (.*)$/.exec(line) ? []
+        batchNotifyChange event, path
+    # respawn when watchmedo process exits
+    p.on "exit", (code, signal) ->
+        _.defer startFSMonitor
+
+
+# Exit hooks, Signal handler
+process.on "exit", ->
+    util.log "Shutting down..."
+    do fsMonitor?.kill
+shutdown = (sig) -> ->
+    util.log "Got SIG#{sig}."
+    process.exit 2
+for sig in "INT QUIT TERM".split /\s+/
+    process.on "SIG#{sig}", shutdown sig
