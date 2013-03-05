@@ -194,17 +194,11 @@ body > .navbar .brand .icon {
     .popover                { width: auto; }
     .overlay-frame {
       text-align: center;
-      display: inline-block;
+      display: block;
       margin: 0px auto;
-      @imageOverlayHeight: 200px;
-      min-width: @imageOverlayHeight;
-      position: relative;
-      img.overlay {
+      .overlay {
+        @imageOverlayHeight: 200px;
         height: @imageOverlayHeight;
-        position: absolute;
-      }
-      img.overlay:last-child {
-        position: static;
       }
     }
 

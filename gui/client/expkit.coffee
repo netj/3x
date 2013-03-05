@@ -178,7 +178,7 @@ class DataRenderer
     @ID:    (allRows, colIdx) -> DataRenderer._ID
     @NOOP:  (allRows, colIdx) -> DataRenderer._NOOP
     @FOR_TYPE: {}
-    constructor: (@type, @html = DataRenderer.ID, @dom = DataRenderer.NOOP) ->
+    constructor: (@type, @html = DataRenderer.ID, @dom = null) ->
         DataRenderer.FOR_TYPE[@type] = @
     @DEFAULT_RENDERER: new DataRenderer ""
     @TYPE_ALIASES: {}
@@ -187,8 +187,8 @@ class DataRenderer
         # resolve type aliases
         type = DataRenderer.TYPE_ALIASES[type] ? type
         DataRenderer.FOR_TYPE[type] ? DataRenderer.DEFAULT_RENDERER
-    @htmlGeneratorForTypeAndData: (type, rows, colIdx) -> DataRenderer.forType(type).html rows, colIdx
-    @domManipulatorForTypeAndData: (type, rows, colIdx) -> DataRenderer.forType(type).dom rows, colIdx
+    @htmlGeneratorForTypeAndData: (type, rows, colIdx) -> DataRenderer.forType(type).html?(rows, colIdx)
+    @domManipulatorForTypeAndData: (type, rows, colIdx) -> DataRenderer.forType(type).dom?(rows, colIdx)
 do ->
     new DataRenderer "string"
     DataRenderer.addAliases "string", "nominal"
@@ -218,7 +218,8 @@ do ->
 
 # More complex types
 do ->
-    new DataRenderer "hyperlink", (allRows, colIdx) ->
+    new DataRenderer "hyperlink"
+    , (allRows, colIdx) ->
         (v, rowIdxs, data, col, runColIdx) ->
             if typeof rowIdxs is "number"
                 """
@@ -226,32 +227,76 @@ do ->
                 """
             else
                 v
+    , (allRows, colIdx) ->
+        (td, rowIdxs, data, col, runColIdx) ->
+            td.style.fontSize = "80%"
     # aggregation/rendering for images
+    fileURL = (row, col, runColIdx) =>
+        "#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[col.dataIndex]}"
     new Aggregation "overlay", "image", Aggregation.FOR_NAME.count.func
     Aggregation.registerForType "image/png", "overlay", "count"
-    new DataRenderer "image", (allRows, colIdx) ->
-        MAX_IMAGES = 20 # TODO Chrome is sluggish at rendering many translucent images
-        BASE_OPACITY = 0.05 # minimum opacity
-        VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
+    MAX_IMAGES = 20 # TODO Chrome is sluggish at rendering many translucent images
+    BASE_OPACITY = 0.05 # minimum opacity
+    VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
+    new DataRenderer "image"
+    , (allRows, colIdx) ->
         (v, rowIdxs, data, col, runColIdx) ->
-            rowIdxs = [rowIdxs] if typeof rowIdxs is "number"
+            rowIdxs = [rowIdxs] if (typeof rowIdxs) is "number"
             if rowIdxs?.length > 0
+                """
+                <span class="overlay-frame"><img class="overlay"
+                src="#{fileURL data.rows[rowIdxs[0]], col, runColIdx}"
+                ></span>
+                """
+    , (allRows, colIdx) ->
+        (td, rowIdxs, data, col, runColIdx) ->
+            return if (typeof rowIdxs) is "number" or not rowIdxs?.length > 1
+            j = 0
+            $td = $(td)
+            $td.find("img")
+            .error(-> @.src = fileURL data.rows[rowIdxs[++j]], col, runColIdx)
+            .load ->
+                $img = $(@)
+                width  = $img.width()
+                height = $img.height()
+                # setup canvas
+                $canvas = $("<canvas>")
+                    .attr(width: $img.width(), height: $img.height())
+                    .addClass("overlay")
+                    .appendTo($img.parent())
+                $img.remove()
+                canvas = $canvas[0]
+                ctx = canvas.getContext("2d")
+                ctx.globalCompositeOperation = "darker"
+                # sample images
                 rows = (data.rows[rowIdx] for rowIdx in rowIdxs)
-                colIdx = col.dataIndex
                 numOverlaid = Math.min(MAX_IMAGES, rows.length)
                 sampledRows =
                     if rows.length <= MAX_IMAGES then rows
                     # TODO can we do a better sampling?
                     else rows[i] for i in [0...rows.length] by Math.floor(rows.length / MAX_IMAGES)
+                # mix images on canvas
                 divOpacity = (1 - BASE_OPACITY) / numOverlaid
-                """<span class="overlay-frame">"""+
-                (for row,i in sampledRows
-                    """
-                    <img class="overlay"
-                    src="#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[colIdx]}"
-                    style="opacity: #{BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)};">
-                    """
-                ).join("") + """</span>"""
+                numLoaded = 0
+                for row,i in sampledRows
+                    img = new Image
+                    img.crossOrigin = "anonymous"
+                    img.src = fileURL row, col, runColIdx
+                    img.onload = ->
+                        ctx.globalAlpha = BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)
+                        try ctx.drawImage @, 0,0, width,height
+                        do replaceCanvas if ++numLoaded is numOverlaid
+                    img.onerror = ->
+                        do replaceCanvas if ++numLoaded is numOverlaid
+                # replace canvas with inline image
+                replaceCanvas = ->
+                    return # XXX rendering inline image (data URL) is extremely slow on Safari
+                    $("<img>")
+                        .addClass("overlay-frame")
+                        .attr(src: canvas.toDataURL())
+                        .appendTo(td)
+                        .load ->
+                            $canvas.remove()
     DataRenderer.addAliases "image", "image/png", "image/jpeg", "image/gif" #, TODO ...
 
 
@@ -876,7 +921,8 @@ class ResultsTable extends CompositeElement
                                    }#{if col.isExpanded then " expanded"   else ""
                                    }"
                         # renderer can't be defined earlier because it needs to see the data
-                        renderer: DataRenderer.htmlGeneratorForTypeAndData(col.type, @resultsForRendering, col.index)
+                        renderHTML: DataRenderer.htmlGeneratorForTypeAndData(col.type, @resultsForRendering, col.index)
+                        renderDOM:  DataRenderer.domManipulatorForTypeAndData(col.type, @resultsForRendering, col.index)
                         isLastColumn: col.index is @columnNames.length - 1
             , {ExpKitServiceBaseURL, @isRunIdExpanded}
             ))
@@ -896,20 +942,24 @@ class ResultsTable extends CompositeElement
 
         # populate table body
         @baseElement.find("tbody").remove()
-        tbody = $("<tbody>").append(do =>
+        tbody = $("<tbody>").append(
             for row,ordinal in @resultsForRendering
                 ResultsTable.ROW_SKELETON.render {
                         ordinal
                         columns:
                             for c,idx in columnMetadata
                                 $.extend {}, c, row[idx],
-                                    valueFormatted: c.renderer(row[idx].value,
+                                    valueFormatted: c.renderHTML(row[idx].value,
                                             row[idx].origin, @results, c, @resultsRunIdIndex)
                     }, {
                         ExpKitServiceBaseURL
                     }
         ).appendTo(@baseElement)
-        # TODO apply DataRenderer dom mainpulator
+        # apply DataRenderer DOM mainpulator
+        for c,idx in columnMetadata when c.renderDOM?
+            tbody.find("tr").find("td:nth(#{idx})").each (ordinal, td) =>
+                row = @resultsForRendering[ordinal]
+                c.renderDOM td, row[idx].origin, @results, c, @resultsRunIdIndex
 
         # finally, make the table interactive with DataTable
         @dataTable = $(@baseElement).dataTable
@@ -1031,7 +1081,8 @@ class ResultsTable extends CompositeElement
         brushingRowProcessed = null
         brushingLastRowIdx = null
         brushingSetupRow = null
-        brushingCellRenderer = null
+        brushingCellHTMLRenderer = null
+        brushingCellDOMRenderer = null
         brushingTDs = null
         brushingTDsOrigContent = null
         brushingTDsAll = null
@@ -1062,12 +1113,14 @@ class ResultsTable extends CompositeElement
                 colIdxData      = @columnsRenderedToData[colIdxRendered]
                 # use DataRenderer to show them
                 c = @columnsRendered[colIdxRendered]
+                args = [rowIdxData, @results, c, @resultsRunIdIndex]
                 $(td).html(
                     # XXX somehow, the first row isn't refreshing even though correct html is being set
                     (if brushingTRIndex is 0 then "<span></span>" else "") +
-                    brushingCellRenderer[i]?(@results.rows[rowIdxData][colIdxData],
-                            rowIdxData, @results, c, @resultsRunIdIndex) ? ""
+                    brushingCellHTMLRenderer[i]?(
+                        @results.rows[rowIdxData][colIdxData], args...) ? ""
                 )
+                brushingCellDOMRenderer[i]?(td, args...)
         endBrushing = =>
             # restore DOM of previous TR
             if brushingSetupRow?
@@ -1078,7 +1131,7 @@ class ResultsTable extends CompositeElement
                     td.style.cssText = brushingTDsOrigCSSText[i]
                 do detachProvenancePopover
                 brushingRowProcessed = brushingSetupRow = brushingLastRowIdx =
-                    brushingCellRenderer =
+                    brushingCellHTMLRenderer = brushingCellDOMRenderer =
                     brushingTDs = brushingTDsOrigContent =
                     brushingTDsAll = brushingTDsOrigCSSText =
                         null
@@ -1124,7 +1177,8 @@ class ResultsTable extends CompositeElement
                         # detach the contents DOM and keep it safe
                         brushingTDsOrigContent[i] = $(td).contents().detach()
                     # prepare DataRenderer for each cell
-                    brushingCellRenderer = []
+                    brushingCellHTMLRenderer = []
+                    brushingCellDOMRenderer = []
                     processedForThisRow =
                         for rowIdx in groupedRowIdxs
                             for col in @results.rows[rowIdx]
@@ -1133,8 +1187,10 @@ class ResultsTable extends CompositeElement
                     brushingTDs.each (i,td) =>
                         # derive a renderer using only the values within this row
                         col = @columnsRendered[$(td).index()]
-                        brushingCellRenderer[i] =
+                        brushingCellHTMLRenderer[i] =
                             try DataRenderer.htmlGeneratorForTypeAndData(col.dataType, processedForThisRow, col.dataIndex)
+                        brushingCellDOMRenderer[i] =
+                            try DataRenderer.domManipulatorForTypeAndData(col.dataType, processedForThisRow, col.dataIndex)
                 updateBrushing $td, e
             else
                 # not on a brushable cell
