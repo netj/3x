@@ -234,7 +234,10 @@ do ->
     fileURL = (row, col, runColIdx) =>
         "#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[col.dataIndex]}"
     new Aggregation "overlay", "image", Aggregation.FOR_NAME.count.func
-    Aggregation.registerForType "image/png", "overlay", "count"
+    # TODO type alias for Aggregation
+    Aggregation.registerForType "image/png",  "overlay", "count"
+    Aggregation.registerForType "image/jpeg", "overlay", "count"
+    Aggregation.registerForType "image/gif",  "overlay", "count"
     MAX_IMAGES = 20 # TODO Chrome is sluggish at rendering many translucent images
     BASE_OPACITY = 0.05 # minimum opacity
     VAR_OPACITY  = 0.50 # ratio to plus/minus the dividend opacity
