@@ -74,8 +74,10 @@ fi
 
 ## find matching inputs to get outputs
 msg +1 "Filtering results with $*"
-find "${runs[@]}" -name output \
-    "${findPredicate[@]}" -print |
+find "${runs[@]}" \
+    -type d \( -name workdir -o -name measures -o -name running.\* \) -prune -o \
+    -name output \( "${findPredicate[@]}" \) \
+    -print |
 while read -r output; do
     run=${output%/output}
     run=$(cd "$run" && pwd -P); run=${run#$EXPROOT/}
