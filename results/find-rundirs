@@ -26,8 +26,13 @@ done
 # enumerate all when no predicate is given
 [[ $# -gt 0 ]] || set -- -true
 
+# workaround for older version of readlink (<= 8.21),
+# which can't handle multiple paths at one invocation
+readlinkXargsOpts=()
+readlink -f a b &>/dev/null || readlinkXargsOpts+=(-L1)
+
 find "${runs[@]}" \
     -type d \( -name workdir -o -name measures \
             -o -name running.\* \) -prune -o \
     -name output \( "$@" \) -print |
-sed 's:/output$::' | xargs readlink -f | sed 's|^'"$EXPROOT"'/||'
+sed 's:/output$::' | xargs "${readlinkXargsOpts[@]}" readlink -f | sed 's|^'"$EXPROOT"'/||'
