@@ -10,7 +10,7 @@ let $EXPROOT = $SourceRoot."/test-exp"
 lcd $SourceRoot
 exec "setlocal path+=".join(map(modules,'$SourceRoot."/".v:val'), ",")
 
-setlocal autowrite
+setlocal autowrite undofile
 
 " Build with Cmd-Enter
 nmap <buffer> <D-CR> :make -C $SourceRoot install PREFIX=~<CR>
