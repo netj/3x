@@ -6,6 +6,7 @@ usage                       $TOOLSDIR/
 error                       $TOOLSDIR/
 msg                         $TOOLSDIR/
 be-quiet                    $TOOLSDIR/
+verbosity-isnt              $TOOLSDIR/
 
 edit                        $TOOLSDIR/
 customize                   $TOOLSDIR/

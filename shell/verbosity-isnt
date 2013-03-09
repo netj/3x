@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# verbosity-isnt -- Check if $EXPKIT_LOGLVL is in range
+# Usage: verbosity-isnt LEVEL...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-03-08
+(( EXPKIT_LOGLVL += 1 - $SHLVL ))
+for l; do [[ $EXPKIT_LOGLVL -ne $l ]] || exit 1; done
+exit 0
