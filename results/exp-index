@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# exp-index -- manage index of experiment results
+# Usage:
+#   exp index init
+# 
+#   exp index rebuild
+#   exp index update RUN...
+# 
+#   exp index query QUERY...
+#     See compile-where(1) for QUERY.
+# 
+# Index resides at $EXPROOT/.exp/index.db, and it is an SQLite database
+# mirroring the input and output values for each run.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-03-08
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "Specify what to do with the inex"
+
+BATCHSIZE=64
+
+EXPROOT=$(exp-findroot)
+export EXPROOT
+
+. "$TOOLSDIR"/sql-vocabs.sh
+
+EXPINDEX="$EXPROOT"/.exp/index.db
+sqlite() { sqlite3 "$EXPINDEX"; }
+
+inputs=$(exp-inputs)
+outputs=$(exp-outputs)
+columns="$outputs $inputs"
+
+Cmd=$1; shift
+case $Cmd in
+    init)
+        ## initialize index if necessary
+        if ! [ -s "$EXPINDEX" ]; then
+            # TODO detect if $inputs and/or $outputs have changed
+            # TODO and use ALTER TABLE run RENAME TO run$$; CREATE TABLE ... AS SELECT ... FROM run$$;
+            sqlite <<-EOF
+		CREATE TABLE IF NOT EXISTS run(
+		  id TEXT PRIMARY KEY
+		$(
+		for varName in $columns; do
+		    echo ", _$varName $(sql-type $varName)"
+		done
+		)
+		);
+		EOF
+	fi
+	;;
+
+    query)
+        header="run#" cols="id"
+        for varName in $columns; do
+            header+="\t$varName"
+            cols+=", _$varName"
+        done
+        # compile selection expression from arguments
+        where=$(compile-where "$@")
+        echo -e "$header"
+        sqlite <<-EOF
+	.header OFF
+	.mode tabs
+	.nullvalue ""
+	SELECT $cols FROM run $where;
+	EOF
+        ;;
+
+    update)
+        # prepare some vocabularies based on log level
+        run-sqlite() { sqlite "$@"; }
+        progress() { :; }
+        verbosity-isnt +1 || progress() { msg "Indexing $*..."; }
+        verbosity-isnt +2 || run-sqlite() { tee /dev/stderr | sqlite "$@"; }
+        be-quiet +3       || set -x
+        # prepare code for generating SQL statements
+        esc= vars= fmt=
+        for varName in $columns; do
+            case $(sql-type $varName) in
+                TEXT)
+                    esc+=" $varName=\${$varName:+\"'\"\${$varName//\"'\"/\"''\"}\"'\"}"
+                    ;;
+            esac
+            vars+="\"\${$varName:-NULL}\"" fmt+="%s"
+            vars+=' ' fmt+=',\t'
+        done
+        printRecordExpr="source input; source output; $esc; printf \"($fmt'%s')\" $vars"
+        {
+            # scan given RUNs and generate VALUES for SQL INSERT statement
+            numRecs=0
+            for run; do
+                if [[ $numRecs -eq 0 ]]; then
+                    echo "INSERT OR REPLACE INTO run($(printf "_%s,\t" $columns)id) VALUES "
+                else
+                    echo ","
+                fi
+                (
+                    cd "$run"
+                    id=$(pwd -P); id=${id#$EXPROOT/}
+                    progress "$id"
+                    eval "$printRecordExpr '$id'"
+                )
+                let ++numRecs
+                if [[ $numRecs -gt $BATCHSIZE ]]; then
+                    echo ";"
+                    numRecs=0
+                fi
+            done
+            [[ $numRecs -eq 0 ]] || echo ";"
+        } | run-sqlite
+        ;;
+
+    rebuild)
+        # make sure index is initialized
+        EXPKIT_LOGLVL=$(($EXPKIT_LOGLVL+1)) 
+        exp-index init
+        # find all runs and update
+        msg "Rebuilding index..."
+        find-rundirs "$EXPROOT"/run |
+        sed 's:/output$::' |
+        xargs exp-index update
+        ;;
+
+    *)
+        usage "$0" "$Cmd: unknown index command"
+        ;;
+esac

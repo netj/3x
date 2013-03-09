@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# compile-where -- compile given expressions into an SQL WHERE expression
+# Usage: compile-where [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-03-08
+set -eu
+shopt -s extglob
+
+. "$TOOLSDIR"/sql-vocabs.sh
+
+where="WHERE "
+for cond; do
+    case $cond in
+        # exclusion; not equal to
+        *@(<>|!=)*)
+            name=${cond%%@(<>|!=)*}; values=${cond##$name@(<>|!=)}
+            ty=$(sql-type "$name")
+            vs=$(sql-csv "$ty" "$values")
+            echo "$where _$name NOT IN ($vs)"
+            ;;
+
+        # inequalities
+        *@(<=|>=|<|>)*)
+            name=${cond%%@(<=|>=|<|>)*}; value=${cond##$name@(<=|>=|<|>)}
+            o=${cond%$value}; o=${o#$name}
+            ty=$(sql-type "$name")
+            v=$(sql-literal "$ty" "$value")
+            echo "$where _$name $o $v"
+            ;;
+
+        # membership; equals
+        *=*)
+            name=${cond%%=*}; values=${cond#$name=}
+            ty=$(sql-type "$name")
+            vs=$(sql-csv "$ty" "$values")
+            echo "$where _$name IN ($vs)"
+            ;;
+
+        *)
+            error "$cond: Invalid query syntax"
+            ;;
+    esac
+    where="  AND "
+done

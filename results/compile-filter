@@ -54,7 +54,7 @@ for cond; do
                     echo "[[ \$$name $o $v ]]"
                     ;;
                 *)
-                    echo "[[ \$(bc <<<\"\$$name $o $v\") = 1 ]]"
+                    echo "[[ \$(bc <<<\"\$$name $o $v\" 2>/dev/null) = 1 ]]"
                     # XXX bc is much more powerful (arbitrary precision) but
                     # not that slower than shell's builtin [[ comparisons,
                     # which can only do int arithmetics.
@@ -72,6 +72,10 @@ for cond; do
             name=${cond%%=*}; values=${cond#$name=}
             patt=$values; patt=${patt//'|'/'\|'}; patt=${patt//','/'|'}
             echo "[[ \$$name = @($patt) ]]"
+            ;;
+
+        *)
+            error "$cond: Invalid query syntax"
             ;;
     esac
 done
