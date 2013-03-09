@@ -307,7 +307,7 @@ getOutputs = (res, opts = "-ut") -> (next) ->
         next err, outputs
 
 app.get "/api/results", (req, res) ->
-    args = []
+    args = [] # TODO use a tab separated format directly from exp-results
     # TODO runs/batches
     inputs  = (try JSON.parse req.param("inputs") ) ? {}
     outputs = (try JSON.parse req.param("outputs")) ? {}

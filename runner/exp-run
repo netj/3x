@@ -63,4 +63,8 @@ for mx in measures/*/measure; do
     fi
 done >output
 
+# incrementally update the index with this run
+exp-index init
+exp-index update .
+
 exit $exitcode

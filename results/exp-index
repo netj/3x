@@ -18,7 +18,7 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" "Specify what to do with the inex"
 
-BATCHSIZE=64
+BATCHSIZE=256
 
 EXPROOT=$(exp-findroot)
 export EXPROOT
@@ -34,23 +34,47 @@ columns="$outputs $inputs"
 
 Cmd=$1; shift
 case $Cmd in
-    init)
+    init|migrate)
         ## initialize index if necessary
-        if ! [ -s "$EXPINDEX" ]; then
-            # TODO detect if $inputs and/or $outputs have changed
-            # TODO and use ALTER TABLE run RENAME TO run$$; CREATE TABLE ... AS SELECT ... FROM run$$;
-            sqlite <<-EOF
-		CREATE TABLE IF NOT EXISTS run(
-		  id TEXT PRIMARY KEY
+        sql-create-table() {
+            cat <<-EOF
+		CREATE TABLE IF NOT EXISTS run
+		( id TEXT PRIMARY KEY
 		$(
 		for varName in $columns; do
-		    echo ", _$varName $(sql-type $varName)"
+		    echo ", _$varName $(sql-type $varName) DEFAULT NULL"
 		done
 		)
-		);
+		)
 		EOF
-	fi
-	;;
+        }
+        if ! [ -s "$EXPINDEX" ]; then
+            sqlite <<-EOF
+                BEGIN TRANSACTION;
+		$(sql-create-table);
+		COMMIT TRANSACTION;
+		EOF
+        elif [ x"$Cmd" = x"migrate" -o "$EXPROOT/.exp/assemble.sh" -nt "$EXPINDEX" ]; then
+            # if $inputs and/or $outputs have changed, migrate indexed data
+            oldColumns=$(
+                sqlite <<<".schema run" |
+                sed -n '/^, _/ { s/^, _//; s/ .*$//; p; }'
+                )
+            selectColumns="id"
+            for varName in $columns; do
+                grep -qF "$varName" <<<"$oldColumns" || continue
+                selectColumns+=", _$varName"
+            done
+            sqlite <<-EOF
+                BEGIN TRANSACTION;
+		ALTER TABLE run RENAME TO run_$$;
+		$(sql-create-table);
+		INSERT INTO run ($selectColumns) SELECT $selectColumns FROM run_$$;
+		DROP TABLE run_$$;
+		COMMIT TRANSACTION;
+		EOF
+        fi
+        ;;
 
     query)
         header="run#" cols="id"
@@ -70,6 +94,7 @@ case $Cmd in
         ;;
 
     update)
+        [ -s "$EXPINDEX" ] || error "No index exists"
         # prepare some vocabularies based on log level
         run-sqlite() { sqlite "$@"; }
         progress() { :; }
@@ -87,13 +112,15 @@ case $Cmd in
             vars+="\"\${$varName:-NULL}\"" fmt+="%s"
             vars+=' ' fmt+=',\t'
         done
-        printRecordExpr="source input; source output; $esc; printf \"($fmt'%s')\" $vars"
+        printRecordExpr="source input; source output;
+                    $esc; printf \"($fmt'%s')\" $vars"
         {
             # scan given RUNs and generate VALUES for SQL INSERT statement
             numRecs=0
             for run; do
                 if [[ $numRecs -eq 0 ]]; then
-                    echo "INSERT OR REPLACE INTO run($(printf "_%s,\t" $columns)id) VALUES "
+                    echo "INSERT OR REPLACE INTO run"
+                    echo "($(printf "_%s,\t" $columns)id) VALUES "
                 else
                     echo ","
                 fi

@@ -105,3 +105,6 @@ case $What in
         echo "$Type" >"$dir"/datatype
         ;;
 esac
+
+# re-initialize index
+exp-index migrate
