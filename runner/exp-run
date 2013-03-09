@@ -59,7 +59,7 @@ for mx in measures/*/measure; do
     m=$(basename "$(dirname "$mx")")
     if [ -x "$mx" ]; then
         # TODO under the same env
-        echo "$m=$("$mx")"
+        echo "$m=$(escape-args-for-shell "$("$mx")")"
     fi
 done >output
 
