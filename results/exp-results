@@ -74,15 +74,14 @@ fi
 
 ## find matching inputs to get outputs
 msg +1 "Filtering results with $*"
-find "${runs[@]}" \
-    -type d \( -name workdir -o -name measures -o -name running.\* \) -prune -o \
-    -name output \( "${findPredicate[@]}" \) \
-    -print |
-while read -r output; do
-    run=${output%/output}
-    run=$(cd "$run" && pwd -P); run=${run#$EXPROOT/}
-    input=$run/input
-    [ -r "$output" ] || continue
-    echo "$run"$'\t'"$(tr '\n' '\t' <"$output")$((sort | tr '\n' '\t') <"$input")"
-done |
+find-rundirs "${runs[@]}" -- "${findPredicate[@]}" |
+{
+    cd "$EXPROOT"
+    while read -r run; do
+        output=$run/output
+        input=$run/input
+        [ -r "$output" ] || continue
+        echo "$run"$'\t'"$(tr '\n' '\t' <"$output")$((sort | tr '\n' '\t') <"$input")"
+    done
+} |
 if [ -t 1 ]; then column -t; else cat; fi

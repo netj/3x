@@ -1,4 +1,6 @@
 exp-results             $TOOLSDIR/
 compile-filter          $TOOLSDIR/
 
+find-rundirs            $TOOLSDIR/
+
 exp-outputs             $TOOLSDIR/

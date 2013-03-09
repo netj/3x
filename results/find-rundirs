@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# find-rundirs -- find run directories
+# Usage: find-rundirs [DIR]... -- [FIND_PREDICATE]...
+# 
+# Enumerates run directories under DIRs that satisfy the FIND_PREDICATEs,
+# which are the predicates for find(1).
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-03-08
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "At least -- must be given"
+
+EXPROOT=$(exp-findroot)
+export EXPROOT
+
+# collect the run DIRs up to -- or the end of args
+runs=()
+until [[ $# -eq 0 || $1 == -- ]]; do
+    runs+=("$1"); shift
+done
+# search the entire runs if no DIR is given
+[[ $# -eq 0 || $1 != -- ]] || shift
+[[ ${#runs[@]} -gt 0 ]] || runs+=("$EXPROOT"/run)
+
+# enumerate all when no predicate is given
+[[ $# -gt 0 ]] || set -- -true
+
+find "${runs[@]}" \
+    -type d \( -name workdir -o -name measures \
+            -o -name running.\* \) -prune -o \
+    -name output \( "$@" \) -print |
+sed 's:/output$::' | xargs readlink -f | sed 's|^'"$EXPROOT"'/||'
