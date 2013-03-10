@@ -26,9 +26,9 @@ done
 # enumerate all when no predicate is given
 [[ $# -gt 0 ]] || set -- -true
 
-# workaround for older version of readlink (<= 8.21),
+# workaround for older version of readlink (< 8.21),
 # which can't handle multiple paths at one invocation
-readlinkXargsOpts=()
+readlinkXargsOpts=(--)
 readlink -f a b &>/dev/null || readlinkXargsOpts+=(-L1)
 
 find "${runs[@]}" \
