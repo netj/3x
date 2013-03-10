@@ -5,6 +5,14 @@ block content
   div.span2
     div.span2.bs-docs-sidebar
       ul.nav.nav-list(data-spy='affix').bs-docs-sidenav
+        li
+          a(href='#input')
+            i.icon-chevron-right
+            | input
+        li
+          a(href='#output')
+            i.icon-chevron-right
+            | output
         each content,file in files
           li
             a(href='##{file}')
