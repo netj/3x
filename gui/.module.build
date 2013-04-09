@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-Self=$(readlink -f "$0")
+Self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 
 # bootstrap .build
 mkdir -p .build/{server,client}

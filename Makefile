@@ -14,8 +14,6 @@ export DOCSDIR        := docs
 PACKAGENAME := exp
 PACKAGEEXECUTES := bin/exp
 
-STAGEDIR := @prefix@
-MODULES := shell setup assembler batch planner runner results gui docs
 include buildkit/modules.mk
 
 buildkit/modules.mk:
