@@ -12,9 +12,12 @@ EXPWDabbrev=${EXPWD#$PWD/}
 
 shopt -s extglob
 
-# TODO check if cp is GNU coreutil's
-cpopts=
-be-quiet +1 || cpopts+=--verbose
+_recordCopiedFiles() {
+    sed -E 's/^/  copying /;  s#([‘ ])run/.*/(workdir/|measures/|args)#\1\2#' |
+    tee -a "$EXPWD"/assembly
+}
+recordCopiedFiles() { _recordCopiedFiles >/dev/null; }
+be-quiet +1 || recordCopiedFiles() { _recordCopiedFiles >&2; }
 be-quiet +3 || set -x
 copyFilesTo() {
     local dst=$1; shift
@@ -35,9 +38,9 @@ copyFilesTo() {
     "${findcmd[@]}" -print0 |
     {
         set -o pipefail
-        xargs -0  cp $cpopts --archive --target-directory="$dst" |
+        xargs -0 -I{} -- cp -av {} "$dst" |
         # TODO check and emit warning if any files get overwritten
-        sed 's/^/  copying /'
+        recordCopiedFiles >&2
     }
 }
 
@@ -69,15 +72,20 @@ for path in "$@"; do
                             case ${a##*/} in
                                 args) # replace arguments
                                     ! [ -e "$EXPWD"/args ] || error "$a cannot overwrite already existing args"
-                                    cp $cpopts --no-clobber "$a" "$EXPWDabbrev"/args |
-                                    sed 's/^/  copying /'
+                                    (
+                                    set -o pipefail
+                                    cp -avn "$a" "$EXPWDabbrev"/args |
+                                    recordCopiedFiles >&2
+                                    )
                                     ;;
                                 args+) # append arguments
                                     msg +1 "  appending $a"
+                                    echo "  appending $a" >>"$EXPWD"/assembly
                                     cat "$a" >>"$EXPWD"/args
                                     ;;
                                 +args) # prepend arguments
                                     msg +1 "  prepending $a"
+                                    echo "  prepending $a" >>"$EXPWD"/assembly
                                     if [ -z "${tmp:-}" ]; then
                                         tmp=$(mktemp /tmp/expkit-import.XXXXXX)
                                         trap "rm -f $tmp" EXIT
@@ -101,11 +109,7 @@ for path in "$@"; do
                     ;;
             esac
         else
-            # .env files
-            if [ -r "$path" ]; then
-                msg +1 "  appending $path"
-                no-comments "$path" >>"$EXPWD"/"${path##*.}"
-            fi
+            error "$path: Not a directory; Only directories can be imported"
         fi
     fi
 done

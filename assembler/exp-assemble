@@ -56,7 +56,7 @@ msg "Assembling $EXPRUN for $*"
         msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
         {
             export -- $(no-comments "${envFiles[@]}")
-            for v in $envVarNames; do echo "$v=${!v}"; done >"$EXPWD"/env
+            for v in $envVarNames; do echo "$v=${!v:-}"; done >"$EXPWD"/env
             declare -r $envVarNames
         } >/dev/null
     fi
