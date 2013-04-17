@@ -141,8 +141,9 @@ case $Cmd in
         ;;
 
     rebuild)
-        # make sure index is initialized
-        EXPKIT_LOGLVL=$(($EXPKIT_LOGLVL+1)) 
+        # make sure clean index is initialized
+        EXPKIT_LOGLVL=$(($EXPKIT_LOGLVL+1))
+        rm -f "$EXPINDEX"
         exp-index init
         # find all runs and update
         msg "Rebuilding index..."
