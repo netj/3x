@@ -17,8 +17,7 @@ PACKAGEEXECUTES := bin/exp
 include buildkit/modules.mk
 
 buildkit/modules.mk:
-	git submodule init
-	git submodule update
+	git submodule update --init
 
 gui-test-loop:
 	while sleep .1; do EXPROOT="$(PWD)/test-exp"  exp -v gui; done
