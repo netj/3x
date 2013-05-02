@@ -20,9 +20,26 @@ npm install
 coffee -c -o . ../../server/*.coffee
 #  server depends on some python packages, e.g., watchdog
 [ -d python-packages -a python-packages -nt "$Self" ] || {
-    export PYTHONPATH="$PWD/python-packages"
-    mkdir -p -- "$PYTHONPATH"
-    easy_install --install-dir "$PYTHONPATH" --always-copy \
+    dir_pypkgs="$PWD/python-packages"
+    dir_easy_install="$PWD/python-packages.easy_install"
+    export PYTHONPATH="$dir_pypkgs"
+    mkdir -p -- "$dir_pypkgs"
+    type easy_install &>/dev/null || {
+        # use a local copy of easy_install
+        export PYTHONPATH="$dir_easy_install:$PYTHONPATH"
+        export PATH="$dir_easy_install:$PATH"
+        type easy_install &>/dev/null || {
+            # install a local copy of easy_install
+            mkdir -p -- "$dir_easy_install"
+            curl -s http://peak.telecommunity.com/dist/ez_setup.py |
+            python -- - --install-dir "$dir_easy_install"
+            type easy_install &>/dev/null || {
+                echo >&2 "easy_install: command not found"
+                exit 127
+            }
+        }
+    }
+    easy_install --install-dir "$dir_pypkgs" --always-copy \
         watchdog \
         #
 }
