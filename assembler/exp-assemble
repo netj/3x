@@ -55,7 +55,7 @@ msg "Assembling $EXPRUN for $*"
         envVarNames=$(list-var-names "${envFiles[@]}")
         msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
         {
-            export -- $(no-comments "${envFiles[@]}")
+            eval export -- $(no-comments "${envFiles[@]}" | sed 's/\([^=]\)*=\(.*\)/\1=${\1:-\2}')
             for v in $envVarNames; do echo "$v=${!v:-}"; done >"$EXPWD"/env
             declare -r $envVarNames
         } >/dev/null
