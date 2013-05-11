@@ -145,7 +145,11 @@ trap "rm -rf $tmp" EXIT
     done
     # coalesce --inputs  x=a,b  y=c,d  x=e,f,g  -->  x=a,b,e,f,g  y=c,d
     what=input
-    eval "set -- $(coalesce-values-by-name = , "${inputArgs[@]}")"
+    if [[ ${#inputArgs[@]} -gt 0 ]]; then
+        eval "set -- $(coalesce-values-by-name = , "${inputArgs[@]}")"
+    else
+        set --
+    fi
     for arg; do
         Name=${arg%%=*}
         IFS=, how=(${arg#$Name=})
