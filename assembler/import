@@ -26,7 +26,7 @@ copyFilesTo() {
     [ $# -eq 0 ] || set -- -o "$@"
     # prepare destination and copy files
     findcmd=(
-    find "$src"/{,.}*  -maxdepth 0 ! \( \
+    find -L "$src"/{,.}*  -maxdepth 0 ! \( \
             -type d \( -name '.' -o -name '..' \
                     -o -name '?*=*' -o -path '*=/*' \) "$@" \
         \)
