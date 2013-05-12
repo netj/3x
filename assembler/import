@@ -38,7 +38,7 @@ copyFilesTo() {
     "${findcmd[@]}" -print0 |
     {
         set -o pipefail
-        xargs -0 -I{} -- cp -av {} "$dst" |
+        xargs -0 -I{} -- cp -avH {} "$dst" |
         # TODO check and emit warning if any files get overwritten
         recordCopiedFiles >&2
     }
