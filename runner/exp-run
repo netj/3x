@@ -58,8 +58,11 @@ fi
 for mx in measures/*/measure; do
     m=$(basename "$(dirname "$mx")")
     if [ -x "$mx" ]; then
-        # TODO under the same env
-        echo "$m=$(escape-args-for-shell "$("$mx")")"
+        echo "$m=$(escape-args-for-shell "$(
+        # run measure drivers under the same env
+        export $(cat ./env) EXPMEASURE=${mx%/measure}
+        "$mx"
+        )")"
     fi
 done >output
 
