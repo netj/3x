@@ -103,7 +103,7 @@ for path in "$@"; do
                     m=${m%%/*}
                     # copy files of output
                     copyFilesTo "$EXPWDabbrev"/measures/"$m" "$path" \
-                        -type f \( -name 'datatype' \
+                        -type f \( -name 'unit' -o -name 'datatype' \
                                 \) \
                         #
                     ;;
