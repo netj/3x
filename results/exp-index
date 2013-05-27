@@ -62,7 +62,7 @@ case $Cmd in
                 )
             selectColumns="id"
             for varName in $columns; do
-                grep -qF "$varName" <<<"$oldColumns" || continue
+                grep -qxF "$varName" <<<"$oldColumns" || continue
                 selectColumns+=", _$varName"
             done
             sqlite <<-EOF

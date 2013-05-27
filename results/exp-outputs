@@ -27,7 +27,9 @@ shift $(($OPTIND - 1))
 cd "$EXPROOT"
 cd output
 
+shopt -s nullglob
 [ $# -gt 0 ] || set -- [A-Za-z_]*([A-Za-z0-9_])/
+shopt -u nullglob
 
 for name; do
     [ -e "$name" ] || error "$name: No such output variable"
