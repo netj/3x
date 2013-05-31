@@ -28,8 +28,9 @@ done
 
 # workaround for older version of readlink (< 8.21),
 # which can't handle multiple paths at one invocation
-readlinkXargsOpts=(--)
+readlinkXargsOpts=()
 readlink -f a b &>/dev/null || readlinkXargsOpts+=(-L1)
+readlinkXargsOpts+=(--)
 
 find "${runs[@]}" \
     -type d \( -name workdir -o -name measures \

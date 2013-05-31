@@ -149,7 +149,7 @@ case $Cmd in
         msg "Rebuilding index..."
         find-rundirs "$EXPROOT"/run |
         sed 's:/output$::' |
-        xargs exp-index update
+        xargs -- exp-index update
         ;;
 
     *)
