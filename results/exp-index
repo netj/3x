@@ -19,6 +19,12 @@ set -eu
 [ $# -gt 0 ] || usage "$0" "Specify what to do with the inex"
 
 BATCHSIZE=256
+# XXX only recent version (>= 3.7.11) of SQLite supports inserting multiple VALUES
+# See: http://www.sqlite.org/changes.html#version_3_7_11
+v=$(sqlite3 -version); v=${v%% *}
+vs=($(IFS=.; set -- $v; echo "$@"))
+[[ ${vs[0]} -gt 3 || ${vs[0]} -eq 3 && ( ${vs[1]} -gt 7 || \
+    ${vs[1]} -eq 7 && ${vs[2]} -ge 11 ) ]] || BATCHSIZE=1
 
 EXPROOT=$(exp-findroot)
 export EXPROOT
@@ -131,7 +137,7 @@ case $Cmd in
                     eval "$printRecordExpr '$id'"
                 )
                 let ++numRecs
-                if [[ $numRecs -gt $BATCHSIZE ]]; then
+                if [[ $numRecs -ge $BATCHSIZE ]]; then
                     echo ";"
                     numRecs=0
                 fi
