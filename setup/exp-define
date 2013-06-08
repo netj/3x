@@ -89,7 +89,7 @@ case $What in
                 {
                     echo "#!/bin/sh"
                     f=$(escape-args-for-shell "$1")
-                    echo "[ -e $f ] && echo $f"
+                    echo "[ -e workdir/$f ] && echo $f"
                 } >"$dir"/measure
                 ;;
             *)
