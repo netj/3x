@@ -27,5 +27,8 @@ command! -nargs=1 FindSource
 
 command! TODOs  FindSource TODO
 
+" Ack options
+let $ACK_OPTIONS = join(readfile($SourceRoot."/.ackrc"))
+
 " Open the to do list with Shift-Cmd-Enter
 "nmap <buffer> <S-D-CR> :split $SourceRoot/docs/TODO.md<CR>

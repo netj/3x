@@ -1,0 +1,2 @@
+--ignore-dir=@prefix@
+--ignore-dir=.build
