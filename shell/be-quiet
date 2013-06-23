@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# be-quiet -- Check if logging is suppressed by $EXPKIT_LOGLVL
+# be-quiet -- Check if logging is suppressed by $_3X_LOGLVL
 # Usage: be-quiet [+-ADJUSTMENT]
 #   Use positive ADJUSTMENT if the caller is thought to be handling a subtask.
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
-(( EXPKIT_LOGLVL += 1 - $SHLVL - ${1:-0} ))
-[[ $EXPKIT_LOGLVL -lt 0 ]]
+(( _3X_LOGLVL += 1 - $SHLVL - ${1:-0} ))
+[[ $_3X_LOGLVL -lt 0 ]]

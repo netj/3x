@@ -1,11 +1,11 @@
-" local vimrc for ExpKit
+" local vimrc for 3X
 " Author: Jaeho Shin <netj@cs.stanford.edu>
 " Created: 2013-01-22
 
 let $SourceRoot = expand("<sfile>:h")
 let modules = split("shell setup assembler planner batch runner results gui docs")
 
-let $EXPROOT = $SourceRoot."/test-exp"
+let $_3X_ROOT = $SourceRoot."/test-exp"
 
 lcd $SourceRoot
 exec "setlocal path+=".join(map(modules,'$SourceRoot."/".v:val'), ",")
@@ -22,7 +22,7 @@ au! BufRead,BufNewFile .module.* try | lcd %:h | catch /.*/ | endtry
 " Handy command for searching strings in the source code
 command! -nargs=1 FindSource
             \ exec "lgrep -r <args> ".join(filter(copy(modules),'v:val!=$SourceRoot."/gui"'), " ")
-            \     ." gui/{exp-*,.module.*,package.json} gui/client/*.{coffee,less,js} gui/server"
+            \     ." gui/{3x-*,.module.*,package.json} gui/client/*.{coffee,less,js,html} gui/server"
             \     ." --exclude='*/.build/*'"
 
 command! TODOs  FindSource TODO

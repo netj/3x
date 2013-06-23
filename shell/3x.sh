@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# exp -- ExpKit Command-Line Interface
-# Usage: exp [-OPTION] COMMAND [ARG]...
+# 3x -- EXecutable EXploratory EXperiments command-line interface
+# Usage: 3x [-OPTION] COMMAND [ARG]...
 # 
 # COMMAND is one of the following forms:
 # 
-#   exp setup DIR ...
+#   3x setup DIR ...
 # 
-#   exp gui
+#   3x gui
 # 
-#   exp init
-#   exp define input
-#   exp define output
-#   exp define program 
+#   3x init
+#   3x define input
+#   3x define output
+#   3x define program 
 # 
-#   exp plan   [NAME[=VALUE[,VALUE]...]]...
-#   exp start  [NAME[=VALUE[,VALUE]...]]...
+#   3x plan   [NAME[=VALUE[,VALUE]...]]...
+#   3x start  [NAME[=VALUE[,VALUE]...]]...
 # 
-#   exp start  BATCH
-#   exp stop   BATCH
-#   exp status BATCH
-#   exp edit   BATCH
+#   3x start  BATCH
+#   3x stop   BATCH
+#   3x status BATCH
+#   3x edit   BATCH
 # 
-#   exp batches [QUERY]
+#   3x batches [QUERY]
 # 
-#   exp results [BATCH | RUN]... [QUERY]...
+#   3x results [BATCH | RUN]... [QUERY]...
 # 
-#   exp inputs  [-v] [NAME]...
-#   exp outputs [-v] [NAME]...
+#   3x inputs  [-v] [NAME]...
+#   3x outputs [-v] [NAME]...
 # 
-#   exp run [NAME=VALUE]...
-#   exp findroot
+#   3x run [NAME=VALUE]...
+#   3x findroot
 # 
 # Global OPTION is one of:
 #   -v      increase verbosity
@@ -42,7 +42,7 @@
 # Created: 2012-11-01
 set -eu
 
-if [ -z "${EXPKIT_HOME:-}" ]; then
+if [ -z "${_3X_HOME:-}" ]; then
     Self=$(readlink -f "$0" 2>/dev/null || {
         # XXX readlink -f is only available in GNU coreutils
         cd $(dirname -- "$0")
@@ -61,31 +61,31 @@ if [ -z "${EXPKIT_HOME:-}" ]; then
     Here=$(dirname "$Self")
 
     # Setup environment
-    export EXPKIT_HOME=${Here%/@BINDIR@}
-    export BINDIR="$EXPKIT_HOME/@BINDIR@"
-    export TOOLSDIR="$EXPKIT_HOME/@TOOLSDIR@"
-    export DATADIR="$EXPKIT_HOME/@DATADIR@"
-    export GUIDIR="$EXPKIT_HOME/@GUIDIR@"
-    export LIBDIR="$EXPKIT_HOME/@LIBDIR@"
-    export DOCSDIR="$EXPKIT_HOME/@DOCSDIR@"
+    export _3X_HOME=${Here%/@BINDIR@}
+    export BINDIR="$_3X_HOME/@BINDIR@"
+    export TOOLSDIR="$_3X_HOME/@TOOLSDIR@"
+    export DATADIR="$_3X_HOME/@DATADIR@"
+    export GUIDIR="$_3X_HOME/@GUIDIR@"
+    export LIBDIR="$_3X_HOME/@LIBDIR@"
+    export DOCSDIR="$_3X_HOME/@DOCSDIR@"
     export NODE_PATH="$LIBDIR/node_modules${NODE_PATH:+:$NODE_PATH}"
     export PATH="$TOOLSDIR:$LIBDIR/node_modules/.bin:$PATH"
     unset CDPATH
-    export SHLVL=0 EXPKIT_LOGLVL=${EXPKIT_LOGLVL:-1}
-    # export EXPKIT_LOG_TO_NONTTY=
+    export SHLVL=0 _3X_LOGLVL=${_3X_LOGLVL:-1}
+    # export _3X_LOG_TO_NONTTY=
 fi
 
 
 while getopts "vtq" opt; do
     case $opt in
         v)
-            let ++EXPKIT_LOGLVL
+            let ++_3X_LOGLVL
             ;;
         q)
-            EXPKIT_LOGLVL=0
+            _3X_LOGLVL=0
             ;;
         t)
-            export EXPKIT_LOG_TO_NONTTY=true
+            export _3X_LOG_TO_NONTTY=true
             ;;
     esac
 done
@@ -98,7 +98,7 @@ Cmd=$1; shift
 
 
 # Check if it's a valid command
-exe=exp-"$Cmd"
+exe=3x-"$Cmd"
 if type "$exe" &>/dev/null; then
     set -- "$exe" "$@"
 else

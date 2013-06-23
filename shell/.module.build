@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-./customize .build/ exp.sh <<PARAMS
+./customize .build/ 3x.sh <<PARAMS
 @BINDIR@=$BINDIR
 @TOOLSDIR@=$TOOLSDIR
 @LIBDIR@=$LIBDIR
@@ -9,7 +9,7 @@ set -eu
 @GUIDIR@=$GUIDIR
 @DOCSDIR@=$DOCSDIR
 PARAMS
-chmod +x .build/exp.sh
+chmod +x .build/3x.sh
 
 cd .build
 ln -sf ../package.json .

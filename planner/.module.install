@@ -1,3 +1,3 @@
-exp-plan                $TOOLSDIR/
-exp-inputs              $TOOLSDIR/
+3x-plan                 $TOOLSDIR/
+3x-inputs               $TOOLSDIR/
 normalize-inputs        $TOOLSDIR/

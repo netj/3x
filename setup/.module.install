@@ -1,5 +1,5 @@
-exp-setup               $TOOLSDIR/
-exp-define              $TOOLSDIR/
+3x-setup                $TOOLSDIR/
+3x-define               $TOOLSDIR/
 
-exp-init                $TOOLSDIR/
-template                $DATADIR/exp.template
+3x-init                 $TOOLSDIR/
+template                $DATADIR/3x.template

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# exp-edit -- edit plan for REMAINING runs of an experiment batch
-# Usage: exp edit BATCH
+# 3x-edit -- edit plan for REMAINING runs of an experiment batch
+# Usage: 3x edit BATCH
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-22
@@ -8,30 +8,30 @@ set -eu
 
 [ $# -ge 1 ] || usage "$0" "BATCH must be given"
 
-EXPROOT=$(exp-findroot)
+_3X_ROOT=$(3x-findroot)
 
 batch=$1; shift
 prePlanned=${1:-}
 
 # figure out which batch we are talking about
 batchpath=$(readlink -f "$batch")
-[[ $batchpath == $EXPROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
-export EXPBATCH=${batchpath#$EXPROOT/}
+[[ $batchpath == $_3X_ROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
+export _3X_BATCH=${batchpath#$_3X_ROOT/}
 
 newPlan=plan.editing
 
 # prepare the plan file for editing
 if ! [ -e "$newPlan" ]; then
     if [ -r "$prePlanned" ]; then
-        cp "$prePlanned" "$EXPROOT/$EXPBATCH/$newPlan"
+        cp "$prePlanned" "$_3X_ROOT/$_3X_BATCH/$newPlan"
         EDITOR=true
     else
-        exp-status "$EXPBATCH" | grep REMAINING |
-        sed 's/^[^[:space:]]*[[:space:]]*/exp run  /; s/[[:space:]]*[^[:space:]]*$//' >"$EXPROOT/$EXPBATCH/$newPlan"
+        3x-status "$_3X_BATCH" | grep REMAINING |
+        sed 's/^[^[:space:]]*[[:space:]]*/3x run  /; s/[[:space:]]*[^[:space:]]*$//' >"$_3X_ROOT/$_3X_BATCH/$newPlan"
     fi
 fi
 
-cd "$EXPROOT/$EXPBATCH"
+cd "$_3X_ROOT/$_3X_BATCH"
 
 # let user edit the plan and update the batch once it gets modified
 if edit $newPlan $newPlan.in-progress; then
@@ -40,7 +40,7 @@ if edit $newPlan $newPlan.in-progress; then
     lockproc remaining.lock grab
     trap "lockproc remaining.lock release" EXIT
     # find out the serials of runs which are still REMAINING
-    exp-status "$EXPBATCH" | grep REMAINING |
+    3x-status "$_3X_BATCH" | grep REMAINING |
     sed 's/[[:space:]]*[^[:space:]]*$//; s/^.*#/#/' >$newPlan.serials
     # replace the remaining file with newly planned runs still REMAINING
     grep -F -f $newPlan.serials <$newPlan >remaining
@@ -54,8 +54,8 @@ if edit $newPlan $newPlan.in-progress; then
         rm -rf "$r"
     done
     msg +0 -n "Updated plan of $(wc -l <remaining) REMAINING runs in "
-    echo "$EXPBATCH"
+    echo "$_3X_BATCH"
 else
-    msg "Canceled editing $EXPBATCH"
+    msg "Canceled editing $_3X_BATCH"
 fi
 rm -f $newPlan

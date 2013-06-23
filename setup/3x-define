@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# exp-define -- Define element of the experiment
-# Usage: exp define WHAT NAME HOW...
-#        exp define program  NAME COMMAND...
-#        exp define input    NAME[(UNIT)][:TYPE] VALUE1 [VALUE2]...
-#        exp define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
-#        exp define output   NAME:MIMETYPE       file     FILENAME
+# 3x-define -- Define element of the experiment
+# Usage: 3x define WHAT NAME HOW...
+#        3x define program  NAME COMMAND...
+#        3x define input    NAME[(UNIT)][:TYPE] VALUE1 [VALUE2]...
+#        3x define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
+#        3x define output   NAME:MIMETYPE       file     FILENAME
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
 set -eu
 
-EXPROOT=$(exp-findroot)
-export EXPROOT
+_3X_ROOT=$(3x-findroot)
+export _3X_ROOT
 
 [ $# -gt 0 ] || usage "$0" "WHAT to define is missing"
 What=$1; shift
@@ -23,7 +23,7 @@ Name=$1; shift
 
 # TODO expand glob pattern in any arguments?
 
-cd "$EXPROOT"
+cd "$_3X_ROOT"
 
 case $What in
     program)
@@ -107,4 +107,4 @@ case $What in
 esac
 
 # re-initialize index
-exp-index migrate
+3x-index migrate

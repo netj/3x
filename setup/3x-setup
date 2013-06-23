@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# exp-setup -- Setup a new computational experiment
+# 3x-setup -- Setup a new computational experiment
 # Usage:
-#   exp setup EXPROOT \
+#   3x setup _3X_ROOT \
 #      --programs [ NAME='COMMAND' ]...                                      \
 #      --inputs   [ NAME[:TYPE]=VALUE1[,VALUE2] ]...                         \
 #      --outputs  [ --extract '...{{NAME[(UNIT)][:TYPE] =~ REGEXP}}...' ]... \
@@ -9,7 +9,7 @@
 # 
 # Example:
 #   # setup the experiment
-#   exp setup sorting-benchmark \
+#   3x setup sorting-benchmark \
 #       --programs \
 #              sort='./gen-input | sort' \
 #              perl="./gen-input | perl -e 'print \$_ foreach sort <>;'" \
@@ -24,7 +24,7 @@
 #   chmod +x input/N=/gen-input
 #   # then, start the GUI
 #   cd sorting-benchmark
-#   exp gui
+#   3x gui
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
@@ -32,19 +32,19 @@
 set -eu
 shopt -s extglob
 
-[ $# -gt 0 ] || usage "$0" "EXPROOT is missing"
+[ $# -gt 0 ] || usage "$0" "_3X_ROOT is missing"
 
-EXPROOT=$1; shift
+_3X_ROOT=$1; shift
 
-# check if EXPROOT was sane
-case $EXPROOT in
+# check if _3X_ROOT was sane
+case $_3X_ROOT in
     --@(program|input|output)s)
-        usage "$0" "EXPROOT is missing"
+        usage "$0" "_3X_ROOT is missing"
         ;;
 esac
 
 # prepare a script
-tmp=$(mktemp -d "${TMPDIR:-/tmp}"/exp-setup.XXXXXX)
+tmp=$(mktemp -d "${TMPDIR:-/tmp}"/3x-setup.XXXXXX)
 trap "rm -rf $tmp" EXIT
 
 # generate a experiment setup script
@@ -52,11 +52,11 @@ trap "rm -rf $tmp" EXIT
     echo "set -eu"
     be-quiet +1 || echo "set -x"
     . "$TOOLSDIR"/sanity-checks.sh
-    # create the EXPROOT directory
-    escape-args-for-shell exp-init "$EXPROOT"
-    escape-args-for-shell cd "$EXPROOT"
-    # map command line args to exp-define commands
-    generate-definition() { escape-args-for-shell exp define $what "$Name${Unit:+($Unit)}${Type:+:$Type}" "${how[@]}"; }
+    # create the _3X_ROOT directory
+    escape-args-for-shell 3x-init "$_3X_ROOT"
+    escape-args-for-shell cd "$_3X_ROOT"
+    # map command line args to 3x-define commands
+    generate-definition() { escape-args-for-shell 3x define $what "$Name${Unit:+($Unit)}${Type:+:$Type}" "${how[@]}"; }
     inputArgs=()
     what=
     for arg; do
@@ -169,7 +169,7 @@ be-quiet +2 ||
 
 # and run it to bootstrap an experiment
 bash "$tmp"/setup-script
-msg "Finished setup of experiment $EXPROOT"
+msg "Finished setup of experiment $_3X_ROOT"
 msg "You can start the GUI by running:"
-msg "  cd $(escape-args-for-shell "$EXPROOT")"
-msg "  exp gui start"
+msg "  cd $(escape-args-for-shell "$_3X_ROOT")"
+msg "  3x gui start"

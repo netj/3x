@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# exp-status -- display status of an experiment batch
-# Usage: exp status BATCH
+# 3x-status -- display status of an experiment batch
+# Usage: 3x status BATCH
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-14
@@ -10,13 +10,13 @@ set -eu
 
 Batch=$1
 
-EXPROOT=$(exp-findroot)
-cd "$EXPROOT/$Batch"
+_3X_ROOT=$(3x-findroot)
+cd "$_3X_ROOT/$Batch"
 
 {
     hasProgress=false
 
-    PREFIXPATT='^exp[[:space:]][[:space:]]*run[[:space:]][[:space:]]*'
+    PREFIXPATT='^3x[[:space:]][[:space:]]*run[[:space:]][[:space:]]*'
     # runs already finished
     if [ -r done ]; then
         sed "s:$PREFIXPATT:DONE :" <"done" |
@@ -42,7 +42,7 @@ cd "$EXPROOT/$Batch"
         case $state in
             RUNNING)
                 run=$(readlink -f "$running"/run || true)
-                run=${run#$EXPROOT/}
+                run=${run#$_3X_ROOT/}
                 line+=" ${run:-?}"
                 ;;
             *)

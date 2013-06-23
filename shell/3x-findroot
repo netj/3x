@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# exp-findroot -- find the root of the current experiment repository
-# Usage: exp findroot
+# 3x-findroot -- find the root of the current experiment repository
+# Usage: 3x findroot
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
 set -eu
 
-is-root() { [ -d .exp -a -d program -a -d input -a -d output ]; }
+is-root() { [ -d .3x -a -d program -a -d input -a -d output ]; }
 
-if [ -n "${EXPROOT:-}" ]; then
-    if [ -d "$EXPROOT" ] && cd "$EXPROOT" && is-root; then
+if [ -n "${_3X_ROOT:-}" ]; then
+    if [ -d "$_3X_ROOT" ] && cd "$_3X_ROOT" && is-root; then
         pwd -P
     else
-        error "$EXPROOT: \$EXPROOT does not point to an experiment repository"
+        error "$_3X_ROOT: \$_3X_ROOT does not point to an experiment repository"
     fi
 else
     OPWD=$PWD

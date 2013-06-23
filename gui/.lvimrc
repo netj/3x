@@ -6,5 +6,5 @@
 " so a new version can be launched if there's a loop there: >
 "   while sleep .1; do exp gui start; done
 " <
-nmap <buffer> <D-CR> :set makeprg=make<CR>:make -C $SourceRoot install PREFIX=~<CR>:!exp gui stop<CR>
+nmap <buffer> <D-CR> :set makeprg=make<CR>:make -C $SourceRoot install PREFIX=~<CR>:!3x gui stop<CR>
 imap <buffer> <D-CR> <C-\><C-N><D-CR><CR>gi

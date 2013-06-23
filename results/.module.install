@@ -1,10 +1,10 @@
-exp-results             $TOOLSDIR/
+3x-results              $TOOLSDIR/
 compile-filter          $TOOLSDIR/
 
-exp-index               $TOOLSDIR/
+3x-index                $TOOLSDIR/
 compile-where           $TOOLSDIR/
 sql-vocabs.sh           $TOOLSDIR/
 
 find-rundirs            $TOOLSDIR/
 
-exp-outputs             $TOOLSDIR/
+3x-outputs              $TOOLSDIR/

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# exp-outputs -- enumerate experiment outputs
-# Usage: exp outputs [NAME]...
+# 3x-outputs -- enumerate experiment outputs
+# Usage: 3x outputs [NAME]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07
 set -eu
 shopt -s extglob
 
-EXPROOT=$(exp-findroot)
-export EXPROOT
+_3X_ROOT=$(3x-findroot)
+export _3X_ROOT
 
 showType=false
 showUnit=false
@@ -24,7 +24,7 @@ while getopts "utv" opt; do
 done
 shift $(($OPTIND - 1))
 
-cd "$EXPROOT"
+cd "$_3X_ROOT"
 cd output
 
 shopt -s nullglob

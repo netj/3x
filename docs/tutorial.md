@@ -1,4 +1,4 @@
-# <i class="icon-beaker"></i> ExpKit
+# <i class="icon-beaker"></i> 3X
 <style>@import url(http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css);</style>
 
 Computational experiments are everywhere these days.  As data and information
@@ -25,9 +25,9 @@ approach, Initial assumptions predetermine many parts of the experiment setup,
 and flexibility is not the  so it is not trivial to incrementally change the
 set of input parameters or output measures based on preliminary results.  -->
 
-*ExpKit* is a software tool that aims to introduce a systematic approach to
+*3X* is a software tool that aims to introduce a systematic approach to
 computational experiments to improve their reliability, while increasing
-our productivity.  ExpKit provides you a simple, yet flexible, standard
+our productivity.  3X provides you a simple, yet flexible, standard
 structure to organize your experiments.  Within such structure, it keeps track
 of all the detailed records of your runs in an obvious and efficient way, so
 that anyone can easily inspect individual traces and reproduce the results
@@ -41,15 +41,15 @@ and automate routine jobs on top of it.
 
 Still, it is very important to understand that conducting a reliable
 computational experiment remains a challenging problem no matter which tool you
-use.  ExpKit is not some magical tool or a silver bullet, and although it
+use.  3X is not some magical tool or a silver bullet, and although it
 provides many scaffoldings on which you can construct reliable experiments more
 easily, the quality of the experiment is ultimately up to how much rigor the
-experimenter puts into it.  Our hope in building ExpKit is to make, with a
+experimenter puts into it.  Our hope in building 3X is to make, with a
 standard structure and common vocabulary, establishing a principle become much
 easier, and practicing it be less burdensome.
 
 
-To give you a clear picture of what ExpKit provides, let's go through several
+To give you a clear picture of what 3X provides, let's go through several
 questions using a concrete example of "comparing performance of different
 sorting algorithms."
 
@@ -69,7 +69,7 @@ Conditions
 Measures
 : These are what you want to collect back from each run of your program.
 
-ExpKit provides a well-defined structure for you to factor your experiment into
+3X provides a well-defined structure for you to factor your experiment into
 these three different categories.
 
 
@@ -94,12 +94,12 @@ Run
 
 ## FAQ
 
-Q. What if my experiment does not fit into ExpKit's condition/program/measure structure?
+Q. What if my experiment does not fit into 3X's condition/program/measure structure?
 : This can happen for more complex types of experiments.
 If you have multiple steps that may have dependencies between them, and
 have different parameters
 
 to produce  programs and/or data that have
 dependencies between them.
-ExpKit really focuses on flat experiments that have a clear input and output.
+3X really focuses on flat experiments that have a clear input and output.
 

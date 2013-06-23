@@ -1,5 +1,5 @@
 ###
-# ExpKit Graphical User Interface
+# 3X Graphical User Interface
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-11
@@ -23,18 +23,18 @@ jade = require "jade"
 marked = require "marked"
 
 
-EXPROOT                    = process.env.EXPROOT
-EXPGUIPORT                 = parseInt process.argv[2] ? 0
+_3X_ROOT                   = process.env._3X_ROOT
+_3X_GUIPORT                = parseInt process.argv[2] ? 0
 process.env.SHLVL          = "0"
-process.env.EXPKIT_LOGLVL  = "1"
-process.env.EXPKIT_LOGMSGS = "true"
+process.env._3X_LOGLVL  = "1"
+process.env._3X_LOGMSGS = "true"
 
 
 RUN_COLUMN_NAME = "run#"
 STATE_COLUMN_NAME = "state#"
 SERIAL_COLUMN_NAME = "serial#"
 
-# use text/plain MIME type for ExpKit artifacts in run/
+# use text/plain MIME type for 3X artifacts in run/
 express.static.mime.define
     "text/plain": """
         sh bash
@@ -50,17 +50,17 @@ RUN_OVERVIEW_FILENAMES = """
     assembly
 """.split(/\s+/).filter((f) -> f?.length > 0)
 
-EXP_DESCRIPTOR = do ->
-    [basename] = EXPROOT.match /[^/]+$/
-    desc = String(fs.readFileSync "#{EXPROOT}/.exp/description").trim()
+_3X_DESCRIPTOR = do ->
+    [basename] = _3X_ROOT.match /[^/]+$/
+    desc = String(fs.readFileSync "#{_3X_ROOT}/.3x/description").trim()
     if desc == "Unnamed repository; edit this file 'description' to name the repository."
         desc = null
     {
         name: basename
         description: desc
-        fileSystemPath: EXPROOT
+        fileSystemPath: _3X_ROOT
         hostname: os.hostname()
-        port: EXPGUIPORT
+        port: _3X_GUIPORT
     }
 
 ###
@@ -78,8 +78,8 @@ app.configure ->
     app.use express.bodyParser()
     #app.use express.methodOverride()
     app.use app.router
-    app.use "/run", express.static    "#{EXPROOT}/run"
-    app.use "/run", express.directory "#{EXPROOT}/run"
+    app.use "/run", express.static    "#{_3X_ROOT}/run"
+    app.use "/run", express.directory "#{_3X_ROOT}/run"
     app.use         express.static    "#{__dirname}/../client"
 
 app.configure "development", ->
@@ -101,7 +101,7 @@ app.get "/docs/*", (req, res) ->
     filepath = "#{process.env.DOCSDIR}/#{path}.md"
     markdown = (filename) ->
         marked String(fs.readFileSync filename)
-    res.render "docs", {EXP_DESCRIPTOR, title, markdown, path, filepath}
+    res.render "docs", {_3X_DESCRIPTOR, title, markdown, path, filepath}
     #if filepath in docsCache
     #    respond docsCache[filepath]
     #else
@@ -113,8 +113,8 @@ app.get "/docs/*", (req, res) ->
 
 # Redirect to its canonical location when a run is requested via serial of batch
 app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
-    fs.realpath "#{EXPROOT}/#{req.path}", (err, path) ->
-        res.redirect path.replace(EXPROOT, "")
+    fs.realpath "#{_3X_ROOT}/#{req.path}", (err, path) ->
+        res.redirect path.replace(_3X_ROOT, "")
 
 
 # Show an overview page for runs
@@ -125,7 +125,7 @@ app.get "/run/*/overview", (req, res) ->
             if err then next null, null
             else next null, contents
     async.parallel [
-        (next) -> async.map ("#{EXPROOT}/#{runId}/#{filename}" for filename in RUN_OVERVIEW_FILENAMES), readFileIfExists, next
+        (next) -> async.map ("#{_3X_ROOT}/#{runId}/#{filename}" for filename in RUN_OVERVIEW_FILENAMES), readFileIfExists, next
         getInputs  res, "-ut"
         getOutputs res, "-ut"
     ], (err, [results, inputs, outputs]) ->
@@ -148,7 +148,7 @@ app.get "/run/*/overview", (req, res) ->
         output = parseKeyValuePairs files.output, outputs
         delete files.input
         delete files.output
-        res.render "run-overview", {EXP_DESCRIPTOR, title:runId, runId, files, input, output}
+        res.render "run-overview", {_3X_DESCRIPTOR, title:runId, runId, files, input, output}
 
 
 # Override content type for run directory
@@ -208,10 +208,10 @@ cliBare = (cmd, args
         , withErr = ((errLines, next) -> errLines.join next)
 ) -> (next) ->
     util.log "CLI running: #{cmd} #{args.map((x) -> "'#{x}'").join " "}"
-    #util.log "  cwd: #{EXPROOT}"
+    #util.log "  cwd: #{_3X_ROOT}"
     #util.log "  env: #{process.env}"
     p = child_process.spawn cmd, args,
-        cwd: EXPROOT
+        cwd: _3X_ROOT
         env: process.env
     _code = null; _result = null; _error = null
     tryEnd = ->
@@ -265,12 +265,12 @@ app.all "/*", (req, res, next) ->
 
 
 app.get "/api/description", (req, res) ->
-    res.json EXP_DESCRIPTOR
+    res.json _3X_DESCRIPTOR
 
 app.get "/api/inputs", (req, res) ->
     (getInputs res) (err, inputs) -> res.json inputs unless err
 getInputs = (res, opts = "-utv") -> (next) ->
-    cli(res, "exp-inputs", [opts]
+    cli(res, "3x-inputs", [opts]
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
@@ -288,7 +288,7 @@ getInputs = (res, opts = "-utv") -> (next) ->
 app.get "/api/outputs", (req, res) ->
     (getOutputs res) (err, outputs) -> res.json outputs unless err
 getOutputs = (res, opts = "-ut") -> (next) ->
-    cli(res, "exp-outputs", [opts]
+    cli(res, "3x-outputs", [opts]
         , (lazyLines, next) -> lazyLines
                 .filter((line) -> line.length > 0)
                 .map((line) ->
@@ -307,7 +307,7 @@ getOutputs = (res, opts = "-ut") -> (next) ->
         next err, outputs
 
 app.get "/api/results", (req, res) ->
-    args = [] # TODO use a tab separated format directly from exp-results
+    args = [] # TODO use a tab separated format directly from 3x-results
     # TODO runs/batches
     inputs  = (try JSON.parse req.param("inputs") ) ? {}
     outputs = (try JSON.parse req.param("outputs")) ? {}
@@ -317,7 +317,7 @@ app.get "/api/results", (req, res) ->
     for name,exprs of outputs when _.isArray exprs
         for [rel, literal] in exprs
             args.push "#{name}#{rel}#{literal}"
-    cli(res, "exp-results", args
+    cli(res, "3x-results", args
         , normalizeNamedColumnLines (line) ->
                 [run, columns...] = line.split /\s+/
                 ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
@@ -330,7 +330,7 @@ app.get "/api/run/batch.DataTables", (req, res) ->
             cliEnv res, {
                 LIMIT:  req.param("iDisplayLength") ? -1
                 OFFSET: req.param("iDisplayStart") ? 0
-            }, "exp-batches", ["--", query]
+            }, "3x-batches", ["--", query]
                 , (lazyLines, next) ->
                     lazyLines
                         .skip(1)
@@ -338,13 +338,13 @@ app.get "/api/run/batch.DataTables", (req, res) ->
                         .map((line) -> line.split /\t/)
                         .join next
         ,
-            cli res, "exp-batches", ["-c", query]
+            cli res, "3x-batches", ["-c", query]
                 , (lazyLines, next) ->
                     lazyLines
                         .take(1)
                         .join ([line]) -> next (+line?.trim())
         ,
-            cli res, "exp-batches", ["-c"]
+            cli res, "3x-batches", ["-c"]
                 , (lazyLines, next) ->
                     lazyLines
                         .take(1)
@@ -358,7 +358,7 @@ app.get "/api/run/batch.DataTables", (req, res) ->
                     aaData: table
 
 app.get "/api/run/batch.numRUNNING", (req, res) ->
-    cli(res, "sh", ["-c", "exp-batches | grep -c RUNNING || true"]
+    cli(res, "sh", ["-c", "3x-batches | grep -c RUNNING || true"]
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
@@ -370,7 +370,7 @@ app.get ////api/run/batch/([^:]+):(start|stop)///, (req, res) ->
     batchId = req.params[0]
     # TODO sanitize batchId
     action = req.params[1]
-    cli(res, "sh", ["-c", "SHLVL=0 exp-#{action} run/batch/#{batchId} </dev/null >>.exp/gui/log.runs 2>&1 &"]
+    cli(res, "sh", ["-c", "SHLVL=0 3x-#{action} run/batch/#{batchId} </dev/null >>.3x/gui/log.runs 2>&1 &"]
         , (lazyLines, next) ->
             lazyLines
                 .join -> next (true)
@@ -381,9 +381,9 @@ app.get "/api/run/batch/:batchId", (req, res) ->
     batchId = req.param("batchId")
     # TODO sanitize batchId
     batchPath = "run/batch/#{batchId}"
-    fs.stat "#{EXPROOT}/#{batchPath}", (err, stat) ->
+    fs.stat "#{_3X_ROOT}/#{batchPath}", (err, stat) ->
         return res.send 404, "Not found: #{batchPath}" if err?
-        cli(res, "exp-status", [batchPath]
+        cli(res, "3x-status", [batchPath]
             , normalizeNamedColumnLines (line) ->
                     [state, columns..., serial, runId] = line.split /\s+/
                     serial = (serial?.replace /^#/, "")
@@ -413,15 +413,15 @@ app.post "/api/run/batch/*", (req, res) ->
         serialCol = plan.names.indexOf SERIAL_COLUMN_NAME
         (for line,idx in generateNamedColumnLines(plan, columns)
             serial = plan.rows[idx][serialCol]
-            "exp run#{line} ##{serial}"
+            "3x run#{line} ##{serial}"
         ).join "\n"
 
     # start right away if shouldStart
     startIfNeeded = (batchId) ->
         if shouldStart
-            try cliSimple "sh", "-c", "SHLVL=0 exp-start #{batchId} </dev/null >>.exp/gui/log.runs 2>&1 &"
+            try cliSimple "sh", "-c", "SHLVL=0 3x-start #{batchId} </dev/null >>.3x/gui/log.runs 2>&1 &"
 
-    mktemp.createFile "#{EXPROOT}/.exp/plan.XXXXXX", (err, planFile) ->
+    mktemp.createFile "#{_3X_ROOT}/.3x/plan.XXXXXX", (err, planFile) ->
         andRespond = (err, [batchId]) ->
             # remove temporary file
             unless err
@@ -430,15 +430,15 @@ app.post "/api/run/batch/*", (req, res) ->
             try cliSimple "rm", "-f", planFile
         fs.writeFile planFile, generatePlanLines(), ->
             if batchId? # modify existing one
-                cli(res, "exp-edit", [batchId, planFile]
+                cli(res, "3x-edit", [batchId, planFile]
                 ) andRespond
             else # create a new batch
-                cli(res, "exp-plan", ["with", planFile]
+                cli(res, "3x-plan", ["with", planFile]
                 ) andRespond
 
 
-server.listen EXPGUIPORT, ->
-    #util.log "ExpKit GUI started at http://localhost:#{EXPGUIPORT}/"
+server.listen _3X_GUIPORT, ->
+    #util.log "3X GUI started at http://localhost:#{_3X_GUIPORT}/"
 
 
 
@@ -450,7 +450,7 @@ io.of("/run/batch/")
         updateRunningCount socket
 
 updateRunningCount = (socket = batchSockets) ->
-    cliBare("sh", ["-c", "exp-batches | grep -c RUNNING || true"]
+    cliBare("sh", ["-c", "3x-batches | grep -c RUNNING || true"]
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
@@ -458,7 +458,7 @@ updateRunningCount = (socket = batchSockets) ->
     ) (code, err, count) ->
         socket.volatile.emit "running-count", count
 
-batchRootDir = "#{EXPROOT}/run/batch/"
+batchRootDir = "#{_3X_ROOT}/run/batch/"
 batchNotifyChange = (event, fullpath) ->
     # assuming first path component is the batch ID
     batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""

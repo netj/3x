@@ -1,11 +1,11 @@
-exp-gui                                                 $TOOLSDIR/
+3x-gui                                                  $TOOLSDIR/
 
 .build/server                                           $GUIDIR/server
 server/views                                            $GUIDIR/server/
 
 client/index.html                                       $GUIDIR/client/
-.build/client/resource/expkit.js                        $GUIDIR/client/resource/
-.build/client/resource/expkit.css                       $GUIDIR/client/resource/
+.build/client/resource/3x.js                            $GUIDIR/client/resource/
+.build/client/resource/3x.css                           $GUIDIR/client/resource/
 
 .build/client/resource/jquery.js                        $GUIDIR/client/resource/
 

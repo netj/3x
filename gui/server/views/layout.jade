@@ -1,12 +1,12 @@
-// requires: EXP_DESCRIPTOR, title
+// requires: _3X_DESCRIPTOR, title
 doctype 5
 html
 
   head
     meta(charset='utf-8')
-    title ExpKit — #{title} — #{EXP_DESCRIPTOR.name} — #{EXP_DESCRIPTOR.hostname}:#{EXP_DESCRIPTOR.port}
+    title 3X — #{title} — #{_3X_DESCRIPTOR.name} — #{_3X_DESCRIPTOR.hostname}:#{_3X_DESCRIPTOR.port}
 
-    link(rel='stylesheet', href='/resource/expkit.css')
+    link(rel='stylesheet', href='/resource/3x.css')
     script(type='text/javascript', src='/resource/jquery.js')
     script(type='text/javascript', src='/resource/bootstrap.js')
 
@@ -16,9 +16,9 @@ html
       .navbar-inner
         .container-fluid
           div
-            a.brand(href='http://netj.github.com/expkit/')
+            a.brand(href='http://netj.github.com/3x/')
               i.icon-beaker.icon
-              | ExpKit
+              | 3X
 
           block nav
 

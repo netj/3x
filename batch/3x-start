@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# exp-start -- start an experiment batch
-# Usage: exp start BATCH
-#        exp start [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+# 3x-start -- start an experiment batch
+# Usage: 3x start BATCH
+#        3x start [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07
@@ -9,25 +9,25 @@ set -eu
 
 [ $# -ge 1 ] || usage "$0" "At least the BATCH must be given"
 
-EXPROOT=$(exp-findroot)
+_3X_ROOT=$(3x-findroot)
 
 batch=$1
 
 # figure out which batch we are talking about
 if [ $# -eq 1 -a -d "$batch" ]; then
     batchpath=$(readlink -f "$batch")
-    [[ $batchpath == $EXPROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
+    [[ $batchpath == $_3X_ROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
     shift
-    EXPBATCH=${batchpath#$EXPROOT/}
+    _3X_BATCH=${batchpath#$_3X_ROOT/}
 else
-    EXPBATCH=$(new-batch-id)
-    EXPBATCH=$EXPBATCH \
-    EXPBATCH_STARTING=true \
-        exp-plan "$@"
+    _3X_BATCH=$(new-batch-id)
+    _3X_BATCH=$_3X_BATCH \
+    _3X_BATCH_STARTING=true \
+        3x-plan "$@"
 fi
-export EXPBATCH
+export _3X_BATCH
 
-cd "$EXPROOT/$EXPBATCH"
+cd "$_3X_ROOT/$_3X_BATCH"
 
 # launch batch-loop in a separate process group, using bash -i, so we can kill
 # all related processes together later.

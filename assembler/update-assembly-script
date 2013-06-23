@@ -6,8 +6,8 @@
 # Created: 2013-01-31
 set -eu
 
-EXPROOT=$(exp-findroot)
-cd "$EXPROOT"
+_3X_ROOT=$(3x-findroot)
+cd "$_3X_ROOT"
 
 let SHLVL--
 update-assembly-script() {
@@ -29,6 +29,6 @@ update-assembly-script() {
         trap - EXIT
     fi
 }
-assembleScript=.exp/assemble.sh
+assembleScript=.3x/assemble.sh
 update-assembly-script $assembleScript program input/?*=* output/*
 echo $assembleScript

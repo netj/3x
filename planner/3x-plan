@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# exp-plan -- plan experiments with given variables
-# Usage: exp plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+# 3x-plan -- plan experiments with given variables
+# Usage: 3x plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
 # 
-# Use `exp inputs -v` to list available input variables.
+# Use `3x inputs -v` to list available input variables.
 # 
 # 
-# Usage: exp plan results RESULTS_QUERY
-#        exp plan skip    RESULTS_QUERY
+# Usage: 3x plan results RESULTS_QUERY
+#        3x plan skip    RESULTS_QUERY
 # 
 # Another way to plan experiments is based on the results.  You can narrow
 # down the list of results and use the same set of inputs to plan more
 # experiments.  If you want to run inputs complementary to a set of
-# results, that is also possible with `exp plan skip`.  In this alternative
+# results, that is also possible with `3x plan skip`.  In this alternative
 # usage, you can plan more runs conditioning on the outputs so far.
 # 
 #
@@ -24,20 +24,20 @@ set -eu
     # show available variables
     echo
     echo "For full combination of inputs, run: "
-    echo "  exp plan "$(exp-inputs)
+    echo "  3x plan "$(3x-inputs)
     false
 }
 
-EXPROOT=$(exp-findroot)
-: ${EXPBATCH:=$(new-batch-id)}
-: ${EXPBATCH_STARTING:=false}
-export EXPROOT EXPBATCH
+_3X_ROOT=$(3x-findroot)
+: ${_3X_BATCH:=$(new-batch-id)}
+: ${_3X_BATCH_STARTING:=false}
+export _3X_ROOT _3X_BATCH
 
 # do a sanity check before we proceed
 update-assembly-script >/dev/null
 
 # create the batch directory
-tmp="$EXPROOT/$EXPBATCH"
+tmp="$_3X_ROOT/$_3X_BATCH"
 trap "rm -rf $tmp" EXIT
 mkdir -p -- "$tmp"
 
@@ -65,10 +65,10 @@ permute() {
 case $1 in
     with) # based on the given files
         shift
-        # adjust EXPROOT-relative paths
-        [ $# -eq 0 ] || [ -e "$1" ] || ! [ -e "$EXPROOT/$1" ] || {
+        # adjust _3X_ROOT-relative paths
+        [ $# -eq 0 ] || [ -e "$1" ] || ! [ -e "$_3X_ROOT/$1" ] || {
             path=$1; shift
-            set -- "$EXPROOT/$path" "$@"
+            set -- "$_3X_ROOT/$path" "$@"
         }
         [ -t 1 ] || EDITOR=true
         {
@@ -77,7 +77,7 @@ case $1 in
         } >"$tmp"/plan.editing
         # clean up any temporary file
         case $(readlink -f "$1") in
-            "$EXPROOT/.exp/plan.editing".*)
+            "$_3X_ROOT/.3x/plan.editing".*)
                 rm -f "$1"
                 ;;
         esac
@@ -88,10 +88,10 @@ case $1 in
 
         # record the query and fetch the results
         echo "$@" >"$tmp"/plan.$results.query
-        exp-results "$@" >"$tmp"/plan.$results
+        3x-results "$@" >"$tmp"/plan.$results
 
         # transform the results into a batch plan
-        cut -f$(( 1 + $(exp-outputs | wc -l) + 1 ))- <"$tmp"/plan.$results |
+        cut -f$(( 1 + $(3x-outputs | wc -l) + 1 ))- <"$tmp"/plan.$results |
         if $invertResults; then # TODO invert from the combination
             excl="$tmp"/plan.skipped
             sort | column -t >"$excl"
@@ -101,7 +101,7 @@ case $1 in
             comm -13 "$excl" -
         else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate inputs
         fi |
-        sed 's/^/exp[[:space:]][[:space:]]*run[[:space:]][[:space:]]*/' | column -t >"$tmp"/plan.editing
+        sed 's/^/3x[[:space:]][[:space:]]*run[[:space:]][[:space:]]*/' | column -t >"$tmp"/plan.editing
         ;;
     *) # by editing combinations generated from given input values
         # normalize command-line arguments
@@ -110,35 +110,35 @@ case $1 in
 
         # permute the arguments and generate a batch plan
         msg "Permuting inputs for ${@%%=*}..."
-        permute "exp run" "$@" | column -t >"$tmp"/plan.editing
+        permute "3x run" "$@" | column -t >"$tmp"/plan.editing
         ;;
 esac
 
-cd "$EXPROOT/$EXPBATCH"
+cd "$_3X_ROOT/$_3X_BATCH"
 
 # let user do a finish edit of the generated plan
 if edit plan.editing plan.in-progress; then
     trap - EXIT
     sanitize() {
         local i=$1 o=$2
-        # check if every line starts with `exp run '
-        ! grep -Hn -E -v '^exp[[:space:]]+run[[:space:]]+|^[[:space:]]*$' "$i" ||
-            error "Syntax Error: All plan lines must start with \`exp run '" || return $?
+        # check if every line starts with `3x run '
+        ! grep -Hn -E -v '^3x[[:space:]]+run[[:space:]]+|^[[:space:]]*$' "$i" ||
+            error "Syntax Error: All plan lines must start with \`3x run '" || return $?
         # discard empty lines
         grep -E -v '^[[:space:]]*$' <"$i" >"$o"
-        # Skip checks of serials at the end of each line, since this is exp-starts' job
+        # Skip checks of serials at the end of each line, since this is 3x-starts' job
         #! grep -E -v '[[:space:]]+#[[:digit:]]+$' "$o" ||
-        #    error "$EXPBATCH/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
+        #    error "$_3X_BATCH/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
         # TODO check whether all input values are sane
     }
     sanitize plan.editing plan.editing.sanitized || {
-        cd "$EXPROOT"
-        # do not leave a bogus EXPBATCH, but clean it up
-        tmp=$(mktemp .exp/plan.editing.XXX)
-        cat "$EXPBATCH"/plan.editing >$tmp
-        rm -rf "$EXPBATCH"
+        cd "$_3X_ROOT"
+        # do not leave a bogus _3X_BATCH, but clean it up
+        tmp=$(mktemp .3x/plan.editing.XXX)
+        cat "$_3X_BATCH"/plan.editing >$tmp
+        rm -rf "$_3X_BATCH"
         msg "Edit the file and retry with the following command:"
-        msg "  exp plan with $tmp"
+        msg "  3x plan with $tmp"
         false
     }
     rm -f plan.editing
@@ -149,10 +149,10 @@ fi
 
 # and the batch creation is done
 msg +0 -n "Batch created at "
-if $EXPBATCH_STARTING; then
-    msg +0 "$EXPBATCH"
+if $_3X_BATCH_STARTING; then
+    msg +0 "$_3X_BATCH"
 else
-    echo "$EXPBATCH"
+    echo "$_3X_BATCH"
     msg "To start the batch, run:"
-    msg "  exp start $EXPBATCH"
+    msg "  3x start $_3X_BATCH"
 fi

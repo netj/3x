@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# exp-gui -- start ExpKit GUI
-# Usage: exp gui [start [PORT]]
-#        exp gui stop
-#        exp gui watch
+# 3x-gui -- GUI for EXecutable EXploratory EXperiments
+# Usage: 3x gui [start [PORT]]
+#        3x gui stop
+#        3x gui watch
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-11
@@ -12,18 +12,18 @@ shopt -s extglob
 defaultPort=38917
 host=$(hostname -f)
 
-EXPROOT=$(exp-findroot)
-export EXPROOT
+_3X_ROOT=$(3x-findroot)
+export _3X_ROOT
 
 # make sure we don't go into an editor
 export EDITOR=true VISUAL=true
 
-cd "$EXPROOT"
+cd "$_3X_ROOT"
 
-mkdir -p .exp/gui
-portfile=.exp/gui/port
-logfile=.exp/gui/log
-pidfile=.exp/gui/pid
+mkdir -p .3x/gui
+portfile=.3x/gui/port
+logfile=.3x/gui/log
+pidfile=.3x/gui/pid
 get-pid() { ps -o pid= -p $(cat $pidfile); } 2>/dev/null
 
 cmd=${1:-start}
@@ -38,7 +38,7 @@ case $cmd in
             port=${1:-${port:-$defaultPort}}
             launchNew=true
         else
-            msg "ExpKit GUI already running at http://$host:$port/"
+            msg "3X GUI already running at http://$host:$port/"
             if [ $# -eq 1 ] && [ "$1" != "$port" ]; then
                 # launch another GUI on different port
                 port=$1
@@ -63,19 +63,19 @@ case $cmd in
             python_site_dir="$GUIDIR"/server/python-packages
             PATH="$python_site_dir:$PATH" \
             PYTHONPATH="$python_site_dir${PYTHONPATH:+:$PYTHONPATH}" \
-            setsid node "$GUIDIR"/server/expkit-gui.js $port \
+            setsid node "$GUIDIR"/server/3x-gui.js $port \
                 </dev/null >$logfile 2>&1 &
             pid=$!
             # record pid, port
             pids="$pid $(get-pid || true)"
             echo $pids >$pidfile
             echo $port >$portfile
-            msg "ExpKit GUI started at $url"
+            msg "3X GUI started at $url"
         else
             url="http://$host:$port/"
         fi
         # watch log if requested
-        be-quiet +1 || exp-gui watch &
+        be-quiet +1 || 3x-gui watch &
         # and launch web browser on known platforms
         case $(uname) in
             Darwin) # Mac
@@ -89,22 +89,22 @@ case $cmd in
 
     watch)
         # watch log
-        pids=($(get-pid)) || error "ExpKit GUI not running"
+        pids=($(get-pid)) || error "3X GUI not running"
         pid=${pids[0]}
         exec tail -qF $logfile --pid=$pid 2>/dev/null
         ;;
 
     stop)
-        pids=$(get-pid) || error "ExpKit GUI not running"
+        pids=$(get-pid) || error "3X GUI not running"
         kill -TERM $(for pid in $pids; do echo -$pid; done)
         mv -f $logfile $logfile.0
         rm -f $pidfile
-        msg "ExpKit GUI stopped"
+        msg "3X GUI stopped"
         ;;
 
     # when it looks like a port number, do start instead of complaining
     +([0-9]))
-        exec exp-gui start $cmd "$@"
+        exec 3x-gui start $cmd "$@"
         ;;
 
     *)

@@ -1,4 +1,4 @@
-# Makefile for ExpKit
+# Makefile for 3X -- EXecutable EXploratory EXperiments
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-10-30
 
@@ -11,8 +11,10 @@ export DATADIR        := data
 export GUIDIR         := gui
 export DOCSDIR        := docs
 
-PACKAGENAME := exp
-PACKAGEEXECUTES := bin/exp
+#DEPENDSDIR := .depends
+
+PACKAGENAME := 3x
+PACKAGEEXECUTES := bin/3x
 
 include buildkit/modules.mk
 
@@ -20,7 +22,7 @@ buildkit/modules.mk:
 	git submodule update --init
 
 gui-test-loop:
-	while sleep .1; do EXPROOT="$(PWD)/test-exp"  exp -v gui; done
+	while sleep .1; do _3X_ROOT="$(PWD)/test-exp"  3x -v gui; done
 
 
 count-loc:

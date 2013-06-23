@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # record-run -- run the run.sh script while recording its behavior
-# Usage: cd $EXPWD && record-run
+# Usage: cd $_3X_WD && record-run
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-05
 set -eu
 
-[ -n "${EXPRUN:-}" ]  || usage "$0" "EXPRUN not defined"
+[ -n "${_3X_RUN:-}" ]  || usage "$0" "_3X_RUN not defined"
 [ -x workdir/run   ]  || usage "$0" "workdir/run: No executable found"
 
 measuring-rusage() {
@@ -35,10 +35,10 @@ done
 set +e
 measuring-rusage \
 env - \
-    EXPKIT_HOME="$EXPKIT_HOME" \
-    EXPROOT="$EXPROOT" \
-    EXPWD="$PWD" \
-    EXPRUN="$EXPRUN" \
+    _3X_HOME="$_3X_HOME" \
+    _3X_ROOT="$_3X_ROOT" \
+    _3X_WD="$PWD" \
+    _3X_RUN="$_3X_RUN" \
 bash -c ''"$(be-quiet +5 || echo set -x)"'
 # declare env
 '"$(sed "s/'/'\\''/g; s/^/export '/; s/$/'/" <env)"'
@@ -48,7 +48,7 @@ args=(
 )
 '"$(be-quiet +1 || ! be-quiet +5 || echo set -x)"'
 # run from workdir/
-cd "$EXPWD"/workdir
+cd "$_3X_WD"/workdir
 exec ./run "${args[@]}" <../stdin >../stdout 2>../stderr
 ' &
 pid=$!

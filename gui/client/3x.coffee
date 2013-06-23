@@ -1,10 +1,10 @@
 ###
-# CoffeeScript for ExpKit GUI
+# CoffeeScript for 3X GUI
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-11
 ###
 
-ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL ? ""
+_3X_ServiceBaseURL = localStorage._3X_ServiceBaseURL ? ""
 
 log   = (args...) -> console.log   args...; args[0]
 error = (args...) -> console.error args...; args[0]
@@ -223,7 +223,7 @@ do ->
         (v, rowIdxs, data, col, runColIdx) ->
             if typeof rowIdxs is "number"
                 """
-                <a href="#{ExpKitServiceBaseURL}/#{v}/overview">#{v}</a>
+                <a href="#{_3X_ServiceBaseURL}/#{v}/overview">#{v}</a>
                 """
             else
                 v
@@ -232,7 +232,7 @@ do ->
             td.style.fontSize = "80%"
     # aggregation/rendering for images
     fileURL = (row, col, runColIdx) =>
-        "#{ExpKitServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[col.dataIndex]}"
+        "#{_3X_ServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[col.dataIndex]}"
     new Aggregation "overlay", "image", Aggregation.FOR_NAME.count.func
     # TODO type alias for Aggregation
     Aggregation.registerForType "image/png",  "overlay", "count"
@@ -308,20 +308,20 @@ do ->
 simplifyURL = (url) ->
     url.replace /^[^:]+:\/\//, ""
 
-ExpDescriptor = null
+_3X_Descriptor = null
 initTitle = ->
-    $.getJSON("#{ExpKitServiceBaseURL}/api/description")
-        .success((exp) ->
-            ExpDescriptor = exp
+    $.getJSON("#{_3X_ServiceBaseURL}/api/description")
+        .success((descr) ->
+            _3X_Descriptor = descr
             hostport =
-                if exp.hostname? and exp.port? then "#{exp.hostname}:#{exp.port}"
-                else simplifyURL ExpKitServiceBaseURL
-            document.title = "ExpKit — #{exp.name} — #{hostport}"
-            $("#title").text("#{exp.name} — #{hostport}")
+                if descr.hostname? and descr.port? then "#{descr.hostname}:#{descr.port}"
+                else simplifyURL _3X_ServiceBaseURL
+            document.title = "3X — #{descr.name} — #{hostport}"
+            $("#title").text("#{descr.name} — #{hostport}")
                 .attr
-                    title: "#{exp.fileSystemPath}#{
-                        unless exp.description? then ""
-                        else "\n#{exp.description}"
+                    title: "#{descr.fileSystemPath}#{
+                        unless descr.description? then ""
+                        else "\n#{descr.description}"
                     }"
         )
 
@@ -348,27 +348,27 @@ initBaseURLControl = ->
     btnPrimary = urlModal.find(".btn-primary")
 
     urlModalToggler
-        .text(simplifyURL ExpKitServiceBaseURL)
+        .text(simplifyURL _3X_ServiceBaseURL)
     urlModal.find("input").keyup (e) ->
         switch e.keyCode
             when 14, 13 # enter or return
                 btnPrimary.click()
     urlModal.on "show", ->
-        m = ExpKitServiceBaseURL.match ///
+        m = _3X_ServiceBaseURL.match ///
             ^http://
             ([^/]+)
             :
             (\d+)
             ///i
-        inputHost.val(m?[1] ? ExpDescriptor.hostname)
-        inputPort.val(m?[2] ? ExpDescriptor.port)
+        inputHost.val(m?[1] ? _3X_Descriptor.hostname)
+        inputPort.val(m?[2] ? _3X_Descriptor.port)
     urlModal.on "shown", -> inputPort.focus()
     urlModal.on "hidden", -> urlModalToggler.blur()
     btnPrimary.click (e) ->
         url = "http://#{inputHost.val()}:#{inputPort.val()}"
-        if url isnt ExpKitServiceBaseURL
+        if url isnt _3X_ServiceBaseURL
             $("#title").text(simplifyURL url)
-            ExpKitServiceBaseURL = localStorage.ExpKitServiceBaseURL = url
+            _3X_ServiceBaseURL = localStorage._3X_ServiceBaseURL = url
             do location.reload # TODO find a nice way to avoid reload?
         urlModal.modal "hide"
 
@@ -554,7 +554,7 @@ class ConditionsUI extends MenuDropdown
         super @baseElement, "condition"
         @conditions = {}
     load: =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/inputs")
+        $.getJSON("#{_3X_ServiceBaseURL}/api/inputs")
             .success(@initialize)
     initialize: (@conditions) =>
         do @clearMenu
@@ -579,7 +579,7 @@ class MeasurementsUI extends MenuDropdown
         localStorage["menuDropdownFilter_#{@menuName}"] = JSON.stringify @menuFilter
 
     load: =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/outputs")
+        $.getJSON("#{_3X_ServiceBaseURL}/api/outputs")
             .success(@initialize)
     initialize: (@measurements) =>
         do @clearMenu
@@ -725,7 +725,7 @@ class ResultsTable extends CompositeElement
             for name,measure of @measurements.measurements
                 measures[name] = @measurements.menuFilter[name]
             # ask for results data
-            $.getJSON("#{ExpKitServiceBaseURL}/api/results",
+            $.getJSON("#{_3X_ServiceBaseURL}/api/results",
                 runs: []
                 batches: []
                 inputs: JSON.stringify conditions
@@ -761,7 +761,7 @@ class ResultsTable extends CompositeElement
         </script>
         """)
     @CELL_SKELETON: """
-        {{if ~column.isRunIdColumn}}<a href="{{>~ExpKitServiceBaseURL}}/{{>~value}}/overview">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
+        {{if ~column.isRunIdColumn}}<a href="{{>~_3X_ServiceBaseURL}}/{{>~value}}/overview">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
         """
 
     _enumerateAll: (name) =>
@@ -927,7 +927,7 @@ class ResultsTable extends CompositeElement
                         renderHTML: DataRenderer.htmlGeneratorForTypeAndData(col.type, @resultsForRendering, col.index)
                         renderDOM:  DataRenderer.domManipulatorForTypeAndData(col.type, @resultsForRendering, col.index)
                         isLastColumn: col.index is @columnNames.length - 1
-            , {ExpKitServiceBaseURL, @isRunIdExpanded}
+            , {_3X_ServiceBaseURL, @isRunIdExpanded}
             ))
         # allow the column header to toggle aggregation
         t = @
@@ -955,7 +955,7 @@ class ResultsTable extends CompositeElement
                                     valueFormatted: c.renderHTML(row[idx].value,
                                             row[idx].origin, @results, c, @resultsRunIdIndex)
                     }, {
-                        ExpKitServiceBaseURL
+                        _3X_ServiceBaseURL
                     }
         ).appendTo(@baseElement)
         # apply DataRenderer DOM mainpulator
@@ -1053,7 +1053,7 @@ class ResultsTable extends CompositeElement
             pos = $td.position()
             provenancePopover
                 .find(".provenance-link").text(runId)
-                    .attr(href:"#{ExpKitServiceBaseURL}/#{runId}/overview").end()
+                    .attr(href:"#{_3X_ServiceBaseURL}/#{runId}/overview").end()
                 .removeClass("hide")
                 .css
                     top:  "#{pos.top              - (provenancePopover.height())}px"
@@ -1660,7 +1660,7 @@ class BatchesTable extends CompositeElement
         super @baseElement
 
         # subscribe to batch notifications
-        @socket = io.connect("#{ExpKitServiceBaseURL}/run/batch/")
+        @socket = io.connect("#{_3X_ServiceBaseURL}/run/batch/")
             .on "listing-update", ([batchId, createOrDelete]) =>
                 # TODO any non intrusive way to give feedback?
                 log "batch #{batchId} #{createOrDelete}"
@@ -1728,7 +1728,7 @@ class BatchesTable extends CompositeElement
             bAutoWidth: false
             bProcessing: true
             bServerSide: true
-            sAjaxSource: "#{ExpKitServiceBaseURL}/api/run/batch.DataTables"
+            sAjaxSource: "#{_3X_ServiceBaseURL}/api/run/batch.DataTables"
             bLengthChange: false
             iDisplayLength: 5
             bPaginate: true
@@ -1822,7 +1822,7 @@ class BatchesTable extends CompositeElement
         act = ($row) =>
             batchId = $row.find("td:nth(0)").text()
             log "#{action}ing #{batchId}"
-            $.getJSON("#{ExpKitServiceBaseURL}/api/#{batchId}:#{action}")
+            $.getJSON("#{_3X_ServiceBaseURL}/api/#{batchId}:#{action}")
                 # TODO feedback on failure
         (e) ->
             act $(this).closest("tr")
@@ -1862,7 +1862,7 @@ class PlanTableBase extends CompositeElement
             {{if run}}
             title="Detailed Info"
             data-placement="bottom" data-html="true" data-trigger="click"
-            data-content='<a href="{{>~ExpKitServiceBaseURL}}/{{>run}}/overview">{{>run}}</a>'
+            data-content='<a href="{{>~_3X_ServiceBaseURL}}/{{>run}}/overview">{{>run}}</a>'
             {{/if}}><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></div></td>
             {{for columns}}
             <td>{{>value}}</td>
@@ -1905,7 +1905,7 @@ class PlanTableBase extends CompositeElement
         tbody = $("<tbody>").appendTo(@baseElement)
         extraData =
             batchId: @planTableId
-            ExpKitServiceBaseURL: ExpKitServiceBaseURL
+            _3X_ServiceBaseURL: _3X_ServiceBaseURL
         ICON_BY_STATE =
             DONE: "ok"
             RUNNING: "spin icon-spinner"
@@ -2013,7 +2013,7 @@ class StatusTable extends PlanTableBase
         # TODO check if there's uncommitted changes beforeunload of document
 
     load: (@batchId) =>
-        $.getJSON("#{ExpKitServiceBaseURL}/api/#{@batchId}")
+        $.getJSON("#{_3X_ServiceBaseURL}/api/#{@batchId}")
             .success(@display)
 
     render: (args...) =>
@@ -2033,7 +2033,7 @@ class StatusTable extends PlanTableBase
     canCommit: => @batchId? and @isReordered
     handleCommit: (e) =>
         # send plan to server to create a new batch
-        $.post("#{ExpKitServiceBaseURL}/api/#{@batchId}",
+        $.post("#{_3X_ServiceBaseURL}/api/#{@batchId}",
             shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
             plan: JSON.stringify @plan
         )
@@ -2090,15 +2090,15 @@ class PlanTable extends PlanTableBase
     canCommit: => @plan?.rows.length > 0
     handleCommit: (e) =>
         # send plan to server to create a new batch
-        $.post("#{ExpKitServiceBaseURL}/api/run/batch/",
+        $.post("#{_3X_ServiceBaseURL}/api/run/batch/",
             shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
             plan: JSON.stringify @plan
         )
             .success (batchId) =>
                 @updatePlan @newPlan()
                 # FIXME clean this dependency by listening to batch changes directly via socket.io
-                ExpKit.batches.openBatchStatus batchId
-                do ExpKit.batches.reload
+                _3X_.batches.openBatchStatus batchId
+                do _3X_.batches.reload
             .fail (err) =>
                 error err # TODO better error presentation
 
@@ -2280,24 +2280,24 @@ class PlanTable extends PlanTableBase
 # initialize UI
 $ ->
     # make things visible to the outside world
-    window.ExpKit = exports =
+    window._3X_ = exports =
         conditions: new ConditionsUI $("#conditions")
         measurements: new MeasurementsUI $("#measurements")
     # load conditions, measurements
-    ExpKit.conditions.load().success ->
-        ExpKit.measurements.load().success ->
+    _3X_.conditions.load().success ->
+        _3X_.measurements.load().success ->
             # and the results
-            ExpKit.results = new ResultsTable $("#results-table"),
-                ExpKit.conditions, ExpKit.measurements,
+            _3X_.results = new ResultsTable $("#results-table"),
+                _3X_.conditions, _3X_.measurements,
                 toggleIncludeEmpty          : $("#results-include-empty")
                 toggleShowHiddenConditions  : $("#results-show-hidden-conditions")
                 buttonResetColumnOrder      : $("#results-reset-column-order")
                 containerForStateDisplay    : $("#results")
                 buttonRefresh               : $("#results-refresh")
-            ExpKit.results.load()
+            _3X_.results.load()
             # chart
-            ExpKit.chart = new ResultsChart $("#chart-body"),
-                $("#chart-type"), $("#chart-axis-controls"), ExpKit.results,
+            _3X_.chart = new ResultsChart $("#chart-body"),
+                $("#chart-type"), $("#chart-axis-controls"), _3X_.results,
                 toggleInterpolateLines  : $("#chart-toggle-interpolate-lines")
                 toggleHideLines         : $("#chart-toggle-hide-lines")
                 toggleLogScaleX         : $("#chart-toggle-log-scale-x")
@@ -2307,21 +2307,21 @@ $ ->
                 toggleOriginY1          : $("#chart-toggle-origin-y1")
                 toggleOriginY2          : $("#chart-toggle-origin-y2")
             # plan
-            ExpKit.planner = new PlanTable "currentPlan", $("#plan-table"),
-                ExpKit.conditions,
-                resultsTable: ExpKit.results
+            _3X_.planner = new PlanTable "currentPlan", $("#plan-table"),
+                _3X_.conditions,
+                resultsTable: _3X_.results
                 countDisplay: $("#plan-count.label")
                 buttonCommit: $("#plan-submit")
                 buttonClear : $("#plan-clear")
                 toggleShouldStart: $("#plan-start-after-create")
         # runs
-        ExpKit.status = new StatusTable "status", $("#status-table"),
-            ExpKit.conditions,
+        _3X_.status = new StatusTable "status", $("#status-table"),
+            _3X_.conditions,
             nameDisplay : $("#status-name")
             buttonCommit: $("#status-submit")
             buttonClear : $("#status-clear")
             toggleShouldStart: $("#status-start-after-create")
-        ExpKit.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), ExpKit.status
+        _3X_.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), _3X_.status
     do initTitle
     do initBaseURLControl
     do initTabs

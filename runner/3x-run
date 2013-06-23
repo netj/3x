@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# exp-run -- run an experiment with given parameters
-# Usage: exp run NAME=VALUE [NAME=VALUE]...
+# 3x-run -- run an experiment with given parameters
+# Usage: 3x run NAME=VALUE [NAME=VALUE]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
@@ -8,10 +8,10 @@ set -eu
 
 [ $# -ge 1 ] || usage "$0" "At least one NAME=VALUE pairs must be given"
 
-EXPROOT=$(exp-findroot)
-: ${EXPRUN:=$(new-run-id)}
-export EXPROOT EXPRUN EXPWD="$EXPROOT/$EXPRUN"
-EXPARCHIVE="$EXPROOT"/.exp/files
+_3X_ROOT=$(3x-findroot)
+: ${_3X_RUN:=$(new-run-id)}
+export _3X_ROOT _3X_RUN _3X_WD="$_3X_ROOT/$_3X_RUN"
+_3X_ARCHIVE="$_3X_ROOT"/.3x/files
 
 # archive everything when run exits
 cleanup() {
@@ -19,21 +19,21 @@ cleanup() {
     set +e
     (
     set -e
-    cd "$EXPWD" 2>/dev/null
-    msg +2 "Archiving $EXPRUN to .exp/files/"
+    cd "$_3X_WD" 2>/dev/null
+    msg +2 "Archiving $_3X_RUN to .3x/files/"
     chmod a-w output stdout stderr 2>/dev/null || true
-    archive "$EXPARCHIVE" . ! -path ./output ! -path ./stdout ! -path ./stderr
+    archive "$_3X_ARCHIVE" . ! -path ./output ! -path ./stdout ! -path ./stderr
     )
     exit $c
 }
 trap cleanup EXIT
 
 # assemble it for running and measuring outputs
-exp-assemble "$EXPWD" "$@"
+3x-assemble "$_3X_WD" "$@"
 
 # run it
-cd "$EXPWD"
-msg "Running $EXPRUN with $*"
+cd "$_3X_WD"
+msg "Running $_3X_RUN with $*"
 record-run &
 runpid=$!
 
@@ -47,10 +47,10 @@ wait || true
 
 if [ -e exitcode ]; then
     exitcode=$(cat exitcode)
-    msg "Finished $EXPRUN with exitcode $exitcode"
+    msg "Finished $_3X_RUN with exitcode $exitcode"
 else
     exitcode=127
-    msg "Interrupted $EXPRUN"
+    msg "Interrupted $_3X_RUN"
     exit $exitcode
 fi
 
@@ -60,14 +60,14 @@ for mx in measures/*/measure; do
     if [ -x "$mx" ]; then
         echo "$m=$(escape-args-for-shell "$(
         # run measure drivers under the same env
-        export $(cat ./env) EXPMEASURE=${mx%/measure}
+        export $(cat ./env) _3X_MEASURE=${mx%/measure}
         "$mx"
         )")"
     fi
 done >output
 
 # incrementally update the index with this run
-exp-index init
-exp-index update .
+3x-index init
+3x-index update .
 
 exit $exitcode

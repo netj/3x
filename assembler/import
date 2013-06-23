@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # import -- import an input directory
-# Usage: cd $EXPROOT;  EXPWD=OUTPUTDIR import INPUTDIR...
+# Usage: cd $_3X_ROOT;  _3X_WD=OUTPUTDIR import INPUTDIR...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
 set -eu
 
 [ $# -gt 0 ]        || usage "$0" "At least one INPUTDIR must be given"
-[ -n "${EXPWD:-}" ] || usage "$0" "EXPWD must be defined"
-EXPWDabbrev=${EXPWD#$PWD/}
+[ -n "${_3X_WD:-}" ] || usage "$0" "_3X_WD must be defined"
+_3X_WDabbrev=${_3X_WD#$PWD/}
 
 shopt -s extglob
 
 _recordCopiedFiles() {
     sed -E 's/^/  copying /;  s#([‘ ])run/.*/(workdir/|measures/|args)#\1\2#' |
-    tee -a "$EXPWD"/assembly
+    tee -a "$_3X_WD"/assembly
 }
 recordCopiedFiles() { _recordCopiedFiles >/dev/null; }
 be-quiet +1 || recordCopiedFiles() { _recordCopiedFiles >&2; }
@@ -45,15 +45,15 @@ copyFilesTo() {
 }
 
 for path in "$@"; do
-    if ! grep -qF "$path" "$EXPWD"/assembly; then
+    if ! grep -qF "$path" "$_3X_WD"/assembly; then
         msg " importing $path"
-        echo "$path" >>"$EXPWD"/assembly
+        echo "$path" >>"$_3X_WD"/assembly
         if [ -d "$path" ]; then
             # a directory containing files and nested patterns
             case $path in
                 @(input|program)/*)
                     # copy files
-                    copyFilesTo "$EXPWDabbrev"/workdir/ "$path" \
+                    copyFilesTo "$_3X_WDabbrev"/workdir/ "$path" \
                         -type f \( -name 'env' \
                                 -o -name 'args' -o -name '+args' -o -name 'args+' \
                                 -o -name 'unit' -o -name 'datatype' \
@@ -63,7 +63,7 @@ for path in "$@"; do
                     for f in env; do
                         if [ -r "$path"/$f ]; then
                             msg +1 "  appending $path/$f"
-                            no-comments "$path"/$f >>"$EXPWD"/$f
+                            no-comments "$path"/$f >>"$_3X_WD"/$f
                         fi
                     done
                     # command-line arguments
@@ -71,27 +71,27 @@ for path in "$@"; do
                         if [ -r "$a" ]; then
                             case ${a##*/} in
                                 args) # replace arguments
-                                    ! [ -e "$EXPWD"/args ] || error "$a cannot overwrite already existing args"
+                                    ! [ -e "$_3X_WD"/args ] || error "$a cannot overwrite already existing args"
                                     (
                                     set -o pipefail
-                                    cp -avn "$a" "$EXPWDabbrev"/args |
+                                    cp -avn "$a" "$_3X_WDabbrev"/args |
                                     recordCopiedFiles >&2
                                     )
                                     ;;
                                 args+) # append arguments
                                     msg +1 "  appending $a"
-                                    echo "  appending $a" >>"$EXPWD"/assembly
-                                    cat "$a" >>"$EXPWD"/args
+                                    echo "  appending $a" >>"$_3X_WD"/assembly
+                                    cat "$a" >>"$_3X_WD"/args
                                     ;;
                                 +args) # prepend arguments
                                     msg +1 "  prepending $a"
-                                    echo "  prepending $a" >>"$EXPWD"/assembly
+                                    echo "  prepending $a" >>"$_3X_WD"/assembly
                                     if [ -z "${tmp:-}" ]; then
-                                        tmp=$(mktemp /tmp/expkit-import.XXXXXX)
+                                        tmp=$(mktemp /tmp/3x-import.XXXXXX)
                                         trap "rm -f $tmp" EXIT
                                     fi
-                                    cat "$a" "$EXPWD"/args >$tmp
-                                    cat $tmp >"$EXPWD"/args
+                                    cat "$a" "$_3X_WD"/args >$tmp
+                                    cat $tmp >"$_3X_WD"/args
                                     ;;
                             esac
                         fi
@@ -102,7 +102,7 @@ for path in "$@"; do
                     m=${m#output/}
                     m=${m%%/*}
                     # copy files of output
-                    copyFilesTo "$EXPWDabbrev"/measures/"$m" "$path" \
+                    copyFilesTo "$_3X_WDabbrev"/measures/"$m" "$path" \
                         -type f \( -name 'unit' -o -name 'datatype' \
                                 \) \
                         #

@@ -12,7 +12,7 @@ _varTypes=
 sql-type() {
     local name=$1
     # TODO use associative arrays if available
-    : ${_varTypes:=$(exp-inputs -t; exp-outputs -t)}
+    : ${_varTypes:=$(3x-inputs -t; 3x-outputs -t)}
     ty=$(sed -n "/^$name:/ { s/^[^:]*://p; q; }" <<<"$_varTypes")
     case $ty in
         "")

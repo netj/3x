@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# exp-results -- enumerate experiment outputs with inputs
-# Usage: exp results [-t] [BATCH | RUN]... QUERY...
+# 3x-results -- enumerate experiment outputs with inputs
+# Usage: 3x results [-t] [BATCH | RUN]... QUERY...
 # 
 # You can specify from which BATCH or RUNs you want to enumerate the results.
 # Otherwise, results from all runs will be filtered and listed.
 # To list all results from the entire set of runs, use:
 # 
-#     exp results run
+#     3x results run
 # 
 # A QUERY in the form of [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]
 # can be specified after the BATCH and RUNs, and only the results satisfying
-# them will be listed.  Use `exp inputs -v` to see available input variables
-# and values.  For the defined output variables, use `exp outputs` to see their
+# them will be listed.  Use `3x inputs -v` to see available input variables
+# and values.  For the defined output variables, use `3x outputs` to see their
 # names and types.
 # 
 #
@@ -21,8 +21,8 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" "At least a RUN/BATCH directory or input variable must be given"
 
-EXPROOT=$(exp-findroot)
-export EXPROOT
+_3X_ROOT=$(3x-findroot)
+export _3X_ROOT
 
 verboseFiltering=
 verbosity-isnt +5 || verboseFiltering="bash -x"
@@ -33,7 +33,7 @@ runs=()
 args=()
 for a; do
     p=$(readlink -f "$a")
-    p=${p#$EXPROOT/}
+    p=${p#$_3X_ROOT/}
     case $p in
         run/batch/*)
             runs+=("${a%/}"/runs/*/)
@@ -47,7 +47,7 @@ for a; do
     esac
 done
 # search from all runs if no scope was given
-[[ ${#runs[@]} -gt 0 ]] || runs+=("$EXPROOT"/run)
+[[ ${#runs[@]} -gt 0 ]] || runs+=("$_3X_ROOT"/run)
 [[ ${#args[@]} -eq 0 ]] && set -- || set -- "${args[@]}"
 msg +1 "Considering runs under ${runs[*]}"
 
@@ -58,7 +58,7 @@ args=($(normalize-inputs -p "$@" | grep -v '=$' || true))
 
 ## try index first
 set -o pipefail
-if ! exp-index query "$@" | {
+if ! 3x-index query "$@" | {
     # TODO only when not using plain tab separated format
     read header
     OFS=$IFS; IFS=$'\t'; set -- $header; IFS=$OFS
@@ -72,7 +72,7 @@ if ! exp-index query "$@" | {
 
 ## and fallback to scanning raw data
 msg +2 "Compiling filter $*"
-filter=$(mktemp ${TMPDIR:-/tmp}/exp-results-filter.XXXXXX)
+filter=$(mktemp ${TMPDIR:-/tmp}/3x-results-filter.XXXXXX)
 trap "rm -f $filter" EXIT
 compile-filter "$@" >"$filter"
 chmod +x "$filter"
@@ -86,7 +86,7 @@ fi
 msg +1 "Filtering results with $*"
 find-rundirs "${runs[@]}" -- "${findPredicate[@]}" |
 {
-    cd "$EXPROOT"
+    cd "$_3X_ROOT"
     while read -r run; do
         output=$run/output
         input=$run/input

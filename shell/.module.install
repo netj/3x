@@ -1,6 +1,6 @@
-.build/exp.sh               $BINDIR/exp
-exp-findroot                $TOOLSDIR/
-exp-hack                    $TOOLSDIR/
+.build/3x.sh                $BINDIR/3x
+3x-findroot                 $TOOLSDIR/
+3x-hack                     $TOOLSDIR/
 
 usage                       $TOOLSDIR/
 error                       $TOOLSDIR/

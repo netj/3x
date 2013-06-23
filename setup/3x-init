@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# 3x-init -- Initialize a new computational experiment directory
+# Usage: 3x-init _3X_ROOT
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-24
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "_3X_ROOT is missing"
+
+_3X_ROOT=$1; shift
+
+if [ -d "$_3X_ROOT" ]; then
+    if [[ $(_3X_ROOT=$_3X_ROOT 3x-findroot 2>/dev/null) == $(readlink -f "$_3X_ROOT") ]]; then
+        msg "No need to initialize $_3X_ROOT"
+        exit
+    else
+        error "$_3X_ROOT already exists, but isn't an experiment directory"
+    fi
+fi
+
+# initialize the _3X_ROOT
+mkdir -p -- "$_3X_ROOT"
+cd "$_3X_ROOT"
+
+# create the skeleton directories
+mkdir -p .3x/{files,gui} input output program run/batch
+
+# copy some default files
+customize "$DATADIR"/3x.template <<RULES
+@@dot@@=.
+RULES
+
+msg "Initialized $_3X_ROOT"

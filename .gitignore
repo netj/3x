@@ -3,6 +3,6 @@
 
 .build
 /@prefix@
-/exp-*.sh
+/3x-*.sh
 
 /test*

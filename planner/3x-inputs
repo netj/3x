@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# exp-inputs -- enumerate input variables
-# Usage: exp inputs [-v] [NAME]...
+# 3x-inputs -- enumerate input variables
+# Usage: 3x inputs [-v] [NAME]...
 # 
 # Enumerates all available input variables.  If a NAME is given, it checks
 # if the variable is defined and enumerates.
@@ -33,9 +33,9 @@ shift $(($OPTIND - 1))
 
 
 # setup environment
-EXPROOT=$(exp-findroot)
-export EXPROOT
-cd "$EXPROOT"
+_3X_ROOT=$(3x-findroot)
+export _3X_ROOT
+cd "$_3X_ROOT"
 
 # prepare pattern directories to show
 if [ $# -eq 0 ]; then

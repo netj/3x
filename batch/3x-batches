@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# exp-batches -- list experiment batches
-# Usage: exp batches [-OPTIONS] [BATCH_FILTER]...
+# 3x-batches -- list experiment batches
+# Usage: 3x batches [-OPTIONS] [BATCH_FILTER]...
 # 
-# Lists all batches whose name contains BATCH_FILTER from $EXPROOT/run/batch/.
+# Lists all batches whose name contains BATCH_FILTER from $_3X_ROOT/run/batch/.
 # 
 # To simply see a quick listing of batches:
-#     exp batches -l
+#     3x batches -l
 # 
 # To simply count the number of batches:
-#     exp batches -c BATCH_FILTER
+#     3x batches -c BATCH_FILTER
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-12
@@ -34,8 +34,8 @@ shift $(($OPTIND - 1))
 
 Query=$*
 
-EXPROOT=$(exp-findroot)
-cd "$EXPROOT"
+_3X_ROOT=$(3x-findroot)
+cd "$_3X_ROOT"
 mkdir -p run/batch
 cd run/batch
 

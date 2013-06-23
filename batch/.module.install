@@ -1,9 +1,9 @@
-exp-start               $TOOLSDIR/
+3x-start                $TOOLSDIR/
 new-batch-id            $TOOLSDIR/
 batch-loop              $TOOLSDIR/
-exp-stop                $TOOLSDIR/
+3x-stop                 $TOOLSDIR/
 
-exp-status              $TOOLSDIR/
-exp-edit                $TOOLSDIR/
+3x-status               $TOOLSDIR/
+3x-edit                 $TOOLSDIR/
 
-exp-batches             $TOOLSDIR/
+3x-batches              $TOOLSDIR/

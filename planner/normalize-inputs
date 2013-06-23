@@ -5,7 +5,7 @@
 # 
 # In addition to the obvious NAME=VALUE pairs, this also understands paths both
 # relative and absolute to either input variables or values of input
-# variables under the $EXPROOT, so you can rely on shell's file path completion.
+# variables under the $_3X_ROOT, so you can rely on shell's file path completion.
 # 
 # Specify -n option to prepend any missing NAME.
 # Specify -v to attach possible values for each NAME without any VALUE as well.
@@ -41,7 +41,7 @@ shift $(($OPTIND - 1))
 
 [ $# -gt 0 ] || exit 0
 
-EXPROOT=$(exp-findroot)
+_3X_ROOT=$(3x-findroot)
 
 ## normalize command-line arguments
 args=()
@@ -52,7 +52,7 @@ for cond in "$@"; do
         #    -> program=f x={1,2} y=abcd z
         cond=$(readlink -f "$cond")
         [ -d "$cond" ] || cond=${cond%.env}
-        cond=${cond#$EXPROOT/}
+        cond=${cond#$_3X_ROOT/}
         case $cond in
             program|input)
                 args+=("$cond"=)
@@ -73,7 +73,7 @@ for cond in "$@"; do
         case $cond in
             *=*) ;;
             *)
-                if [ -d "$EXPROOT"/program/"$cond" ]; then
+                if [ -d "$_3X_ROOT"/program/"$cond" ]; then
                     cond="program=$cond"
                 fi
                 ;;
@@ -81,9 +81,9 @@ for cond in "$@"; do
         # then see if it's a valid input
         name=${cond%%=*}
         if [[ $name == "program" ]]; then
-            pattDir="$EXPROOT"/program
+            pattDir="$_3X_ROOT"/program
         else
-            pattDir="$EXPROOT"/input/$name=
+            pattDir="$_3X_ROOT"/input/$name=
         fi
         if ! [ -d "$pattDir" ]; then
             if $passUnrecognized; then
@@ -127,7 +127,7 @@ if $fillNames; then
         return 1
     }
     args=()
-    for name in $(exp-inputs); do
+    for name in $(3x-inputs); do
         arg-has "^$name(=.*)?$" "$@" || args+=("$name"=)
     done
     [ ${#args[@]} -eq 0 ] || set -- "${args[@]}" "$@"
@@ -139,7 +139,7 @@ if $fillValues; then
     for cond in "$@"; do
         name=${cond%%=*}
         values=${cond#$name=}
-        [ -n "$values" ] || cond=$(exp-inputs -v "$name")
+        [ -n "$values" ] || cond=$(3x-inputs -v "$name")
         args+=("$cond")
     done
     [ ${#args[@]} -gt 0 -o ${#restArgs[0]} -gt 0 ] || exit 0
