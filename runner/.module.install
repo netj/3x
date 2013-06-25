@@ -1,3 +1,6 @@
-3x-run                  $TOOLSDIR/
+3x-start                $TOOLSDIR/
+3x-stop                 $TOOLSDIR/
+3x-status               $TOOLSDIR/
+
+find-queue-runner.sh    $TOOLSDIR/
 new-run-id              $TOOLSDIR/
-record-run              $TOOLSDIR/

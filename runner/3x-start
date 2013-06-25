@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# 3x-start -- start executing runs in the current queue at the target
+# Usage: 3x start
+#        3x start [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-07
+set -eu
+
+# first, adjust plan if necessary
+if [ $# -gt 0 ]; then
+    3x-plan "$@"
+fi
+
+. "$TOOLSDIR"/find-queue-runner.sh
+
+cd "$queueDir"
+export queue queueDir
+
+# start queue runner in a separate process group, so we can kill all related
+# processes together later.
+exec setsid queue-start

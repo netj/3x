@@ -1,0 +1,5 @@
+queue-start             $TOOLSDIR/runner/local/
+queue-stop              $TOOLSDIR/runner/local/
+
+3x-run                  $TOOLSDIR/
+record-run              $TOOLSDIR/

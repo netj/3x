@@ -1,45 +1,39 @@
 #!/usr/bin/env bash
 # 3x-plan -- plan experiments with given variables
-# Usage: 3x plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+# Usage:
+#   3x plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+#     New runs can be added to the queue with the combination of given values
+#     for the input variables.  The current queue can be specified by setting
+#     the environment variable $_3X_QUEUE, e.g., `export _3X_QUEUE=alt` to use
+#     run/queue.alt/.  The default queue is run/queue/.
 # 
-# Use `3x inputs -v` to list available input variables.
+#     For a full combination of inputs, simply run: `3x plan program`
+#     Use `3x inputs -v` to list allowed values for available input variables.
 # 
+#   3x plan
+#     Planned runs for the current queue can be edited using your $EDITOR.
 # 
-# Usage: 3x plan results RESULTS_QUERY
-#        3x plan skip    RESULTS_QUERY
-# 
-# Another way to plan experiments is based on the results.  You can narrow
-# down the list of results and use the same set of inputs to plan more
-# experiments.  If you want to run inputs complementary to a set of
-# results, that is also possible with `3x plan skip`.  In this alternative
-# usage, you can plan more runs conditioning on the outputs so far.
+#   3x plan results RESULTS_QUERY
+#   3x plan skip    RESULTS_QUERY
+#     Another way to plan more runs is based on the results so far.  You can
+#     narrow down the list of results and use the same set of inputs to plan
+#     more experiments.  If you want to run inputs complementary to a set of
+#     results, that is also possible with `3x plan skip`.  In this alternative
+#     usage, you can plan more runs conditioning on the outputs so far.
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07
 set -eu
 
-[ $# -ge 1 ] || {
-    usage "$0" "At least program or one input variable must be given" || true
-    # show available variables
-    echo
-    echo "For full combination of inputs, run: "
-    echo "  3x plan "$(3x-inputs)
-    false
-}
-
-_3X_ROOT=$(3x-findroot)
-: ${_3X_BATCH:=$(new-batch-id)}
-: ${_3X_BATCH_STARTING:=false}
-export _3X_ROOT _3X_BATCH
+. "$TOOLSDIR"/find-queue.sh
 
 # do a sanity check before we proceed
 update-assembly-script >/dev/null
 
-# create the batch directory
-tmp="$_3X_ROOT/$_3X_BATCH"
-trap "rm -rf $tmp" EXIT
-mkdir -p -- "$tmp"
+# create the queue directory if needed
+mkdir -p -- "$queueDir"
+[ -e "$queueDir"/plan ] || touch "$queueDir"/plan
 
 # knowing how to generate combinations is important
 permute() {
@@ -61,39 +55,43 @@ permute() {
     fi
 }
 
-# decide how we want to plan this batch
-case $1 in
+tmp=$(mktemp -d "$queueDir"/plan.XXXXXX)
+trap "rm -rf -- $tmp" EXIT
+planSHA1orig=$(sha1sum <"$queueDir"/plan)
+planWithFiles=()
+
+# decide how we want to plan
+case ${1:-} in
     with) # based on the given files
         shift
-        # adjust _3X_ROOT-relative paths
-        [ $# -eq 0 ] || [ -e "$1" ] || ! [ -e "$_3X_ROOT/$1" ] || {
-            path=$1; shift
-            set -- "$_3X_ROOT/$path" "$@"
-        }
-        [ -t 1 ] || EDITOR=true
+        if [ $# -gt 0 ]; then
+            for f; do
+                # adjust _3X_ROOT-relative paths
+                [ -e "$f" ] ||
+                    ! [ -e "$_3X_ROOT/$f" ] || f="$_3X_ROOT/$f"
+                planWithFiles+=("$(readlink -f "$f")")
+            done
+            set -- "${planWithFiles[@]}"
+        fi
+        [ -t 0 -a -t 1 ] || EDITOR=true
         {
             cat "$@"
             echo
-        } >"$tmp"/plan.editing
-        # clean up any temporary file
-        case $(readlink -f "$1") in
-            "$_3X_ROOT/.3x/plan.editing".*)
-                rm -f "$1"
-                ;;
-        esac
+        } >"$tmp"/new
         ;;
+
     results|skip) # based on query over results
         results=$1; shift
         invertResults=false; case $results in skip) invertResults=true ;; esac
 
         # record the query and fetch the results
-        echo "$@" >"$tmp"/plan.$results.query
-        3x-results "$@" >"$tmp"/plan.$results
+        echo "$@" >"$tmp"/results.query
+        3x-results "$@" >"$tmp"/$results
 
         # transform the results into a batch plan
-        cut -f$(( 1 + $(3x-outputs | wc -l) + 1 ))- <"$tmp"/plan.$results |
+        cut -f$(( 1 + $(3x-outputs | wc -l) + 1 ))- <"$tmp"/$results |
         if $invertResults; then # TODO invert from the combination
-            excl="$tmp"/plan.skipped
+            excl="$tmp"/skipped
             sort | column -t >"$excl"
             permute "" $(normalize-inputs -v \
                 $(tr ' \t' '\n' <"$excl" | sed -n 's/=.*//p' | sort -u)) |
@@ -101,8 +99,17 @@ case $1 in
             comm -13 "$excl" -
         else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate inputs
         fi |
-        sed 's/^/3x[[:space:]][[:space:]]*run[[:space:]][[:space:]]*/' | column -t >"$tmp"/plan.editing
+        sed 's/^/3x[[:space:]][[:space:]]*run[[:space:]][[:space:]]*/' | column -t >"$tmp"/new
         ;;
+
+    "") # edit the current plan
+        if [ -s "$queueDir"/plan ]; then
+            cat "$queueDir"/plan >"$tmp"/new
+        else # show usage first if empty
+            usage "$0" "No PROGRAM or input variables are given and plan is empty"
+        fi
+        ;;
+
     *) # by editing combinations generated from given input values
         # normalize command-line arguments
         args=($(normalize-inputs -nv "$@"))
@@ -110,49 +117,74 @@ case $1 in
 
         # permute the arguments and generate a batch plan
         msg "Permuting inputs for ${@%%=*}..."
-        permute "3x run" "$@" | column -t >"$tmp"/plan.editing
+        permute "3x run" "$@" | column -t >"$tmp"/more
+        planSHA1orig=$(sha1sum <"$queueDir"/plan)
+        cat "$queueDir"/plan "$tmp"/more >"$tmp"/new
         ;;
 esac
 
-cd "$_3X_ROOT/$_3X_BATCH"
+cd "$queueDir"
 
 # let user do a finish edit of the generated plan
-if edit plan.editing plan.in-progress; then
-    trap - EXIT
+if edit "$tmp"/new "$tmp"/timestamp; then
     sanitize() {
         local i=$1 o=$2
         # check if every line starts with `3x run '
         ! grep -Hn -E -v '^3x[[:space:]]+run[[:space:]]+|^[[:space:]]*$' "$i" ||
             error "Syntax Error: All plan lines must start with \`3x run '" || return $?
         # discard empty lines
-        grep -E -v '^[[:space:]]*$' <"$i" >"$o"
+        grep -E -v '^[[:space:]]*$' <"$i" >"$o" || true
         # Skip checks of serials at the end of each line, since this is 3x-starts' job
         #! grep -E -v '[[:space:]]+#[[:digit:]]+$' "$o" ||
-        #    error "$_3X_BATCH/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
+        #    error "$_3X_QUEUE/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
         # TODO check whether all input values are sane
     }
-    sanitize plan.editing plan.editing.sanitized || {
-        cd "$_3X_ROOT"
-        # do not leave a bogus _3X_BATCH, but clean it up
-        tmp=$(mktemp .3x/plan.editing.XXX)
-        cat "$_3X_BATCH"/plan.editing >$tmp
-        rm -rf "$_3X_BATCH"
+    confirm-if-changed() {
+        if ! [ x"$planSHA1orig" = x"$(sha1sum <plan)" ]; then
+            # show error if changed
+            error "Plan for $queue changed since editing" || true
+            if [ -t 0 -a -t 1 ]; then
+                # confirm overwrite
+                while :; do
+                    read -n 1 -p "Overwrite and discard changes? (y/n) " || true
+                    echo
+                    case $REPLY in
+                        [yY]) return 0 ;;
+                        [nN]) break ;;
+                    esac
+                done
+            fi
+            false
+        fi
+    }
+    sanitize "$tmp"/new "$tmp"/sanitized &&
+    confirm-if-changed ||
+    {
+        # in case there's error, keep the erroneous one for later retries
+        savedPlan=$(mktemp "$_3X_ROOT"/.3x/plan.editing.XXXXXX)
+        cp -pf "$tmp"/new $savedPlan
         msg "Edit the file and retry with the following command:"
-        msg "  3x plan with $tmp"
+        msg "  3x plan with ${savedPlan#$_3X_ROOT/}"
         false
     }
-    rm -f plan.editing
-    mv -f plan.editing.sanitized plan
+    mv -f "$tmp"/sanitized plan
+    if [ ${#planWithFiles[@]} -gt 0 ]; then
+        # clean up any temporary file for `plan with`
+        for f; do
+            case $f in
+                "$_3X_ROOT"/.3x/plan.editing.*)
+                    rm -f "$f"
+                    ;;
+            esac
+        done
+    fi
 else
-    error "Aborted planning"
+    msg "No changes made to plan for $queue"
+    exit 2
 fi
 
 # and the batch creation is done
-msg +0 -n "Batch created at "
-if $_3X_BATCH_STARTING; then
-    msg +0 "$_3X_BATCH"
-else
-    echo "$_3X_BATCH"
-    msg "To start the batch, run:"
-    msg "  3x start $_3X_BATCH"
-fi
+msg "3x: updated plan for $queue"
+# TODO summarize plan
+msg "To start executing, run:"
+msg "  ${_3X_QUEUE:+_3X_QUEUE=$_3X_QUEUE }3x start"

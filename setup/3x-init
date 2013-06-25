@@ -24,7 +24,7 @@ mkdir -p -- "$_3X_ROOT"
 cd "$_3X_ROOT"
 
 # create the skeleton directories
-mkdir -p .3x/{files,gui} input output program run/batch
+mkdir -p .3x/{files,gui} input output program run/{queue,target}
 
 # copy some default files
 customize "$DATADIR"/3x.template <<RULES

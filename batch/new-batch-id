@@ -1,3 +1,0 @@
-#!/bin/sh
-# new-batch-id -- generate a new id for _3X_BATCH
-date +run/batch/%Y%m%d.%H%M%S.%N

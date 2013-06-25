@@ -1,9 +1,0 @@
-3x-start                $TOOLSDIR/
-new-batch-id            $TOOLSDIR/
-batch-loop              $TOOLSDIR/
-3x-stop                 $TOOLSDIR/
-
-3x-status               $TOOLSDIR/
-3x-edit                 $TOOLSDIR/
-
-3x-batches              $TOOLSDIR/

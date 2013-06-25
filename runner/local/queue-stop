@@ -1,24 +1,10 @@
 #!/usr/bin/env bash
-# 3x-stop -- stop an experiment batch
-# Usage: 3x stop BATCH [WORKER]
+# queue-stop -- Stop executing locally
+# Usage: . find-queue-runner.sh; cd "$queueDir"; queue-stop [WORKER]
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-17
 set -eu
-
-[ $# -ge 1 ] || usage "$0" "BATCH must be given"
-
-_3X_ROOT=$(3x-findroot)
-
-# figure out which batch we are talking about
-batch=$1; shift
-[ -d "$batch" ] || error "$batch: No such file"
-batchpath=$(readlink -f "$batch")
-[[ $batchpath == $_3X_ROOT/run/batch/* ]] || error "Not a path to a batch: $batch"
-_3X_BATCH=${batchpath#$_3X_ROOT/}
-export _3X_BATCH
-
-cd "$_3X_ROOT/$_3X_BATCH"
 
 # collect the handles of workers
 if [ $# -gt 0 ]; then

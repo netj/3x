@@ -15,15 +15,13 @@
 # 
 #   3x plan   [NAME[=VALUE[,VALUE]...]]...
 #   3x start  [NAME[=VALUE[,VALUE]...]]...
+#   3x stop
+#   3x status
+#   3x queues
 # 
-#   3x start  BATCH
-#   3x stop   BATCH
-#   3x status BATCH
-#   3x edit   BATCH
-# 
-#   3x batches [QUERY]
-# 
-#   3x results [BATCH | RUN]... [QUERY]...
+#   3x results [RUN | QUEUE]... [QUERY]...
+#   3x plan results RESULTS_QUERY
+#   3x plan skip    RESULTS_QUERY
 # 
 #   3x inputs  [-v] [NAME]...
 #   3x outputs [-v] [NAME]...
