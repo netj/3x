@@ -30,4 +30,4 @@ for handle; do
 done
 
 # then reflect status
-queue-poll
+queue-refresh

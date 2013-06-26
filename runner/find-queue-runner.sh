@@ -3,7 +3,7 @@
 # Usage: . find-queue-runner.sh; echo "$target"
 #        . find-queue-runner.sh; queue-start
 #        . find-queue-runner.sh; queue-stop
-#        . find-queue-runner.sh; queue-poll
+#        . find-queue-runner.sh; queue-refresh
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-24
@@ -16,7 +16,10 @@ if [ -L "$queueDir"/target ]; then
     targetType=$(cat "$queueDir"/target/type 2>/dev/null) ||
         error "$target: No type defined for target execution environment"
 else
-    error "No target execution environment assigned for $queue"
+    error "No target execution environment asscoaited with $queue" || true
+    msg "Associate a target environment by running:"
+    msg "  3x target"
+    false
 fi
 
 PATH="$TOOLSDIR"/runner/"$targetType":"$PATH"

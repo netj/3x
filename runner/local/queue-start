@@ -116,6 +116,7 @@ lockproc $workerHandle release
 
 if $abort; then
     error "Aborted $queue" || true
+    queue-refresh
     msg "To resume, run:"
     msg "  3x start"
     exit 2

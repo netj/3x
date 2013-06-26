@@ -1,6 +1,6 @@
 queue-start             $TOOLSDIR/runner/local/
 queue-stop              $TOOLSDIR/runner/local/
-queue-poll              $TOOLSDIR/runner/local/
+queue-refresh           $TOOLSDIR/runner/local/
 queue-changed           $TOOLSDIR/runner/local/
 local-queue-runner.sh   $TOOLSDIR/runner/local/
 

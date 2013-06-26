@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# # 3x-target -- manage target execution environments
+# # Usage:
+# 
+# 3x target
+# # Lists target execution environments already defined.
+# 
+# 3x target TARGET
+# # Configures the current queue to execute planned runs at TARGET.
+# 
+# 3x target -h
+# # Shows this usage.
+# 
+# 3x target TARGET local [NAME[=VALUE]]...
+# # Defines a new local execution environment, named TARGET.  Specified NAMEs
+# # are the names of variables you want to pass down to the environment used
+# # for executing planned runs.  Additionally, a fixed, predefined VALUE can be
+# # specified for a variable.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-06-26
+set -eu
+
+usage "$0" "Not implemented"

@@ -1,0 +1,24 @@
+# TODO reflect status to $queueDir
+
+# TODO clean up stale runDirs
+# TODO move them back to plan
+
+# TODO refresh queue status
+#  # determine running ones
+#  for pidfile in $queue/worker-*.lock; do
+#      if lockproc $pidfile alive; then
+#          state=RUNNING
+#          break
+#      fi
+#  done
+#  numRunning=0
+#  for run in $queue/running.*/cmdln; do
+#      [ -e "$run" ] || continue
+#      run=${run%/cmdln}
+#      if lockproc $run/lock alive; then
+#          let ++numRunning
+#          state=RUNNING
+#      else
+#          let ++numRemaining
+#      fi
+#  done

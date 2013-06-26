@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# # 3x-queue -- list queues and their stats and select the current queue
+# # Usage:
+# 
+# 3x queue
+# # Lists existing queues with some statistics.
+# 
+# 3x queue QUEUE
+# # Switches the current queue to given QUEUE.
+# 
+# 3x queue -h
+# # Shows this usage.
+# 
+# 3x target
+# # Manages the target execution environment for the current queue.
+# 
+# 3x status
+# # Shows the full execution history of the current queue.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-12
+set -eu
+TAB=$'\t'
+tsvline() {
+    local line= col=
+    for col
+    do line+="$TAB$col"
+    done
+    echo "${line#$TAB}"
+}
+
+ListDetails=true
+ShowCount=false
+while getopts "clh" o; do
+    case $o in
+        c) ShowCount=true ListDetails=false ;;
+        l) ListDetails=false ;;
+        h) exec usage "$0" ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+_3X_ROOT=$(3x-findroot)
+cd "$_3X_ROOT"/run/queue
+
+# switch the current queue to given one
+if $ListDetails && [ $# -eq 1 ]; then
+    _3X_QUEUE=$1
+    . find-queue.sh
+    ln -sfn ../$queue "$_3X_ROOT"/.3x/Q
+    mkdir -p "$queueDir"
+    set --
+else
+    . find-queue.sh
+fi
+
+# prepare the query for listing
+[ $# -gt 0 ] || set -- ""
+Query=(); for q; do Query+=(*"$q"*/); done
+set -- "${Query[@]}"
+
+# list queues
+limitOffset ls -td "$@" 2>/dev/null |
+if $ListDetails; then
+    NBSP=' '
+    {
+    tsvline \
+        "$NBSP" \
+        "queue" \
+        "state" \
+        "#planned" \
+        "#running" \
+        "#done" \
+        "target" \
+        #
+    while read -r queue; do
+        queue=${queue%/}
+        {
+            # TODO use a dedicated flag for queue RUNNING state
+            state=INACTIVE
+            ! [ -e $queue/started ] || state=ACTIVE
+            numPlanned=$(wc -l <$queue/plan    || echo 0)
+            numRunning=$(wc -l <$queue/running || echo 0)
+            numDone=$(   wc -l <$queue/done    || echo 0)
+            target=$(    readlink $queue/target || echo '?')
+            target=${target##*/}
+        } 2>/dev/null
+        current=$NBSP
+        [ x"$_3X_QUEUE" != x"$queue" ] || current="*"
+        # output in tab-separated columns
+        tsvline \
+            "$current" \
+            "$queue" \
+            "$state" \
+            "$numPlanned" \
+            "$numRunning" \
+            "$numDone" \
+            "$target" \
+            #
+    done
+    } |
+    if [ -t 1 ]; then column -t; else cat; fi
+elif $ShowCount; then
+    wc -l
+else
+    sed 's:/$::; s:^:run/:'
+fi

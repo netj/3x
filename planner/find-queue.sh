@@ -10,13 +10,24 @@ _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
 # determine the current queue
-: ${_3X_QUEUE:=main}
+: ${_3X_QUEUE:=$(readlink "$_3X_ROOT"/.3x/Q || echo main)}
 case $_3X_QUEUE in
-    run/queue/*)
-        _3X_QUEUE=${_3X_QUEUE#run/queue/}
+    ../run/queue/*)
+        # short circuit for symlink
+        _3X_QUEUE=${_3X_QUEUE#../run/queue/}
         ;;
     */*)
-        error "$_3X_QUEUE: Invalid queue name"
+        # extract queue name if it looks like a path
+        _3X_QUEUE=$(readlink -f "$_3X_QUEUE")
+        _3X_QUEUE=${_3X_QUEUE#$_3X_ROOT/}
+        case $_3X_QUEUE in
+            run/queue/*)
+                _3X_QUEUE=${_3X_QUEUE#run/queue/}
+                ;;
+            *)
+                error "$_3X_QUEUE: Invalid queue name"
+                ;;
+        esac
         ;;
 esac
 export _3X_QUEUE
