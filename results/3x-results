@@ -28,20 +28,20 @@ verboseFiltering=
 verbosity-isnt +5 || verboseFiltering="bash -x"
 verbosity-isnt +4 || set -x
 
-## from command-line, find the batches and runs
+## from command-line, find the queues and runs
 runs=()
 args=()
 for a; do
     p=$(readlink -f "$a")
     p=${p#$_3X_ROOT/}
     case $p in
-        run/batch/*)
+        run/queue/*)
             runs+=("${a%/}"/runs/*/)
             ;;
         run/*)
             runs+=("$a")
             ;;
-        *) # neither a batch nor run dir
+        *) # neither a queue nor run dir
             args+=("$a")
             ;;
     esac

@@ -6,8 +6,13 @@
 # Created: 2012-11-17
 set -eu
 
+# TODO we probably need to call queue-stop for all runners
 . "$TOOLSDIR"/find-queue-runner.sh
 export queue queueDir
 
 cd "$queueDir"
-queue-stop
+
+setsid queue-stop "$@"
+
+# mark as stopped
+rm -f started

@@ -2,8 +2,8 @@
 # find-queue-runner.sh -- Find the runner for the current queue
 # Usage: . find-queue-runner.sh; echo "$target"
 #        . find-queue-runner.sh; queue-start
-#        . find-queue-runner.sh; queue-poll
 #        . find-queue-runner.sh; queue-stop
+#        . find-queue-runner.sh; queue-poll
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-24

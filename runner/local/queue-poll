@@ -1,0 +1,4 @@
+# TODO reflect status to $queueDir
+
+# TODO clean up stale runDirs
+# TODO move them back to plan

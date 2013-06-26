@@ -6,17 +6,21 @@
 # Created: 2012-11-17
 set -eu
 
+. local-queue-runner.sh
+
+cd "$queueDir"
+
 # collect the handles of workers
 if [ $# -gt 0 ]; then
     handles=()
     for workerId; do
-        handle=worker-"$workerId".lock
+        handle=$WORKER_LOCK_PREFIX-"$workerId".lock
         [ -e "$handle" ] || error "No such worker #$workerId" || continue
         handles+=("$handle")
     done
     set -- "${handles[@]}"
 else
-    set -- worker-*.lock running.*/lock
+    set -- $WORKER_LOCK_PREFIX-*.lock $RUNDIR_PREFIX*/lock
 fi
 
 # and stop the workers
@@ -24,3 +28,6 @@ for handle; do
     [ -e "$handle" ] || continue
     lockproc "$handle" kill
 done
+
+# then reflect status
+queue-poll

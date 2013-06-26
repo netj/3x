@@ -1,5 +1,8 @@
 queue-start             $TOOLSDIR/runner/local/
 queue-stop              $TOOLSDIR/runner/local/
+queue-poll              $TOOLSDIR/runner/local/
+queue-changed           $TOOLSDIR/runner/local/
+local-queue-runner.sh   $TOOLSDIR/runner/local/
 
 3x-run                  $TOOLSDIR/
 record-run              $TOOLSDIR/

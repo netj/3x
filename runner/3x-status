@@ -1,67 +1,100 @@
 #!/usr/bin/env bash
-# 3x-status -- display status of an experiment batch
-# Usage: 3x status BATCH
+# 3x-status -- Show status of queues
+# Usage: 3x queues [-OPTIONS] [QUEUE_FILTER]...
+# 
+# Show status of all queues whose name contains QUEUE_FILTER.
+# 
+# To see the full history of queues:
+#     3x status -h QUEUE_FILTER
+#     3x history
+# 
+# To see a quick listing of queues:
+#     3x status -l
+# 
+# To only count the number of queues:
+#     3x status -c QUEUE_FILTER
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
-# Created: 2013-01-14
+# Created: 2013-01-12
 set -eu
+TAB=$'\t'
+tsvline() {
+    local line= col=
+    for col
+    do line+="$TAB$col"
+    done
+    echo "${line#$TAB}"
+}
 
-[ $# -eq 1 ] || usage "$0" "Exactly one BATCH must be given"
+ListDetails=true
+ShowCount=false
+while getopts "cl" o; do
+    case $o in
+        c) ShowCount=true ListDetails=false ;;
+        l) ListDetails=false ;;
+    esac
+done
+shift $(($OPTIND - 1))
 
-Batch=$1
+Query=$*
 
 _3X_ROOT=$(3x-findroot)
-cd "$_3X_ROOT/$Batch"
+cd "$_3X_ROOT"/run/queue
 
-{
-    hasProgress=false
+limitOffset ls -td *"$Query"*/ 2>/dev/null |
+if $ListDetails; then
+    {
+    tsvline \
+        "queue" \
+        "state" \
+        "#planned" \
+        "#running" \
+        "#done" \
+        #
+    while read -r queue; do
+        queue=${queue%/}
+        {
+            # TODO use a dedicated flag for queue RUNNING state
+            state=STOPPED
+            ! [ -e $queue/started ] || state=RUNNING
+            numPlanned=$(wc -l <$queue/plan    || echo 0)
+            numRunning=$(wc -l <$queue/running || echo 0)
+            numDone=$(   wc -l <$queue/done    || echo 0)
+        } 2>/dev/null
 
-    PREFIXPATT='^3x[[:space:]][[:space:]]*run[[:space:]][[:space:]]*'
-    # runs already finished
-    if [ -r done ]; then
-        sed "s:$PREFIXPATT:DONE :" <"done" |
-        perl -ne '
-            use strict; use Cwd "abs_path";
-            my ($line, $serial) = /^(.*#)(\d+)$/;
-            my $runpath = abs_path("runs/$serial");
-            $runpath =~ s#.*/run/#run/#;
-            printf "%s%s %s\n", $line, $serial, $runpath;
-            '
-        hasProgress=true
-    fi
+        # TODO move below to local/queue-poll
+        #  # determine running ones
+        #  for pidfile in $queue/worker-*.lock; do
+        #      if lockproc $pidfile alive; then
+        #          state=RUNNING
+        #          break
+        #      fi
+        #  done
+        #  numRunning=0
+        #  for run in $queue/running.*/cmdln; do
+        #      [ -e "$run" ] || continue
+        #      run=${run%/cmdln}
+        #      if lockproc $run/lock alive; then
+        #          let ++numRunning
+        #          state=RUNNING
+        #      else
+        #          let ++numRemaining
+        #      fi
+        #  done
 
-    # runs still running
-    for running in running.*; do
-        [ -d "$running" ] || continue
-        [ -s "$running"/cmdln ] || continue
-        # see if it's actually running
-        state=RUNNING
-        lockproc "$running"/lock alive || state=REMAINING
-        line=$(sed "s:$PREFIXPATT:$state :" <"$running"/cmdln)
-        # TODO add column for the actual runId?
-        case $state in
-            RUNNING)
-                run=$(readlink -f "$running"/run || true)
-                run=${run#$_3X_ROOT/}
-                line+=" ${run:-?}"
-                ;;
-            *)
-                line+=" ?"
-                ;;
-        esac
-        echo "$line"
-        hasProgress=true
+        # output in tab-separated columns
+        tsvline \
+            "$queue" \
+            "$state" \
+            "$numPlanned" \
+            "$numRunning" \
+            "$numDone" \
+            #
     done
-
-    # runs yet to be run
-    if [ -r remaining ]; then
-        sed "s:$PREFIXPATT:REMAINING :; s:$: ?:" <"remaining"
-        hasProgress=true
-    fi
-
-    # if there's only a plan, show them as remaining
-    if ! $hasProgress; then
-        serialOnEachLine "plan" |
-        sed "s:$PREFIXPATT:REMAINING :; s:$: ?:"
-    fi
-} | column -t
+    } |
+    if [ -t 1 ]; then column -t; else cat; fi
+elif $ShowCount; then
+    wc -l
+else
+    sed 's:/$::; s:^:run/:'
+fi

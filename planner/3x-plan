@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 3x-plan -- plan experiments with given variables
+# 3x-plan -- plan experimental runs
 # Usage:
 #   3x plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
 #     New runs can be added to the queue with the combination of given values
@@ -88,7 +88,7 @@ case ${1:-} in
         echo "$@" >"$tmp"/results.query
         3x-results "$@" >"$tmp"/$results
 
-        # transform the results into a batch plan
+        # transform the results into a plan
         cut -f$(( 1 + $(3x-outputs | wc -l) + 1 ))- <"$tmp"/$results |
         if $invertResults; then # TODO invert from the combination
             excl="$tmp"/skipped
@@ -106,7 +106,7 @@ case ${1:-} in
         if [ -s "$queueDir"/plan ]; then
             cat "$queueDir"/plan >"$tmp"/new
         else # show usage first if empty
-            usage "$0" "No PROGRAM or input variables are given and plan is empty"
+            usage "$0" "Empty plan for $queue; specify PROGRAM or input variables to add runs"
         fi
         ;;
 
@@ -115,7 +115,7 @@ case ${1:-} in
         args=($(normalize-inputs -nv "$@"))
         [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
-        # permute the arguments and generate a batch plan
+        # permute the arguments and generate a plan
         msg "Permuting inputs for ${@%%=*}..."
         permute "3x run" "$@" | column -t >"$tmp"/more
         planSHA1orig=$(sha1sum <"$queueDir"/plan)
@@ -183,8 +183,14 @@ else
     exit 2
 fi
 
-# and the batch creation is done
-msg "3x: updated plan for $queue"
-# TODO summarize plan
-msg "To start executing, run:"
-msg "  ${_3X_QUEUE:+_3X_QUEUE=$_3X_QUEUE }3x start"
+# and summarize the new plan for queue
+msg "3x: updated plan for $queue ($(wc -l <plan) runs)"
+
+# and notify queue-changed if already started,
+if [ -e started ]; then
+    . "$TOOLSDIR"/find-queue-runner.sh
+    setsid queue-changed
+else # or give instructions how to start the queue
+    msg "To start executing, run:"
+    msg "  3x start"
+fi

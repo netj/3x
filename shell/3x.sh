@@ -14,7 +14,7 @@
 #   3x define program 
 # 
 #   3x plan   [NAME[=VALUE[,VALUE]...]]...
-#   3x start  [NAME[=VALUE[,VALUE]...]]...
+#   3x start
 #   3x stop
 #   3x status
 #   3x queues

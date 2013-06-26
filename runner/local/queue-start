@@ -1,42 +1,18 @@
 #!/usr/bin/env bash
-# queue-start -- Start executing locally runs in the current queue
-# Usage: . find-queue-runner.sh; cd "$queueDir"; queue-start
+# queue-start -- Start executing locally the runs in the current queue
+# Usage: . find-queue-runner.sh; queue-start
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-17
 set -eu
 
-synchronized() {
-    local Lock=$1; shift
-    until lockproc $Lock grab; do sleep 1; done
-    "$@"
-    lockproc $Lock release
-}
+. local-queue-runner.sh
 
-# prepare a remaining queue based on the plan
-# TODO get rid of count
-# TODO rename remaining to plan
-# TODO no more serial on plan
-if ! [ -e remaining -a -s count -a -d runs ]; then
-    initialize() {
-        msg "Initializing $queue"
-        # append serial numbers to each line unless all lines already have one
-        if grep -q -E -v '#[0-9]+$' <plan; then
-            mv -f plan plan.orig
-            sed 's/#[0-9][0-9]*$//' <plan.orig >plan
-            serialOnEachLine plan >remaining
-        else
-            cat plan >remaining
-        fi
-        chmod a-w plan
-        wc -l <plan >count
-        mkdir -p runs
-    }
-    synchronized remaining.lock  initialize
-fi
-if ! [ -s remaining ] && [[ $(find running.*/cmdln 2>/dev/null | wc -l) == 0 ]]; then
-    rm -rf running.*/
-    msg "Nothing remaining for $queue"
+cd "$queueDir"
+
+if ! [ -s plan ] && [[ $(find $RUNDIR_PREFIX*/cmdln 2>/dev/null | wc -l) == 0 ]]; then
+    rm -rf $RUNDIR_PREFIX*/
+    msg "Nothing to run for $queue"
     exit 2
 fi
 
@@ -45,59 +21,94 @@ workerHandle=
 register-pid() {
     local id=0
     local handle=
-    while handle=worker-"$id".lock
+    while handle=$WORKER_LOCK_PREFIX-$id.lock
         lockproc $handle alive
     do let ++id
     done
     lockproc $handle grab
     workerHandle=$handle
 }
-synchronized workers.lock register-pid
+synchronized $WORKER_LOCK_PREFIX.lock register-pid
 
-# repeat until all "remaining" runs are done
+# repeat until all planned runs are done
 msg "Starting $queue"
-count=$(cat count || wc -l <plan)
 abort=false
 trap "abort=true" INT QUIT TERM
-while [ -s remaining ] && ! $abort; do
-    run=
+while [ -s plan ] && ! $abort; do
+    runDir=
+    cmdln=
+    serial=
+    runId=
     pick-next() {
-        # check if there's any running item which isn't alive
-        for r in running.*/; do
+        # check if there were anything running which isn't alive
+        for r in $RUNDIR_PREFIX*/; do
+            r=${r%/}
             [ -d "$r" ] || continue
             [ -s "$r"/cmdln ] || continue
             ! lockproc $r/lock alive || continue
             lockproc $r/lock grab || continue
             msg +2 " resuming $r..."
-            run=$r; break
+            runDir=$r; break
         done
-        # otherwise, dequeue from remaining
-        if ! [ -d "$run" ]; then
-            run=$(mktemp -d running.XXX)
-            lockproc $run/lock grab || continue
-            head -n 1 remaining >$run/cmdln
-            { echo 1d; echo wq; } | ed remaining &>/dev/null
+        # resume running if so, or dequeue from the plan
+        if [ -d "$runDir" ]; then
+            runId=$(cat $runDir/runId || new-run-id)
+            serial=${runDir#$RUNDIR_PREFIX}
+            cmdln=$(cat $runDir/cmdln)
+        else
+            # determine serial number
+            serial=$(cat count 2>/dev/null || echo 0)
+            let ++serial
+            # prepare a run dir
+            runDir=$RUNDIR_PREFIX$serial
+            mkdir -p $runDir
+            lockproc $runDir/lock grab
+            # determine a fresh run id
+            runId=$(new-run-id | tee $runDir/runId)
+            # dequeue one planned run
+            cmdln=$(head -n 1 plan | tee $runDir/cmdln)
+            { echo 1d; echo wq; } | ed plan &>/dev/null
+            # increment serial count
+            echo $serial >count
         fi
     }
-    synchronized remaining.lock  pick-next || continue
-    # run the one we picked for next
-    line=$(cat $run/cmdln)
-    serial=${line##*"#"}
-    cmdln=${line%"#"*}
-    _3X_RUN=$(new-run-id)
-    runRelPath="../../../${_3X_RUN#run/}"
-    msg "Batch #$serial/$count of $queue as $_3X_RUN"
-    ln -sfn "$runRelPath" $run/run
-    _3X_RUN=$_3X_RUN $cmdln || true
-    ! $abort || break
-    # after it ends, record the run in the "done" queue
-    record() {
+    synchronized plan.lock  pick-next || continue
+    # prepare to run the one we picked for next
+    count=$(($serial + $(wc -l <plan)))
+    msg "Running #$serial/$count of $queue as $runId"
+    queue-record() { echo $cmdln "#$serial $target $runId"; }
+    record-running() {
+        # book-keep the running list and symlink to actual run
+        [ -e running ] && grep -q " #$serial " running ||
+            queue-record >>running
+        mkdir -p runs
+        runRelPath="../../../${runId#run/}"
+        ln -sfn "$runRelPath" $runDir/run
         ln -sfn "$runRelPath" runs/$serial
-        echo "$line" >>"done"
     }
-    synchronized done.lock  record
-    rm -rf "$run"
-    #lockproc $run/lock release || true # no need to release the removed lock
+    synchronized running.lock  record-running
+    # TODO copy target execution environment configuration to $runDir
+    #cp -a $targetDir $runDir/target
+    # XXX clean $runId first, in case we are retrying one that failed last time
+    {
+        chmod -R +w runs/$serial/ && rm -rf runs/$serial/ || true
+    } 2>/dev/null
+    # run the picked one
+    # TODO use the target execution environment configuration
+    _3X_RUN=$runId $cmdln || true
+    ! $abort || break
+    # after it ends, record the run in the "done" list
+    record-finished() {
+        queue-record >>"done"
+        # book-keep the running list
+        {
+            echo "g/ #$serial /d"
+            echo wq
+        } | ed running &>/dev/null
+    }
+    synchronized running.lock  record-finished
+    rm -rf "$runDir"
+    #lockproc $runDir/lock release || true # no need to release the removed lock
 done
 
 # unregister worker pid
