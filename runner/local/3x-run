@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 3x-run -- run an experiment with given parameters
-# Usage: 3x run NAME=VALUE [NAME=VALUE]...
+# 
+# > 3x run NAME=VALUE [NAME=VALUE]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01

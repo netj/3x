@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # serialOnEachLine -- add a serial number to each line
-# Usage: serialOnEachLine INPUT >OUTPUT
+# 
+# > serialOnEachLine INPUT >OUTPUT
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-14

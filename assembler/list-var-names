@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # list-var-names -- output file without comments
-# Usage: list-var-names FILE...
+# 
+# > list-var-names FILE...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-05

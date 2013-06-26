@@ -2,7 +2,8 @@
 # generate-assembly-script -- generate an experiment assembly script that
 #                             reflects the logic of the given pattern
 #                             directories
-# Usage: generate-assembly-script PATTDIR...
+# 
+# > generate-assembly-script PATTDIR...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 3x-stop -- stop executing the current queue
-# Usage: 3x stop
+# 
+# > 3x stop
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-17

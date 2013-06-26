@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # normalize-inputs -- normalize input specification
-# Usage: normalize-inputs -[nvp] [NAME[=VALUE[,VALUE]...]]...
-#        normalize-inputs -[nvp] DIR...
+# 
+# > normalize-inputs -[nvp] [NAME[=VALUE[,VALUE]...]]...
+# > normalize-inputs -[nvp] DIR...
 # 
 # In addition to the obvious NAME=VALUE pairs, this also understands paths both
 # relative and absolute to either input variables or values of input
@@ -12,8 +13,8 @@
 # Specify -p to pass thru any unrecognized argument. Otherwise, it will cause an error.
 # 
 # For processing arguments to a script, use as follows:
-#   args=($(normalize-inputs "$@"))
-#   [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
+# > args=($(normalize-inputs "$@"))
+# > [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 3x-init -- Initialize a new computational experiment directory
-# Usage: 3x-init _3X_ROOT
+# 
+# > 3x-init _3X_ROOT
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24

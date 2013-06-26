@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # lockproc -- process lock functions on top of lockfile
-# Usage:
-#   lockproc LOCKFILE grab PGID
-#     Grab the lock from this process group
 # 
-#   lockproc LOCKFILE release
-#     Release the lock
+# > lockproc LOCKFILE grab PGID
+# Grabs the lock from this process group.
 # 
-#   lockproc LOCKFILE kill [-SIGNAL]
-#     Kill the owner process of this lock, with given SIGNAL or SIGTERM
+# > lockproc LOCKFILE release
+# Releases the lock.
 # 
-#   lockproc LOCKFILE alive
-#     Check whether the process who grabbed the lock is still alive
+# > lockproc LOCKFILE kill [-SIGNAL]
+# Kills the owner process of this lock, with given SIGNAL or SIGTERM.
 # 
-#   lockproc LOCKFILE owner
-#     Show the owner process of this lock
+# > lockproc LOCKFILE alive
+# Checks whether the process who grabbed the lock is still alive.
+# 
+# > lockproc LOCKFILE owner
+# Shows the owner process of this lock.
 #
 # Created: 2009-10-07
 # 

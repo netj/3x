@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # 3x-index -- manage index of experiment results
-# Usage:
-#   3x index init
 # 
-#   3x index rebuild
-#   3x index update RUN...
+# > 3x index init
 # 
-#   3x index query QUERY...
-#     See compile-where(1) for QUERY.
+# > 3x index rebuild
+# > 3x index update RUN...
+# 
+# > 3x index query QUERY...
+# See compile-where(1) for QUERY.
 # 
 # Index resides at $_3X_ROOT/.3x/index.db, and it is an SQLite database
 # mirroring the input and output values for each run.

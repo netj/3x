@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # escape-args-for-shell -- Escape given command-line arguments as a string that
 #                          is safe to use as input for shells, e.g., sh -c ...
-# Usage: sh -c "$(escape-args-for-shell ARG...)"
+# 
+# > sh -c "$(escape-args-for-shell ARG...)"
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24

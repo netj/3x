@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # edit -- Edit given file with the $EDITOR
-# Usage: EDITOR=...  edit FILE [TIMESTAMP_FILE]
+# 
+# > EDITOR=...  edit FILE [TIMESTAMP_FILE]
 # 
 # Returns 0 only when the file is actually edited (modified).
 # When EDITOR=true then this will always return 0.

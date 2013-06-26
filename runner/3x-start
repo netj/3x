@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 3x-start -- start executing runs in the current queue at the target
-# Usage: 3x start
+# 
+# > 3x start
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07

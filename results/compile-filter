@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # compile-filter -- compile given expressions into a shell script
-# Usage: compile-filter [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]... >filter
-#        chmod +x filter
-#        ./filter $_3X_RUN/output
-#        find ... -exec ./filter {} \; -print
-#
-#
+# 
+# > compile-filter [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]... >filter
+# > chmod +x filter
+# > ./filter $_3X_RUN/output
+# > find ... -exec ./filter {} \; -print
+# 
+# 
 # You can test/debug this with the hack command like this:
-#    3x hack compile-filter exectime\<200000 workers=2,4 graph=v25e4 |
-#      sh -xs -- run/2012/11/30/012900.970453277/output
+# > 3x hack compile-filter exectime\<200000 workers=2,4 graph=v25e4 |
+# > sh -xs -- run/2012/11/30/012900.970453277/output
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-30

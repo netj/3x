@@ -1,25 +1,32 @@
 #!/usr/bin/env bash
 # 3x-plan -- plan experimental runs
-# Usage:
-#   3x plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
-#     New runs can be added to the queue with the combination of given values
-#     for the input variables.  The current queue can be specified by setting
-#     the environment variable $_3X_QUEUE, e.g., `export _3X_QUEUE=alt` to use
-#     run/queue.alt/.  The default queue is run/queue/.
 # 
-#     For a full combination of inputs, simply run: `3x plan program`
-#     Use `3x inputs -v` to list allowed values for available input variables.
+# > 3x plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+# New runs can be added to the current queue with the combination of given
+# values for the input variables.
 # 
-#   3x plan
-#     Planned runs for the current queue can be edited using your $EDITOR.
+# To add runs for a full combination of inputs, simply run:
+# > 3x plan `3x inputs`
+# To list allowed values for available input variables, run:
+# > 3x inputs -v
 # 
-#   3x plan results RESULTS_QUERY
-#   3x plan skip    RESULTS_QUERY
-#     Another way to plan more runs is based on the results so far.  You can
-#     narrow down the list of results and use the same set of inputs to plan
-#     more experiments.  If you want to run inputs complementary to a set of
-#     results, that is also possible with `3x plan skip`.  In this alternative
-#     usage, you can plan more runs conditioning on the outputs so far.
+# 
+# > 3x plan
+# Planned runs for the current queue can be edited using your $EDITOR.
+# 
+# 
+# > 3x plan results RESULTS_QUERY
+# > 3x plan skip    RESULTS_QUERY
+# Another way to plan more runs is based on the results so far.  You can narrow
+# down the list of results and use the same set of inputs to plan more
+# experiments.  If you want to run inputs complementary to a set of results,
+# that is also possible with `3x plan skip`.  In this alternative usage, you
+# can plan more runs conditioning on the outputs so far.
+# 
+# The default current queue is named "main".  It can be changed with:
+# > 3x queue
+# Or, by setting the environment variable $_3X_QUEUE to the name of the desired
+# queue, e.g., `export _3X_QUEUE=alt` to use run/queue/alt/.
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>

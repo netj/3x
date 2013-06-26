@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # limitOffset -- limit/offset output lines
-# Usage: LIMIT=N OFFSET=M  limitOffset  [COMMAND [ARG]...]
+# 
+# > LIMIT=N OFFSET=M  limitOffset  [COMMAND [ARG]...]
 # 
 # Limits the output of given COMMAND to N lines, starting from the Mth line.
 #

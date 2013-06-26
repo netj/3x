@@ -1,18 +1,17 @@
 #!/usr/bin/env coffee
 # coalesce-values-by-name -- Coalesce value part of the arguments by name
-# Usage: coalesce-by-names NAME_DELIM VALUE_DELIM ARG...
+# Usage:
+# > coalesce-by-names NAME_DELIM VALUE_DELIM ARG...
 # 
-# Example: The following command:
-# 
-#   coalesce-by-names = , program=f program=g x=1 x=2,3 y=abcd z= k="k's value"
+# Example:
+# The following command:
+# > coalesce-by-names = , program=f program=g x=1 x=2,3 y=abcd z= k="k's value"
 # 
 # will output:
-# 
 #   'program=f,g' 'x=1,2,3' 'y=abcd' 'z=' 'k=k'\''s value'
 # 
 # Therefore, you should use it in your shell script as follows:
-# 
-#   eval "set -- $(coalesce-by-names = , "$@")"
+# > eval "set -- $(coalesce-by-names = , "$@")"
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>

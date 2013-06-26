@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # verbosity-isnt -- Check if $_3X_LOGLVL is in range
-# Usage: verbosity-isnt LEVEL...
+# 
+# > verbosity-isnt LEVEL...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-03-08

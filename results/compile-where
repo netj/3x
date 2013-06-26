@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # compile-where -- compile given expressions into an SQL WHERE expression
-# Usage: compile-where [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]...
+# 
+# > compile-where [NAME[[=|<>|!=]VALUE[,VALUE]... | [<|<=|>=|>]VALUE]]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-03-08

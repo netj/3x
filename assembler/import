@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # import -- import an input directory
-# Usage: cd $_3X_ROOT;  _3X_WD=OUTPUTDIR import INPUTDIR...
+# 
+# > cd $_3X_ROOT
+# > _3X_WD=OUTPUTDIR import INPUTDIR...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01

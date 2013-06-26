@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # sanity-checks.sh
-# Usage: . sanity-checks.sh; checkIfNameIsSane NAME SRC
-#        . sanity-checks.sh; checkIfValueIsSane VALUE NAME SRC
+# 
+# > . sanity-checks.sh
+# > checkIfNameIsSane NAME SRC
+# > checkIfValueIsSane VALUE NAME SRC
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-31

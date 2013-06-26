@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # 3x-gui -- GUI for EXecutable EXploratory EXperiments
-# Usage: 3x gui [start [PORT]]
-#        3x gui stop
-#        3x gui watch
+# 
+# > 3x gui [start [PORT]]
+# > 3x gui stop
+# > 3x gui watch
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-11

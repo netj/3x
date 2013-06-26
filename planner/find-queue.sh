@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # find-queue.sh -- Find current queue based on $_3X_QUEUE
-# Usage: . find-queue.sh; echo "$queue"
-#        . find-queue.sh; cd "$queueDir"
+# 
+# > . find-queue.sh
+# > echo "$queue"
+# > cd "$queueDir"
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-24

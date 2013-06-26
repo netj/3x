@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 3x-outputs -- enumerate experiment outputs
-# Usage: 3x outputs [NAME]...
+# 
+# > 3x outputs [-u] [-t] [-v] [NAME]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07

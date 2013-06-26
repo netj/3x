@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 3x-inputs -- enumerate input variables
-# Usage: 3x inputs [-v] [NAME]...
+# 
+# > 3x inputs [-v] [NAME]...
 # 
 # Enumerates all available input variables.  If a NAME is given, it checks
 # if the variable is defined and enumerates.

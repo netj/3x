@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # find-rundirs -- find run directories
-# Usage: find-rundirs [DIR]... -- [FIND_PREDICATE]...
+# 
+# > find-rundirs [DIR]... -- [FIND_PREDICATE]...
 # 
 # Enumerates run directories under DIRs that satisfy the FIND_PREDICATEs,
 # which are the predicates for find(1).

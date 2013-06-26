@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # queue-start -- Start executing locally the runs in the current queue
-# Usage: . find-queue-runner.sh; queue-start
+# 
+# > . find-queue-runner.sh
+# > queue-start
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-17

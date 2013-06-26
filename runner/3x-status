@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# 3x-history -- Display history of the current queue
-# Usage: 3x status
+# 3x-status -- display status of the current queue
+# 
+# > 3x status
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-14

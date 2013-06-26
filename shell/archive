@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # archive -- De-duplicate given FILEs with the hardlink copies in REPO
-# Usage: archive REPO FILE...
+# 
+# > archive REPO FILE...
 # 
 # If there's a file already in the REPO with the same hash, FILE will be
 # replaced as a hardlink to it.  Otherwise, a new hardlink of FILE will be

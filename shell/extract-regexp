@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # extract-regexp -- Extract the first string that matches given regular
 #                   expresion from any single line of the INPUT
-# Usage: extract-regexp REGEXP_BEFORE  REGEXP  REGEXP_AFTER  <INPUT
+# 
+# > extract-regexp REGEXP_BEFORE  REGEXP  REGEXP_AFTER  <INPUT
 # 
 # All REGEXP should be Perl regular expressions.  See man page for perlre(1).
 #
