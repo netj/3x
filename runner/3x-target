@@ -7,10 +7,17 @@
 # > 3x target TARGET
 # Configures the current queue to execute planned runs at TARGET.
 # 
+# > 3x target TARGET info
+# Displays detailed information of the TARGET execution environment.
+# 
 # > 3x target -h
 # Shows this usage.
 # 
-# > 3x target TARGET local [NAME[=VALUE]]...
+# > 3x target TARGET define TYPE [ARG]...
+# Defines the TARGET as an execution environment of type TYPE.  Optional ARGs
+# may vary depending on TYPE.
+# 
+# > 3x target TARGET define local [NAME[=VALUE]]...
 # Defines a new local execution environment, named TARGET.  Specified NAMEs are
 # the names of variables you want to pass down to the environment used for
 # executing planned runs.  Additionally, a fixed, predefined VALUE can be
@@ -20,4 +27,97 @@
 # Created: 2013-06-26
 set -eu
 
-usage "$0" "Not implemented"
+while getopts "h" o; do
+    case $o in
+        h) exec usage "$0" ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+. find-queue.sh
+
+is-valid-target() {
+    local t=$1
+    local targetDir="$_3X_ROOT"/run/target/"$t"
+    [ -d "$targetDir" ] && [ -r "$targetDir"/type ]
+}
+target-must-exist() {
+    is-valid-target "$Target" || error "$Target: No such target"
+}
+load-target() {
+    local t=$1
+    local targetDir="$_3X_ROOT"/run/target/"$t"
+    type=$(cat "$targetDir"/type)
+    PATH="$TOOLSDIR/runner/$type:$PATH"
+} 2>/dev/null
+
+# decide what to do based on the number of given arguments
+if [ $# -eq 0 ]; then
+    Target=$(readlink "$queueDir"/target)
+    Target=${Target##*/}
+elif [ $# -eq 1 ]; then
+    # set given target for the current queue
+    Target=$1
+    # make sure it is a valid target
+    target-must-exist "$Target"
+    # place a symlink in the queue
+    mkdir -p "$queueDir"
+    ln -sfn ../../target/$Target "$queueDir"/target
+else # [ $# -gt 1 ]
+    Target=$1; shift
+    # TODO sanitize $Target name
+    Command=$1; shift
+    case $Command in
+        define)
+            [ $# -gt 0 ] || usage "$0" "Specify the TYPE of target to define"
+            Type=$1; shift
+            # some sanity checks first
+            targetTypeDir="$TOOLSDIR"/runner/"$Type"
+            [ -x "$targetTypeDir"/target-define ] ||
+                error "$Type: Unknown target execution environment type"
+            if is-valid-target "$Target"; then
+                load-target "$Target"
+                [ x"$Type" = x"$type" ] ||
+                    error "$Target: Unable to change type of an existing target ($type -> $Type)"
+            fi
+            # define the given target
+            PATH="$targetTypeDir:$PATH"
+            target-define "$Target" "$@"
+            exec target-info "$Target"
+            ;;
+        info)
+            target-must-exist "$Target"
+            load-target "$Target"
+            exec target-info "$Target" "$@"
+            ;;
+        *)
+            error "$Command: unknown command for target $Target"
+            ;;
+    esac
+fi
+
+# list available targets
+cd "$_3X_ROOT"/run/target
+ls -d */ |
+{
+NBSP=' '
+echo "$(printf '%s\t' \
+    "$NBSP" \
+    "target" \
+    "type" \
+    #
+)"
+while read t; do
+    t=${t%/}
+    current=$NBSP
+    [ x"$t" != x"$Target" ] || current='*'
+    load-target $t
+    echo "$(printf '%s\t' \
+        "$current" \
+        "$t" \
+        "$type" \
+        #
+    )"
+done
+} |
+column -t

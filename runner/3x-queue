@@ -40,7 +40,6 @@ done
 shift $(($OPTIND - 1))
 
 _3X_ROOT=$(3x-findroot)
-cd "$_3X_ROOT"/run/queue
 
 # switch the current queue to given one
 if $ListDetails && [ $# -eq 1 ]; then
@@ -54,6 +53,7 @@ else
 fi
 
 # prepare the query for listing
+cd "$_3X_ROOT"/run/queue
 [ $# -gt 0 ] || set -- ""
 Query=(); for q; do Query+=(*"$q"*/); done
 set -- "${Query[@]}"
@@ -102,5 +102,5 @@ if $ListDetails; then
 elif $ShowCount; then
     wc -l
 else
-    sed 's:/$::; s:^:run/:'
+    sed 's:/$::'
 fi

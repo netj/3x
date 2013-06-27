@@ -7,7 +7,7 @@
 # Created: 2012-11-07
 set -eu
 
-. "$TOOLSDIR"/find-queue-runner.sh
+. find-queue-runner.sh
 
 cd "$queueDir"
 export queue queueDir target targetDir

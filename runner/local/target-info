@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# > 3x target TARGET info
+# Displays information of a local execution environment, named TARGET.
+#
+#
+# local/target-info -- display local target info
+# > cd "$targetDir"
+# > target-info TARGET
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-06-26
+set -eu
+
+Target=$1
+cd "$_3X_ROOT"/run/target/"$Target"
+
+echo "# run/target/$Target"
+echo
+echo "# environment variables:"
+cat environ 2>/dev/null

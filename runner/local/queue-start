@@ -89,15 +89,16 @@ while [ -s plan ] && ! $abort; do
         ln -sfn "$runRelPath" runs/$serial
     }
     synchronized running.lock  record-running
-    # TODO copy target execution environment configuration to $runDir
-    #cp -a $targetDir $runDir/target
+    # TODO copy the target execution environment configuration to $runDir
+    #cp -a "$targetDir" $runDir/target
     # XXX clean $runId first, in case we are retrying one that failed last time
     {
         chmod -R +w runs/$serial/ && rm -rf runs/$serial/ || true
     } 2>/dev/null
-    # run the picked one
-    # TODO use the target execution environment configuration
-    _3X_RUN=$runId $cmdln || true
+    # run the picked one, using the environment as configured in target
+    _3X_RUN_ENVIRON="$targetDir"/environ \
+    _3X_RUN=$runId \
+        $cmdln || true
     ! $abort || break
     # after it ends, record the run in the "done" list
     record-finished() {

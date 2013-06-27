@@ -7,7 +7,7 @@
 # Created: 2013-01-14
 set -eu
 
-. "$TOOLSDIR"/find-queue-runner.sh
+. find-queue-runner.sh
 
 cd "$queueDir"
 

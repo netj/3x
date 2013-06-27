@@ -25,11 +25,22 @@ mkdir -p -- "$_3X_ROOT"
 cd "$_3X_ROOT"
 
 # create the skeleton directories
-mkdir -p .3x/{files,gui} input output program run/{queue,target}
+mkdir -p .3x/{files,gui} input output program run
 
 # copy some default files
 customize "$DATADIR"/3x.template <<RULES
 @@dot@@=.
 RULES
+
+# some more initializations
+{
+if ! [ -d run/queue ]; then
+    3x-queue main
+fi
+if ! [ -d run/target ]; then
+    3x-target local define local
+    3x-target local
+fi
+} >/dev/null
 
 msg "Initialized $_3X_ROOT"

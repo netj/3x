@@ -8,7 +8,7 @@
 set -eu
 
 # TODO we probably need to call queue-stop for all runners
-. "$TOOLSDIR"/find-queue-runner.sh
+. find-queue-runner.sh
 export queue queueDir
 
 cd "$queueDir"

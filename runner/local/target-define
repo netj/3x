@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# > 3x target TARGET define local [NAME[=VALUE]]...
+# Defines a new local execution environment, named TARGET.  Specified NAMEs are
+# the names of variables you want to pass down to the environment used for
+# executing planned runs.  Additionally, a fixed, predefined VALUE can be
+# specified for a variable.
+#
+#
+# local/target-define -- define a local target
+# > target-define TARGET [NAME[=VALUE]]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-06-26
+set -eu
+
+Target=$1; shift
+cd "$_3X_ROOT"/run
+
+mkdir -p target/"$Target"
+cd target/"$Target"
+
+echo local >type
+
+# keep a backup
+! [ -e environ ] || mv -f environ environ~.$$
+
+# replace the environment configuration
+if [ $# -gt 0 ]; then
+    for nameValuePair; do
+        echo $nameValuePair
+    done >environ
+else # use default configuration if none given
+    cp -f "$TOOLSDIR/runner/local/environ.default" environ
+fi
+
+# decide if we need to leave a backup
+if [ -e environ~.$$ ]; then
+    if [ x"$(sha1sum <environ)" = x"$(sha1sum <environ~.$$)" ]; then
+        rm -f environ~.$$
+    else
+        mv -f environ~.$$ environ~
+    fi
+fi

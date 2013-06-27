@@ -33,7 +33,7 @@
 # Created: 2012-11-07
 set -eu
 
-. "$TOOLSDIR"/find-queue.sh
+. find-queue.sh
 
 # do a sanity check before we proceed
 update-assembly-script >/dev/null
@@ -195,7 +195,7 @@ msg "3x: updated plan for $queue ($(wc -l <plan) runs)"
 
 # and notify queue-changed if already started,
 if [ -e started ]; then
-    . "$TOOLSDIR"/find-queue-runner.sh
+    . find-queue-runner.sh
     setsid queue-changed
 else # or give instructions how to start the queue
     msg "To start executing, run:"

@@ -4,5 +4,9 @@ queue-refresh           $TOOLSDIR/runner/local/
 queue-changed           $TOOLSDIR/runner/local/
 local-queue-runner.sh   $TOOLSDIR/runner/local/
 
+target-info             $TOOLSDIR/runner/local/
+target-define           $TOOLSDIR/runner/local/
+environ.default         $TOOLSDIR/runner/local/
+
 3x-run                  $TOOLSDIR/
 record-run              $TOOLSDIR/

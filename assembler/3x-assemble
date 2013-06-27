@@ -51,7 +51,7 @@ msg "Assembling $_3X_RUN for $*"
     }
 
     # record environment variables
-    envFiles=(input/env.default)
+    envFiles=("${_3X_RUN_ENVIRON:-$TOOLSDIR/runner/local/environ.default}")
     if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
         envVarNames=$(list-var-names "${envFiles[@]}")
         msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
