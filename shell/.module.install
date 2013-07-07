@@ -11,6 +11,7 @@ verbosity-isnt              $TOOLSDIR/
 edit                        $TOOLSDIR/
 customize                   $TOOLSDIR/
 archive                     $TOOLSDIR/
+unarchive                   $TOOLSDIR/
 escape-args-for-shell       $TOOLSDIR/
 coalesce-values-by-name     $TOOLSDIR/
 extract-regexp              $TOOLSDIR/

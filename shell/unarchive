@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# unarchive -- Remove hardlink copies of given FILEs from the REPO
+# 
+# > unarchive REPO FILE...
+# 
+# Any hardlink copies that may solely remain in the REPO if `rm -f FILE...`
+# would be run will be removed.  Note that the given FILEs are not removed by
+# this command.
+# 
+# The SHA1 hash for each FILE is computed with `git hash-object` as done in
+# `archive`.
+# 
+# When a directory is unarchived, all its subdirectories marked read-only will
+# become read-writable.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-06
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "No REPO given"
+[ $# -gt 1 ] || usage "$0" "No FILE given"
+
+REPO=$1; shift
+
+# remove hardlink copies from the archive only when it exists
+[ -d "$REPO" ] || exit 0
+
+# prepare some dirs for removal
+tmp=$(mktemp -d "${TMPDIR:-/tmp}"/unarchive.XXXXXX)
+trap "rm -rf $tmp" EXIT
+
+# generate a list of files first
+filelist="$tmp"/files
+statlist="$tmp"/filestats
+find "$@" -type f >"$filelist" || true
+
+# see which files are executables to archive separately from normal files
+perl <"$filelist" -Mstrict -MFile::stat -e '
+while (my $filename = <>) {
+    chomp $filename;
+    my $sb = stat($filename);
+    printf "%s\n", join "\t", ($sb->mode & 0111 ? "x" : ""), $sb->nlink;
+}
+' >"$statlist"
+
+# generate a shell script that unarchives all the hardlink copies in the REPO
+{
+    be-quiet +5 || echo "set -x"
+    cat <<-PROLOGUE
+	set -u
+	u() {
+	    local archived='${REPO//\'/\'\\\'\'}'/"\$1"; shift
+	    local archivedDir=\${archived%/*}
+	    local file=
+	    for file; do
+	        [ "\$archived" -ef "\$file" ] || return 2
+	    done
+	    if chmod +w "\$archivedDir"; then
+	        rm -f "\$archived"
+	        rmdir -p "\$archivedDir" 2>/dev/null
+	    fi
+	}
+	PROLOGUE
+    # use git hash-object to compute SHA1 sum of each file
+    # and paste everything together as a script that will do the job
+    git hash-object --stdin-paths <"$filelist" |
+    sed 's:^....:&/:; s:^..:&/:' |
+    paste - "$statlist" "$filelist" |
+    perl -Mstrict -MCwd -e '
+    my %pathsBySHA1; my %occursByPath;
+    sub esc { my $f = shift; $f =~ s/'\''/'\''\\'\'\''/g; $f }
+    while (my $line = <>) {
+        chomp $line;
+        my ($sha1file, $executableFlag, $nlinks, $path) = split /\t/, $line, 4;
+        my $key = $sha1file.$executableFlag;
+        my $realpath = Cwd::realpath $path;
+        my $paths = $pathsBySHA1{$key};
+        $pathsBySHA1{$key} = $paths = [] unless defined $paths;
+        $occursByPath{$realpath}++;
+        push @$paths, $path if $occursByPath{$realpath} eq 1;
+        next if $nlinks - @$paths > 1;
+        printf "u %s %s\n", $key,
+            (join " ", map { sprintf "'\''%s'\''", esc($_); } @$paths);
+    }
+    '
+    # finally, make all involved read-only directories to read-writable
+    echo 'find "$@" -type d ! -perm +a=w -exec chmod +w {} +'
+} >"$tmp"/clean.sh
+
+be-quiet +4 || {
+    echo "set -- $(escape-args-for-shell "$@")"
+    cat "$tmp"/clean.sh
+} >&2
+
+# and run it
+bash "$tmp"/clean.sh -- "$@"

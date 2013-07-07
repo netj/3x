@@ -31,12 +31,24 @@ trap "rm -rf $tmp" EXIT
 
 # generate a list of files first
 filelist="$tmp"/files
-executableList="$tmp"/execfiles
-find "$@" -type f >"$filelist" || true
+statlist="$tmp"/filestats
+find -H "$@" -type f >"$filelist" || true
+
+# see which files are executables to archive separately from normal files
+# (hardlink copies cannot have separate permission modes, so when two files
+#  share the content but one is an executable and the other isn't, we'll
+#  have to keep another copy with +x separately in a different name)
+perl <"$filelist" -Mstrict -MFile::stat -e '
+while (my $filename = <>) {
+    chomp $filename;
+    my $sb = stat($filename);
+    printf "%s\n", ($sb->mode & 0111 ? "x" : "");
+}
+' >"$statlist"
 
 # generate a shell script that unifies all the files with the ones in the archive
 {
-    be-quiet +4 || echo "set -x"
+    be-quiet +5 || echo "set -x"
     cat <<-PROLOGUE
 	set -u
 	u() {
@@ -49,38 +61,34 @@ find "$@" -type f >"$filelist" || true
 	        fi
 	    else
 	        mkdir -p "\$(dirname "\$archived")"
-	        cp --archive --link --force "\$file" "\$archived"
+	        ln -fn "\$file" "\$archived"
 	    fi
 	    chmod a-w "\$archived"
 	}
 	PROLOGUE
-    # see which files are executables to archive separately from normal files
-    # (hardlink copies cannot have separate permission modes, so when two files
-    #  share the content but one is an executable and the other isn't, we'll
-    #  have to keep another copy with +x separately in a different name)
-    perl <"$filelist" -Mstrict -e '
-    while (my $line = <>) {
-        chomp $line;
-        printf "%s\n", (-x $line) ? "x" : "";
-    }
-    ' >"$executableList"
     # use git hash-object to compute SHA1 sum of each file
     # and paste everything together as a script that will do the job
     git hash-object --stdin-paths <"$filelist" |
     sed 's:^....:&/:; s:^..:&/:' |
-    paste - "$executableList" "$filelist" |
+    paste - "$statlist" "$filelist" |
     perl -Mstrict -e '
     sub esc { my $f = shift; $f =~ s/'\''/'\''\\'\'\''/g; $f }
     while (my $line = <>) {
         chomp $line;
         my ($sha1file, $executableFlag, $path) = split /\t/, $line, 3;
-        printf "u %s%s '\''%s'\''\n", $sha1file, $executableFlag, esc($path);
+        my $key = $sha1file.$executableFlag;
+        printf "u %s '\''%s'\''\n", $key, esc($path);
     }
     '
+    # finally, make all involved directories read-only
+    echo
+    echo 'find "$@" -type d -exec chmod a-w {} +'
 } >"$tmp"/dedup.sh
 
-# and run it
-bash "$tmp"/dedup.sh
+be-quiet +4 || {
+    echo "set -- $(escape-args-for-shell "$@")"
+    cat "$tmp"/dedup.sh
+} >&2
 
-# finally, make all involved directories read-only
-find "$@" -type d -exec chmod a-w {} +
+# and run it
+bash "$tmp"/dedup.sh -- "$@"
