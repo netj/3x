@@ -7,13 +7,15 @@
 # Created: 2012-11-17
 set -eu
 
-# TODO we probably need to call queue-stop for all runners
-. find-queue-runner.sh
-export queue queueDir
-
+. find-queue.sh
 cd "$queueDir"
 
-setsid queue-stop "$@"
-
-# mark as stopped
-rm -f started
+# we need to call queue-stop for all runners that were running
+export queue queueDir
+OPATH=$PATH
+for stop in "$queueRunner"/*/queue-stop; do
+    [ -x "$stop" ] || continue
+    PATH="$(dirname "$stop"):$PATH"
+    setsid "$stop" "$@"
+    PATH=$OPATH
+done

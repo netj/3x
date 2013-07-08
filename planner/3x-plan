@@ -194,9 +194,9 @@ fi
 msg "3x: updated plan for $queue ($(wc -l <plan) runs)"
 
 # and notify queue-changed if already started,
-if [ -e started ]; then
+if queue-is-active; then
     . find-queue-runner.sh
-    setsid queue-changed
+    setsid queue-changed &
 else # or give instructions how to start the queue
     msg "To start executing, run:"
     msg "  3x start"

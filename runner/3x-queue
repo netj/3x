@@ -74,18 +74,23 @@ if $ListDetails; then
         #
     while read -r queue; do
         queue=${queue%/}
+        current=$NBSP
+        [ x"$_3X_QUEUE" != x"$queue" ] || current="*"
+        # refresh queue state
+        (
+            _3X_QUEUE=$queue
+            . find-queue-runner.sh
+            setsid queue-refresh
+        )
         {
-            # TODO use a dedicated flag for queue RUNNING state
             state=INACTIVE
-            ! [ -e $queue/started ] || state=ACTIVE
+            ! queue-is-active || state=ACTIVE
             numPlanned=$(wc -l <$queue/plan    || echo 0)
             numRunning=$(wc -l <$queue/running || echo 0)
             numDone=$(   wc -l <$queue/done    || echo 0)
             target=$(    readlink $queue/target || echo '?')
             target=${target##*/}
         } 2>/dev/null
-        current=$NBSP
-        [ x"$_3X_QUEUE" != x"$queue" ] || current="*"
         # output in tab-separated columns
         tsvline \
             "$current" \

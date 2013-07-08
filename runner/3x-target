@@ -48,7 +48,7 @@ load-target() {
     local t=$1
     local targetDir="$_3X_ROOT"/run/target/"$t"
     type=$(cat "$targetDir"/type)
-    PATH="$TOOLSDIR/runner/$type:$PATH"
+    PATH="$queueRunner/$type:$PATH"
 } 2>/dev/null
 
 # decide what to do based on the number of given arguments
@@ -72,7 +72,7 @@ else # [ $# -gt 1 ]
             [ $# -gt 0 ] || usage "$0" "Specify the TYPE of target to define"
             Type=$1; shift
             # some sanity checks first
-            targetTypeDir="$TOOLSDIR"/runner/"$Type"
+            targetTypeDir="$queueRunner/$Type"
             [ -x "$targetTypeDir"/target-define ] ||
                 error "$Type: Unknown target execution environment type"
             if is-valid-target "$Target"; then

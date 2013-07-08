@@ -69,8 +69,8 @@ easily accessed as done in the following shell script:
 Second, every runner must provide commands to handle execution of runs within a
 queue.  In 3X, groups of experimental runs are organized as queues, and each
 queue has an associated target execution environment that determines how new
-runs will be executed.  The associated target, in turn, determines which runner
-is used for planned runs in the queue.
+runs will be executed.  The associated target determines which runner is used
+for planned runs in the queue.
 
 When 3X invokes these handler commands, the following assertions are guaranteed
 to hold:
@@ -113,17 +113,29 @@ invoked when the following 3X user command is run:
 
 The handler must stop any running executions of its type.  It should move back
 all the runs that it has stopped to the `plan` list and clean up their
-intermediate data.
+intermediate data using the queue-sync handler.
 
 
 ### queue-refresh
 
     queue-refresh [ARG]...
 
-This handler is used for reflecting the execution status to the `running` list
-of the queue.  When there are runs that are not in fact in execution, it may or
-may not move them back to the `plan` list and clean up their intermediate data
-as the queue-stop handler is supposed to do.
+This handler is used for reflecting the execution status of the queue.
+However, it is not supposed to reflect current intermediate data of the runs
+that are marked as `running`.  That should be handled by the queue-sync
+handler.
+
+
+### queue-sync
+
+    queue-sync [ARG]...
+
+This handler is used for synchronizing the repository data with the current
+data for the runs that are listed in the `running` list.  When there are runs
+that are in fact not executing but marked as so, it must move them back to the
+`plan` list and clean up their intermediate data.  Otherwise, for executing
+runs, it must update the intermediate data of their run directories with
+current data.
 
 
 ### queue-changed

@@ -1,24 +1,25 @@
-# TODO reflect status to $queueDir
+#!/usr/bin/env bash
+# queue-refresh -- refresh the current queue records of its state
+# 
+# > . find-queue-runner.sh
+# > setsid queue-refresh
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-01
+set -eu
 
-# TODO clean up stale runDirs
-# TODO move them back to plan
+. local-runner.sh
 
-# TODO refresh queue status
-#  # determine running ones
-#  for pidfile in $queue/worker-*.lock; do
-#      if lockproc $pidfile alive; then
-#          state=RUNNING
-#          break
-#      fi
-#  done
-#  numRunning=0
-#  for run in $queue/running.*/cmdln; do
-#      [ -e "$run" ] || continue
-#      run=${run%/cmdln}
-#      if lockproc $run/lock alive; then
-#          let ++numRunning
-#          state=RUNNING
-#      else
-#          let ++numRemaining
-#      fi
-#  done
+cd "$queueDir"
+
+# check lock handles to see if there's anything alive
+for handle in $WORKER_LOCK_PREFIX-*.lock $RUNDIR_PREFIX*/lock; do
+    [ -e "$handle" ] || continue
+    lockproc "$handle" alive || continue
+    # if so, touch the flag
+    touch $ACTIVE_FLAG
+    exit
+done
+
+# otherwise, remove the flag
+rm -f $ACTIVE_FLAG

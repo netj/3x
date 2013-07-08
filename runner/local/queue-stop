@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# queue-stop -- Stop executing locally
+# queue-stop -- stop executing locally
 # 
 # > . find-queue-runner.sh
-# > cd "$queueDir"
-# > queue-stop [WORKER]
+# > setsid queue-stop [WORKER]
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-17
 set -eu
 
-. local-queue-runner.sh
+. local-runner.sh
 
 cd "$queueDir"
 
@@ -32,5 +31,5 @@ for handle; do
     lockproc "$handle" kill
 done
 
-# then reflect status
-queue-refresh
+# then synchronize queue records with reality
+queue-sync

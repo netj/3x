@@ -11,6 +11,11 @@
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
+export _3X_ARCHIVE="$_3X_ROOT"/.3x/files
+
+# some predefined paths
+export queueRunner="$TOOLSDIR"/runner
+
 # determine the current queue
 : ${_3X_QUEUE:=$(readlink "$_3X_ROOT"/.3x/Q || echo main)}
 case $_3X_QUEUE in
@@ -33,6 +38,11 @@ case $_3X_QUEUE in
         ;;
 esac
 export _3X_QUEUE
-queue="run/queue/$_3X_QUEUE"
-queueDir="$_3X_ROOT/$queue"
+export queue="run/queue/$_3X_QUEUE"
+export queueDir="$_3X_ROOT/$queue"
 #[ -d "$queue" ] || error "$_3X_QUEUE: No such queue"
+
+queue-is-active() {
+    set -- "$queueDir"/is-active.*
+    [ -e "$1" ]
+}

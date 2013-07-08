@@ -13,9 +13,9 @@
 . find-queue.sh
 
 if [ -L "$queueDir"/target ]; then
-    targetDir=$(readlink -f "$queueDir"/target)
-    target=${targetDir##*/}
-    targetType=$(cat "$queueDir"/target/type 2>/dev/null) ||
+    export targetDir=$(readlink -f "$queueDir"/target)
+    export target=${targetDir##*/}
+    export targetType=$(cat "$queueDir"/target/type 2>/dev/null) ||
         error "$target: No type defined for target execution environment"
 else
     error "No target execution environment asscoaited with $queue" || true
@@ -24,4 +24,4 @@ else
     false
 fi
 
-PATH="$TOOLSDIR"/runner/"$targetType":"$PATH"
+PATH="$queueRunner/$targetType":"$PATH"

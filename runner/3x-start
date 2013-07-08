@@ -10,13 +10,6 @@ set -eu
 . find-queue-runner.sh
 
 cd "$queueDir"
-export queue queueDir target targetDir
-
-# mark as running
-{
-    date +"# %FT%T%:z"
-    echo "start $*"
-} >>started
 
 # start queue runner in a separate process group, so we can kill all related
 # processes together later.

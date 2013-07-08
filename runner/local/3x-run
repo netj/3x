@@ -12,7 +12,7 @@ set -eu
 _3X_ROOT=$(3x-findroot)
 : ${_3X_RUN:=$(new-run-id)}
 export _3X_ROOT _3X_RUN _3X_WD="$_3X_ROOT/$_3X_RUN"
-_3X_ARCHIVE="$_3X_ROOT"/.3x/files
+: ${_3X_ARCHIVE:=$_3X_ROOT/.3x/files}
 
 # archive everything when run exits
 cleanup() {
