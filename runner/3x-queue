@@ -77,11 +77,15 @@ if $ListDetails; then
         current=$NBSP
         [ x"$_3X_QUEUE" != x"$queue" ] || current="*"
         # refresh queue state
-        (
+        for activeFlag in $queue/is-active.*; do
+            (
             _3X_QUEUE=$queue
-            . find-queue-runner.sh
+            export targetDir= target= # XXX queue-refresh must not depend on these variables
+            export targetType=${activeFlag##*/is-active.}
+            PATH="$queueRunner/$targetType":"$PATH"
             setsid queue-refresh
-        )
+            )
+        done
         {
             state=INACTIVE
             ! queue-is-active || state=ACTIVE

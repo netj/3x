@@ -4,8 +4,10 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-25
 
-RUNDIR_PREFIX=running.local.
-WORKER_LOCK_PREFIX=worker.local
+RUNDIR_PREFIX=local.running.
+WORKER_LOCK_PREFIX=local.worker
+WORKER_WAITING_SIGNAL=USR1
+WORKER_WAITING_SUFFIX=.waiting
 ACTIVE_FLAG=is-active.local
 
 synchronized() {

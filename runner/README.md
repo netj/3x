@@ -75,7 +75,13 @@ for planned runs in the queue.
 When 3X invokes these handler commands, the following assertions are guaranteed
 to hold:
 
-* Environment variable `queueDir` is set to the path to the queue.
+* Environment variable `_3X_QUEUE` is set to the queue's simple name, e.g., `name`.
+* Environment variable `queue` is set to the queue's qualified name, e.g., `run/queue/main`
+* Environment variable `queueDir` is set to the absolute path to the queue.
+* Environment variable `target` is set to the target's name.
+* Environment variable `targetType` is set to the runner's name.
+* Environment variable `targetDir` is set to the absolute path to the target.
+  (exceptions: queue-refresh, queue-sync)
 
 All handlers must function robustly even in the case where the queue and/or
 intermediate data used by previously executing runs are incomplete or stale.
@@ -125,6 +131,10 @@ However, it is not supposed to reflect current intermediate data of the runs
 that are marked as `running`.  That should be handled by the queue-sync
 handler.
 
+This handler should not assume the environment variables `$targetDir` and
+`$target` will be defined as it is invoked, and they must be inferred by the
+handler itself from its intermediate data when necessary.
+
 
 ### queue-sync
 
@@ -136,6 +146,10 @@ that are in fact not executing but marked as so, it must move them back to the
 `plan` list and clean up their intermediate data.  Otherwise, for executing
 runs, it must update the intermediate data of their run directories with
 current data.
+
+This handler should not assume the environment variables `$targetDir` and
+`$target` will be defined as it is invoked, and they must be inferred by the
+handler itself from its intermediate data when necessary.
 
 
 ### queue-changed

@@ -12,12 +12,6 @@ set -eu
 
 cd "$queueDir"
 
-if ! [ -s plan ] && [[ $(find $RUNDIR_PREFIX*/cmdln 2>/dev/null | wc -l) == 0 ]]; then
-    rm -rf $RUNDIR_PREFIX*/
-    msg "Nothing to run for $queue"
-    exit 2
-fi
-
 # register worker pid
 workerHandle=
 register-pid() {
@@ -40,10 +34,21 @@ synchronized $WORKER_LOCK_PREFIX.lock register-pid
 
 # repeat until all planned runs are done
 msg "Starting $queue"
+stopped=false
 abort=false
-trap "abort=true" INT QUIT TERM
-# TODO wait for plan to become non-empty
-while [ -s plan ] && ! $abort; do
+trap "stopped=true abort=true" INT QUIT
+trap "stopped=true" TERM
+trap 'msg "Resuming $queue"' $WORKER_WAITING_SIGNAL
+while :; do
+    # wait for plan to become non-empty
+    until [ -s plan ] || $stopped; do
+        msg "Waiting $queue"
+        touch $workerHandle$WORKER_WAITING_SUFFIX
+        sleep 300 &>/dev/null || true
+    done
+    rm -f $workerHandle$WORKER_WAITING_SUFFIX
+    ! $stopped || break
+    [ -s plan ] || continue
     runDir=
     cmdln=
     serial=
@@ -83,6 +88,7 @@ while [ -s plan ] && ! $abort; do
     }
     synchronized plan.lock  pick-next || continue
     # prepare to run the one we picked for next
+    # XXX count=$(($(wc -l <done) + $(wc -l <running) + $(wc -l <plan)))
     count=$(($serial + $(wc -l <plan)))
     msg "Running #$serial/$count of $queue as $runId"
     queue-record() { echo $cmdln "#$serial $target $runId"; }
@@ -105,7 +111,7 @@ while [ -s plan ] && ! $abort; do
     _3X_RUN_ENVIRON="$targetDir"/environ \
     _3X_RUN=$runId \
         $cmdln || true
-    ! $abort || break
+    ! $stopped || break
     # after it ends, record the run in the "done" list
     record-finished() {
         queue-record >>"done"
@@ -126,10 +132,11 @@ lockproc $workerHandle release
 if $abort; then
     error "Aborted $queue" || true
     queue-refresh
-    msg "To resume, run:"
-    msg "  3x start"
+    if ! [ -e $ACTIVE_FLAG ]; then
+        msg "To restart, run:"
+        msg "  3x start"
+    fi
     exit 2
 else
-    # TODO recognize signal from queue-stop and say "Stopped"
-    msg "Done $queue"
+    msg "Stopped $queue"
 fi

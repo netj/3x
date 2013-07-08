@@ -8,15 +8,19 @@
 # Created: 2013-01-17
 set -eu
 
+. find-queue.sh
 . local-runner.sh
 
 cd "$queueDir"
 
 queue-refresh
 
-if queue-is-alive; then
+if queue-is-active; then
 
-    # start a worker for the queue if none
-    queue-start &
+    for workerHandle in $WORKER_LOCK_PREFIX-*.lock; do
+        [ -e "$workerHandle$WORKER_WAITING_SUFFIX" ] || continue
+        # wake up a waiting worker for the queue change
+        lockproc $workerHandle kill -$WORKER_WAITING_SIGNAL
+    done
 
 fi
