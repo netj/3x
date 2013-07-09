@@ -2,7 +2,7 @@
 # 3x-setup -- Setup a new computational experiment
 # 
 # > 3x setup _3X_ROOT \
-# >    --programs [ NAME='COMMAND' ]...                                      \
+# >    --program  [ 'COMMAND' ]...                                           \
 # >    --inputs   [ NAME[:TYPE]=VALUE1[,VALUE2] ]...                         \
 # >    --outputs  [ --extract '...{{NAME[(UNIT)][:TYPE] =~ REGEXP}}...' ]... \
 # >               [ --file NAME:TYPE=FILENAME ]...
@@ -10,13 +10,19 @@
 # Example:
 # setup the experiment
 # > 3x setup sorting-benchmark \
-# >     --programs \
-# >            sort='./gen-input | sort' \
-# >            perl="./gen-input | perl -e 'print \$_ foreach sort <>;'" \
-# >          python="./gen-input | python -c ' \
-# >                    import sys; sys.stdout.writelines(
-# >                                    sorted(sys.stdin.readlines()))' \
-# >     --inputs N=1000,10000,100000,1000000 \
+# >     --program '
+# >       case $impl in
+# >       coreutils) ./gen-input | sort ;;
+# >            perl) ./gen-input | perl -e '\''print \$_ foreach sort <>;'\'' ;;
+# >          python) ./gen-input | python -c '\''
+# >                    import sys
+# >                    sys.stdout.writelines(sorted(sys.stdin.readlines()))
+# >                    '\'' ;;
+# >               *) exit 2 ;;
+# >       esac
+# >     ' \
+# >     --inputs impl=coreutils,perl,python \
+# >                 N=1000,10000,100000,1000000 \
 # >     --outputs --extract 'Elapsed.*time.*: {{time(s) =~ [0-9:.]+}}' \
 # >     #
 # add some files
@@ -38,7 +44,7 @@ _3X_ROOT=$1; shift
 
 # check if _3X_ROOT was sane
 case $_3X_ROOT in
-    --@(program|input|output)s)
+    --@(program|@(input|output)s))
         usage "$0" "_3X_ROOT is missing"
         ;;
 esac
@@ -66,7 +72,7 @@ trap "rm -rf $tmp" EXIT
             --*)
                 a=${arg#--}
                 case $a in
-                    programs|inputs|outputs)
+                    program|inputs|outputs)
                         what=${a%s}
                         whatOutput=
                         continue
@@ -81,7 +87,7 @@ trap "rm -rf $tmp" EXIT
                 usage "$0" "Unknown argument $arg"
         esac
         if [ -z "$what" ]; then
-            msg +1 "Assuming --programs for $arg"
+            msg +1 "Assuming --program for $arg"
             what=program
         fi
         # translate $arg to the appropriate command
@@ -91,7 +97,7 @@ trap "rm -rf $tmp" EXIT
                 how=("${arg#$Name=}")
                 Unit= # no unit for programs
                 Type= # no type for programs
-                checkIfValueIsSane "$Name" program "--programs $Name"
+                checkIfValueIsSane "$Name" program "--program $Name"
                 generate-definition
                 ;;
 

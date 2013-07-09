@@ -2,7 +2,7 @@
 # 3x-define -- Define element of the experiment
 # 
 # > 3x define WHAT NAME HOW...
-# > 3x define program  NAME COMMAND...
+# > 3x define program  COMMAND...
 # > 3x define input    NAME[(UNIT)][:TYPE] VALUE1 [VALUE2]...
 # > 3x define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER
 # > 3x define output   NAME:MIMETYPE       file     FILENAME
@@ -28,8 +28,9 @@ cd "$_3X_ROOT"
 
 case $What in
     program)
-        dir="program/$Name"
-        checkIfValueIsSane "$Name" program "$dir"
+        dir="program"
+        runner="$dir"/run
+        ! [ -e "$runner" ] || error "program already defined"
         mkdir -p "$dir"
         touch "$dir"/env
         {
@@ -37,8 +38,8 @@ case $What in
             for Command; do
                 echo "$Command"
             done
-        } >"$dir"/run
-        chmod +x "$dir"/run
+        } >"$runner"
+        chmod +x "$runner"
         ;;
 
     input)

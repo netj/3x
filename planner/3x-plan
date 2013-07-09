@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 3x-plan -- plan experimental runs
 # 
-# > 3x plan [PROGRAM] [NAME[=VALUE[,VALUE]...]]...
+# > 3x plan [NAME[=VALUE[,VALUE]...]]...
 # New runs can be added to the current queue with the combination of given
 # values for the input variables.
 # 
@@ -113,7 +113,7 @@ case ${1:-} in
         if [ -s "$queueDir"/plan ]; then
             cat "$queueDir"/plan >"$tmp"/new
         else # show usage first if empty
-            usage "$0" "Empty plan for $queue; specify PROGRAM or input variables to add runs"
+            usage "$0" "Empty plan for $queue; specify input variables to add runs"
         fi
         ;;
 

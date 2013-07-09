@@ -20,7 +20,13 @@ codeForPatternDirs() {
     for pattDir; do
         [ -d "$pattDir" ] || continue
         echo "# $pattDir"
+        # handle some special cases
         case $pattDir in
+            # program need not any guards
+            program)
+                codeForMatchedPatternDir "$pattDir"
+                continue
+                ;;
             # outputs themselves need not any guards
             output/+([^/]))
                 name=${pattDir#output/}

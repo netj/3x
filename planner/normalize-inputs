@@ -49,50 +49,34 @@ args=()
 restArgs=()
 for cond in "$@"; do
     if [ -e "$cond" ]; then # infer input name/value from path names
-        # e.g., program/f/ input/x=/1 input/x=/2.env input/y=abcd input/z=/
-        #    -> program=f x={1,2} y=abcd z
+        # e.g., input/x=/1 input/x=/2.env input/y=abcd input/z=/
+        #    -> x={1,2} y=abcd z
         cond=$(readlink -f "$cond")
-        [ -d "$cond" ] || cond=${cond%.env}
         cond=${cond#$_3X_ROOT/}
         case $cond in
-            program|input)
-                args+=("$cond"=)
-                ;;
-            program/*)
-                args+=(program="$(basename "$cond")")
-                ;;
             input/*=*)
                 name=${cond#input/}
                 name=${name%%=*}
                 value=${cond#input/$name=}
-                value=$(basename "$value")
+                value=${value#/}
+                value=${value%%/*}
                 args+=("$name=$value")
+                ;;
+            *)
+                error "$cond: Unrecognized input path"
                 ;;
         esac
     else # or, sanitize cond
-        # first check if it's a program name
-        case $cond in
-            *=*) ;;
-            *)
-                if [ -d "$_3X_ROOT"/program/"$cond" ]; then
-                    cond="program=$cond"
-                fi
-                ;;
-        esac
-        # then see if it's a valid input
+        # see if it's a valid input
         name=${cond%%=*}
-        if [[ $name == "program" ]]; then
-            pattDir="$_3X_ROOT"/program
-        else
-            pattDir="$_3X_ROOT"/input/$name=
-        fi
+        pattDir="$_3X_ROOT"/input/$name=
         if ! [ -d "$pattDir" ]; then
             if $passUnrecognized; then
                 # hold unrecognized arguments for output
                 restArgs+=("$cond")
                 continue
             else
-                error "Undefined input $cond"
+                error "$cond: Undefined input name"
             fi
         fi
         valuePart=${cond#$name}
@@ -104,8 +88,8 @@ for cond in "$@"; do
             values=($valuePart)
             IFS=$OIFS
             for value in "${values[@]}"; do
-                [ -e "$pattDir/$value" -o -e "$pattDir/$value.env" ] ||
-                    error "Undefined input: $name=$value"
+                [ -d "$pattDir/$value" ] ||
+                    error "$name=$value: Undefined input value"
             done
         fi
         args+=("$name=$valuePart")

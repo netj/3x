@@ -53,7 +53,7 @@ for path in "$@"; do
         if [ -d "$path" ]; then
             # a directory containing files and nested patterns
             case $path in
-                @(input|program)/*)
+                program@(|/*)|input/*)
                     # copy files
                     copyFilesTo "$_3X_WDabbrev"/workdir/ "$path" \
                         -type f \( -name 'env' \

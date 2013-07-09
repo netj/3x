@@ -41,16 +41,12 @@ cd "$_3X_ROOT"
 # prepare pattern directories to show
 if [ $# -eq 0 ]; then
     # default is to show all input variables
-    set -- program input/[A-Za-z_]*([A-Za-z0-9_])=
+    set -- input/[A-Za-z_]*([A-Za-z0-9_])=
 else
     # map each input name to pattern directory
     args=()
     for name in "$@"; do
-        if [[ $name == "program" ]]; then
-            path=program
-        else
-            path=input/$name=
-        fi
+        path=input/$name=
         [ -d "$path" ] || error "Undefined input: $name"
         args+=("$path")
     done
