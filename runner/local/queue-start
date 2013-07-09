@@ -141,8 +141,12 @@ if $abort; then
     worker-error "Aborted" || true
     queue-refresh
     if ! [ -e $ACTIVE_FLAG ]; then
-        msg "To restart, run:"
-        msg "  3x start"
+        msg
+        msg "# To restart and resume execution, run:"
+        msg "3x start"
+        msg
+        msg "# To fully stop, and put executing runs back to plan, run:"
+        msg "3x stop"
     fi
     exit 2
 else
