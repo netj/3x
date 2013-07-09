@@ -106,7 +106,7 @@ case ${1:-} in
             comm -13 "$excl" -
         else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate inputs
         fi |
-        sed 's/^/3x[[:space:]][[:space:]]*run[[:space:]][[:space:]]*/' | column -t >"$tmp"/new
+        sed 's/^[^[:space:]]*[[:space:]]*/run  /' | column -t >"$tmp"/new
         ;;
 
     "") # edit the current plan
@@ -124,7 +124,7 @@ case ${1:-} in
 
         # permute the arguments and generate a plan
         msg "Permuting inputs for ${@%%=*}..."
-        permute "3x run" "$@" | column -t >"$tmp"/more
+        permute "run" "$@" | column -t >"$tmp"/more
         planSHA1orig=$(sha1sum <"$queueDir"/plan)
         cat "$queueDir"/plan "$tmp"/more >"$tmp"/new
         ;;
@@ -136,14 +136,11 @@ cd "$queueDir"
 if edit "$tmp"/new "$tmp"/timestamp; then
     sanitize() {
         local i=$1 o=$2
-        # check if every line starts with `3x run '
-        ! grep -Hn -E -v '^3x[[:space:]]+run[[:space:]]+|^[[:space:]]*$' "$i" ||
-            error "Syntax Error: All plan lines must start with \`3x run '" || return $?
+        # check if every line starts with `run '
+        ! grep -Hn -E -v '^run[[:space:]]+|^[[:space:]]*$' "$i" ||
+            error "Syntax Error: All plan lines must start with \`run '" || return $?
         # discard empty lines
         grep -E -v '^[[:space:]]*$' <"$i" >"$o" || true
-        # Skip checks of serials at the end of each line, since this is 3x-starts' job
-        #! grep -E -v '[[:space:]]+#[[:digit:]]+$' "$o" ||
-        #    error "$_3X_QUEUE/$i"': all plan lines must end with #SERIAL where SERIAL is a decimal number'
         # TODO check whether all input values are sane
     }
     confirm-if-changed() {
@@ -198,6 +195,6 @@ if queue-is-active; then
     . find-queue-runner.sh
     setsid queue-changed &
 else # or give instructions how to start the queue
-    msg "To start executing, run:"
-    msg "  3x start"
+    msg "# To start executing, run:"
+    msg "3x start"
 fi

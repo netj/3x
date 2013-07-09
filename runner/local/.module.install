@@ -9,5 +9,5 @@ target-info             $TOOLSDIR/runner/local/
 target-define           $TOOLSDIR/runner/local/
 environ.default         $TOOLSDIR/runner/local/
 
-3x-run                  $TOOLSDIR/
+run                     $TOOLSDIR/runner/local/
 record-run              $TOOLSDIR/
