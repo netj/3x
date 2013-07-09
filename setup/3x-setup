@@ -55,6 +55,7 @@ trap "rm -rf $tmp" EXIT
 
 # generate a experiment setup script
 {
+    be-quiet +4 || set -x
     echo "set -eu"
     be-quiet +1 || echo "set -x"
     . "$TOOLSDIR"/sanity-checks.sh
@@ -62,7 +63,22 @@ trap "rm -rf $tmp" EXIT
     escape-args-for-shell 3x-init "$_3X_ROOT"
     escape-args-for-shell cd "$_3X_ROOT"
     # map command line args to 3x-define commands
-    generate-definition() { escape-args-for-shell 3x define $what "$Name${Unit:+($Unit)}${Type:+:$Type}" "${how[@]}"; }
+    generate-definition() {
+        case $what in
+            program)
+                echo "$(
+                escape-args-for-shell  3x define $what "${how[@]}"
+                ) || true"
+                ;;
+            input|output)
+                escape-args-for-shell  3x define $what \
+                    "$Name${Unit:+($Unit)}${Type:+:$Type}" "${how[@]}"
+                ;;
+            *)
+                error "$what: Unrecognized to generate definition"
+                ;;
+        esac
+    }
     inputArgs=()
     what=
     for arg; do
@@ -85,6 +101,7 @@ trap "rm -rf $tmp" EXIT
                         ;;
                 esac
                 usage "$0" "Unknown argument $arg"
+                ;;
         esac
         if [ -z "$what" ]; then
             msg +1 "Assuming --program for $arg"
@@ -93,11 +110,10 @@ trap "rm -rf $tmp" EXIT
         # translate $arg to the appropriate command
         case $what in
             program)
-                Name=${arg%%=*}
-                how=("${arg#$Name=}")
+                how=("$arg")
+                Name= # no name for programs
                 Unit= # no unit for programs
                 Type= # no type for programs
-                checkIfValueIsSane "$Name" program "--program $Name"
                 generate-definition
                 ;;
 
