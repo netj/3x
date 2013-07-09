@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# > 3x start
+# Starts a new worker for locally executing runs in the current queue on this
+# machine.  You can start as many as you want to execute runs in parallel.
+#
 # queue-start -- Start executing locally the runs in the current queue
 # 
 # > . find-queue-runner.sh
@@ -13,13 +17,13 @@ set -eu
 cd "$queueDir"
 
 # register worker pid
-workerHandle=
+workerId= workerHandle=
 register-pid() {
-    local id=0
+    workerId=0
     local handle=
-    while handle=$WORKER_LOCK_PREFIX-$id.lock
+    while handle=$WORKER_LOCK_PREFIX-$workerId.lock
         lockproc $handle alive
-    do let ++id
+    do let ++workerId
     done
     lockproc $handle grab
     workerHandle=$handle
@@ -32,17 +36,21 @@ synchronized $WORKER_LOCK_PREFIX.lock register-pid
     echo "start $*"
 } >>$ACTIVE_FLAG
 
+workerMsgPrefix="$queue $target[$workerId]: "
+worker-msg()   { msg   "$workerMsgPrefix$*"; }
+worker-error() { error "$workerMsgPrefix$*"; }
+
 # repeat until all planned runs are done
-msg "Starting $queue"
+worker-msg "Starting"
 stopped=false
 abort=false
 trap "stopped=true abort=true" INT QUIT
 trap "stopped=true" TERM
-trap 'msg "Resuming $queue"' $WORKER_WAITING_SIGNAL
+trap 'worker-msg "Resuming"' $WORKER_WAITING_SIGNAL
 while :; do
     # wait for plan to become non-empty
     until [ -s plan ] || $stopped; do
-        msg "Waiting $queue"
+        worker-msg "Waiting"
         touch $workerHandle$WORKER_WAITING_SUFFIX
         sleep 300 &>/dev/null || true
     done
@@ -90,7 +98,7 @@ while :; do
     # prepare to run the one we picked for next
     # XXX count=$(($(wc -l <done) + $(wc -l <running) + $(wc -l <plan)))
     count=$(($serial + $(wc -l <plan)))
-    msg "Running #$serial/$count of $queue as $runId"
+    worker-msg "Running #$serial/$count as $runId"
     queue-record() { echo $cmdln "#$serial $target $runId"; }
     record-running() {
         # book-keep the running list and symlink to actual run
@@ -130,7 +138,7 @@ done
 lockproc $workerHandle release
 
 if $abort; then
-    error "Aborted $queue" || true
+    worker-error "Aborted" || true
     queue-refresh
     if ! [ -e $ACTIVE_FLAG ]; then
         msg "To restart, run:"
@@ -138,5 +146,5 @@ if $abort; then
     fi
     exit 2
 else
-    msg "Stopped $queue"
+    worker-msg "Stopped"
 fi

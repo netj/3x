@@ -23,7 +23,8 @@ ToolPath=$1; shift || usage "$0" "No TOOLPATH given"
 
 # show embedded usage
 # TODO only for scripts
-sed <"$ToolPath" -n '
+cat "$ToolPath" |
+sed -n '
 2,/^#$/ {
     s/^# [$>] //
     s/^# *$//

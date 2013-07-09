@@ -15,13 +15,7 @@
 # 
 # > 3x target TARGET define TYPE [ARG]...
 # Defines the TARGET as an execution environment of type TYPE.  Optional ARGs
-# may vary depending on TYPE.
-# 
-# > 3x target TARGET define local [NAME[=VALUE]]...
-# Defines a new local execution environment, named TARGET.  Specified NAMEs are
-# the names of variables you want to pass down to the environment used for
-# executing planned runs.  Additionally, a fixed, predefined VALUE can be
-# specified for a variable.
+# may vary depending on TYPE.  Available TYPEs are as follows:
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-26
@@ -29,7 +23,14 @@ set -eu
 
 while getopts "h" o; do
     case $o in
-        h) exec usage "$0" ;;
+        h)
+            usage "$0"
+            for targetDefine in "$TOOLSDIR"/runner/*/target-define; do
+                [ -x "$targetDefine" ] || continue
+                usage "$targetDefine"
+            done
+            exit
+            ;;
     esac
 done
 shift $(($OPTIND - 1))

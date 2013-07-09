@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# > 3x stop LOCAL_WORKER_ID...
+# Stops local workers identified by given LOCAL_WORKER_IDs.  LOCAL_WORKER_ID is
+# a unique number assigned to each local worker.  0 is first assigned, and
+# incremented by 1 as new local workers are started.
+#
 # queue-stop -- stop executing locally
 # 
 # > . find-queue-runner.sh

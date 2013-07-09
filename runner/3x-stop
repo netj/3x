@@ -1,21 +1,44 @@
 #!/usr/bin/env bash
 # 3x-stop -- stop executing the current queue
 # 
+# > 3x stop -h
+# Shows this usage.  Usage varies for different types of target.
+# 
 # > 3x stop
+# Stops executing runs of the current queue from all targets.
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-17
 set -eu
 
+while getopts "h" o; do
+    case $o in
+        h)
+            usage "$0"
+            (
+                . find-queue-runner.sh
+                usage "$(type -p queue-stop)"
+            ) 2>/dev/null ||
+                true
+            exit
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
 . find-queue.sh
 cd "$queueDir"
 
-# we need to call queue-stop for all runners that were running
-export queue queueDir
-OPATH=$PATH
-for stop in "$queueRunner"/*/queue-stop; do
-    [ -x "$stop" ] || continue
-    PATH="$(dirname "$stop"):$PATH"
-    setsid "$stop" "$@"
-    PATH=$OPATH
-done
+if [ $# -eq 0 ]; then
+    # we need to call queue-stop for all runners that were running
+    OPATH=$PATH
+    for stop in "$queueRunner"/*/queue-stop; do
+        [ -x "$stop" ] || continue
+        PATH="$(dirname "$stop"):$PATH"
+        setsid "$stop"
+        PATH=$OPATH
+    done
+else # if there are given arguments, just stop for the current target
+    . find-queue-runner.sh
+    setsid queue-stop "$@"
+fi
