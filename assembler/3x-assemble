@@ -25,69 +25,21 @@ cd "$_3X_ROOT"
 # prepare the assemble script
 assembleScript=$(update-assembly-script)
 
-# assemble the inputs for experiment
-msg "Assembling $_3X_RUN for $*"
-: >"$_3X_WD"/assembly
-(
-    # override some commands used in the assembly script
-    error() {
-        command error "$@"
-        touch "$_3X_WD"/assembly.error
-    }
-    source() {
-        # replace source with our function that avoids any evaluation in the definitions
-        local f=$1
-        ! grep -qF "${f%/env}" "$_3X_WD"/assembly || return 0
-        local decl= v= l=1
-        while read -r decl; do
-            decl=${decl%%*([ 	])#*}
-            [ -n "$decl" ] || continue
-            v=${decl%%=*}
-            ! declare -p $v &>/dev/null || error "$f: line $l: $v: duplicate variable"
-            export "$decl"
-            declare -r $v
-            let l++
-        done <"$f"
-    }
-
-    # record environment variables
-    envFiles=("${_3X_RUN_ENVIRON:-$TOOLSDIR/runner/local/environ.default}")
-    if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
-        envVarNames=$(list-var-names "${envFiles[@]}")
-        msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
-        {
-            eval export -- $(no-comments "${envFiles[@]}" | sed 's/\([^=]*\)=\(.*\)/\1=${\1:-\2}/')
-            for v in $envVarNames; do echo "$v=${!v:-}"; done >"$_3X_WD"/env
-            declare -r $envVarNames
-        } >/dev/null
-    fi
-
-    # record input variables, so they can populate the environment
-    for param in "$@"; do echo "$param"; done >>"$_3X_WD"/env
-    be-quiet +3 || set -x
-    declare -r "$@"
-
-    # repeat iterations with assembly script until no change
-    assemble-iteration() {
-        wc -l <"$_3X_WD"/assembly >"$_3X_WD"/assembly.in-progress
-        builtin source "$assembleScript"
-        [ $(wc -l <"$_3X_WD"/assembly) -eq $(cat "$_3X_WD"/assembly.in-progress) ]
-    }
-    while ! assemble-iteration; do :; done
-    rm -f "$_3X_WD"/assembly.in-progress
-)
-
-# check if assembly went ok
-[ ! -e "$_3X_WD"/assembly.error ]
-if ! [ -x "$_3X_WD"/workdir/run ]; then
-    error "Assembly failed for $_3X_RUN: No executable \`run' exists"
+# record environment variables
+envVars=()
+envFiles=("${_3X_RUN_ENVIRON:-$TOOLSDIR/runner/local/environ.default}")
+if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
+    envVarNames=$(list-var-names "${envFiles[@]}")
+    msg +1 " recording environment as per ${envFiles[*]}: "$envVarNames
+    {
+        eval export -- $(no-comments "${envFiles[@]}" | sed 's/\([^=]*\)=\(.*\)/\1=${\1:-\2}/')
+        for v in $envVarNames; do
+            envVars+=("$v=${!v:-}")
+        done
+    } >/dev/null
 fi
 
-# record all input parameters again in a separate file
-for param in "$@"; do echo "$param"; done >"$_3X_WD"/input
-
-# make sure some files exist
-cp -af "$assembleScript" "$_3X_WD"/assemble.sh
-for f in env args stdin; do
-    [ -e "$_3X_WD/$f" ] || touch "$_3X_WD/$f"
-done
+# assemble the inputs for experiment
+msg "Assembling $_3X_RUN for $*"
+"$assembleScript" "$_3X_WD" "$@" -- "${envVars[@]}" ||
+    error "Assembly failed for $_3X_RUN"

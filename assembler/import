@@ -1,26 +1,35 @@
 #!/usr/bin/env bash
-# import -- import an input directory
+# import -- import contents of input directories to current working directory
 # 
-# > cd $_3X_ROOT
-# > _3X_WD=OUTPUTDIR import INPUTDIR...
+# > export _3X_ROOT=$(3x-findroot)
+# > import INPUTDIR...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-01
+# Rewritten: 2013-07-09
 set -eu
-
-[ $# -gt 0 ]        || usage "$0" "At least one INPUTDIR must be given"
-[ -n "${_3X_WD:-}" ] || usage "$0" "_3X_WD must be defined"
-_3X_WDabbrev=${_3X_WD#$PWD/}
-
 shopt -s extglob
 
+[ $# -gt 0 ] || usage "$0" "At least one INPUTDIR must be given"
+
+# destination is current working directory, and we'll use repository-relative paths
+DestDir=$PWD
+cd "$_3X_ROOT"
+
+# prepare logging
+Log="$DestDir"/assembly
+logmsg() {
+    msg +1 "$@"
+    echo "$@" >>"$Log"
+}
 _recordCopiedFiles() {
-    sed -E 's/^/  copying /;  s#([‘ ])run/.*/(workdir/|measures/|args)#\1\2#' |
-    tee -a "$_3X_WD"/assembly
+    sed -E 's/^/  copying /;  s:'"$DestDir"'/::;  s:[‘’]::g' |
+    tee -a "$Log"
 }
 recordCopiedFiles() { _recordCopiedFiles >/dev/null; }
 be-quiet +1 || recordCopiedFiles() { _recordCopiedFiles >&2; }
 be-quiet +3 || set -x
+
 copyFilesTo() {
     local dst=$1; shift
     local src=$1; shift
@@ -28,7 +37,7 @@ copyFilesTo() {
     [ $# -eq 0 ] || set -- -o "$@"
     # prepare destination and copy files
     findcmd=(
-    find -L "$src"/{,.}*  -maxdepth 0 ! \( \
+    find "$src"/{,.}*  -maxdepth 0 ! \( \
             -type d \( -name '.' -o -name '..' \
                     -o -name '?*=*' -o -path '*=/*' \) "$@" \
         \)
@@ -42,76 +51,72 @@ copyFilesTo() {
         set -o pipefail
         xargs -0 -I{} -- cp -avH {} "$dst" |
         # TODO check and emit warning if any files get overwritten
-        recordCopiedFiles >&2
+        recordCopiedFiles
     }
 }
 
 for path in "$@"; do
-    if ! grep -qF "$path" "$_3X_WD"/assembly; then
-        msg " importing $path"
-        echo "$path" >>"$_3X_WD"/assembly
-        if [ -d "$path" ]; then
-            # a directory containing files and nested patterns
-            case $path in
-                program@(|/*)|input/*)
-                    # copy files
-                    copyFilesTo "$_3X_WDabbrev"/workdir/ "$path" \
-                        -type f \( -name 'env' \
-                                -o -name 'args' -o -name '+args' -o -name 'args+' \
-                                -o -name 'unit' -o -name 'datatype' \
-                                \) \
-                        #
-                    # environment variables
-                    for f in env; do
-                        if [ -r "$path"/$f ]; then
-                            msg +1 "  appending $path/$f"
-                            no-comments "$path"/$f >>"$_3X_WD"/$f
-                        fi
-                    done
-                    # command-line arguments
-                    for a in "$path"/{args,+args,args+}; do
-                        if [ -r "$a" ]; then
-                            case ${a##*/} in
-                                args) # replace arguments
-                                    ! [ -e "$_3X_WD"/args ] || error "$a cannot overwrite already existing args"
-                                    (
-                                    set -o pipefail
-                                    cp -avn "$a" "$_3X_WDabbrev"/args |
-                                    recordCopiedFiles >&2
-                                    )
-                                    ;;
-                                args+) # append arguments
-                                    msg +1 "  appending $a"
-                                    echo "  appending $a" >>"$_3X_WD"/assembly
-                                    cat "$a" >>"$_3X_WD"/args
-                                    ;;
-                                +args) # prepend arguments
-                                    msg +1 "  prepending $a"
-                                    echo "  prepending $a" >>"$_3X_WD"/assembly
-                                    if [ -z "${tmp:-}" ]; then
-                                        tmp=$(mktemp /tmp/3x-import.XXXXXX)
-                                        trap "rm -f $tmp" EXIT
-                                    fi
-                                    cat "$a" "$_3X_WD"/args >$tmp
-                                    cat $tmp >"$_3X_WD"/args
-                                    ;;
-                            esac
-                        fi
-                    done
-                    ;;
-                output/*)
-                    m=$path
-                    m=${m#output/}
-                    m=${m%%/*}
-                    # copy files of output
-                    copyFilesTo "$_3X_WDabbrev"/measures/"$m" "$path" \
-                        -type f \( -name 'unit' -o -name 'datatype' \
-                                \) \
-                        #
-                    ;;
-            esac
-        else
-            error "$path: Not a directory; Only directories can be imported"
-        fi
+    msg " importing $path"
+    if [ -d "$path" ]; then
+        # a directory containing files and nested patterns
+        case $path in
+            program@(|/*)|input/*)
+                # copy files
+                copyFilesTo "$DestDir"/workdir/ "$path" \
+                    -type f \( -name 'env' \
+                            -o -name 'args' -o -name '+args' -o -name 'args+' \
+                            -o -name 'unit' -o -name 'datatype' \
+                            \) \
+                    #
+                # environment variables
+                for f in env; do
+                    if [ -r "$path"/$f ]; then
+                        logmsg "  appending $path/$f"
+                        no-comments "$path"/$f >>"$DestDir"/$f
+                    fi
+                done
+                # command-line arguments
+                for a in "$path"/{args,+args,args+}; do
+                    if [ -r "$a" ]; then
+                        case ${a##*/} in
+                            args) # replace arguments
+                                ! [ -e "$DestDir"/args ] ||
+                                    logmsg "  overriding with $a"
+                                (
+                                set -o pipefail
+                                cp -av "$a" "$DestDir"/args |
+                                recordCopiedFiles
+                                )
+                                ;;
+                            args+) # append arguments
+                                logmsg "  appending $a"
+                                cat "$a" >>"$DestDir"/args
+                                ;;
+                            +args) # prepend arguments
+                                logmsg "  prepending $a"
+                                if [ -z "${tmp:-}" ]; then
+                                    tmp=$(mktemp /tmp/3x-import.XXXXXX)
+                                    trap "rm -f $tmp" EXIT
+                                fi
+                                cat "$a" "$DestDir"/args >$tmp
+                                cat $tmp >"$DestDir"/args
+                                ;;
+                        esac
+                    fi
+                done
+                ;;
+            output/*)
+                m=$path
+                m=${m#output/}
+                m=${m%%/*}
+                # copy files of output
+                copyFilesTo "$DestDir"/measures/"$m" "$path" \
+                    -type f \( -name 'unit' -o -name 'datatype' \
+                            \) \
+                    #
+                ;;
+        esac
+    else
+        error "$path: Not a directory; Only directories can be imported"
     fi
 done
