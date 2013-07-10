@@ -11,6 +11,7 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-17
 set -eu
+shopt -s extglob
 
 . local-runner.sh
 

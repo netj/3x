@@ -53,7 +53,7 @@ fi
 # execute it
 cd "$_3X_WD"
 msg "Running $_3X_RUN with $*"
-record-run &
+./execute.sh &
 runpid=$!
 
 # watch stdout and stderr

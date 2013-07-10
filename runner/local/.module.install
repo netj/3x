@@ -10,4 +10,3 @@ target-define           $TOOLSDIR/runner/local/
 environ.default         $TOOLSDIR/runner/local/
 
 run                     $TOOLSDIR/runner/local/
-record-run              $TOOLSDIR/

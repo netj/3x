@@ -166,4 +166,9 @@ for f in env args stdin; do
     [ -e "$f" ] || touch "$f"
 done
 
+echo >execute.sh '\'
+sed "s/'/'\\\\''/g" <"$DATADIR"/assembler/execute.sh
+echo \''
+chmod +x execute.sh
+
 rm -f assembly.error'

@@ -15,7 +15,8 @@ update-assembly-script() {
     local scpt=$1; shift
     if ! [ -s "$scpt" ] ||
         [ input -nt "$scpt" -o output -nt "$scpt" -o program -nt "$scpt" ] ||
-        find "$0" $(type -p generate-assembly-script) "$@" -newer "$scpt" | read; then
+        find "$0" $(type -p generate-assembly-script) \
+            "$DATADIR"/assembler/execute.sh "$@" -newer "$scpt" | read; then
         touch "$scpt"
         msg "Updating $scpt"
         local tmp=$(mktemp "$scpt".XXXXXX)
