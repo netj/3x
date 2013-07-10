@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# Usage: ./execute.sh
+# Usage: cd runnable; ./execute.sh
 set -eu
+
+[ -x workdir/run -a -r env -a -r args -a -r stdin -a -w . ] ||
+    { echo >&2 "$PWD: not a runnable"; exit 127; }
+: $_3X_ROOT $_3X_RUN
 
 trap 'chmod -x "$0"' EXIT  # turn itself off after execution
 
@@ -46,4 +50,6 @@ pid=$!
 # wait for the execution to end and record result
 set +m  # need to disable job control to suppress ugly status reporting on aborts
 wait $pid
-echo $? >exitcode
+code=$?
+echo $code >exitcode
+exit $code
