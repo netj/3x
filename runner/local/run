@@ -29,10 +29,28 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# assemble it for running and measuring outputs
-3x-assemble "$_3X_WD" "$@"
+# assemble the run
+cd "$_3X_ROOT"
+assembleScript=$(update-assembly-script)
+msg "Assembling $_3X_RUN for $*"
+# figure out environment
+envVars=()
+envFiles=("${_3X_RUN_ENVIRON:-$TOOLSDIR/runner/local/environ.default}")
+if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
+    envVarNames=$(list-var-names "${envFiles[@]}")
+    msg +1 " using environment as per ${envFiles[*]}: "$envVarNames
+    {
+        eval export -- $(no-comments "${envFiles[@]}" | sed 's/\([^=]*\)=\(.*\)/\1=${\1:-\2}/')
+        for v in $envVarNames; do
+            envVars+=("$v=${!v:-}")
+        done
+    } >/dev/null
+fi
+"$assembleScript" "$_3X_WD" "$@" -- "${envVars[@]}" ||
+    error "Assembly failed for $_3X_RUN"
 
-# run it
+
+# execute it
 cd "$_3X_WD"
 msg "Running $_3X_RUN with $*"
 record-run &

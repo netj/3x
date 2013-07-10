@@ -1,4 +1,3 @@
-3x-assemble                     $TOOLSDIR/
 update-assembly-script          $TOOLSDIR/
 generate-assembly-script        $TOOLSDIR/
 sanity-checks.sh                $TOOLSDIR/

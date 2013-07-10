@@ -88,16 +88,19 @@ codeForSourcing() {
 . "$TOOLSDIR"/sanity-checks.sh
 
 echo '#!/usr/bin/env bash
-# Usage: assemble.sh [INPUT_NAME=VALUE]... -- [ENV_NAME=VALUE]...
+# Usage: .../.3x/assemble.sh [INPUT_NAME=VALUE]... -- [ENV_NAME=VALUE]...
 set -eu
+
+: ${_3X_ROOT:=$(cd "$(dirname "$0")"/..; pwd -P)}
+export _3X_ROOT
+type error import >/dev/null
+
 be-quiet +3 || set -x
 
 # create the directory to be assembled
-_3X_ASSEMBLY_PRODUCT=$1; shift
-mkdir -p -- "$_3X_ASSEMBLY_PRODUCT"/workdir
-cp -f "$0" "$_3X_ASSEMBLY_PRODUCT"/assemble.sh
-cd "$_3X_ASSEMBLY_PRODUCT"
-unset _3X_ASSEMBLY_PRODUCT
+mkdir -p -- "$1"/workdir
+cd "$1"
+shift
 trap "rm -f assembly.in-progress" EXIT
 touch assembly.in-progress
 : >assembly
@@ -114,13 +117,9 @@ unset param endOfInput
 
 
 # define how each iteration of assembly works
-assembly-iteration() {
-'
-
+assemble1() {'
 codeForPatternDirs "$@"
-
-echo '
-}
+echo '}
 
 # define/override some commands used in the assembly script
 error() {
@@ -158,7 +157,7 @@ import() {
 _3X_ASSEMBLY_CONTINUE=true
 while $_3X_ASSEMBLY_CONTINUE; do
     _3X_ASSEMBLY_CONTINUE=false
-    assembly-iteration
+    assemble1
 done
 
 # make sure all essential files exist
@@ -167,5 +166,4 @@ for f in env args stdin; do
     [ -e "$f" ] || touch "$f"
 done
 
-rm -f assembly.error
-'
+rm -f assembly.error'
