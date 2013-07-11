@@ -7,6 +7,7 @@ error                       $TOOLSDIR/
 msg                         $TOOLSDIR/
 be-quiet                    $TOOLSDIR/
 verbosity-isnt              $TOOLSDIR/
+super                       $TOOLSDIR/
 
 edit                        $TOOLSDIR/
 customize                   $TOOLSDIR/

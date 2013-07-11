@@ -17,6 +17,29 @@ synchronized() {
     lockproc $Lock release
 }
 
+# source the parent script overriden by the current one
+# Example usage: super "$0" "$@"
+super() {
+    local this=$1; shift
+    local super=$(
+        cmd=${this##*/} lastWasThis=false
+        IFS=:
+        for dir in $PATH; do
+            s="$dir/$cmd"
+            [ -e "$s" ] || continue
+            if [ x"$s" = x"$this" ]; then
+                lastWasThis=true
+            elif $lastWasThis; then
+                echo "$s"
+                exit 0
+            fi
+        done
+        error "$this: No overriden script found"
+    )
+    set -- "$super" "$@"; unset this super
+    . "$@"
+}
+
 # put self at the beginning of PATH
 [ x"$queueRunner/local" = x"${PATH%%:*}" ] ||
     PATH="$queueRunner/local:$PATH"
