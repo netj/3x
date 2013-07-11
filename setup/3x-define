@@ -17,8 +17,12 @@ export _3X_ROOT
 [ $# -gt 0 ] || usage "$0" "WHAT to define is missing"
 What=$1; shift
 
-[ $# -gt 0 ] || usage "$0" "NAME is missing"
-Name=$1; shift
+case $What in
+    input|output)
+        [ $# -gt 0 ] || usage "$0" "NAME is missing"
+        Name=$1; shift
+        ;;
+esac
 
 . "$TOOLSDIR"/sanity-checks.sh
 
