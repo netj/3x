@@ -17,7 +17,7 @@ queue-refresh
 
 if queue-is-active; then
 
-    for workerHandle in $WORKER_LOCK_PREFIX-*.lock; do
+    for workerHandle in $WORKER_LOCK_PREFIX*.lock; do
         [ -e "$workerHandle$WORKER_WAITING_SUFFIX" ] || continue
         # wake up a waiting worker for the queue change
         lockproc $workerHandle kill -$WORKER_WAITING_SIGNAL

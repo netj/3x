@@ -5,6 +5,7 @@
 # > queue-start
 # > queue-stop
 # > queue-refresh
+# > queue-sync
 # > queue-changed
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>

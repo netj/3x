@@ -22,7 +22,7 @@ workerId= workerHandle=
 register-pid() {
     workerId=0
     local handle=
-    while handle=$WORKER_LOCK_PREFIX-$workerId.lock
+    while handle=$WORKER_LOCK_PREFIX$workerId.lock
         lockproc $handle alive
     do let ++workerId
     done

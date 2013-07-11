@@ -13,7 +13,7 @@ set -eu
 cd "$queueDir"
 
 # check lock handles to see if there's anything alive
-for handle in $WORKER_LOCK_PREFIX-*.lock $RUNDIR_PREFIX*/lock; do
+for handle in $WORKER_LOCK_PREFIX*.lock $RUNDIR_PREFIX*/lock; do
     [ -e "$handle" ] || continue
     lockproc "$handle" alive || continue
     # if so, touch the flag
