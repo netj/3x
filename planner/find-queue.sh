@@ -2,8 +2,8 @@
 # find-queue.sh -- Find current queue based on $_3X_QUEUE
 # 
 # > . find-queue.sh
-# > echo "$queue"
-# > cd "$queueDir"
+# > echo "$_3X_QUEUE_ID"
+# > cd "$_3X_QUEUE_DIR"
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-24
@@ -14,7 +14,7 @@ export _3X_ROOT
 export _3X_ARCHIVE="$_3X_ROOT"/.3x/files
 
 # some predefined paths
-export queueRunner="$TOOLSDIR"/runner
+export _3X_RUNNER_HOME="$TOOLSDIR"/runner
 
 # determine the current queue
 : ${_3X_QUEUE:=$(readlink "$_3X_ROOT"/.3x/Q || echo main)}
@@ -38,11 +38,23 @@ case $_3X_QUEUE in
         ;;
 esac
 export _3X_QUEUE
-export queue="run/queue/$_3X_QUEUE"
-export queueDir="$_3X_ROOT/$queue"
-#[ -d "$queue" ] || error "$_3X_QUEUE: No such queue"
+export _3X_QUEUE_ID="run/queue/$_3X_QUEUE"
+export _3X_QUEUE_DIR="$_3X_ROOT/$_3X_QUEUE_ID"
+export _3X_TARGET_DIR=$(readlink -f "$_3X_QUEUE_DIR"/target) || true
+export _3X_TARGET=${_3X_TARGET_DIR##*/}
 
 queue-is-active() {
-    set -- "$queueDir"/is-active.*
+    set -- "$_3X_QUEUE_DIR"/.is-active.*
     [ -e "$1" ]
+}
+
+for-each-active-runner() {
+    local activeFlag=
+    for activeFlag in "$_3X_QUEUE_DIR"/.is-active.*; do
+        (
+        runner=${activeFlag##*/.is-active.}
+        . find-runner.sh "$runner"
+        setsid "$@"
+        )
+    done
 }

@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
-# > 3x stop LOCAL_WORKER_ID...
-# Stops local workers identified by given LOCAL_WORKER_IDs.  LOCAL_WORKER_ID is
-# a unique number assigned to each local worker.  0 is first assigned, and
-# incremented by 1 as new local workers are started.
+# > 3x stop WORKER_ID...
+# Stops workers identified by given WORKER_IDs.  WORKER_ID is a unique number
+# assigned to each local worker.  0 is first assigned, and incremented by 1 as
+# new local workers are started.
 #
-# queue-stop -- stop executing locally
+# queue-stop -- stops executing workers for current queue
 # 
-# > . find-queue-runner.sh
+# > . find-runner.sh -
 # > setsid queue-stop [WORKER]
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-17
 set -eu
-
-. local-runner.sh
-
-cd "$queueDir"
+. runner.sh
 
 # collect the handles of workers
 if [ $# -gt 0 ]; then

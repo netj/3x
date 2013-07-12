@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# dequeue -- execute runs in the plan and running list of current queue and
+#            move finished ones to the done list
+# See runner.sh for extending and overriding base runners behavior.
+# 
+# Usage:
+# > . runner.sh
+# > dequeue
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+. runner.sh
+
+runDir=
+cmdln=
+serial=
+runId=
+
+queue-record() { echo $cmdln "#$serial $_3X_TARGET $runId"; }
+
+pick-next() {
+    # check if there were anything running which isn't alive
+    for r in $RUNDIR_PREFIX*/; do
+        r=${r%/}
+        [ -d "$r" ] || continue
+        [ -s "$r"/cmdln ] || continue
+        ! lockproc $r/lock alive || continue
+        lockproc $r/lock grab || continue
+        msg +2 " resuming $r..."
+        runDir=$r; break
+    done
+    # resume running if so, or dequeue from the plan
+    if [ -d "$runDir" ]; then
+        runId=$(cat $runDir/runId || new-run-id)
+        serial=${runDir#$RUNDIR_PREFIX}
+        cmdln=$(cat $runDir/cmdln)
+    else
+        # determine serial number
+        serial=$(cat $SERIAL_COUNTER 2>/dev/null || echo 0)
+        let ++serial
+        # prepare a run dir
+        runDir=$RUNDIR_PREFIX$serial
+        mkdir -p $runDir
+        lockproc $runDir/lock grab
+        # determine a fresh run id
+        runId=$(new-run-id | tee $runDir/runId)
+        # dequeue one planned run
+        cmdln=$(head -n 1 plan | tee $runDir/cmdln)
+        { echo 1d; echo wq; } | ed plan &>/dev/null
+        # increment serial counter
+        echo $serial >$SERIAL_COUNTER
+    fi
+}
+synchronized plan.lock  pick-next || continue
+
+record-running() {
+    # book-keep the running list and symlink to actual run
+    [ -e running ] && grep -q " #$serial " running ||
+        queue-record >>running
+    mkdir -p runs
+    runRelPath="../../../${runId#run/}"
+    ln -sfn "$runRelPath" $runDir/run
+    ln -sfn "$runRelPath" runs/$serial
+}
+synchronized running.lock  record-running
+
+
+# prepare to execute the one we picked for next
+# TODO make sure the $cmdln starts with "run "
+
+# TODO #cp -a "$_3X_TARGET_DIR" $runDir/target
+
+# XXX clean $runId first, in case we are retrying one that failed last time
+! [ -e runs/$serial/ ] || unarchive "$_3X_ARCHIVE" runs/$serial/
+rm -rf runs/$serial/ 2>/dev/null || true
+assembleScript=$(update-assembly-script)
+
+
+# execute the picked one
+# XXX count=$(($(wc -l <done) + $(wc -l <running) + $(wc -l <plan)))
+count=$(( $serial + $(wc -l <plan) ))
+runner-msg "Executing #$serial/$count as $runId"
+
+_3X_RUNNER_DIR=$runDir \
+_3X_RUN=$runId \
+$cmdln # NOTE this invokes the run command
+
+# make sure execution finished properly
+[ -s $runDir/run/output ]
+
+
+# after it ends, record the run in the "done" list
+record-finished() {
+    queue-record >>"done"
+    # book-keep the running list
+    {
+        echo "g/ #$serial /d"
+        echo wq
+    } | ed running &>/dev/null
+}
+synchronized running.lock  record-finished
+
+
+# clean up
+rm -rf "$runDir"
+#lockproc $runDir/lock release || true # no need to release the removed lock

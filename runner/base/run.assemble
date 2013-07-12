@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# run.assemble -- assemble the run
+# Usage:
+# > . runner.sh
+# > _3X_RUN=... \
+# > run.assemble [NAME=VALUE]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+
+"$_3X_ROOT"/.3x/assemble.sh "$_3X_ROOT/$_3X_RUN" "$@"

@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
-# queue-sync -- synchronize the current queue records with reality
+# queue-sync -- synchronize current queue records with reality
 # 
-# > . find-queue-runner.sh
+# > . find-runner.sh -
 # > setsid queue-sync
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-07-07
 set -eu
-
-. local-runner.sh
-
-cd "$queueDir"
+. runner.sh
 
 clean-stale-running-dirs() {
     # determine the stopped/stale ones
@@ -25,7 +22,7 @@ clean-stale-running-dirs() {
         [ -e "$staleRunDir" ] || continue
 
         serial=${staleRunDir#$RUNDIR_PREFIX}
-        msg +2 "moving $queue #$serial back to plan"
+        msg +2 "$_3X_QUEUE_ID: moving #$serial back to plan"
 
         # unregister from queue's running list
         {

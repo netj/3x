@@ -1,10 +1,25 @@
-3x-queue                $TOOLSDIR/
+3x-queue                        $TOOLSDIR/
+3x-target                       $TOOLSDIR/
 
-find-queue-runner.sh    $TOOLSDIR/
-3x-start                $TOOLSDIR/
-3x-stop                 $TOOLSDIR/
-3x-status               $TOOLSDIR/
+3x-status                       $TOOLSDIR/
+3x-start                        $TOOLSDIR/
+3x-stop                         $TOOLSDIR/
 
-3x-target               $TOOLSDIR/
+find-runner.sh                  $TOOLSDIR/
 
-new-run-id              $TOOLSDIR/
+base/queue-start                $TOOLSDIR/runner/
+base/queue-stop                 $TOOLSDIR/runner/
+base/queue-changed              $TOOLSDIR/runner/
+base/queue-refresh              $TOOLSDIR/runner/
+base/queue-sync                 $TOOLSDIR/runner/
+base/target-define              $TOOLSDIR/runner/
+base/target-info                $TOOLSDIR/runner/
+
+base/runner.sh                  $TOOLSDIR/runner/
+base/dequeue                    $TOOLSDIR/runner/
+base/run                        $TOOLSDIR/runner/
+base/run.assemble               $TOOLSDIR/runner/
+base/run.execute                $TOOLSDIR/runner/
+base/run.store                  $TOOLSDIR/runner/
+
+new-run-id                      $TOOLSDIR/

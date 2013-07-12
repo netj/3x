@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# target-define -- define a target
+# > _3X_ROOT=... \
+# > _3X_RUNNER=... \
+# > target-define TARGET
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+
+Target=$1; shift
+cd "$_3X_ROOT"
+
+mkdir -p run/target/"$Target"
+cd run/target/"$Target"
+
+echo "$_3X_RUNNER" >type

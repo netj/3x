@@ -45,8 +45,8 @@ _3X_ROOT=$(3x-findroot)
 if $ListDetails && [ $# -eq 1 ]; then
     _3X_QUEUE=$1
     . find-queue.sh
-    ln -sfn ../$queue "$_3X_ROOT"/.3x/Q
-    mkdir -p "$queueDir"
+    ln -sfn ../$_3X_QUEUE_ID "$_3X_ROOT"/.3x/Q
+    mkdir -p "$_3X_QUEUE_DIR"
     set --
 else
     . find-queue.sh
@@ -77,15 +77,9 @@ if $ListDetails; then
         current=$NBSP
         [ x"$_3X_QUEUE" != x"$queue" ] || current="*"
         # refresh queue state
-        for activeFlag in $queue/is-active.*; do
-            (
-            _3X_QUEUE=$queue
-            export targetDir= target= # XXX queue-refresh must not depend on these variables
-            export targetType=${activeFlag##*/is-active.}
-            PATH="$queueRunner/$targetType":"$PATH"
-            setsid queue-refresh
-            )
-        done
+        # XXX modifying _3X_QUEUE_DIR is fragile
+        _3X_QUEUE=$queue _3X_QUEUE_DIR="$PWD/$queue" \
+        for-each-active-runner queue-refresh
         {
             state=INACTIVE
             ! queue-is-active || state=ACTIVE

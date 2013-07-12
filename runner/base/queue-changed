@@ -1,20 +1,17 @@
 #!/usr/bin/env bash
 # queue-changed -- handle the event of queue modification
 # 
-# > . find-queue-runner.sh
+# > . find-runner.sh -
 # > setsid queue-changed
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-17
 set -eu
-
-. find-queue.sh
-. local-runner.sh
-
-cd "$queueDir"
+. runner.sh
 
 queue-refresh
 
+. find-queue.sh
 if queue-is-active; then
 
     for workerHandle in $WORKER_LOCK_PREFIX*.lock; do

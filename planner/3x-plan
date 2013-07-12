@@ -2,7 +2,7 @@
 # 3x-plan -- plan experimental runs
 # 
 # > 3x plan [NAME[=VALUE[,VALUE]...]]...
-# New runs can be added to the current queue with the combination of given
+# New runs can be added to current queue with the combination of given
 # values for the input variables.
 # 
 # To add runs for a full combination of inputs, simply run:
@@ -12,8 +12,14 @@
 # 
 # 
 # > 3x plan
-# Planned runs for the current queue can be edited using your $EDITOR.
+# Planned runs for current queue can be edited using your $EDITOR.
 # 
+# 
+# The default current queue is named "main".  It can be changed with:
+# > 3x queue
+# Or, by setting the environment variable $_3X_QUEUE to the name of the desired
+# queue, e.g., `export _3X_QUEUE=alt` to use run/queue/alt/.
+#
 # 
 # > 3x plan results RESULTS_QUERY
 # > 3x plan skip    RESULTS_QUERY
@@ -22,11 +28,6 @@
 # experiments.  If you want to run inputs complementary to a set of results,
 # that is also possible with `3x plan skip`.  In this alternative usage, you
 # can plan more runs conditioning on the outputs so far.
-# 
-# The default current queue is named "main".  It can be changed with:
-# > 3x queue
-# Or, by setting the environment variable $_3X_QUEUE to the name of the desired
-# queue, e.g., `export _3X_QUEUE=alt` to use run/queue/alt/.
 # 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
@@ -39,8 +40,8 @@ set -eu
 update-assembly-script >/dev/null
 
 # create the queue directory if needed
-mkdir -p -- "$queueDir"
-[ -e "$queueDir"/plan ] || touch "$queueDir"/plan
+mkdir -p -- "$_3X_QUEUE_DIR"
+[ -e "$_3X_QUEUE_DIR"/plan ] || touch "$_3X_QUEUE_DIR"/plan
 
 # knowing how to generate combinations is important
 permute() {
@@ -62,9 +63,9 @@ permute() {
     fi
 }
 
-tmp=$(mktemp -d "$queueDir"/plan.XXXXXX)
+tmp=$(mktemp -d "$_3X_QUEUE_DIR"/plan.XXXXXX)
 trap "rm -rf -- $tmp" EXIT
-planSHA1orig=$(sha1sum <"$queueDir"/plan)
+planSHA1orig=$(sha1sum <"$_3X_QUEUE_DIR"/plan)
 planWithFiles=()
 
 # decide how we want to plan
@@ -110,10 +111,10 @@ case ${1:-} in
         ;;
 
     "") # edit the current plan
-        if [ -s "$queueDir"/plan ]; then
-            cat "$queueDir"/plan >"$tmp"/new
+        if [ -s "$_3X_QUEUE_DIR"/plan ]; then
+            cat "$_3X_QUEUE_DIR"/plan >"$tmp"/new
         else # show usage first if empty
-            usage "$0" "Empty plan for $queue; specify input variables to add runs"
+            usage "$0" "Empty plan for $_3X_QUEUE_ID; specify input variables to add runs"
         fi
         ;;
 
@@ -125,12 +126,12 @@ case ${1:-} in
         # permute the arguments and generate a plan
         msg "Permuting inputs for ${@%%=*}..."
         permute "run" "$@" | column -t >"$tmp"/more
-        planSHA1orig=$(sha1sum <"$queueDir"/plan)
-        cat "$queueDir"/plan "$tmp"/more >"$tmp"/new
+        planSHA1orig=$(sha1sum <"$_3X_QUEUE_DIR"/plan)
+        cat "$_3X_QUEUE_DIR"/plan "$tmp"/more >"$tmp"/new
         ;;
 esac
 
-cd "$queueDir"
+cd "$_3X_QUEUE_DIR"
 
 # let user do a finish edit of the generated plan
 if edit "$tmp"/new "$tmp"/timestamp; then
@@ -146,7 +147,7 @@ if edit "$tmp"/new "$tmp"/timestamp; then
     confirm-if-changed() {
         if ! [ x"$planSHA1orig" = x"$(sha1sum <plan)" ]; then
             # show error if changed
-            error "Plan for $queue changed since editing" || true
+            error "Plan for $_3X_QUEUE_ID changed since editing" || true
             if [ -t 0 -a -t 1 ]; then
                 # confirm overwrite
                 while :; do
@@ -183,16 +184,16 @@ if edit "$tmp"/new "$tmp"/timestamp; then
         done
     fi
 else
-    msg "No changes made to plan for $queue"
+    msg "No changes made to plan for $_3X_QUEUE_ID"
     exit 2
 fi
 
 # and summarize the new plan for queue
-msg "3x: updated plan for $queue ($(wc -l <plan) runs)"
+msg "3x: updated plan for $_3X_QUEUE_ID ($(wc -l <plan) runs)"
 
 # and notify queue-changed if already started,
 if queue-is-active; then
-    . find-queue-runner.sh
+    . find-runner.sh -
     setsid queue-changed &
 else # or give instructions how to start the queue
     msg "# To start executing, run:"

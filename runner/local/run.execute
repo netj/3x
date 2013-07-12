@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# local/run.execute -- execute the run locally
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+
+cd "$_3X_ROOT/$_3X_RUN"
+./execute.sh &
+runpid=$!
+
+# watch stdout and stderr
+trap 'msg "$_3X_RUN: interrupted"
+    {
+        set +e
+        kill -TERM $runpid
+        wait $runpid
+        c=$?
+        chmod +x execute.sh
+        exit $c
+    } 2>/dev/null' INT QUIT TERM
+be-quiet +1 || {
+tail -qF stdout --pid=$runpid      2>/dev/null &
+tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &
+}
+wait || true
+
+if [ -e exitcode ]; then
+    exitcode=$(cat exitcode)
+    msg "$_3X_RUN: finished with exitcode $exitcode"
+else
+    exitcode=127
+    msg "$_3X_RUN: interrupted"
+    exit $exitcode
+fi

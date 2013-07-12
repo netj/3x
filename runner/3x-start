@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 3x-start -- start executing runs in the current queue at the target
+# 3x-start -- start executing runs in current queue at its target
 # 
 # > 3x start -h
 # Shows this usage.  Usage varies for different types of target.
@@ -13,13 +13,13 @@ while getopts "h" o; do
         h)
             usage "$0"
             (
-                . find-queue-runner.sh
+                . find-runner.sh -
                 usage "$(type -p queue-start)"
             ) 2>/dev/null ||
                 usage - <<-EOF
 		#
 		# > 3x start
-		# Starts executing runs in the current queue on the current target.
+		# Starts executing runs in current queue at its target.
 		#
 		EOF
             exit
@@ -28,9 +28,7 @@ while getopts "h" o; do
 done
 shift $(($OPTIND - 1))
 
-. find-queue-runner.sh
-cd "$queueDir"
-
 # start queue runner in a separate process group, so we can kill all related
 # processes together later.
+. find-runner.sh -
 exec setsid queue-start "$@"

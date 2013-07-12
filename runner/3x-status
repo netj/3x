@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 3x-status -- display status of the current queue
+# 3x-status -- display status of current queue
 # 
 # > 3x status
 #
@@ -7,14 +7,12 @@
 # Created: 2013-01-14
 set -eu
 
-. find-queue-runner.sh
-
-cd "$queueDir"
+. find-runner.sh -
 
 # TODO add CLI switch to selectively show DONE/RUNNING/PLANNED
 
 {
-    PREFIXPATT='^3x[[:space:]][[:space:]]*run[[:space:]][[:space:]]*'
+    PREFIXPATT='^run[[:space:]][[:space:]]*'
 
     # runs already finished
     if [ -r done ]; then

@@ -10,7 +10,7 @@ trap 'chmod -x "$0"' EXIT  # turn itself off after execution
 
 # prepare to forward signal to the child process group
 for sig in HUP INT QUIT ABRT USR1 USR2 TERM
-do trap "kill -$sig "'-$pid; wait $pid' $sig
+do trap '[ -z "${pid:-}" ] || { kill -'"$sig"' -$pid; wait $pid; } 2>/dev/null' $sig
 done
 
 # execute this run in a clean environment and its own process group

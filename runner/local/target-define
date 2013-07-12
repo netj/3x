@@ -7,19 +7,19 @@
 #
 #
 # local/target-define -- define a local target
+# > _3X_ROOT=... \
+# > _3X_RUNNER=... \
 # > target-define TARGET [NAME[=VALUE]]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-26
 set -eu
 
+super "$0" "$@"
+
 Target=$1; shift
-cd "$_3X_ROOT"/run
 
-mkdir -p target/"$Target"
-cd target/"$Target"
-
-echo local >type
+cd "$_3X_ROOT"/run/target/"$Target"
 
 # keep a backup
 ! [ -e environ ] || mv -f environ environ~.$$

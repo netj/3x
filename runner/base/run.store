@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# run.store -- store the run
+# Usage:
+# > . runner.sh
+# > _3X_RUN=... \
+# > run.store
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+
+: ${_3X_ARCHIVE:=$_3X_ROOT/.3x/files}
+
+cd "$_3X_ROOT/$_3X_RUN" 2>/dev/null
+
+# post-process when the run seems to have completed
+if [ -s exitcode -a -e execute.sh -a ! -x execute.sh ]; then
+    # run output measurements
+    msg "$_3X_RUN: extracting output"
+    for mx in measures/*/measure; do
+        m=$(basename "$(dirname "$mx")")
+        if [ -x "$mx" ]; then
+            echo "$m=$(escape-args-for-shell "$(
+            # run measure drivers under the same env
+            export $(cat ./env) _3X_MEASURE=${mx%/measure}
+            "$mx"
+            )")"
+        fi
+    done >output
+
+    # incrementally update the index with this run
+    msg "$_3X_RUN: indexing"
+    3x-index init
+    3x-index update .
+fi
+
+# archive everything
+msg "$_3X_RUN: archiving"
+archive "$_3X_ARCHIVE" .

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# run.execute -- execute the run
+# Usage:
+# > . runner.sh
+# > _3X_RUN=... \
+# > . execute-run.sh
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-12
+set -eu
+
+error "$_3X_RUNNER/run.execute: Not implemented"

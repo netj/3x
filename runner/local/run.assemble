@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# local/run.assemble -- assemble the run for local execution
+# Usage:
+# > . runner.sh
+# > _3X_RUN=... \
+# > run.assemble [NAME=VALUE]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+
+# figure out the environment to use for assembly
+envVars=()
+envFiles=()
+# either as configured in target or default
+if [ -e "$_3X_TARGET_DIR"/environ ]; then
+    envFiles+=("$_3X_TARGET_DIR"/environ)
+else
+    envFiles+=("$_3X_RUNNER_HOME"/local/environ.default)
+fi
+if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
+    envVarNames=$(list-var-names "${envFiles[@]}")
+    msg +1 "$_3X_RUN: assembling with environment spec ${envFiles[*]}: "$envVarNames
+    {
+        eval export -- $(no-comments "${envFiles[@]}" | sed 's/\([^=]*\)=\(.*\)/\1=${\1:-\2}/')
+        for v in $envVarNames; do
+            envVars+=("$v=${!v:-}")
+        done
+    } >/dev/null
+fi
+
+# assemble using them
+super "$0" "$@" -- "${envVars[@]}"

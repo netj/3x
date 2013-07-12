@@ -37,33 +37,34 @@ shift $(($OPTIND - 1))
 
 . find-queue.sh
 
-is-valid-target() {
+target-exists() {
     local t=$1
     local targetDir="$_3X_ROOT"/run/target/"$t"
     [ -d "$targetDir" ] && [ -r "$targetDir"/type ]
 }
 target-must-exist() {
-    is-valid-target "$Target" || error "$Target: No such target"
+    local t=$1
+    target-exists "$t" || error "$t: No such target"
 }
 load-target() {
     local t=$1
     local targetDir="$_3X_ROOT"/run/target/"$t"
-    type=$(cat "$targetDir"/type)
-    PATH="$queueRunner/$type:$PATH"
+    runner=$(cat "$targetDir"/type)
 } 2>/dev/null
 
 # decide what to do based on the number of given arguments
 if [ $# -eq 0 ]; then
-    Target=$(readlink "$queueDir"/target)
+    Target=$(readlink "$_3X_QUEUE_DIR"/target)
     Target=${Target##*/}
 elif [ $# -eq 1 ]; then
     # set given target for the current queue
     Target=$1
     # make sure it is a valid target
     target-must-exist "$Target"
+    # TODO disallow target switching when it is active
     # place a symlink in the queue
-    mkdir -p "$queueDir"
-    ln -sfn ../../target/$Target "$queueDir"/target
+    mkdir -p "$_3X_QUEUE_DIR"
+    ln -sfn ../../target/$Target "$_3X_QUEUE_DIR"/target
 else # [ $# -gt 1 ]
     Target=$1; shift
     # TODO sanitize $Target name
@@ -73,22 +74,23 @@ else # [ $# -gt 1 ]
             [ $# -gt 0 ] || usage "$0" "Specify the TYPE of target to define"
             Type=$1; shift
             # some sanity checks first
-            targetTypeDir="$queueRunner/$Type"
-            [ -x "$targetTypeDir"/target-define ] ||
+            runnerDir="$_3X_RUNNER_HOME/$Type"
+            [ -x "$runnerDir"/target-define ] ||
                 error "$Type: Unknown target execution environment type"
-            if is-valid-target "$Target"; then
+            if target-exists "$Target"; then
                 load-target "$Target"
-                [ x"$Type" = x"$type" ] ||
-                    error "$Target: Unable to change type of an existing target ($type -> $Type)"
+                [ x"$runner" = x"$Type" ] ||
+                    error "$Target: Unable to change type of an existing target ($runner -> $Type)"
             fi
             # define the given target
-            PATH="$targetTypeDir:$PATH"
+            . find-runner.sh "$Type"
             target-define "$Target" "$@"
             exec target-info "$Target"
             ;;
         info)
             target-must-exist "$Target"
             load-target "$Target"
+            . find-runner.sh "$runner"
             exec target-info "$Target" "$@"
             ;;
         *)
@@ -112,11 +114,12 @@ while read t; do
     t=${t%/}
     current=$NBSP
     [ x"$t" != x"$Target" ] || current='*'
+    echo "$(
     load-target $t
-    echo "$(printf '%s\t' \
+    printf '%s\t' \
         "$current" \
         "$t" \
-        "$type" \
+        "$runner" \
         #
     )"
 done
