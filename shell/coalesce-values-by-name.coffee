@@ -16,18 +16,18 @@
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-02-13
-[_,_,_,_, args...] = process.argv
+[_,_, nameDelim, valueDelim, args...] = process.argv
 ordering = []
 values = {}
 for arg in args
-    [name,vs] = arg.split "=", 2
+    [name,vs] = arg.split nameDelim, 2
     ordering.push name unless name in ordering
     values[name] ?= []
     if vs?
-        for v in vs.split ","
+        for v in vs.split valueDelim
             values[name].push v unless v in values[name]
 esc = (s) -> s.replace /'/g, "'\\''"
 console.log (
         for name in ordering
-            "'#{esc(name)}=#{values[name].map(esc).join ","}'"
+            "'#{esc(name)}#{nameDelim}#{values[name].map(esc).join valueDelim}'"
     ).join " "

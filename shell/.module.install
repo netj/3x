@@ -19,7 +19,7 @@ customize                   $TOOLSDIR/
 limitOffset                 $TOOLSDIR/
 no-comments                 $TOOLSDIR/
 extract-regexp              $TOOLSDIR/
-coalesce-values-by-name     $TOOLSDIR/
+.build/coalesce-values-by-name $TOOLSDIR/
 
 # concurrency
 lockproc                    $TOOLSDIR/

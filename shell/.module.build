@@ -11,6 +11,12 @@ set -eu
 PARAMS
 chmod +x .build/3x.sh
 
+for c in *.coffee; do
+    x=.build/${c%.coffee}
+    { echo "#!/usr/bin/env node"; coffee -p "$c"; } >"$x"
+    chmod +x "$x"
+done
+
 cd .build
 ln -sf ../package.json .
 date >README.md
