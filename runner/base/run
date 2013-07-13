@@ -15,7 +15,6 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" "At least one NAME=VALUE pairs must be given"
 
-# TODO decide whether we want clean up here
 cleanup() {
     local c=$?
     set +e

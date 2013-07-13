@@ -2,26 +2,35 @@
 3x-findroot                 $TOOLSDIR/
 3x-hack                     $TOOLSDIR/
 
-usage                       $TOOLSDIR/
+# logging, reporting
 error                       $TOOLSDIR/
 msg                         $TOOLSDIR/
 be-quiet                    $TOOLSDIR/
 verbosity-isnt              $TOOLSDIR/
+usage                       $TOOLSDIR/
+
+# shell scripting
+escape-args-for-shell       $TOOLSDIR/
 super                       $TOOLSDIR/
 
+# useful primitives
 edit                        $TOOLSDIR/
 customize                   $TOOLSDIR/
-archive                     $TOOLSDIR/
-unarchive                   $TOOLSDIR/
-escape-args-for-shell       $TOOLSDIR/
-coalesce-values-by-name     $TOOLSDIR/
-extract-regexp              $TOOLSDIR/
-
-column                      $TOOLSDIR/
 limitOffset                 $TOOLSDIR/
-serialOnEachLine            $TOOLSDIR/
+no-comments                 $TOOLSDIR/
+extract-regexp              $TOOLSDIR/
+coalesce-values-by-name     $TOOLSDIR/
+
+# concurrency
 lockproc                    $TOOLSDIR/
 synchronized                $TOOLSDIR/
+
+# deduplication
+archive                     $TOOLSDIR/
+unarchive                   $TOOLSDIR/
+
+# portability
+column                      $TOOLSDIR/
 setsid                      $TOOLSDIR/
 
 .build/node_modules         $LIBDIR/

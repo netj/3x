@@ -2,6 +2,5 @@ update-assembly-script          $TOOLSDIR/
 generate-assembly-script        $TOOLSDIR/
 sanity-checks.sh                $TOOLSDIR/
 import                          $TOOLSDIR/
-no-comments                     $TOOLSDIR/
 list-var-names                  $TOOLSDIR/
 execute.sh                      $DATADIR/assembler/

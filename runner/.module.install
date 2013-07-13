@@ -5,6 +5,7 @@
 3x-start                        $TOOLSDIR/
 3x-stop                         $TOOLSDIR/
 
+find-queue.sh                   $TOOLSDIR/
 find-runner.sh                  $TOOLSDIR/
 
 base/queue-start                $TOOLSDIR/runner/

@@ -1,5 +1,4 @@
 3x-plan                 $TOOLSDIR/
-find-queue.sh           $TOOLSDIR/
 
 3x-inputs               $TOOLSDIR/
 normalize-inputs        $TOOLSDIR/
