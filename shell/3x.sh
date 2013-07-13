@@ -57,6 +57,13 @@ if [ -z "${_3X_HOME:-}" ]; then
     })
     Here=$(dirname "$Self")
 
+    # Keep a backup of some environment variables
+    for v in PATH NODE_PATH
+    do  vbak=_3X_ORIG_$v
+        ! declare -p $vbak &>/dev/null || continue
+        export $vbak=${!v}
+    done
+
     # Setup environment
     export _3X_HOME=${Here%/@BINDIR@}
     export BINDIR="$_3X_HOME/@BINDIR@"

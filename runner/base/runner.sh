@@ -21,8 +21,11 @@ WORKER_WAITING_SUFFIX=.waiting
 WORKER_WAITING_SIGNAL=USR1
 WORKER_WAITING_TIMEOUT=600 #secs
 
-WORKER_ID=
-runner-msg()   { msg   "$_3X_QUEUE_ID $_3X_TARGET${WORKER_ID:+[$WORKER_ID]}: $*"; }
+export WORKER_ID=${WORKER_ID:-}
+runner-msg()   {
+    local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
+    msg $level "$_3X_QUEUE_ID $_3X_TARGET${WORKER_ID:+[$WORKER_ID]}: $*"
+}
 runner-error() { error "$_3X_QUEUE_ID $_3X_TARGET${WORKER_ID:+[$WORKER_ID]}: $*"; }
 
 synchronized() {

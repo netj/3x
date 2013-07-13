@@ -106,14 +106,15 @@ touch assembly.in-progress
 : >assembly
 
 # record and declare input parameters and environment variables
-: >env; : >input; endOfInput=false
+: >env; : >input; paramIsInput=true
 for param; do
-    case $param in --) endOfInput=true; continue ;; esac
-    declare -r "$param"
+    case $param in --) paramIsInput=false; continue ;; esac
     echo "$param" >>env
-    $endOfInput || echo "$param" >>input
+    $paramIsInput || continue
+    declare -r "$param"
+    echo "$param" >>input
 done
-unset param endOfInput
+unset param paramIsInput
 
 
 # define how each iteration of assembly works

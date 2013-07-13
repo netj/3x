@@ -9,4 +9,7 @@
 # Created: 2013-07-11
 set -eu
 
-"$_3X_ROOT"/.3x/assemble.sh "$_3X_ROOT/$_3X_RUN" "$@"
+set -- "$_3X_ROOT"/.3x/assemble.sh "$_3X_ROOT/$_3X_RUN"  "$@"
+be-quiet +4 || set -- bash -x "$@"
+
+exec "$@"

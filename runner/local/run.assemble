@@ -24,7 +24,12 @@ if [ $(no-comments "${envFiles[@]}" | wc -l) -gt 0 ]; then
     {
         eval export -- $(no-comments "${envFiles[@]}" | sed 's/\([^=]*\)=\(.*\)/\1=${\1:-\2}/')
         for v in $envVarNames; do
-            envVars+=("$v=${!v:-}")
+            vbak=_3X_ORIG_$v
+            if declare -p $vbak &>/dev/null; then
+                envVars+=("$v=${!vbak:-}")
+            else
+                envVars+=("$v=${!v:-}")
+            fi
         done
     } >/dev/null
 fi

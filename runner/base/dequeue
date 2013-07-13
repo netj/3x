@@ -27,7 +27,7 @@ pick-next() {
         [ -s "$r"/cmdln ] || continue
         ! lockproc $r/lock alive || continue
         lockproc $r/lock grab || continue
-        msg +2 " resuming $r..."
+        runner-msg +2 "resuming $r..."
         runDir=$r; break
     done
     # resume running if so, or dequeue from the plan
