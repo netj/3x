@@ -105,9 +105,9 @@ ls -d */ |
 {
 NBSP=' '
 echo "$(printf '%s\t' \
-    "$NBSP" \
-    "target" \
-    "type" \
+    "#" \
+    "TARGET" \
+    "TYPE" \
     #
 )"
 while read t; do
@@ -124,4 +124,4 @@ while read t; do
     )"
 done
 } |
-column -t
+color-marked-row '* '

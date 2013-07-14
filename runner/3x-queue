@@ -64,13 +64,13 @@ if $ListDetails; then
     NBSP=' '
     {
     tsvline \
-        "$NBSP" \
-        "queue" \
-        "state" \
-        "#planned" \
-        "#running" \
-        "#done" \
-        "target" \
+        "#" \
+        "QUEUE" \
+        "STATE" \
+        "#PLANNED" \
+        "#RUNNING" \
+        "#DONE" \
+        "TARGET" \
         #
     while read -r queue; do
         queue=${queue%/}
@@ -101,7 +101,7 @@ if $ListDetails; then
             #
     done
     } |
-    if [ -t 1 ]; then column -t; else cat; fi
+    color-marked-row '* '
 elif $ShowCount; then
     wc -l
 else

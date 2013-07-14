@@ -8,6 +8,7 @@ msg                         $TOOLSDIR/
 be-quiet                    $TOOLSDIR/
 verbosity-isnt              $TOOLSDIR/
 usage                       $TOOLSDIR/
+color-marked-row            $TOOLSDIR/
 
 # shell scripting
 escape-args-for-shell       $TOOLSDIR/
