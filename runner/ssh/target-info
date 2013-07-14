@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#
+# ssh/target-info -- display remote (ssh) target info
+# > target-info TARGET
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-13
+set -eu
+
+super "$0" "$@"
+echo
+
+Target=$1
+cd "$_3X_ROOT"/run/target/"$Target"
+
+echo "# remote URL:"
+cat remote 2>/dev/null || true
+echo
+
+echo "# environment for execution:"
+cat environ 2>/dev/null

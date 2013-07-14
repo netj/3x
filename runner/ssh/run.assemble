@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# ssh/run.assemble -- assemble the run for local execution
+# Usage:
+# > . runner.sh
+# > _3X_RUN=... \
+# > run.assemble [NAME=VALUE]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+shopt -s extglob
+
+. runner.sh
+. remote-runner.sh
+
+parseRemote
+
+# figure out the environment to use for assembly from remote
+envVars=($(
+    envCache="$_3X_TARGET_DIR"/environ.cached
+    if [ -r "$envCache" ]; then
+        cat "$envCache"
+    else
+        envSpec=($(
+            set -- $(findOneInTargetOrRunners environ)
+            runner-msg-withTargetOrRunnerPaths +1 "assembling with environment spec:" "$@"
+            cat "$@"
+        )
+        )
+        trap 'rm -f "$envCache"' EXIT
+        set -o pipefail
+        # run record-environ.sh from the target host
+        sshRemote bash -eu -s -- "${envSpec[@]}" <"$(type -p record-environ.sh)" |
+        tee "$envCache"
+        trap - EXIT
+    fi
+)
+)
+[ ${#envVars[@]} -eq 0 ] || set -- "$@" -- "${envVars[@]}"
+
+# assemble using them
+super "$0" "$@"

@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# > 3x target TARGET define ssh  REMOTE_URL  [NAME[=VALUE]]...
+# Defines a new target that is accessible via ssh, named TARGET.
+#  
+# REMOTE_URL can be in one of these forms:
+# - USER@HOSTNAME:WORKING_DIR
+# - ssh://USER@HOSTNAME:PORT/WORKING_DIR
+#  
+# The following NAMEs or NAME=VALUE pairs specify the environment variables you
+# want to pass down to the executing runs.  VALUE in each NAME=VALUE pair is
+# the default value to use if the variable named NAME is not declared.
+#
+#
+# ssh/target-define -- define a remote (ssh) target
+# > _3X_ROOT=... \
+# > _3X_RUNNER=... \
+# > target-define TARGET REMOTE_URL [NAME[=VALUE]]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-13
+set -eu
+
+super "$0" "$@"
+
+. runner.sh
+
+Target=$1; shift
+
+export _3X_TARGET=$Target
+export _3X_TARGET_DIR="$_3X_ROOT"/run/target/"$Target"
+
+cd "$_3X_TARGET_DIR"
+
+
+[ $# -gt 0 ] || usage "$0" "Missing REMOTE_URL"
+RemoteURL=$1; shift
+
+# replace the remote
+# TODO sanitize $RemoteURL
+echo "$RemoteURL" >remote
+
+
+# keep a backup
+! [ -e environ ] || mv -f environ environ~.$$
+
+# replace the environment configuration
+if [ $# -gt 0 ]; then
+    for nameValuePair; do
+        echo $nameValuePair
+    done >environ
+else # use default configuration if none given
+    cp -f "$(findOneInTargetOrRunners environ)" environ
+fi
+
+# decide if we need to leave a backup
+if [ -e environ~.$$ ]; then
+    if [ x"$(sha1sum <environ)" = x"$(sha1sum <environ~.$$)" ]; then
+        rm -f environ~.$$
+    else
+        mv -f environ~.$$ environ~
+    fi
+fi
+
+# move a cached environment
+! [ -e environ.cached ] || mv -f environ.cached environ.cached~

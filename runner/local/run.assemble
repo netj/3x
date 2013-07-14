@@ -21,6 +21,7 @@ envVars=($(
     record-environ.sh "${envSpec[@]}"
 )
 )
+[ ${#envVars[@]} -eq 0 ] || set -- "$@" -- "${envVars[@]}"
 
 # assemble using them
-super "$0" "$@" -- "${envVars[@]}"
+super "$0" "$@"

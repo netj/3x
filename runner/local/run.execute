@@ -6,19 +6,20 @@
 set -eu
 
 cd "$_3X_ROOT/$_3X_RUN"
+verbose=; be-quiet +4 || verbose="bash -x"
+$verbose \
 ./execute.sh &
 runpid=$!
 
 # watch stdout and stderr
-trap 'msg "$_3X_RUN: interrupted"
-    {
-        set +e
-        kill -TERM $runpid
-        wait $runpid
-        c=$?
-        chmod +x execute.sh
-        exit $c
-    } 2>/dev/null' INT QUIT TERM
+for sig in INT QUIT TERM; do
+    trap 'msg "$_3X_RUN: interrupted"
+        {
+            set +e
+            kill -'$sig' $runpid
+            wait $runpid
+        } 2>/dev/null' $sig
+done
 be-quiet +1 || {
 tail -qF stdout --pid=$runpid      2>/dev/null &
 tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &

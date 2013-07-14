@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# ssh/run.execute -- execute the run locally
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-13
+set -eu
+. remote-runner.sh
+parseRemote
+
+trap 'msg "$_3X_RUN: interrupted"; exit 127' HUP INT QUIT TERM
+
+cd "$_3X_ROOT"
+
+msg "$_3X_RUN: transferring to remote"
+sshRemote mkdir -p "$remoteRoot/.3x"
+rsyncToRemote . --archive --hard-links --omit-dir-times --delete --relative "$_3X_RUN"
+
+
+cd "$_3X_ROOT/$_3X_RUN"
+
+msg "$_3X_RUN: executing at remote"
+set +e
+{
+    verbose=; be-quiet +4 || verbose="bash -x"
+    echo 'set -eu
+        cd "$_3X_ROOT/$_3X_RUN"'
+    be-quiet +1 || echo '
+tail -qF stdout --pid=$$      2>/dev/null &
+tail -qF stderr --pid=$$ 1>&2 2>/dev/null &
+'
+    echo "exec $verbose ./execute.sh"
+} |
+sshRemote env _3X_ROOT="$remoteRoot" _3X_RUN="$_3X_RUN" bash -s || true
+
+
+msg "$_3X_RUN: retrieving from remote"
+rsyncFromRemote "$_3X_RUN"/ --archive --hard-links --remove-source-files .
+sshRemote find "$remoteRoot/$_3X_RUN" -exec rmdir -p {} + 2>/dev/null
+
+
+if [ -e exitcode ]; then
+    exitcode=$(cat exitcode)
+    msg "$_3X_RUN: finished with exitcode $exitcode"
+else
+    exitcode=127
+    msg "$_3X_RUN: incomplete execution"
+    exit $exitcode
+fi

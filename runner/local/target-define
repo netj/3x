@@ -20,8 +20,10 @@ super "$0" "$@"
 . runner.sh
 
 Target=$1; shift
+export _3X_TARGET=$Target
+export _3X_TARGET_DIR="$_3X_ROOT"/run/target/"$Target"
 
-cd "$_3X_ROOT"/run/target/"$Target"
+cd "$_3X_TARGET_DIR"
 
 # keep a backup
 ! [ -e environ ] || mv -f environ environ~.$$

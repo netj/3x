@@ -1,0 +1,8 @@
+remote-runner.sh        $TOOLSDIR/runner/ssh/
+
+run.assemble            $TOOLSDIR/runner/ssh/
+
+run.execute             $TOOLSDIR/runner/ssh/
+
+target-info             $TOOLSDIR/runner/ssh/
+target-define           $TOOLSDIR/runner/ssh/

@@ -6,8 +6,6 @@ set -eu
     { echo >&2 "$PWD: not a runnable"; exit 127; }
 : $_3X_ROOT $_3X_RUN
 
-trap 'chmod -x "$0"' EXIT  # turn itself off after execution
-
 # prepare to forward signal to the child process group
 for sig in HUP INT QUIT ABRT USR1 USR2 TERM
 do trap '[ -z "${pid:-}" ] || { kill -'"$sig"' -$pid; wait $pid; } 2>/dev/null' $sig
@@ -52,4 +50,9 @@ set +m  # need to disable job control to suppress ugly status reporting on abort
 wait $pid
 code=$?
 echo $code >exitcode
+
+# turn itself off
+chmod -x "$0"
+
+# finally, preserve the exit code
 exit $code
