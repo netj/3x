@@ -41,15 +41,10 @@ else
 fi
 
 # add all parent runners of $_3X_RUNNER and the base runner to PATH
-setup-runner-path() {
+setupRunnerPath() {
     # TODO remove all dirs under $_3X_RUNNER_HOME from PATH first?
-    local r=$_3X_RUNNER
-    local paths="$_3X_RUNNER_HOME/$r"
-    while r=$(cat "$_3X_RUNNER_HOME/$r"/parent 2>/dev/null); do
-        paths+=":$_3X_RUNNER_HOME/$r"
-    done
-    PATH="$paths:$_3X_RUNNER_HOME:$PATH"
+    PATH="$(ls-super -a "$_3X_RUNNER_HOME" "$_3X_RUNNER" | tr '\n' :)$PATH"
 }
-setup-runner-path
+setupRunnerPath
 
 cd "$_3X_QUEUE_DIR"

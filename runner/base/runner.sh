@@ -36,7 +36,7 @@ synchronized() {
 }
 
 # source the parent script overriden by the current one
-# Example usage: super "$0" "$@"
+# Example usage: super "$BASH_SOURCE" "$@"
 super() {
     local this=$1; shift
     case $this in
@@ -66,6 +66,37 @@ super() {
             command super "$this" "$@"
             ;;
     esac
+}
+
+findOneInTargetOrRunners() {
+    local f
+    for f; do
+        if [ -e "$_3X_TARGET_DIR/$f" ]; then
+            echo "$_3X_TARGET_DIR/$f"
+        else
+            ls-super "$_3X_RUNNER_HOME" "$_3X_RUNNER" "$f"
+        fi
+    done
+}
+runner-msg-withTargetOrRunnerPaths() {
+    local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
+    be-quiet $level || {
+        local msg=$1; shift
+        for path; do
+            # abbreviate some known paths
+            case $path in
+                "$_3X_HOME"/*)
+                    path=${path#$_3X_HOME/}
+                    ;;
+                "$_3X_RUNNER_HOME"/*)
+                    path=${path#$_3X_RUNNER_HOME/}
+                    path=${path/\//"'s default "}
+                    ;;
+            esac
+            msg+=" $path"
+        done
+        msg $level "$msg"
+    }
 }
 
 # allow actual runner to override/extend

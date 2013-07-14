@@ -17,6 +17,8 @@ set -eu
 
 super "$0" "$@"
 
+. runner.sh
+
 Target=$1; shift
 
 cd "$_3X_ROOT"/run/target/"$Target"
@@ -30,7 +32,7 @@ if [ $# -gt 0 ]; then
         echo $nameValuePair
     done >environ
 else # use default configuration if none given
-    cp -f "$TOOLSDIR/runner/local/environ.default" environ
+    cp -f "$(findOneInTargetOrRunners environ)" environ
 fi
 
 # decide if we need to leave a backup

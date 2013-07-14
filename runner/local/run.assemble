@@ -8,20 +8,15 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-07-11
 set -eu
+. runner.sh
 
 # figure out the environment to use for assembly
-envVars=(
-$(
-    # either as configured in target or default
-    set --
-    if [ -e "$_3X_TARGET_DIR"/environ ]; then
-        set -- "$@" "$_3X_TARGET_DIR"/environ
-    else
-        set -- "$@" "$_3X_RUNNER_HOME"/local/environ.default
-    fi
-    msg +1 "$_3X_RUN: assembling with environment spec ${*#$_3X_ROOT/}"
-    envSpec=(
-    $(cat "$@")
+envVars=($(
+    envSpec=($(
+        set -- $(findOneInTargetOrRunners environ)
+        runner-msg-withTargetOrRunnerPaths +1 "assembling with environment spec:" "$@"
+        cat "$@"
+    )
     )
     record-environ.sh "${envSpec[@]}"
 )

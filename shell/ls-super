@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# ls-super -- list files provided by a module or any of its super (parent) modules
+# Usage: ls-super [-a] MODULE_ROOT MODULE_NAME [FILE...]
+# 
+# Assume modules are laid out as follows:
+#   /path/to/modules/
+#     .../
+#       file
+#       command
+#       data/
+#         b.txt
+#     A/
+#       command
+#       file
+#       data/
+#         a.txt
+#     B/
+#       parent  # which points to A
+#       command
+#     C/
+#       file
+#     D/
+#       parent  # which points to B
+#       file
+#       data/
+#         a.txt
+# 
+# > ls-super -a /path/to/modules B
+# Will output:
+# > /path/to/modules/B
+# > /path/to/modules/A
+# > /path/to/modules/...
+# 
+# > ls-super -a /path/to/modules C file
+# Will output:
+# > /path/to/modules/C/file
+# > /path/to/modules/.../file
+# 
+# > ls-super /path/to/modules D command
+# Will output:
+# > /path/to/modules/B/command
+# 
+# > ls-super -a /path/to/modules D command file data/b.txt
+# Will output:
+# > /path/to/modules/B/command
+# > /path/to/modules/A/command
+# > /path/to/modules/.../command
+# > /path/to/modules/D/file
+# > /path/to/modules/A/file
+# > /path/to/modules/.../file
+# > /path/to/modules/.../data/b.txt
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-13
+set -eu
+
+ListAll=false
+while getopts "a" o; do
+    case $o in
+        a)
+            ListAll=true
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+[ $# -ge 2 ] || usage "$0" "No MODULE_ROOT and MODULE_NAME must be specified"
+
+Root=$1; shift
+Module=$1; shift
+
+[ $# -gt 0 ] || set -- ""
+
+for f; do
+    p=${f:+/$f}
+    m=$Module
+    found=false
+    while :; do
+        if [ -e "$Root/$m$p" ]; then
+            echo "$Root/$m$p"
+            found=true
+            $ListAll || break
+        fi
+        m=$(cat "$Root/$m"/parent 2>/dev/null) || break
+    done
+    if ! $found || $ListAll; then
+        if [ -e "$Root/...$p" ]; then
+            echo "$Root/...$p"
+            found=true
+        fi
+    fi
+    $ListAll || $found
+done

@@ -1,5 +1,4 @@
 run.assemble            $TOOLSDIR/runner/local/
-environ.default         $TOOLSDIR/runner/local/
 
 run.execute             $TOOLSDIR/runner/local/
 

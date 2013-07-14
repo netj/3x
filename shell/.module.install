@@ -12,6 +12,7 @@ usage                       $TOOLSDIR/
 # shell scripting
 escape-args-for-shell       $TOOLSDIR/
 super                       $TOOLSDIR/
+ls-super                    $TOOLSDIR/
 
 # useful primitives
 edit                        $TOOLSDIR/
