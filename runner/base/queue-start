@@ -26,14 +26,14 @@ set -eu
 . runner.sh
 
 # register worker pid
-WORKER_ID=
+_3X_WORKER_ID=
 workerHandle=
 register-pid() {
-    WORKER_ID=0
+    _3X_WORKER_ID=0
     local handle=
-    while handle=$WORKER_LOCK_PREFIX${WORKER_ID}.lock
+    while handle=$WORKER_LOCK_PREFIX${_3X_WORKER_ID}.lock
         lockproc $handle alive
-    do let ++WORKER_ID
+    do let ++_3X_WORKER_ID
     done
     lockproc $handle grab
     workerHandle=$handle
@@ -46,7 +46,12 @@ synchronized $WORKER_LOCK_PREFIX.lock register-pid
     echo "start $*"
 } >>$ACTIVE_FLAG
 
-# TODO copy the target execution environment configuration to a workerDir
+# create a directory for organizing worker-local stuffs
+export _3X_WORKER_DIR="$_3X_QUEUE_DIR/$WORKER_DIR_PREFIX$_3X_WORKER_ID"
+mkdir -p "$_3X_WORKER_DIR"
+
+# keep a copy of the target execution environment configuration while for this session
+cp -a "$_3X_TARGET_DIR"/. "$_3X_WORKER_DIR"/target
 
 # repeat until all planned runs are done
 runner-msg "Starting"

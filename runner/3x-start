@@ -28,6 +28,11 @@ while getopts "h" o; do
 done
 shift $(($OPTIND - 1))
 
+# TODO accept number of concurrent workers
+
+# make sure the assemble script is up to date
+assembleScript=$(update-assembly-script)
+
 # start queue runner in a separate process group, so we can kill all related
 # processes together later.
 . find-runner.sh -

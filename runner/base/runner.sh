@@ -13,20 +13,23 @@ set -eu
 # make sure runner handler is invoked after . find-runner.sh
 : $_3X_RUNNER $_3X_QUEUE_ID $_3X_QUEUE_DIR $_3X_QUEUE $_3X_ROOT
 
+# all file paths are $_3X_QUEUE_DIR-relative
 ACTIVE_FLAG=.is-active.$_3X_RUNNER
 SERIAL_COUNTER=.count
 RUNDIR_PREFIX=running.$_3X_RUNNER.
 WORKER_LOCK_PREFIX=.worker.$_3X_RUNNER.
+WORKER_DIR_PREFIX=.worker.$_3X_RUNNER.
 WORKER_WAITING_SUFFIX=.waiting
 WORKER_WAITING_SIGNAL=USR1
 WORKER_WAITING_TIMEOUT=600 #secs
 
-export WORKER_ID=${WORKER_ID:-}
+export WORKER_DIR=${WORKER_DIR:-}
+export _3X_WORKER_ID=${_3X_WORKER_ID:-}
 runner-msg()   {
     local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
-    msg $level "$_3X_QUEUE_ID $_3X_TARGET${WORKER_ID:+[$WORKER_ID]}: $*"
+    msg $level "$_3X_QUEUE_ID $_3X_TARGET${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"
 }
-runner-error() { error "$_3X_QUEUE_ID $_3X_TARGET${WORKER_ID:+[$WORKER_ID]}: $*"; }
+runner-error() { error "$_3X_QUEUE_ID $_3X_TARGET${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"; }
 
 synchronized() {
     local Lock=$1; shift

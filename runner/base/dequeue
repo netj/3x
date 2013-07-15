@@ -60,8 +60,8 @@ record-running() {
         queue-record >>running
     mkdir -p runs
     runRelPath="../../../${runId#run/}"
-    ln -sfn "$runRelPath" $runDir/run
     ln -sfn "$runRelPath" runs/$serial
+    ln -sfn "../runs/$serial" $runDir/run
 }
 synchronized running.lock  record-running
 
@@ -69,12 +69,12 @@ synchronized running.lock  record-running
 # prepare to execute the one we picked for next
 # TODO make sure the $cmdln starts with "run "
 
-# TODO #cp -a "$_3X_TARGET_DIR" $runDir/target
+# keep a copy of the target execution environment configuration and target name for later maintenance
+rsync -aH --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" $runDir/target/
 
 # XXX clean $runId first, in case we are retrying one that failed last time
 ! [ -e runs/$serial/ ] || unarchive "$_3X_ARCHIVE" runs/$serial/
 rm -rf runs/$serial/ 2>/dev/null || true
-assembleScript=$(update-assembly-script)
 
 
 # execute the picked one
