@@ -49,6 +49,7 @@ synchronized $WORKER_LOCK_PREFIX.lock register-pid
 # create a directory for organizing worker-local stuffs
 export _3X_WORKER_DIR="$_3X_QUEUE_DIR/$WORKER_DIR_PREFIX$_3X_WORKER_ID"
 mkdir -p "$_3X_WORKER_DIR"
+# TODO rotate log
 
 # keep a copy of the target execution environment configuration while for this session
 cp -a "$_3X_TARGET_DIR"/. "$_3X_WORKER_DIR"/target
@@ -57,9 +58,11 @@ cp -a "$_3X_TARGET_DIR"/. "$_3X_WORKER_DIR"/target
 runner-msg "Starting"
 processing=false
 stopped=false
-abort=false
-trap "stopped=true abort=true" INT QUIT
-trap "stopped=true" TERM
+interrupted=false
+terminated=false
+failed=false
+trap "stopped=true interrupted=true" INT QUIT
+trap "stopped=true terminated=true" TERM
 trap '$processing || runner-msg "Resuming"' $WORKER_WAITING_SIGNAL
 queue-not-empty() {
     # check if there are planned runs, or interrupted ones in current queue
@@ -79,7 +82,7 @@ until $stopped; do
         # process runs in the current queue
         processing=true
         let SHLVL--
-        dequeue || true
+        dequeue || stopped=true failed=true
         let ++SHLVL
         processing=false
     fi
@@ -87,7 +90,7 @@ until $stopped; do
     until $stopped || queue-not-empty; do
         runner-msg "Waiting"
         touch $workerHandle$WORKER_WAITING_SUFFIX
-        sleep $WORKER_WAITING_TIMEOUT &>/dev/null || true
+        sleep $WORKER_WAITING_TIMEOUT </dev/null &>/dev/null || true
     done
     rm -f $workerHandle$WORKER_WAITING_SUFFIX
 done
@@ -95,8 +98,11 @@ done
 # unregister worker pid
 lockproc $workerHandle release
 
-if $abort; then
-    runner-error "Aborted" || true
+# clean up worker directory
+rm -rf "$_3X_WORKER_DIR"
+
+if $interrupted; then
+    runner-error "Interrupted" || true
     queue-refresh
     if ! [ -e $ACTIVE_FLAG ]; then
         msg
@@ -106,6 +112,10 @@ if $abort; then
         msg "# To fully stop, and put executing runs back to plan, run:"
         msg "3x stop"
     fi
+    exit 1
+elif $failed && ! $terminated; then
+    runner-error "Failed Execution" || true
+    # TODO msg inspect worker log
     exit 2
 else
     runner-msg "Stopped"
