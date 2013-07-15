@@ -47,10 +47,19 @@ parseRemote() {
     error "$remote: malformed REMOTE_URL"
 }
 
+# TODO see if ssh supports Control{Master,Persist}
+remoteSSHCommand=$(escape-args-for-shell \
+    ssh \
+    -o BatchMode=yes \
+    -o ControlMaster=auto -o ControlPersist=60 \
+    -o ControlPath="$_3X_WORKER_DIR"/ssh-master \
+    #
+)
+
 sshRemote() {
     parseRemote
     # TODO use ControlMaster ControlPersist
-    ssh ${remotePort:+-p $remotePort} \
+    $remoteSSHCommand ${remotePort:+-p $remotePort} \
         ${remoteUser:+$remoteUser@}$remoteHost \
         "$@"
 }
@@ -60,7 +69,7 @@ rsyncToRemote() {
     parseRemote
     local verboseOpt=; be-quiet +2 || verboseOpt=-v
     set -- \
-    rsync ${remotePort:+--rsh="ssh -p $remotePort"} $verboseOpt \
+    rsync --rsh="$remoteSSHCommand ${remotePort:+-p $remotePort}" $verboseOpt \
         "$@" \
         "${remoteUser:+$remoteUser@}$remoteHost":"$(escape-args-for-shell "$remoteRoot/$remotePath")" \
         #
@@ -73,7 +82,7 @@ rsyncFromRemote() {
     parseRemote
     local verboseOpt=; be-quiet +2 || verboseOpt=-v
     set -- \
-    rsync ${remotePort:+--rsh="ssh -p $remotePort"} $verboseOpt \
+    rsync --rsh="$remoteSSHCommand ${remotePort:+-p $remotePort}" $verboseOpt \
         "${remoteUser:+$remoteUser@}$remoteHost":"$(escape-args-for-shell "$remoteRoot/$remotePath")" \
         "$@" \
         #
