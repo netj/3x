@@ -23,6 +23,7 @@ set -eu
 super "$0" "$@"
 
 . runner.sh
+. remote-runner.sh
 
 Target=$1; shift
 
@@ -35,8 +36,10 @@ cd "$_3X_TARGET_DIR"
 [ $# -gt 0 ] || usage "$0" "Missing REMOTE_URL"
 RemoteURL=$1; shift
 
+# check if REMOTE_URL is valid
+parseRemote "$RemoteURL"
+
 # replace the remote
-# TODO sanitize $RemoteURL
 echo "$RemoteURL" >remote
 
 

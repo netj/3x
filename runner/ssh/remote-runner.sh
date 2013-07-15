@@ -28,6 +28,9 @@ parseRemote() {
             remoteHost=${remoteHostPort%:*}
             remotePort=${remoteHostPort#$remoteHost}
             remotePort=${remotePort#:}
+            return 0
+            ;;
+        +([^:])://*) # other URLs are not allowed
             ;;
         ?(+([^@:])@)+(+([^@:]))?(:*))
             local remoteUserHost=${remote%%:*}
@@ -38,11 +41,10 @@ parseRemote() {
             remoteUser=${remoteUserHost%$remoteHost}
             remoteUser=${remoteUser%@}
             remotePort= # no port can be specified in this syntax
-            ;;
-        *)
-            error "$remote: malformed remote URL"
+            return 0
             ;;
     esac
+    error "$remote: malformed REMOTE_URL"
 }
 
 sshRemote() {
