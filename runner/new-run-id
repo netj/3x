@@ -1,3 +1,9 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # new-run-id -- generate a new id for _3X_RUN
-date +run/%Y/%m/%d/%H%M%S.%N
+set -eu
+fmt=$(
+    fmtConf="$_3X_ROOT/.3x/run-id-format"
+    [ -s "$fmtConf" ] && cat "$fmtConf" ||
+        echo run/%Y/%m%d/%H/%M%S.%N
+)
+exec date +"$fmt"
