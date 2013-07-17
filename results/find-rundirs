@@ -34,7 +34,7 @@ readlink -f a b &>/dev/null || readlinkXargsOpts+=(-L1)
 readlinkXargsOpts+=(--)
 
 find "${runs[@]}" \
-    -type d \( -name workdir -o -name measures \
-            -o -name running.\* \) -prune -o \
+    -type d \( -name workdir -o -name outputs \
+            \) -prune -o \
     -name output \( "$@" \) -print |
 sed 's:/output$::' | xargs "${readlinkXargsOpts[@]}" readlink -f | sed 's|^'"$_3X_ROOT"'/||'

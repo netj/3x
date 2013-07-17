@@ -110,7 +110,7 @@ for path in "$@"; do
                 m=${m#output/}
                 m=${m%%/*}
                 # copy files of output
-                copyFilesTo "$DestDir"/measures/"$m" "$path" \
+                copyFilesTo "$DestDir"/outputs/"$m" "$path" \
                     -type f \( -name 'unit' -o -name 'datatype' \
                             \) \
                     #

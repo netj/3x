@@ -15,13 +15,12 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" "At least one NAME=VALUE pairs must be given"
 
+# store the run regardless of whether execution finishes or aborts
 cleanup() {
     local c=$?
-    set +e
-    # store it
     msg "$_3X_RUN: Storing"
     run.store
-    exit $c
+    return $c
 }
 trap cleanup EXIT
 

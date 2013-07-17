@@ -10,8 +10,18 @@
 set -eu
 
 : ${_3X_ARCHIVE:=$_3X_ROOT/.3x/files}
+_3X_API_EXTRACTOR=extract
 
 cd "$_3X_ROOT/$_3X_RUN" 2>/dev/null
+
+# archive everything regardless of whether run.store finishes or aborts
+archiveHere() {
+    local c=$?
+    msg "$_3X_RUN: archiving"
+    archive "$_3X_ARCHIVE" .
+    return $c
+}
+trap archiveHere EXIT
 
 # post-process when the run seems to have completed execution
 if [ -s exitcode -a -e execute.sh -a ! -x execute.sh ]; then
@@ -19,25 +29,38 @@ if [ -s exitcode -a -e execute.sh -a ! -x execute.sh ]; then
     echo "$_3X_TARGET" >target.name
     rsync -aH --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" target/
 
-    # run output measurements
+    # run output extractors
     msg "$_3X_RUN: extracting output"
-    for mx in measures/*/measure; do
-        m=$(basename "$(dirname "$mx")")
-        if [ -x "$mx" ]; then
-            echo "$m=$(escape-args-for-shell "$(
-            # run measure drivers under the same env
-            export $(cat ./env) _3X_MEASURE=${mx%/measure}
-            "$mx"
-            )")"
+    rm -f outputs.failed
+    for ox in outputs/*/$_3X_API_EXTRACTOR; do
+        if [ -x "$ox" ]; then
+            od=$(dirname "$ox")
+            o=$(basename "$od") oerr="$od/stderr"
+            v=$(
+                # running extractor under the same env
+                export $(cat ./env) _3X_MEASURE=${ox%/$_3X_API_EXTRACTOR}
+                if "$ox" 2>"$oerr"; then
+                    # only keep non-empty stderr logs
+                    [ -s "$oerr" ] || rm -f "$oerr"
+                else # keep going on any failed extractor
+                    # but keep track of their names and exit status
+                    echo "$o (exit status=$?)" >>outputs.failed
+                fi
+            )
+            case $v in # try not to wrap quotes around empty value
+                "") ;;
+                *) v=$(escape-args-for-shell "") ;;
+            esac
+            # finally record a name/value-pair line for each output
+            echo "$o=$v"
         fi
     done >output
+    # see if all output extractors ended successfully
+    ! [ -s outputs.failed ] ||
+        error "$_3X_RUN: failed extracting outputs:" "$(cat outputs.failed)"
 
     # incrementally update the index with this run
     msg "$_3X_RUN: indexing"
     3x-index init
     3x-index update .
 fi
-
-# archive everything
-msg "$_3X_RUN: archiving"
-archive "$_3X_ARCHIVE" .

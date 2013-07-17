@@ -11,6 +11,10 @@
 # Created: 2013-01-24
 set -eu
 
+# Some names of executables as 3X API
+_3X_API_RUNNER=run
+_3X_API_EXTRACTOR=extract
+
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
@@ -33,7 +37,7 @@ cd "$_3X_ROOT"
 case $What in
     program)
         dir="program"
-        runner="$dir"/run
+        runner="$dir/$_3X_API_RUNNER"
         ! [ -e "$runner" ] || error "program already defined"
         mkdir -p "$dir"
         touch "$dir"/env
@@ -71,6 +75,7 @@ case $What in
         extractTypeFromName
         dir="output/$Name"
         checkIfNameIsSane "$Name" "$dir"
+        extractor="$dir/$_3X_API_EXTRACTOR"
         # TODO check validity of $Unit, $Type
         case $outputType in 
             extract)
@@ -83,7 +88,7 @@ case $What in
                     echo "#!/usr/bin/env bash"
                     echo "cat stdout stderr |"
                     echo -n "extract-regexp "; escape-args-for-shell "$@"
-                } >"$dir"/measure
+                } >"$extractor"
                 ;;
             file)
                 [ $# -gt 0 ] || usage "$0" "Missing FILENAME"
@@ -96,13 +101,13 @@ case $What in
                     echo "#!/bin/sh"
                     f=$(escape-args-for-shell "$1")
                     echo "[ -e workdir/$f ] && echo $f"
-                } >"$dir"/measure
+                } >"$extractor"
                 ;;
             *)
                 usage "$0" "Unknown output type $outputType: must be \`file' or \`output'"
                 ;;
         esac
-        chmod +x "$dir"/measure
+        chmod +x "$extractor"
         if [ -n "$Unit" ]; then
             echo "$Unit" >"$dir"/unit
         else
