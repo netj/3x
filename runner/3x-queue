@@ -4,8 +4,9 @@
 # > 3x queue
 # Lists existing queues with some statistics.
 # 
-# > 3x queue QUEUE
-# Switches the current queue to given QUEUE.
+# > 3x queue QUEUE [TARGET]
+# Switches the current queue to given QUEUE.  Optionally, sets the target of
+# QUEUE to the given TARGET.
 # 
 # > 3x queue -h
 # Shows this usage.
@@ -42,11 +43,13 @@ shift $(($OPTIND - 1))
 _3X_ROOT=$(3x-findroot)
 
 # switch the current queue to given one
-if $ListDetails && [ $# -eq 1 ]; then
-    _3X_QUEUE=$1
+if $ListDetails && [ $# -gt 0 ]; then
+    _3X_QUEUE=$1; shift
     . find-queue.sh
     ln -sfn ../$_3X_QUEUE_ID "$_3X_ROOT"/.3x/Q
     mkdir -p "$_3X_QUEUE_DIR"
+    # set the queue's target if given as well
+    [ $# -eq 0 ] || 3x-target "$1" >/dev/null
     set --
 else
     . find-queue.sh
