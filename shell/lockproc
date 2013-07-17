@@ -69,7 +69,7 @@ elif has dotlockfile; then
 
 elif has lockfile; then
     # lockfile(1) in procmail
-    lockfile-acquire() { lockfile -r3 "$1" 2>/dev/null; }
+    lockfile-acquire() { lockfile -1 -r3 "$1" 2>/dev/null; }
     lockfile-release() { rm -f "$1"; }
 
 else
