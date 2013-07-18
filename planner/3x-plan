@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # 3x-plan -- plan experimental runs
 # 
+# New runs can be added to current queue by generating the full combination of
+# values for input variables with the following command:
 # > 3x plan [NAME[=VALUE[,VALUE]...]]...
-# New runs can be added to current queue with the combination of given
-# values for the input variables.
+# 
+# Once runs are planned for the queue, they can be easily reordered,
+# duplicated, or removed using your $EDITOR when you run the following command:
+# > 3x plan
+#
 # 
 # To add runs for a full combination of inputs, simply run:
 # > 3x plan `3x inputs`
 # To list allowed values for available input variables, run:
 # > 3x inputs -v
-# 
-# 
-# > 3x plan
-# Planned runs for current queue can be edited using your $EDITOR.
 # 
 # 
 # The default current queue is named "main".  It can be changed with:
@@ -114,7 +115,44 @@ case ${1:-} in
         if [ -s "$_3X_QUEUE_DIR"/plan ]; then
             cat "$_3X_QUEUE_DIR"/plan >"$tmp"/new
         else # show usage first if empty
-            usage "$0" "Empty plan for $_3X_QUEUE_ID; specify input variables to add runs"
+            usage "$0" "Plan is empty for $_3X_QUEUE_ID; specify input variables to add." || {
+                msg "# Try commands similar to these examples:"
+                3x-inputs -v | shuf | {
+                    NUM_EXAMPLES=4 MAX_VALUES=8
+                    i=1 j=1 args=
+                    while IFS='='; read name values; do
+                        IFS=,; set -- $values
+                        n=$(($RANDOM % $# % $MAX_VALUES))
+                        case $n in
+                            [0-3])
+                                let ++n
+                                let j+=$n
+                                vs=$(printf '%s\n' "$@" |
+                                    shuf | head -n $n | tr '\n' ,)
+                                args+="  $name=${vs%,}"
+                                ;;
+                            *)
+                                args+="  $name"
+                                let ++j
+                                ;;
+                        esac
+                        p=$(($RANDOM % 2))
+                        [[ $j -lt $MAX_VALUES ]] || p=0
+                        case $p in
+                            0)
+                                msg "3x run$args"
+                                j=0 args=
+                                [[ $i -lt $NUM_EXAMPLES ]] || break
+                                let ++i
+                                ;;
+                            *)
+                                ;;
+                        esac
+                    done
+                    [ -z "$args" ] || msg "3x run$args"
+                }
+                false
+            }
         fi
         ;;
 
