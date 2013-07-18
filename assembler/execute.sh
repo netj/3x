@@ -49,7 +49,7 @@ pid=$!
 set +m  # need to disable job control to suppress ugly status reporting on aborts
 wait $pid
 code=$?
-echo $code >exitcode
+echo $code >exitstatus
 
 # turn itself off
 chmod -x "$0"

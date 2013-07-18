@@ -26,11 +26,11 @@ tail -qF stderr --pid=$runpid 1>&2 2>/dev/null &
 }
 wait || true
 
-if [ -e exitcode ]; then
-    exitcode=$(cat exitcode)
-    msg "$_3X_RUN: finished with exitcode $exitcode"
+if [ -e exitstatus ]; then
+    exitstatus=$(cat exitstatus)
+    msg "$_3X_RUN: finished execution with exit status=$exitstatus"
 else
-    exitcode=127
+    exitstatus=127
     msg "$_3X_RUN: interrupted"
-    exit $exitcode
+    exit $exitstatus
 fi

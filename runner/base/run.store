@@ -24,7 +24,7 @@ archiveHere() {
 trap archiveHere EXIT
 
 # post-process when the run seems to have completed execution
-if [ -s exitcode -a -e execute.sh -a ! -x execute.sh ]; then
+if [ -s exitstatus -a -e execute.sh -a ! -x execute.sh ]; then
     # record target execution environment
     echo "$_3X_TARGET" >target.name
     rsync -aH --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" target/

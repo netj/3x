@@ -45,9 +45,10 @@ express.static.mime.define
 
 RUN_OVERVIEW_FILENAMES = """
     input output
-    stdout stderr exitcode rusage
+    stdout stderr exitstatus rusage
     env args stdin
     assembly
+    target.name target/type
 """.split(/\s+/).filter((f) -> f?.length > 0)
 
 _3X_DESCRIPTOR = do ->
