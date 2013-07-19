@@ -49,7 +49,7 @@ if [ -s exitstatus -a -e execute.sh -a ! -x execute.sh ]; then
             )
             case $v in # try not to wrap quotes around empty value
                 "") ;;
-                *) v=$(escape-args-for-shell "") ;;
+                *) v=$(escape-args-for-shell "$v") ;;
             esac
             # finally record a name/value-pair line for each output
             echo "$o=$v"
