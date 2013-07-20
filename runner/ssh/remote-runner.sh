@@ -48,16 +48,19 @@ parseRemote() {
 }
 
 # TODO see if ssh supports Control{Master,Persist}
-remoteSSHCommand=$(escape-args-for-shell \
-    ssh \
-    -o BatchMode=yes \
-    -o ControlMaster=auto -o ControlPersist=60 \
-    -o ControlPath="$_3X_WORKER_DIR"/ssh-master \
-    #
-)
+requiresSSHCommand() {
+    remoteSSHCommand=${remoteSSHCommand:-$(escape-args-for-shell \
+        ssh \
+        -o BatchMode=yes \
+        -o ControlMaster=auto -o ControlPersist=60 \
+        -o ControlPath="$_3X_WORKER_DIR"/ssh-master \
+        #
+    )}
+}
 
 sshRemote() {
     parseRemote
+    requiresSSHCommand
     # TODO use ControlMaster ControlPersist
     $remoteSSHCommand ${remotePort:+-p $remotePort} \
         ${remoteUser:+$remoteUser@}$remoteHost \
@@ -67,6 +70,7 @@ sshRemote() {
 rsyncToRemote() {
     local remotePath=$1; shift
     parseRemote
+    requiresSSHCommand
     local verboseOpt=; be-quiet +2 || verboseOpt=-v
     set -- \
     rsync --rsh="$remoteSSHCommand ${remotePort:+-p $remotePort}" $verboseOpt \
@@ -80,6 +84,7 @@ rsyncToRemote() {
 rsyncFromRemote() {
     local remotePath=$1; shift
     parseRemote
+    requiresSSHCommand
     local verboseOpt=; be-quiet +2 || verboseOpt=-v
     set -- \
     rsync --rsh="$remoteSSHCommand ${remotePort:+-p $remotePort}" $verboseOpt \
