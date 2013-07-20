@@ -55,7 +55,7 @@
         <div class="span2">
           <div id="setup" class="span2" data-spy="affix" data-offset-top="0">
 
-            <h4><i class="icon-tasks icon"></i>Inputs</h4>
+            <h4><i class="icon-wrench icon"></i>Inputs</h4>
             <ul id="conditions" class="nav nav-pills nav-stacked">
             </ul>
 
@@ -183,21 +183,20 @@
       <div id="runs" class="tab-pane row-fluid">
         <h2><i class="icon-cogs icon"></i>Runs</h2>
 
-        <h3><i class="icon-wrench icon"></i>Run Control</h3>
-        <table id="batches-table" class="table table-hover table-bordered"
-          cellpadding="0" cellspacing="0" border="0">
-          <thead>
-            <th class="id">Batch</th>
-            <th class="state">State</th>
-            <th>#running</th>
-            <th>#done</th>
-            <th>#remaining</th>
-            <th>#planned</th>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="row-fluid">
+          <div class="span8">
+            <h3><i class="icon-tasks icon"></i>Queues</h3>
+            ..
+            <ul id="queues"></ul>
+          </div>
+          <div class="span4">
+            <h3><i class="icon-flag icon"></i>Targets</h3>
+            ..
+            <ul id="targets"></ul>
+          </div>
+        </div>
 
-        <h3><i class="icon-reorder icon"></i>Run Ordering of <span id="status-name">N/A</span></h3>
+        <h3><i class="icon-list-ol icon"></i>Execution History of <span id="status-name">N/A</span></h3>
         <form class="form-inline">
           <a id="status-submit" class="btn btn-primary disabled"><i class="icon icon-upload-alt"></i>
             Save Changes

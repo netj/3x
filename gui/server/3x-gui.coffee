@@ -112,8 +112,8 @@ app.get "/docs/*", (req, res) ->
     #        respond contents
 
 
-# Redirect to its canonical location when a run is requested via serial of batch
-app.get "/run/batch/:batchId/runs/:serial", (req, res, next) ->
+# Redirect to its canonical location when a run is requested via serial of a queue
+app.get "/run/queue/:queueName/runs/:serial", (req, res, next) ->
     fs.realpath "#{_3X_ROOT}/#{req.path}", (err, path) ->
         res.redirect path.replace(_3X_ROOT, "")
 
@@ -248,6 +248,9 @@ respondJSON = (res) -> (err, result) ->
 cliSimple = (cmd, args...) ->
     cliBare(cmd, args) (code, err, out) ->
         util.log err unless code is 0
+cliSimpleEnv = (env, cmd, args...) ->
+    cliBareEnv(env, cmd, args) (code, err, out) ->
+        util.log err unless code is 0
 
 
 # Allow Cross Origin AJAX Requests
@@ -309,7 +312,7 @@ getOutputs = (res, opts = "-ut") -> (next) ->
 
 app.get "/api/results", (req, res) ->
     args = [] # TODO use a tab separated format directly from 3x-results
-    # TODO runs/batches
+    # TODO runs/queue/
     inputs  = (try JSON.parse req.param("inputs") ) ? {}
     outputs = (try JSON.parse req.param("outputs")) ? {}
     for name,values of inputs
@@ -325,68 +328,78 @@ app.get "/api/results", (req, res) ->
     ) (err, results) ->
         res.json results unless err
 
-app.get "/api/run/batch.DataTables", (req, res) ->
+app.get "/api/run/queue/", (req, res) ->
+    cli(res, "3x-queue", []
+        , (lazyLines, next) ->
+            lazyLines
+                .map((line) -> line.split /\s+/)
+                .join (rows) ->
+                    # format 3x-queue output
+                    names = rows.shift().map (s) ->
+                        if s is "#" then "isCurrent"
+                        else s.toLowerCase().replace(/^#(.)/,
+                            (__, m) -> "num#{m.toUpperCase()}")
+                    rows.forEach (cols) ->
+                        cols[0] = (cols[0] is "*")
+                    next {names, rows}
+    ) (err, queueList) ->
+        res.json queueList unless err
+
+
+app.get "/api/run/queue/*/.DataTables", (req, res) ->
+    [queueName] = req.params
     query = req.param("sSearch") ? ""
-    async.parallel [
-            cliEnv res, {
+    getHistory = (cmd, args, next) ->
+        cliEnv res, {
+                _3X_QUEUE: queueName
                 LIMIT:  req.param("iDisplayLength") ? -1
                 OFFSET: req.param("iDisplayStart") ? 0
-            }, "3x-batches", ["--", query]
+            }, cmd, args, next
+    async.parallel [
+            getHistory "limitOffset", ["3x-status"]
                 , (lazyLines, next) ->
                     lazyLines
                         .skip(1)
                         .filter((line) -> line isnt "")
-                        .map((line) -> line.split /\t/)
+                        .map((line) -> line.split /\s+/)
                         .join next
         ,
-            cli res, "3x-batches", ["-c", query]
+            getHistory "sh", ["-c", "3x-status | wc -l"]
                 , (lazyLines, next) ->
                     lazyLines
                         .take(1)
                         .join ([line]) -> next (+line?.trim())
-        ,
-            cli res, "3x-batches", ["-c"]
-                , (lazyLines, next) ->
-                    lazyLines
-                        .take(1)
-                        .join ([line]) -> next (+line?.trim())
-        ], (err, [table, filteredCount, totalCount]) ->
+        ], (err, [table, totalCount, filteredCount]) ->
             unless err
                 res.json
                     sEcho: req.param("sEcho")
                     iTotalRecords: totalCount
-                    iTotalDisplayRecords: filteredCount
+                    #iTotalDisplayRecords: filteredCount
                     aaData: table
 
-app.get "/api/run/batch.numRUNNING", (req, res) ->
-    cli(res, "sh", ["-c", "3x-batches | grep -c RUNNING || true"]
-        , (lazyLines, next) ->
-            lazyLines
-                .take(1)
-                .join ([line]) -> next (+line?.trim())
-    ) (err, count) ->
-        res.json count unless err
-
-app.get ////api/run/batch/([^:]+):(start|stop)///, (req, res) ->
-    batchId = req.params[0]
-    # TODO sanitize batchId
-    action = req.params[1]
-    cli(res, "sh", ["-c", "SHLVL=0 3x-#{action} run/batch/#{batchId} </dev/null >>.3x/gui/log.runs 2>&1 &"]
+app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
+    [queueName, action] = req.params
+    # TODO sanitize queueName
+    cliEnv(res, {
+        _3X_QUEUE: queueName
+    }, "sh", ["-c", "SHLVL=0 3x-#{action} </dev/null >>.3x/gui/log.runs 2>&1 &"]
         , (lazyLines, next) ->
             lazyLines
                 .join -> next (true)
     ) (err, result) ->
         res.json result unless err
 
-app.get "/api/run/batch/:batchId", (req, res) ->
-    batchId = req.param("batchId")
-    # TODO sanitize batchId
-    batchPath = "run/batch/#{batchId}"
-    fs.stat "#{_3X_ROOT}/#{batchPath}", (err, stat) ->
-        return res.send 404, "Not found: #{batchPath}" if err?
-        cli(res, "3x-status", [batchPath]
+app.get "/api/run/queue/:queueName", (req, res) ->
+    [queueName] = req.params
+    # TODO sanitize queueName
+    queueId = "run/queue/#{queueName}"
+    fs.stat "#{_3X_ROOT}/#{queueId}", (err, stat) ->
+        return res.send 404, "Not found: #{queueId}" if err?
+        cliEnv(res, {
+            _3X_QUEUE: queueName
+        }, "3x-status", [queueId]
             , normalizeNamedColumnLines (line) ->
-                    [state, columns..., serial, runId] = line.split /\s+/
+                    [state, columns..., serial, target, runId] = line.split /\s+/
                     serial = (serial?.replace /^#/, "")
                     runId = "" if runId is "?"
                     if state
@@ -396,13 +409,13 @@ app.get "/api/run/batch/:batchId", (req, res) ->
                             "#{RUN_COLUMN_NAME}=#{runId}"
                             columns...
                         ]
-        ) (err, batch) ->
-            res.json batch unless err
+        ) (err, queueStatus) ->
+            res.json queueStatus unless err
 
-app.post "/api/run/batch/*", (req, res) ->
-    batchId = req.params[0]
-    batchId = if batchId?.length is 0 then null else "run/batch/#{batchId}"
-    # TODO sanitize batchId
+app.post "/api/run/queue/*", (req, res) ->
+    [queueName] = req.params
+    # TODO sanitize queueName
+    queueId = if queueName?.length is 0 then null else "run/queue/#{queueName}"
     try
         plan        = JSON.parse req.body.plan
     catch err
@@ -417,21 +430,24 @@ app.post "/api/run/batch/*", (req, res) ->
             "3x run#{line} ##{serial}"
         ).join "\n"
 
+    # TODO rewrite old batch stuffs for the new queue system
     # start right away if shouldStart
-    startIfNeeded = (batchId) ->
+    startIfNeeded = (queueName) ->
         if shouldStart
-            try cliSimple "sh", "-c", "SHLVL=0 3x-start #{batchId} </dev/null >>.3x/gui/log.runs 2>&1 &"
+            try cliSimpleEnv {
+                _3X_QUEUE: queueName
+            }, "sh", "-c", "SHLVL=0 3x-start </dev/null >>.3x/gui/log.runs 2>&1 &"
 
     mktemp.createFile "#{_3X_ROOT}/.3x/plan.XXXXXX", (err, planFile) ->
-        andRespond = (err, [batchId]) ->
+        andRespond = (err, [queueName]) ->
             # remove temporary file
             unless err
-                res.json batchId
-                startIfNeeded batchId
+                res.json queueName
+                startIfNeeded queueName
             try cliSimple "rm", "-f", planFile
         fs.writeFile planFile, generatePlanLines(), ->
-            if batchId? # modify existing one
-                cli(res, "3x-edit", [batchId, planFile]
+            if queueName? # modify existing one
+                cli(res, "3x-edit", [queueName, planFile]
                 ) andRespond
             else # create a new batch
                 cli(res, "3x-plan", ["with", planFile]
@@ -445,13 +461,13 @@ server.listen _3X_GUIPORT, ->
 
 ###### incremental updates via WebSockets with Socket.IO
 
-batchSockets =
-io.of("/run/batch/")
+queueSockets =
+io.of("/run/queue/")
     .on "connection", (socket) ->
         updateRunningCount socket
 
-updateRunningCount = (socket = batchSockets) ->
-    cliBare("sh", ["-c", "3x-batches | grep -c RUNNING || true"]
+updateRunningCount = (socket = queueSockets) ->
+    cliBare("sh", ["-c", "cat run/queue/*/running | wc -l"]
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
@@ -459,21 +475,21 @@ updateRunningCount = (socket = batchSockets) ->
     ) (code, err, count) ->
         socket.volatile.emit "running-count", count
 
-batchRootDir = "#{_3X_ROOT}/run/batch/"
-batchNotifyChange = (event, fullpath) ->
-    # assuming first path component is the batch ID
-    batchIdProper = fullpath?.substring(batchRootDir.length).replace /\/.*$/, ""
-    filename = fullpath?.substring((batchRootDir + batchIdProper).length)
-    return unless batchIdProper?
-    batchId = "run/batch/#{batchIdProper}"
-    util.log "WATCH #{batchId} #{event} #{filename}"
+queueRootDir = "#{_3X_ROOT}/run/queue/"
+queueNotifyChange = (event, fullpath) ->
+    # assuming first path component is the queue ID
+    queueName = fullpath?.substring(queueRootDir.length).replace /// /.*$ ///, ""
+    filename = fullpath?.substring((queueRootDir + queueName).length)
+    return unless queueName?
+    queueId = "run/queue/#{queueName}"
+    util.log "WATCH #{queueId} #{event} #{filename}"
     if filename is "/plan"
-        batchSockets.volatile.emit "listing-update", [batchId, event]
-    else if filename.match /// ^/( worker-\d+\.lock )$ ///
+        queueSockets.volatile.emit "listing-update", [queueId, event]
+    else if filename.match /// ^/( \.worker\..*\.\d+\.lock )$ ///
         do updateRunningCount
     else if filename.match /// ^/( running\.[^/]+/lock )$ ///
-        batchSockets.volatile.emit "state-update", [
-            batchId
+        queueSockets.volatile.emit "state-update", [
+            queueId
             if event is "deleted" then "PAUSED" else "RUNNING"
             # TODO pass new progress: running/done/remaining/total
         ]
@@ -488,12 +504,12 @@ do startFSMonitor = ->
         '--recursive'
         '--patterns=*'
         '--command=echo ${watch_event_type} "${watch_src_path}"'
-        batchRootDir
+        queueRootDir
     ]
     splitter = p.stdout.pipe(StreamSplitter("\n"))
     splitter.on "token", (line) ->
         [__, event, path] = /^(\S+) (.*)$/.exec(line) ? []
-        batchNotifyChange event, path
+        queueNotifyChange event, path
     # respawn when watchmedo process exits
     p.on "exit", (code, signal) ->
         _.defer startFSMonitor

@@ -1660,7 +1660,7 @@ class BatchesTable extends CompositeElement
         super @baseElement
 
         # subscribe to batch notifications
-        @socket = io.connect("#{_3X_ServiceBaseURL}/run/batch/")
+        @socket = io.connect("#{_3X_ServiceBaseURL}/run/queue/")
             .on "listing-update", ([batchId, createOrDelete]) =>
                 # TODO any non intrusive way to give feedback?
                 log "batch #{batchId} #{createOrDelete}"
@@ -1697,8 +1697,11 @@ class BatchesTable extends CompositeElement
         if @currentBatchId?
             @status.load @currentBatchId
         else
+            @status.load "run/queue/main"
+            ###
             @dataTable.one "draw", =>
                 @baseElement.find("tbody tr:nth(0)").click()
+            ###
 
     persist: =>
         # TODO isolate localStorage key
@@ -1728,7 +1731,7 @@ class BatchesTable extends CompositeElement
             bAutoWidth: false
             bProcessing: true
             bServerSide: true
-            sAjaxSource: "#{_3X_ServiceBaseURL}/api/run/batch.DataTables"
+            sAjaxSource: "#{_3X_ServiceBaseURL}/api/run/queue/.DataTables"
             bLengthChange: false
             iDisplayLength: 5
             bPaginate: true
@@ -1945,6 +1948,8 @@ class PlanTableBase extends CompositeElement
             sDom: 'R<"H"fir>t<"F"lp>'
             bDestroy: true
             bAutoWidth: false
+            bServerSide: true
+            sAjaxSource: "#{_3X_ServiceBaseURL}/api/#{@batchId}/.DataTables"
             bLengthChange: false
             bPaginate: false
             bScrollInfinite: true
@@ -2013,8 +2018,9 @@ class StatusTable extends PlanTableBase
         # TODO check if there's uncommitted changes beforeunload of document
 
     load: (@batchId) =>
-        $.getJSON("#{_3X_ServiceBaseURL}/api/#{@batchId}")
-            .success(@display)
+        do @display
+        #$.getJSON("#{_3X_ServiceBaseURL}/api/#{@batchId}")
+        #    .success(@display)
 
     render: (args...) =>
         # display the name of the batch
@@ -2090,7 +2096,7 @@ class PlanTable extends PlanTableBase
     canCommit: => @plan?.rows.length > 0
     handleCommit: (e) =>
         # send plan to server to create a new batch
-        $.post("#{_3X_ServiceBaseURL}/api/run/batch/",
+        $.post("#{_3X_ServiceBaseURL}/api/run/queue/",
             shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
             plan: JSON.stringify @plan
         )
