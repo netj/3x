@@ -221,9 +221,10 @@ cliBare = (cmd, args
             try next _code, _error, _result...
             catch err
                 util.log err
-    withOut Lazy(p.stdout).lines.map(String), (result...) -> _result = result; do tryEnd
-    withErr Lazy(p.stderr).lines.map(String), (error)     -> _error  = error ; do tryEnd
-    p.on "exit",                              (code)      -> _code   = code  ; do tryEnd
+    cstr = (d) -> if d then String d else ""
+    withOut Lazy(p.stdout).lines.map(cstr), (result...) -> _result = result; do tryEnd
+    withErr Lazy(p.stderr).lines.map(cstr), (error)     -> _error  = error ; do tryEnd
+    p.on "exit",                            (code)      -> _code   = code  ; do tryEnd
 
 cliBareEnv = (env, cmd, args, rest...) ->
     envArgs = ("#{name}=#{value}" for name,value of env)
@@ -290,7 +291,7 @@ getInputs = (res, opts = "-utv") -> (next) ->
     ) next
 
 app.get "/api/outputs", (req, res) ->
-    (getOutputs res) (err, outputs) -> res.json outputs unless err
+    (getOutputs res) (respondJSON res)
 getOutputs = (res, opts = "-ut") -> (next) ->
     cli(res, "3x-outputs", [opts]
         , (lazyLines, next) -> lazyLines
@@ -325,25 +326,61 @@ app.get "/api/results", (req, res) ->
         , normalizeNamedColumnLines (line) ->
                 [run, columns...] = line.split /\s+/
                 ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
-    ) (err, results) ->
-        res.json results unless err
+    ) (respondJSON res)
+
+
+formatStatusTable = (lines, firstColumnName = "isCurrent") ->
+    # format 3x-{queue,target}-like output
+    names = lines.shift().map (s) ->
+        if s is "#" then firstColumnName
+        else s.toLowerCase().replace(/^#(.)/,
+            (__, m) -> "num#{m.toUpperCase()}")
+    lines.forEach (cols) ->
+        cols[0] = (cols[0] is "*")
+    {names, lines}
 
 app.get "/api/run/queue/", (req, res) ->
     cli(res, "3x-queue", []
         , (lazyLines, next) ->
             lazyLines
+                .map((line) -> line.trim().split /\s+/)
+                .join (rows) ->
+                    next (formatStatusTable rows)
+    ) (respondJSON res)
+
+app.get "/api/run/target/", (req, res) ->
+    cli(res, "3x-target", []
+        , (lazyLines, next) ->
+            lazyLines
                 .map((line) -> line.split /\s+/)
                 .join (rows) ->
-                    # format 3x-queue output
-                    names = rows.shift().map (s) ->
-                        if s is "#" then "isCurrent"
-                        else s.toLowerCase().replace(/^#(.)/,
-                            (__, m) -> "num#{m.toUpperCase()}")
-                    rows.forEach (cols) ->
-                        cols[0] = (cols[0] is "*")
-                    next {names, rows}
-    ) (err, queueList) ->
-        res.json queueList unless err
+                    next (formatStatusTable rows)
+    ) (respondJSON res)
+
+app.get "/api/run/target/:name", (req, res) ->
+    name = req.param("name")
+    cli(res, "3x-target", [name, "info"]
+        , (lazyLines, next) ->
+            lazyLines
+                .bucket(null, (attr, line) ->
+                    # group block of lines by "# NAME (DESC):" leader
+                    if (m = line?.match /^# (\S+)( \((.*)\))?:\s*$/)?
+                        @ (attr = { name: m[1], desc: m[3], value: [] })
+                    else if attr? and line?
+                        attr.value.push line
+                    attr
+                    )
+                .join (attrs) ->
+                    # format the attribute blocks into a nice JSON object
+                    targetInfo = {name}
+                    for attr in attrs
+                        v = attr.value
+                        v.pop() while v[v.length - 1]?.length is 0
+                        attr.value = v[0] if v?.length <= 1
+                        targetInfo[attr.name] = attr.value
+                    targetInfo.name = name
+                    next targetInfo
+    ) (respondJSON res)
 
 
 app.get "/api/run/queue/*/.DataTables", (req, res) ->
@@ -386,8 +423,7 @@ app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
         , (lazyLines, next) ->
             lazyLines
                 .join -> next (true)
-    ) (err, result) ->
-        res.json result unless err
+    ) (respondJSON res)
 
 app.get "/api/run/queue/:queueName", (req, res) ->
     [queueName] = req.params
@@ -409,8 +445,7 @@ app.get "/api/run/queue/:queueName", (req, res) ->
                             "#{RUN_COLUMN_NAME}=#{runId}"
                             columns...
                         ]
-        ) (err, queueStatus) ->
-            res.json queueStatus unless err
+        ) (respondJSON res)
 
 app.post "/api/run/queue/*", (req, res) ->
     [queueName] = req.params

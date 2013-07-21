@@ -104,8 +104,7 @@ cd "$_3X_ROOT"/run/target
 ls -d */ |
 {
 NBSP=' '
-echo "$(printf '%s\t' \
-    "#" \
+echo "#$(printf '\t%s' \
     "TARGET" \
     "TYPE" \
     #
@@ -114,10 +113,9 @@ while read t; do
     t=${t%/}
     current=$NBSP
     [ x"$t" != x"$Target" ] || current='*'
-    echo "$(
+    echo "$current$(
     load-target $t
-    printf '%s\t' \
-        "$current" \
+    printf '\t%s' \
         "$t" \
         "$runner" \
         #

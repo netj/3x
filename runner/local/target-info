@@ -7,11 +7,15 @@
 # Created: 2013-06-26
 set -eu
 
-super "$0" "$@"
+code=0
+
+super "$0" "$@" || code=$?
 echo
 
 Target=$1
 cd "$_3X_ROOT"/run/target/"$Target"
 
-echo "# environment variables:"
-cat environ 2>/dev/null
+echo "# environ (environment variables):"
+cat environ 2>/dev/null || code=2
+
+exit $code

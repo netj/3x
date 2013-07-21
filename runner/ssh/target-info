@@ -7,15 +7,19 @@
 # Created: 2013-07-13
 set -eu
 
-super "$0" "$@"
+code=0
+
+super "$0" "$@" || code=$?
 echo
 
 Target=$1
 cd "$_3X_ROOT"/run/target/"$Target"
 
-echo "# remote URL:"
-cat remote 2>/dev/null || true
+echo "# remote (remote URL):"
+cat remote 2>/dev/null || code=2
 echo
 
-echo "# environment for execution:"
-cat environ 2>/dev/null
+echo "# environ (environment for execution):"
+cat environ 2>/dev/null || code=2
+
+exit $code

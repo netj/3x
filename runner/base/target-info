@@ -13,4 +13,6 @@ set -eu
 Target=$1
 cd "$_3X_ROOT"/run/target/"$Target"
 
-echo "# run/target/$Target"
+echo "## run/target/$Target"
+echo "# type:"
+echo "$_3X_RUNNER"
