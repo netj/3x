@@ -1655,8 +1655,98 @@ class ResultsChart extends CompositeElement
             .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
 
 
+class QueuesUI extends CompositeElement
+    constructor: (@baseElement, @countDisplay, @status, @target) ->
+        super @baseElement
+
+        # subscribe to queue change notifications
+        @socket = io.connect("#{_3X_ServiceBaseURL}/run/queue/")
+            .on "listing-update", ([queueId, createOrDelete]) =>
+                # TODO any non intrusive way to give feedback?
+                log "queue #{queueId} #{createOrDelete}"
+                do @reload
+
+            .on "state-update", ([queueId, newStatus]) =>
+                log queueId, newStatus
+                # TODO update only when the batch is visible on current page
+                # TODO rate limit?
+                do @reload
+
+                # TODO when the batch is opened in status table, and unless it's dirty, update it
+                #@openBatchStatus batchId
+
+            .on "running-count", (count) =>
+                log "running-count", count
+                # update how many batches are running
+                @countDisplay
+                    ?.text(count)
+                     .toggleClass("hide", count == 0)
+
+        do @reload
+
+    reload: =>
+        # TODO loading feedback
+        $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/")
+            .success((@queues) =>
+                do @display
+            )
+
+    @QUEUE_SKELETON: $("""
+        <script type="text/x-jsrender">
+            <li><b>{{>queue}}</b>
+            </li>
+        </script>
+        """)
+
+    render: =>
+        @baseElement
+            .find("*").remove().end()
+            .append(
+                for name,queue of @queues
+                    QueuesUI.QUEUE_SKELETON.render queue, {
+                        _3X_ServiceBaseURL
+                    }
+            )
+
+class TargetsUI extends CompositeElement
+    constructor: (@baseElement) ->
+        super @baseElement
+
+        # subscribe to queue change notifications
+        @socket = io.connect("#{_3X_ServiceBaseURL}/run/queue/")
+            .on "listing-update", ([targetId, createOrDelete]) =>
+                log "target #{targetId} #{createOrDelete}"
+                do @reload
+
+        do @reload
+
+    reload: =>
+        # TODO loading feedback
+        $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/")
+            .success((@targets) =>
+                do @display
+            )
+
+    @TARGET_SKELETON: $("""
+        <script type="text/x-jsrender">
+            <li><b>{{>target}}</b>
+            </li>
+        </script>
+        """)
+
+    render: =>
+        @baseElement
+            .find("*").remove().end()
+            .append(
+                for name,target of @targets
+                    TargetsUI.TARGET_SKELETON.render target, {
+                        _3X_ServiceBaseURL
+                    }
+            )
+
+
 class BatchesTable extends CompositeElement
-    constructor: (@baseElement, @countDisplay, @status) ->
+    constructor: (@baseElement, @countDisplay, @status, @optionElements) ->
         super @baseElement
 
         # subscribe to batch notifications
@@ -2327,7 +2417,8 @@ $ ->
             buttonCommit: $("#status-submit")
             buttonClear : $("#status-clear")
             toggleShouldStart: $("#status-start-after-create")
-        _3X_.batches = new BatchesTable $("#batches-table"), $("#run-count.label"), _3X_.status
+        _3X_.targets = new TargetsUI $("#targets")
+        _3X_.queues = new QueuesUI $("#queues"), $("#run-count.label"), _3X_.status, _3X_.targets
     do initTitle
     do initBaseURLControl
     do initTabs

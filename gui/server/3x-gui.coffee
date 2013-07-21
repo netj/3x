@@ -329,7 +329,7 @@ app.get "/api/results", (req, res) ->
     ) (respondJSON res)
 
 
-formatStatusTable = (lines, firstColumnName = "isCurrent") ->
+formatStatusTable = (lines, firstColumnName = "isCurrent", indexColumnName = null) ->
     # format 3x-{queue,target}-like output
     names = lines.shift().map (s) ->
         if s is "#" then firstColumnName
@@ -337,13 +337,20 @@ formatStatusTable = (lines, firstColumnName = "isCurrent") ->
             (__, m) -> "num#{m.toUpperCase()}")
     lines.forEach (cols) ->
         cols[0] = (cols[0] is "*")
-    {names, lines}
+    rows = {}
+    indexColumn = if indexColumnName? then names.indexOf indexColumnName else 1
+    indexColumn = 1 unless indexColumn >= 0
+    for line in lines
+        row = rows[line[indexColumn]] = {}
+        for name,i in names
+            row[name] = line[i]
+    rows
 
 app.get "/api/run/queue/", (req, res) ->
     cli(res, "3x-queue", []
         , (lazyLines, next) ->
             lazyLines
-                .map((line) -> line.trim().split /\s+/)
+                .map((line) -> line.split /\s+/)
                 .join (rows) ->
                     next (formatStatusTable rows)
     ) (respondJSON res)
