@@ -81,7 +81,8 @@ if $ListDetails; then
         [ x"$_3X_QUEUE" != x"$queue" ] || current="*"
         # refresh queue state
         # XXX modifying _3X_QUEUE_DIR is fragile
-        _3X_QUEUE=$queue _3X_QUEUE_DIR="$PWD/$queue" \
+        (
+        _3X_QUEUE=$queue _3X_QUEUE_DIR="$PWD/$queue"
         for-each-active-runner queue-refresh
         {
             state=INACTIVE
@@ -102,6 +103,7 @@ if $ListDetails; then
             "$numDone" \
             "$target" \
             #
+        )
     done
     } |
     color-marked-row '* '
