@@ -1745,12 +1745,15 @@ class QueuesUI extends CompositeElement
                 <div style="text-align:right;">
                     <div class="pull-left">
                     {{if numRunning > 0}}
-                        <button class="queue-stop btn btn-small btn-danger"><i
+                        <button class="queue-stop btn btn-small btn-danger"
+                        title="{{if state == "ACTIVE"}}Stop this queue and clean up{{else}}Clean up runs that were executing{{/if}}"><i
                         class="icon icon-{{if state == "ACTIVE"}}stop{{else}}undo{{/if}}"></i></button>
                     {{/if}}
                     </div>
-                    <button class="queue-refresh btn btn-small" disabled><i class="icon icon-refresh"></i></button>
-                    <button class="queue-{{if state == "ACTIVE"}}stop{{else}}start{{/if}} btn btn-small btn-primary"><i class="icon icon-{{if state == "ACTIVE"}}pause{{else}}play{{/if}}"></i></button>
+                    <button class="queue-refresh btn btn-small" disabled
+                        title="Refresh queue"><i class="icon icon-refresh"></i></button>
+                    <button class="queue-{{if state == "ACTIVE"}}stop{{else}}start{{/if}} btn btn-small btn-primary"
+                        title="Turn this queue {{if state == "ACTIVE"}}off{{else}}on{{/if}}"><i class="icon icon-{{if state == "ACTIVE"}}pause{{else}}play{{/if}}"></i></button>
                 </div>
             </li>
         </script>
