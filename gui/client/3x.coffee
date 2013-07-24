@@ -1656,7 +1656,7 @@ class ResultsChart extends CompositeElement
 
 
 class QueuesUI extends CompositeElement
-    constructor: (@baseElement, @countDisplay, @status, @target) ->
+    constructor: (@baseElement, @countDisplay, @status, @target, @optionElements) ->
         super @baseElement
 
         # subscribe to queue change notifications
@@ -1682,6 +1682,40 @@ class QueuesUI extends CompositeElement
                     ?.text(count)
                      .toggleClass("hide", count == 0)
 
+        # listen to events
+        @baseElement
+            .on("click", ".queue-start", @handleQueueAction @startQueue)
+            .on("click", ".queue-stop", @handleQueueAction @stopQueue)
+            .on("click", ".queue-refresh", @handleQueueAction @refreshQueue)
+
+        # TODO @optionElements.addNewQueue?. ...
+        @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
+        @optionElements.toggleAbsoluteProgress
+            ?.toggleClass("active", @showAbsoluteProgress)
+            .click (e) =>
+                localStorage.queuesShowAbsoluteProgress =
+                @showAbsoluteProgress = not $(e.srcElement).hasClass("active")
+                do @display
+
+        @queuesDisplayOrder = (try JSON.parse localStorage.queuesDisplayOrder) ? []
+        changeQueuesDisplayOrder = (order) =>
+            log "new queue display order", order
+            @queuesDisplayOrder = order
+            localStorage.queuesDisplayOrder = JSON.stringify order
+        @optionElements.sortByName?.click (e) =>
+            changeQueuesDisplayOrder _.keys(@queues).sort()
+            do @display
+        @optionElements.sortByTime?.click (e) =>
+            changeQueuesDisplayOrder _.keys(@queues)
+            do @display
+        @baseElement
+            .on("sortupdate", (e, ui) =>
+                changeQueuesDisplayOrder @baseElement
+                    .find(".queue .queue-name")
+                    .map(-> $(@).text()).toArray()
+            )
+
+        # then load
         do @reload
 
     reload: =>
@@ -1691,22 +1725,70 @@ class QueuesUI extends CompositeElement
                 do @display
             )
 
+    handleQueueAction: (action) -> (e) ->
+        queueName = $(@).closest(".queue").find(".queue-name").text()
+        action queueName, e
+
     @QUEUE_SKELETON: $("""
         <script type="text/x-jsrender">
-            <li><b>{{>queue}}</b>
+            <li class="queue {{if state == "ACTIVE"}}active{{/if}} span4 well alert-block">
+                <h4 {{if state == "ACTIVE"}}class="text-error"{{/if}}>
+                    {{if state == "ACTIVE"}}<i class="icon icon-cog icon-spin"></i>{{/if}}
+                    <span class="queue-name">{{>queue}}</span>
+                </h4>
+                <div class="progress {{if state == "ACTIVE XXX disabled due to high CPU usage"}}progress-striped active{{/if}}"
+                    {{if ~showAbsoluteProgress}} style="width: {{>100 * +numTotal / ~maxTotal}}%"{{/if}}>
+                    <div class="bar bar-success" style="width:{{>100 * ratioDone}}%;"    data-toggle="tooltip" data-placement="bottom" title="{{>numDone}} done"      ></div>
+                    <div class="bar"             style="width:{{>100 * ratioRunning}}%;" data-toggle="tooltip" data-placement="bottom" title="{{>numRunning}} running"></div>
+                    <div class="bar bar-warning" style="width:{{>100 * ratioPlanned}}%;" data-toggle="tooltip" data-placement="right" title="{{>numPlanned}} planned"></div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="pull-left">
+                    {{if numRunning > 0}}
+                        <button class="queue-stop btn btn-small btn-danger"><i
+                        class="icon icon-{{if state == "ACTIVE"}}stop{{else}}undo{{/if}}"></i></button>
+                    {{/if}}
+                    </div>
+                    <button class="queue-refresh btn btn-small" disabled><i class="icon icon-refresh"></i></button>
+                    <button class="queue-{{if state == "ACTIVE"}}stop{{else}}start{{/if}} btn btn-small btn-primary"><i class="icon icon-{{if state == "ACTIVE"}}pause{{else}}play{{/if}}"></i></button>
+                </div>
             </li>
         </script>
-        """)
+        """) # TODO queue-pause
 
     render: =>
+        numQueues = _.size(@queues)
+        @optionElements.sortByName?.toggleClass("hide", numQueues <= 3)
+        @optionElements.sortByTime?.toggleClass("hide", numQueues <= 3)
+        @optionElements.toggleAbsoluteProgress?.toggleClass("hide", numQueues < 2)
+        queueNames = _.keys(@queues).sort()
+        if @queuesDisplayOrder?.length > 0
+            queueNames = @queuesDisplayOrder.concat(_.difference(queueNames, @queuesDisplayOrder))
+        maxTotal = _.max _.pluck @queues, "numTotal"
         @baseElement
-            .find("*").remove().end()
+            .find("*").remove().end() # TODO render incrementally, reusing existing DOM elements
             .append(
-                for name,queue of @queues
+                for name in queueNames when @queues[name]?
+                    queue = @queues[name]
+                    groups = ["Done", "Running", "Planned"]
+                    total = 0; total += +queue["num#{g}"] for g in groups
+                    for g in groups
+                        queue["ratio#{g}"] = if total is 0 then 0 else +queue["num#{g}"] / total
                     QueuesUI.QUEUE_SKELETON.render queue, {
                         _3X_ServiceBaseURL
+                        maxTotal
+                        showAbsoluteProgress: @showAbsoluteProgress
                     }
             )
+            .find(".progress, .bar").tooltip("hide").end()
+            .sortable()
+
+    startQueue:    (queueName) => @doQueueAction queueName, "start"
+    stopQueue:     (queueName) => @doQueueAction queueName, "stop"
+    refreshQueue:  (queueName) => @doQueueAction queueName, "refresh"
+    doQueueAction: (queueName, action) =>
+        $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/#{queueName}:#{action}")
+            # TODO show feedback in case of failure
 
 class TargetsUI extends CompositeElement
     constructor: (@baseElement) ->
@@ -1743,185 +1825,6 @@ class TargetsUI extends CompositeElement
                         _3X_ServiceBaseURL
                     }
             )
-
-
-class BatchesTable extends CompositeElement
-    constructor: (@baseElement, @countDisplay, @status, @optionElements) ->
-        super @baseElement
-
-        # subscribe to batch notifications
-        @socket = io.connect("#{_3X_ServiceBaseURL}/run/queue/")
-            .on "listing-update", ([batchId, createOrDelete]) =>
-                # TODO any non intrusive way to give feedback?
-                log "batch #{batchId} #{createOrDelete}"
-                do @reload
-
-            .on "state-update", ([batchId, newStatus]) =>
-                log batchId, newStatus
-                # TODO update only when the batch is visible on current page
-                # TODO rate limit?
-                do @reload
-
-                # TODO when the batch is opened in status table, and unless it's dirty, update it
-                @openBatchStatus batchId
-
-            .on "running-count", (count) =>
-                log "running-count", count
-                # update how many batches are running
-                @countDisplay
-                    ?.text(count)
-                     .toggleClass("hide", count == 0)
-
-        # TODO isolate localStorage key
-        @currentBatchId = localStorage.lastBatchId
-
-        openBatchStatusFor = ($row) =>
-            batchId = $row.find("td:nth(0)").text()
-            @openBatchStatus batchId, $row
-        @baseElement.on "click", "tbody tr", (e) ->
-            openBatchStatusFor $(this).closest("tr")
-
-        do @display
-
-        # load the current batch status
-        if @currentBatchId?
-            @status.load @currentBatchId
-        else
-            @status.load "run/queue/main"
-            ###
-            @dataTable.one "draw", =>
-                @baseElement.find("tbody tr:nth(0)").click()
-            ###
-
-    persist: =>
-        # TODO isolate localStorage key
-        localStorage.lastBatchId = @currentBatchId
-
-    render: =>
-        bt = @
-        unless @dataTable?
-            # clone original thead row
-            @thead = @baseElement.find("thead")
-            @origHeadRow = @thead.find("tr").clone()
-            # remember the column names
-            @headerNames = []
-            @thead.find("th:gt(1)")
-                .each (i,th) => @headerNames.push $(th).text().replace /^#/, ""
-        else
-            # fold any artifacts made by previous DataTables
-            @dataTable?.dataTable bDestroy:true
-            @thead.find("tr").remove()
-            @thead.append(@origHeadRow)
-            @baseElement.find("tbody").remove()
-            @baseElement.append("<tbody>")
-        # initialize server-side DataTables
-        @dataTable = $(@baseElement).dataTable
-            sDom: '<"H"fir>t<"F"lp>'
-            bDestroy: true
-            bAutoWidth: false
-            bProcessing: true
-            bServerSide: true
-            sAjaxSource: "#{_3X_ServiceBaseURL}/api/run/queue/.DataTables"
-            bLengthChange: false
-            iDisplayLength: 5
-            bPaginate: true
-            #bScrollInfinite: true
-            bScrollCollapse: true
-            #sScrollY: "#{Math.max(240, .2 * window.innerHeight)}px"
-            bSort: false
-            # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
-            # TODO isolate localStorage key
-            fnStateSave: (oSettings, oData) -> localStorage.batchesDataTablesState = JSON.stringify oData
-            fnStateLoad: (oSettings       ) -> try JSON.parse localStorage.batchesDataTablesState
-            bStateSave: true
-            # manipulate header columns
-            fnHeaderCallback: (nHead, aData, iStart, iEnd, aiDisplay) ->
-                $("th:gt(1)", nHead).remove()
-                $(nHead).append("""
-                    <th class="action">Action</th>
-                    <th>#Total</th>
-                    <th>#Done</th>
-                    <th>#Running</th>
-                    <th>#Remaining</th>
-                    """)
-            # manipulate rows before they are rendered
-            fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
-                $row = $(nRow)
-                # indicate which batch's status is displayed
-                $batchCell = $row.find("td:nth(0)")
-                batchId = $batchCell.text()
-                if localStorage.lastBatchId is batchId
-                    @_displaySelected $row
-                # collect the values and replace columns
-                value = {}
-                $row.find("td:gt(1)")
-                    .each((i,td) => value[@headerNames[i]] = $(td).text())
-                    .remove()
-                totalRuns = (+value.done) + (+value.running) + (+value.remaining)
-                percentage = (100 * ((+value.done) + (+value.running)) / totalRuns).toFixed(0)
-                $row.append("""
-                    <td class="action"></td>
-                    <td>#{totalRuns}</td>
-                    <td>#{value.done}</td>
-                    <td>#{value.running}</td>
-                    <td>#{value.remaining}</td>
-                    """)
-                $batchCell.addClass("id")
-                # progress bar
-                $stateCell = $row.find("td:nth(1)")
-                state = $stateCell.text()
-                $row.addClass(state)
-                PROGRESS_BY_STATE =
-                    DONE: "progress-success"
-                    RUNNING: "progress-striped active"
-                    PAUSED: "progress-warning"
-                    PLANNED: ""
-                $stateCell.html("""<div
-                    class="progress #{PROGRESS_BY_STATE[state]}">
-                        <div class="bar" style="width: #{percentage}%"></div>
-                    </div>""")
-                # add action buttons
-                ICON_BY_STATE =
-                    DONE: null
-                    RUNNING: "stop"
-                    PAUSED: "play"
-                    PLANNED: "play"
-                ACTION_BY_STATE =
-                    DONE: null
-                    RUNNING: "stop"
-                    PAUSED: "start"
-                    PLANNED: "start"
-                if (action = ACTION_BY_STATE[state])?
-                    icon = ICON_BY_STATE[state]
-                    $actionCell = $row.find("td:nth(2)")
-                    $actionCell.html("""<a class="btn btn-small
-                        #{action}"><i class="icon icon-#{icon}"></i></a>""")
-                    $actionCell.find(".btn").click(@actionHandler action)
-
-    _displaySelected: ($row) =>
-        @baseElement.find("tbody tr").removeClass("info"); $row.addClass("info")
-
-    openBatchStatus: (batchId, $row) =>
-        @currentBatchId = batchId
-        $row ?= @baseElement.find("tbody tr").filter(-> $(this).text() is batchId)
-        @_displaySelected $row
-        @status.load @currentBatchId
-        do @persist
-
-    reload: =>
-        @dataTable.fnPageChange "first"
-
-    actionHandler: (action) =>
-        act = ($row) =>
-            batchId = $row.find("td:nth(0)").text()
-            log "#{action}ing #{batchId}"
-            $.getJSON("#{_3X_ServiceBaseURL}/api/#{batchId}:#{action}")
-                # TODO feedback on failure
-        (e) ->
-            act $(this).closest("tr")
-            do e.preventDefault
-            do e.stopPropagation
-
 
 
 
@@ -2418,7 +2321,11 @@ $ ->
             buttonClear : $("#status-clear")
             toggleShouldStart: $("#status-start-after-create")
         _3X_.targets = new TargetsUI $("#targets")
-        _3X_.queues = new QueuesUI $("#queues"), $("#run-count.label"), _3X_.status, _3X_.targets
+        _3X_.queues = new QueuesUI $("#queues"), $("#run-count.label"), _3X_.status, _3X_.targets,
+            addNewQueue: $("#queue-create")
+            sortByName: $("#queue-sortby-name")
+            sortByTime: $("#queue-sortby-time")
+            toggleAbsoluteProgress: $("#queue-toggle-absolute-progress")
     do initTitle
     do initBaseURLControl
     do initTabs

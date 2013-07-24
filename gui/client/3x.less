@@ -99,6 +99,11 @@ body > .navbar .brand .icon {
   }
 }
 
+.section-tools {
+  float: right;
+  line-height: @baseLineHeight * 2;
+}
+
 #setup {
   h4 {
     margin-bottom: 4px;
@@ -241,6 +246,18 @@ body > .navbar .brand .icon {
 
 #chart {
   overflow: hidden;
+}
+
+#queues {
+  overflow-y: auto;
+  max-height: 9 * @baseLineHeight;
+  .queue {
+    margin: @fluidGridGutterWidth768 / 4;
+    cursor: pointer;
+    .queue-name {
+      font-weight: bold;
+    }
+  }
 }
 
 #batches-table {

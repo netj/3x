@@ -185,12 +185,18 @@
 
         <div class="row-fluid">
           <div class="span8">
+            <div class="section-tools">
+              <button id="queue-sortby-name" class="btn btn-mini hide"><i class="icon icon-sort-by-alphabet"></i></button>
+              <button id="queue-sortby-time" class="btn btn-mini hide"><i class="icon icon-sort-by-attributes-alt"></i></button>
+              <button id="queue-toggle-absolute-progress" class="btn btn-mini hide" data-toggle="button"><i class="icon icon-resize-horizontal"></i> Absolute Progress</button>
+              <button id="queue-create" class="btn btn-mini"><i class="icon icon-plus"></i> New Queue</button>
+            </div>
             <h3><i class="icon-tasks icon"></i>Queues</h3>
-            <ul id="queues"></ul>
+            <ul id="queues" class="unstyled clearfix"></ul>
           </div>
           <div class="span4">
             <h3><i class="icon-flag icon"></i>Targets</h3>
-            <ul id="targets"></ul>
+            <ul id="targets" class="unstyled clearfix"></ul>
           </div>
         </div>
 

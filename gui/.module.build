@@ -17,7 +17,7 @@ cd server
 ln -sf ../../server/package.json
 echo >README.md
 npm install
-coffee -c -o . ../../server/*.coffee
+
 #  server depends on some python packages, e.g., watchdog
 [ -d python-packages -a python-packages -nt "$Self" ] || {
     dir_pypkgs="$PWD/python-packages"
@@ -44,15 +44,19 @@ coffee -c -o . ../../server/*.coffee
         #
 }
 
+cd ../..
+coffee -c -o .build/server server/*.coffee
+
 
 # client
-cd ../client
-mkdir -p resource
-cd resource
+clientDst=.build/client/resource
 clientSrc=../../../client
 
 # compile client coffee scripts
-coffee -c -o . $clientSrc/*.coffee
+mkdir -p "$clientDst"
+coffee -c -o "$clientDst" client/*.coffee
+
+cd "$clientDst"
 
 # get jquery
 [ -s jquery.js ] ||

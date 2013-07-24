@@ -115,6 +115,7 @@ if $interrupted; then
     exit 1
 elif $failed && ! $terminated; then
     runner-error "Failed Execution" || true
+    queue-refresh
     # TODO msg inspect worker log
     exit 2
 else

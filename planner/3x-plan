@@ -210,7 +210,7 @@ if edit "$tmp"/new "$tmp"/timestamp; then
         msg "  3x plan with ${savedPlan#$_3X_ROOT/}"
         false
     }
-    mv -f "$tmp"/sanitized plan
+    cp -f "$tmp"/sanitized plan
     if [ ${#planWithFiles[@]} -gt 0 ]; then
         # clean up any temporary file for `plan with`
         for f; do

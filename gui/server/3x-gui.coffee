@@ -342,8 +342,13 @@ formatStatusTable = (lines, firstColumnName = "isCurrent", indexColumnName = nul
     indexColumn = 1 unless indexColumn >= 0
     for line in lines
         row = rows[line[indexColumn]] = {}
+        total = null
         for name,i in names
             row[name] = line[i]
+            if /^num.+/.test name
+                total ?= 0
+                total += +line[i]
+        row.numTotal = total if total?
     rows
 
 app.get "/api/run/queue/", (req, res) ->
@@ -509,7 +514,7 @@ io.of("/run/queue/")
         updateRunningCount socket
 
 updateRunningCount = (socket = queueSockets) ->
-    cliBare("sh", ["-c", "cat run/queue/*/running | wc -l"]
+    cliBare("sh", ["-c", "ls run/queue/*/.is-active.* | wc -l"]
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
@@ -525,11 +530,10 @@ queueNotifyChange = (event, fullpath) ->
     return unless queueName?
     queueId = "run/queue/#{queueName}"
     util.log "WATCH #{queueId} #{event} #{filename}"
-    if filename is "/plan"
+    if /// ^/( plan | running | done )$ ///.test filename
         queueSockets.volatile.emit "listing-update", [queueId, event]
-    else if filename.match /// ^/( \.worker\..*\.\d+\.lock )$ ///
+    else if /// ^/( \.is-active\..* )$ ///.test filename
         do updateRunningCount
-    else if filename.match /// ^/( running\.[^/]+/lock )$ ///
         queueSockets.volatile.emit "state-update", [
             queueId
             if event is "deleted" then "PAUSED" else "RUNNING"
