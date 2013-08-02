@@ -1714,6 +1714,9 @@ class QueuesUI extends CompositeElement
                     .find(".queue .queue-name")
                     .map(-> $(@).text()).toArray()
             )
+            # Workaround for tooltips' interference with sortable
+            .on("sortstart", (e, ui) => ui.item.find(".progress, .bar").tooltip("destroy"))
+            .on("sortstop",  (e, ui) => ui.item.find(".progress, .bar").tooltip("hide"))
 
         # then load
         do @reload
@@ -1738,9 +1741,9 @@ class QueuesUI extends CompositeElement
                 </h4>
                 <div class="progress {{if state == "ACTIVE XXX disabled due to high CPU usage"}}progress-striped active{{/if}}"
                     {{if ~showAbsoluteProgress}} style="width: {{>100 * +numTotal / ~maxTotal}}%"{{/if}}>
-                    <div class="bar bar-success" style="width:{{>100 * ratioDone}}%;"    data-toggle="tooltip" data-placement="bottom" title="{{>numDone}} done"      ></div>
-                    <div class="bar"             style="width:{{>100 * ratioRunning}}%;" data-toggle="tooltip" data-placement="bottom" title="{{>numRunning}} running"></div>
-                    <div class="bar bar-warning" style="width:{{>100 * ratioPlanned}}%;" data-toggle="tooltip" data-placement="right" title="{{>numPlanned}} planned"></div>
+                    <div class="bar bar-success" style="width:{{>100 * ratioDone}}%;"    data-toggle="tooltip" data-placement="bottom" data-container="body" title="{{>numDone}} done"      ></div>
+                    <div class="bar"             style="width:{{>100 * ratioRunning}}%;" data-toggle="tooltip" data-placement="bottom" data-container="body" title="{{>numRunning}} running"></div>
+                    <div class="bar bar-warning" style="width:{{>100 * ratioPlanned}}%;" data-toggle="tooltip" data-placement="right"  data-container="body" title="{{>numPlanned}} planned"></div>
                 </div>
                 <div class="actions">
                     <div class="pull-left">
@@ -1840,9 +1843,9 @@ class TargetsUI extends CompositeElement
                             <button class="target-edit btn btn-small"
                                 title="Edit current target configuration"><i class="icon icon-edit"></i></button>
                         </div>
-                        <button class="target-use btn btn-small btn-primary"
+                        <button class="target-use btn btn-small btn-danger"
                             {{if target == ~currentTarget}}disabled{{/if}}
-                            title="Use this target for executing runs in current queue"><i class="icon icon-flag"></i></button>
+                            title="Use this target for executing runs in current queue"><i class="icon icon-ok"></i></button>
                     </div>
                 </div>
             </div>  
