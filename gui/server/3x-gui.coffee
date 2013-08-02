@@ -390,7 +390,7 @@ app.get "/api/run/target/:name", (req, res) ->
                         v.pop() while v[v.length - 1]?.length is 0
                         attr.value = v[0] if v?.length <= 1
                         targetInfo[attr.name] = attr.value
-                    targetInfo.name = name
+                    targetInfo.target = name
                     next targetInfo
     ) (respondJSON res)
 

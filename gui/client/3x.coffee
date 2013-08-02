@@ -1742,7 +1742,7 @@ class QueuesUI extends CompositeElement
                     <div class="bar"             style="width:{{>100 * ratioRunning}}%;" data-toggle="tooltip" data-placement="bottom" title="{{>numRunning}} running"></div>
                     <div class="bar bar-warning" style="width:{{>100 * ratioPlanned}}%;" data-toggle="tooltip" data-placement="right" title="{{>numPlanned}} planned"></div>
                 </div>
-                <div style="text-align:right;">
+                <div class="actions">
                     <div class="pull-left">
                     {{if numRunning > 0}}
                         <button class="queue-stop btn btn-small btn-danger"
@@ -1768,7 +1768,12 @@ class QueuesUI extends CompositeElement
         if @queuesDisplayOrder?.length > 0
             queueNames = @queuesDisplayOrder.concat(_.difference(queueNames, @queuesDisplayOrder))
         maxTotal = _.max _.pluck @queues, "numTotal"
-        @baseElement
+        queuesList = @baseElement.find("ul:first")
+        unless queuesList.length > 0
+            queuesList = $("<ul>")
+                .addClass("unstyled clearfix")
+                .appendTo(@baseElement)
+        queuesList
             .find("*").remove().end() # TODO render incrementally, reusing existing DOM elements
             .append(
                 for name in queueNames when @queues[name]?
@@ -1795,13 +1800,11 @@ class QueuesUI extends CompositeElement
 
 class TargetsUI extends CompositeElement
     constructor: (@baseElement) ->
-        super @baseElement
+        @targetKnobs    = $(TargetsUI.TARGET_KNOB_CONTAINER_SKELETON   ).appendTo(@baseElement)
+        log "TargetsUI constructor", @targetKnobs
+        @targetContents = $(TargetsUI.TARGET_CONTENT_CONTAINER_SKELETON).appendTo(@baseElement)
 
-        # subscribe to queue change notifications
-        @socket = io.connect("#{_3X_ServiceBaseURL}/run/queue/")
-            .on "listing-update", ([targetId, createOrDelete]) =>
-                log "target #{targetId} #{createOrDelete}"
-                do @reload
+        super @baseElement
 
         do @reload
 
@@ -1809,25 +1812,67 @@ class TargetsUI extends CompositeElement
         # TODO loading feedback
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/")
             .success((@targets) =>
+                @currentTarget = _.where(@targets, isCurrent:true)[0]?.target
                 do @display
             )
 
-    @TARGET_SKELETON: $("""
+    @TARGET_KNOB_CONTAINER_SKELETON: """
+        <ul class="nav nav-pills"></ul>
+        """
+    @TARGET_KNOB_SKELETON: $("""
         <script type="text/x-jsrender">
-            <li><b>{{>target}}</b>
+            <li {{if target == ~currentTarget}}class="current"{{/if}}>
+                <a href="#target-{{>target}}" data-toggle="tab">{{>target}}</a>
             </li>
         </script>
         """)
 
+    @TARGET_CONTENT_CONTAINER_SKELETON: """
+        <div class="pill-content"></div>
+        """
+    @TARGET_CONTENT_SKELETON: $("""
+        <script type="text/x-jsrender">
+            <div id="target-{{>target}}" class="target pill-pane">
+                <div class="well alert-block">
+                    <span class="target-summary"></span>
+                    <div class="actions">
+                        <div class="pull-left">
+                            <button class="target-edit btn btn-small"
+                                title="Edit current target configuration"><i class="icon icon-edit"></i></button>
+                        </div>
+                        <button class="target-use btn btn-small btn-primary"
+                            {{if target == ~currentTarget}}disabled{{/if}}
+                            title="Use this target for executing runs in current queue"><i class="icon icon-flag"></i></button>
+                    </div>
+                </div>
+            </div>  
+        </script>
+        """)
+
     render: =>
-        @baseElement
-            .find("*").remove().end()
-            .append(
-                for name,target of @targets
-                    TargetsUI.TARGET_SKELETON.render target, {
-                        _3X_ServiceBaseURL
-                    }
-            )
+        for name in _.keys(@targets).sort()
+            target = @targets[name]
+            targetUI = @targetContents.find("#target-#{name}")
+            unless targetUI.length > 0
+                ctx = {
+                    _3X_ServiceBaseURL
+                    currentTarget: @currentTarget
+                }
+                $(TargetsUI.TARGET_KNOB_SKELETON.render target, ctx).appendTo(@targetKnobs)
+                targetUI = $(TargetsUI.TARGET_CONTENT_SKELETON.render target, ctx).appendTo(@targetContents)
+                $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/#{name}")
+                .success((targetInfo) =>
+                    _.extend(target, targetInfo)
+                    targetUI.find(".target-summary").text(
+                            # TODO elaborate
+                            targetInfo.remote
+                        )
+                    )
+        log "TargetsUI rendered", @targetKnobs?.find("li a")
+        t = @targetKnobs?.find("li.current a")
+        t = @targetKnobs?.find("li a:first") unless t?.length > 0
+        t?.tab("show")
+
 
 
 

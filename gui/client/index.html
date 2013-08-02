@@ -184,8 +184,8 @@
         <h2><i class="icon-cogs icon"></i>Runs</h2>
 
         <div class="row-fluid">
-          <div class="span8">
-            <div class="section-tools">
+          <div class="span9">
+            <div class="section-actions">
               <button id="queue-sortby-name" class="btn btn-mini hide"
                 title="Sort queues by their names' alphanumeric order"
                 ><i class="icon icon-sort-by-alphabet"></i></button>
@@ -202,11 +202,15 @@
                 title="Create a new queue"><i class="icon icon-plus"></i> New Queue</button>
             </div>
             <h3><i class="icon-tasks icon"></i>Queues</h3>
-            <ul id="queues" class="unstyled clearfix"></ul>
+            <div id="queues"></div>
           </div>
-          <div class="span4">
+          <div class="span3">
+            <div class="section-actions">
+              <button class="target-new btn btn-mini"
+                title="Create new target configuration"><i class="icon icon-plus"></i> New Target</button>
+            </div>
             <h3><i class="icon-flag icon"></i>Targets</h3>
-            <ul id="targets" class="unstyled clearfix"></ul>
+            <div id="targets"></div>
           </div>
         </div>
 

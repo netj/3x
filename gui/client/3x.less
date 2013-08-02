@@ -99,9 +99,10 @@ body > .navbar .brand .icon {
   }
 }
 
-.section-tools {
+.section-actions {
   float: right;
   line-height: @baseLineHeight * 2;
+  margin-top: (@baseLineHeight / 2);
 }
 
 #setup {
@@ -248,7 +249,7 @@ body > .navbar .brand .icon {
   overflow: hidden;
 }
 
-#queues {
+#queues > ul {
   overflow-y: auto;
   max-height: 9 * @baseLineHeight;
   .queue {
@@ -260,17 +261,30 @@ body > .navbar .brand .icon {
   }
 }
 
-#batches-table {
-  thead {
-    th { text-align: center; }
-    th.state { width: 30%; }
+#targets {
+  .nav-pills > li > a {
+    color: @errorText;
   }
-  tbody {
-    tr        { cursor: pointer; }
-    td        { text-align: right; }
-    .progress { margin-bottom: 0px; }
-    td.action { text-align: center; }
-    td.id     { text-align: left; }
+  .nav-pills > .active > a {
+    color: @white;
+    background-color: @errorText;
+    border-color: @errorBorder;
+  }
+  .nav-pills > .current > a {
+    font-weight: bold;
+    border-style: double;
+    padding: 6px;
+  }
+  .target {
+  }
+}
+
+.section-actions, .actions {
+  text-align: right;
+  opacity: 0;
+  .transition(opacity .15s linear);
+  *:hover > & {
+    opacity: 1;
   }
 }
 
