@@ -1694,7 +1694,7 @@ class QueuesUI extends CompositeElement
             ?.toggleClass("active", @showAbsoluteProgress)
             .click (e) =>
                 localStorage.queuesShowAbsoluteProgress =
-                @showAbsoluteProgress = not $(e.srcElement).hasClass("active")
+                @showAbsoluteProgress = not @optionElements.toggleAbsoluteProgress.hasClass("active")
                 do @display
 
         @queuesDisplayOrder = (try JSON.parse localStorage.queuesDisplayOrder) ? []
@@ -1734,11 +1734,11 @@ class QueuesUI extends CompositeElement
 
     @QUEUE_SKELETON: $("""
         <script type="text/x-jsrender">
-            <li class="queue {{if state == "ACTIVE"}}active{{/if}} span4 well alert-block">
-                <h4 {{if state == "ACTIVE"}}class="text-error"{{/if}}>
+            <li class="queue {{if state == "ACTIVE"}}active{{/if}} well alert-block">
+                <h5 {{if state == "ACTIVE"}}class="text-error"{{/if}}>
                     {{if state == "ACTIVE"}}<i class="icon icon-cog icon-spin"></i>{{/if}}
                     <span class="queue-name">{{>queue}}</span>
-                </h4>
+                </h5>
                 <div class="progress {{if state == "ACTIVE XXX disabled due to high CPU usage"}}progress-striped active{{/if}}"
                     {{if ~showAbsoluteProgress}} style="width: {{>100 * +numTotal / ~maxTotal}}%"{{/if}}>
                     <div class="bar bar-success" style="width:{{>100 * ratioDone}}%;"    data-toggle="tooltip" data-placement="bottom" data-container="body" title="{{>numDone}} done"      ></div>
@@ -1774,7 +1774,7 @@ class QueuesUI extends CompositeElement
         queuesList = @baseElement.find("ul:first")
         unless queuesList.length > 0
             queuesList = $("<ul>")
-                .addClass("unstyled clearfix")
+                .addClass("clearfix unstyled")
                 .appendTo(@baseElement)
         queuesList
             .find("*").remove().end() # TODO render incrementally, reusing existing DOM elements
@@ -1804,7 +1804,6 @@ class QueuesUI extends CompositeElement
 class TargetsUI extends CompositeElement
     constructor: (@baseElement) ->
         @targetKnobs    = $(TargetsUI.TARGET_KNOB_CONTAINER_SKELETON   ).appendTo(@baseElement)
-        log "TargetsUI constructor", @targetKnobs
         @targetContents = $(TargetsUI.TARGET_CONTENT_CONTAINER_SKELETON).appendTo(@baseElement)
 
         super @baseElement
@@ -1871,7 +1870,6 @@ class TargetsUI extends CompositeElement
                             targetInfo.remote
                         )
                     )
-        log "TargetsUI rendered", @targetKnobs?.find("li a")
         t = @targetKnobs?.find("li.current a")
         t = @targetKnobs?.find("li a:first") unless t?.length > 0
         t?.tab("show")

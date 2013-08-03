@@ -99,12 +99,6 @@ body > .navbar .brand .icon {
   }
 }
 
-.section-actions {
-  float: right;
-  line-height: @baseLineHeight * 2;
-  margin-top: (@baseLineHeight / 2);
-}
-
 #setup {
   h4 {
     margin-bottom: 4px;
@@ -249,14 +243,15 @@ body > .navbar .brand .icon {
   overflow: hidden;
 }
 
-#queues > ul {
-  overflow-y: auto;
-  max-height: 9 * @baseLineHeight;
-  .queue {
-    margin: @fluidGridGutterWidth768 / 4;
-    cursor: pointer;
-    .queue-name {
-      font-weight: bold;
+#queues {
+  & > ul {
+    .queue {
+      //margin: @fluidGridGutterWidth768 / 4;
+      cursor: pointer;
+      padding: (@baseLineHeight / 3) (@baseLineHeight / 2);
+      .queue-name { font-weight: bold; }
+      h5        { margin: (@baseLineHeight / 4) 0; }
+      .progress { margin-bottom: @baseLineHeight / 2; }
     }
   }
 }
@@ -276,6 +271,15 @@ body > .navbar .brand .icon {
     padding: 6px;
   }
   .target {
+  }
+}
+
+.section-title {
+  &.pull-right, &.pull-left {
+    margin: 0;
+    & + .section-actions {
+      margin: (@baseLineHeight / 2) 0;
+    }
   }
 }
 
