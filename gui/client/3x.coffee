@@ -1812,6 +1812,8 @@ class QueuesUI extends CompositeElement
             @baseElement.find(".queue").removeClass("alert-info")
                 .filter("[data-name='#{queueName}']").addClass("alert-info")
             @status.load queueName
+            @target.currentTarget = @queues[queueName].target
+            do @target.display
 
     startQueue:    (queueName) => @doQueueAction queueName, "start"
     stopQueue:     (queueName) => @doQueueAction queueName, "stop"
@@ -1842,7 +1844,7 @@ class TargetsUI extends CompositeElement
         """
     @TARGET_KNOB_SKELETON: $("""
         <script type="text/x-jsrender">
-            <li {{if target == ~currentTarget}}class="current"{{/if}}>
+            <li data-name="{{>target}}">
                 <a href="#target-{{>target}}" data-toggle="tab">{{>target}}</a>
             </li>
         </script>
@@ -1862,7 +1864,6 @@ class TargetsUI extends CompositeElement
                                 title="Edit current target configuration"><i class="icon icon-edit"></i></button>
                         </div>
                         <button class="target-use btn btn-small btn-danger"
-                            {{if target == ~currentTarget}}disabled{{/if}}
                             title="Use this target for executing runs in current queue"><i class="icon icon-ok"></i></button>
                     </div>
                 </div>
@@ -1877,21 +1878,28 @@ class TargetsUI extends CompositeElement
             unless targetUI.length > 0
                 ctx = {
                     _3X_ServiceBaseURL
-                    currentTarget: @currentTarget
                 }
                 $(TargetsUI.TARGET_KNOB_SKELETON.render target, ctx).appendTo(@targetKnobs)
                 targetUI = $(TargetsUI.TARGET_CONTENT_SKELETON.render target, ctx).appendTo(@targetContents)
-                $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/#{name}")
-                .success((targetInfo) =>
-                    _.extend(target, targetInfo)
-                    targetUI.find(".target-summary").text(
-                            # TODO elaborate
-                            targetInfo.remote
+                do (targetUI) =>
+                    $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/#{name}")
+                    .success((targetInfo) =>
+                        _.extend(target, targetInfo)
+                        targetUI.find(".target-summary").text(
+                                # TODO elaborate
+                                targetInfo.remote
+                            )
                         )
-                    )
-        t = @targetKnobs?.find("li.current a")
-        t = @targetKnobs?.find("li a:first") unless t?.length > 0
-        t?.tab("show")
+        # adjust UI for current target
+        @targetKnobs?.find("li").removeClass("current")
+            .filter("[data-name='#{@currentTarget}']").addClass("current")
+        @targetContents.find(".target-use").prop("disabled", false)
+        @targetContents.find("#target-#{@currentTarget}").find(".target-use").prop("disabled", true)
+        # show current target tab if none active
+        if @targetContents.find(".pill-pane.active").length is 0
+            t = @targetKnobs?.find("li.current a")
+            t = @targetKnobs?.find("li a:first") unless t?.length > 0
+            t?.tab("show")
 
 
 class StatusTable extends CompositeElement
