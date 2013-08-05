@@ -33,6 +33,7 @@ process.env._3X_LOGMSGS = "true"
 RUN_COLUMN_NAME = "run#"
 STATE_COLUMN_NAME = "state#"
 SERIAL_COLUMN_NAME = "serial#"
+TARGET_COLUMN_NAME = "target#"
 
 # use text/plain MIME type for 3X artifacts in run/
 express.static.mime.define
@@ -176,9 +177,13 @@ normalizeNamedColumnLines = (
         .map((columns) ->
             row = []
             for column in columns
-                m = /^([^=]+)=(.*)$/.exec column
-                continue unless m
-                [__, name, value] = m
+                if (m = /^([^=]+)=(.*)$/.exec column)?
+                    [__, name, value] = m
+                else if (m = /^([^=]+)!$/.exec column)?
+                    name = m[1]
+                    value = null
+                else
+                    continue
                 idx = columnIndex[name]
                 unless idx?
                     idx = columnNames.length
@@ -395,9 +400,30 @@ app.get "/api/run/target/:name", (req, res) ->
     ) (respondJSON res)
 
 
+parseStatusOutput = normalizeNamedColumnLines (line) ->
+                    [state, columns...] = line.split /\s+/
+                    switch state
+                        when "PLANNED"
+                            serial = target = runId = null
+                        else
+                            [columns..., serial, target, runId] = columns
+                    serial = (serial?.replace /^#/, "")
+                    runId = "" if runId is "?"
+                    if state
+                        formatValue = (name, v) ->
+                            "#{name}#{if v? then "=#{v}" else "!"}"
+                        [
+                            (formatValue SERIAL_COLUMN_NAME, serial)
+                            # TODO order columns by 3x-condition
+                            columns...
+                            (formatValue  STATE_COLUMN_NAME, state)
+                            (formatValue TARGET_COLUMN_NAME, target)
+                            (formatValue    RUN_COLUMN_NAME, runId)
+                        ]
+
 app.get "/api/run/queue/*/.DataTables", (req, res) ->
     [queueName] = req.params
-    query = req.param("sSearch") ? ""
+    query = req.param("sSearch") ? null
     getHistory = (cmd, args, next) ->
         cliEnv res, {
                 _3X_QUEUE: queueName
@@ -406,12 +432,7 @@ app.get "/api/run/queue/*/.DataTables", (req, res) ->
             }, cmd, args, next
     async.parallel [
             getHistory "limitOffset", ["3x-status"]
-                , (lazyLines, next) ->
-                    lazyLines
-                        .skip(1)
-                        .filter((line) -> line isnt "")
-                        .map((line) -> line.split /\s+/)
-                        .join next
+                , parseStatusOutput
         ,
             getHistory "sh", ["-c", "3x-status | wc -l"]
                 , (lazyLines, next) ->
@@ -423,8 +444,9 @@ app.get "/api/run/queue/*/.DataTables", (req, res) ->
                 res.json
                     sEcho: req.param("sEcho")
                     iTotalRecords: totalCount
-                    #iTotalDisplayRecords: filteredCount
-                    aaData: table
+                    iTotalDisplayRecords: totalCount # FIXME filteredCount
+                    aColumnNames: table.names
+                    aaData: table.rows
 
 app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
     [queueName, action] = req.params
@@ -437,7 +459,7 @@ app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
                 .join -> next (true)
     ) (respondJSON res)
 
-app.get "/api/run/queue/:queueName", (req, res) ->
+app.get "/api/run/queue/*", (req, res) ->
     [queueName] = req.params
     # TODO sanitize queueName
     queueId = "run/queue/#{queueName}"
@@ -446,17 +468,7 @@ app.get "/api/run/queue/:queueName", (req, res) ->
         cliEnv(res, {
             _3X_QUEUE: queueName
         }, "3x-status", [queueId]
-            , normalizeNamedColumnLines (line) ->
-                    [state, columns..., serial, target, runId] = line.split /\s+/
-                    serial = (serial?.replace /^#/, "")
-                    runId = "" if runId is "?"
-                    if state
-                        [
-                            "#{STATE_COLUMN_NAME}=#{state}"
-                            "#{SERIAL_COLUMN_NAME}=#{serial}"
-                            "#{RUN_COLUMN_NAME}=#{runId}"
-                            columns...
-                        ]
+            , parseStatusOutput
         ) (respondJSON res)
 
 app.post "/api/run/queue/*", (req, res) ->

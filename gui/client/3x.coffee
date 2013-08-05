@@ -37,6 +37,7 @@ safeId = (str) -> str.replace(/[^A-Za-z0-9_-]/g, "-")
 RUN_COLUMN_NAME = "run#"
 SERIAL_COLUMN_NAME = "serial#"
 STATE_COLUMN_NAME  = "state#"
+TARGET_COLUMN_NAME  = "target#"
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -1673,7 +1674,7 @@ class QueuesUI extends CompositeElement
                 do @reload
 
                 # TODO when the batch is opened in status table, and unless it's dirty, update it
-                #@openBatchStatus batchId
+                #@openBatchStatus queueId
 
             .on "running-count", (count) =>
                 log "running-count", count
@@ -1687,6 +1688,7 @@ class QueuesUI extends CompositeElement
             .on("click", ".queue-start", @handleQueueAction @startQueue)
             .on("click", ".queue-stop", @handleQueueAction @stopQueue)
             .on("click", ".queue-refresh", @handleQueueAction @refreshQueue)
+            .on("click", ".queue", @handleQueueAction @focusQueue)
 
         # TODO @optionElements.addNewQueue?. ...
         @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
@@ -1696,6 +1698,8 @@ class QueuesUI extends CompositeElement
                 localStorage.queuesShowAbsoluteProgress =
                 @showAbsoluteProgress = not @optionElements.toggleAbsoluteProgress.hasClass("active")
                 do @display
+
+        @queueOnFocus = localStorage.queueOnFocus
 
         @queuesDisplayOrder = (try JSON.parse localStorage.queuesDisplayOrder) ? []
         changeQueuesDisplayOrder = (order) =>
@@ -1726,6 +1730,7 @@ class QueuesUI extends CompositeElement
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/")
             .success((@queues) =>
                 do @display
+                @focusQueue (@queueOnFocus ? @queues[0])
             )
 
     handleQueueAction: (action) -> (e) ->
@@ -1734,7 +1739,7 @@ class QueuesUI extends CompositeElement
 
     @QUEUE_SKELETON: $("""
         <script type="text/x-jsrender">
-            <li class="queue {{if state == "ACTIVE"}}active{{/if}} well alert-block">
+            <li class="queue {{if state == "ACTIVE"}}active{{/if}} well alert-block" data-name="{{>queue}}">
                 <h5 {{if state == "ACTIVE"}}class="text-error"{{/if}}>
                     {{if state == "ACTIVE"}}<i class="icon icon-cog icon-spin"></i>{{/if}}
                     <span class="queue-name">{{>queue}}</span>
@@ -1793,6 +1798,20 @@ class QueuesUI extends CompositeElement
             )
             .find(".progress, .bar").tooltip("hide").end()
             .sortable()
+
+        # indicate which queue is on focus
+        if @queueOnFocus
+            queuesList.find(".queue")
+                .removeClass("alert-info")
+                .filter("[data-name='#{@queueOnFocus}']").addClass("alert-info")
+
+    focusQueue: (queueName, e) =>
+        if not e? or $(e?.srcElement).closest("button").length is 0
+            localStorage.queueOnFocus =
+            @queueOnFocus = queueName
+            @baseElement.find(".queue").removeClass("alert-info")
+                .filter("[data-name='#{queueName}']").addClass("alert-info")
+            @status.load queueName
 
     startQueue:    (queueName) => @doQueueAction queueName, "start"
     stopQueue:     (queueName) => @doQueueAction queueName, "stop"
@@ -1875,32 +1894,47 @@ class TargetsUI extends CompositeElement
         t?.tab("show")
 
 
-
-
-class PlanTableBase extends CompositeElement
-    constructor: (@planTableId, @baseElement, @conditions, @optionElements) ->
+class StatusTable extends CompositeElement
+    constructor: (@baseElement, @conditions, @optionElements) ->
         super @baseElement
-        @plan = null
-        do @initButtons
         $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
                 @popovers?.popover("hide")
             )
 
+        @queueId = null
+        @on "reordered", =>
+            # TODO see if it's actually different from the original
+            @isReordered = true
+            do @updateButtons
+
+        # intialize UI and hook events
+        do @attachToResultsTable
+        @on "reordered", @persist
+
+    persist: =>
+        # TODO persist to server
+        log "TODO persist status/plan to server"
+
+    load: (@queueName) =>
+        @queueId = "run/queue/#{queueName}"
+        do @display
+
     @HEAD_SKELETON: $("""
         <script type="text/x-jsrender">
           <tr>
-            <th class="fixed"></th>
             <th class="fixed">#</th>
-            <th class="fixed">State</th>
             {{for columns}}
             <th>{{>name}}</th>
             {{/for}}
+            <th class="fixed">State</th>
+            <th class="fixed">Target</th>
+            <th class="fixed">run#</th>
           </tr>
         </script>
         """)
     @ROW_SKELETON: $("""
         <script type="text/x-jsrender">
-          <tr class="run {{>className}} {{>state}}" id="{{>~batchId}}-{{>serial}}">
+          <tr class="run {{>className}} {{>state}}" id="{{>~queueId}}-{{>serial}}">
             <td class="order">{{>ordinal}}</td>
             <td class="serial">{{>serial}}</td>
             <td class="state"><div class="detail"
@@ -1916,239 +1950,159 @@ class PlanTableBase extends CompositeElement
         </script>
         """)
 
-    render: (@plan) =>
-        # prepare to distinguish metadata from condition columns
-        columnIndex = {}; columnIndex[name] = idx for name,idx in @plan.names
-        columnNames = (name for name of @conditions.conditions)
-        metaColumnNames = {} # at the least, there should be SERIAL_COLUMN_NAME and STATE_COLUMN_NAME
-        for name,idx in @plan.names
-            if (m = name.match /^(.*)#$/)?
-                nm = switch name
-                    when STATE_COLUMN_NAME
-                        "state"
-                    when SERIAL_COLUMN_NAME
-                        "serial"
-                    else
-                        m[1]
-                metaColumnNames[nm] = idx
-            else if not name in columnNames
-                columnNames.push name
+    render: (args...) =>
+        # display the name of the batch
+        @optionElements.nameDisplay?.text(@queueName)
 
-        # fold any artifacts left by previous DataTables construction
-        @dataTable?.dataTable bDestroy:true
-
-        # populate table head
-        thead = @baseElement.find("thead")
-        thead.find("tr").remove()
-        thead.append(StatusTable.HEAD_SKELETON.render(
-                columns:
-                    for name in columnNames
-                        name: name
-            ))
-        # populate table body
-        @baseElement.find("tbody").remove()
-        tbody = $("<tbody>").appendTo(@baseElement)
-        extraData =
-            batchId: @planTableId
-            _3X_ServiceBaseURL: _3X_ServiceBaseURL
         ICON_BY_STATE =
             DONE: "ok"
             RUNNING: "spin icon-spinner"
-            REMAINING: "time"
+            PLANNED: "time"
         CLASS_BY_STATE =
             DONE: "success"
             RUNNING: "info"
             PAUSED: "warning"
-            REMAINING: ""
-        ordUB = @plan.rows.length
-        for row,ord in @plan.rows
-            metadata = {}
-            for name,idx of metaColumnNames
-                metadata[name] = row[idx]
-            metadata.className = CLASS_BY_STATE[metadata.state]
-            tbody.append(StatusTable.ROW_SKELETON.render(_.extend(metadata,
-                    ordinal: ord
-                    ordinalGroup: if metadata.state == "REMAINING" then ordUB else ord
-                    icon: ICON_BY_STATE[metadata.state]
-                    columns:
-                        for name in columnNames
-                            value: row[columnIndex[name]]
-                ), extraData))
-        tbody.find("tr").each (i,tr) -> tr.ordinal = i
-        # popover detail (link to run)
-        t = @
-        @popovers = tbody.find(".state .detail")
-            .popover(trigger: "manual")
-            .click((e) ->
-                t.popovers.not(this).popover("hide")
-                $(this).popover("show")
-                e.stopPropagation()
-                e.preventDefault()
-            )
+            PLANNED: ""
+        extraData =
+            queueId: @queueId
+            _3X_ServiceBaseURL: _3X_ServiceBaseURL
+
+        # prepare to distinguish metadata from input parameter columns
+        columnNames = (name for name of @conditions.conditions)
+        metaColumnNames = null
+
+        columnIndex = null
+        ordUB = null
+
+        # fold any artifacts left by previous DataTables construction
+        @dataTable?.dataTable bDestroy:true
+        # populate header columns
+        @baseElement?.find("thead")
+            .find("tr").remove().end()
+            .append(StatusTable.HEAD_SKELETON.render(
+                columns:
+                    for name in columnNames
+                        name: name
+            ))
+
+        ## popover detail (link to run)
+        #t = @
+        #@popovers = tbody.find(".state .detail")
+        #    .popover(trigger: "manual")
+        #    .click((e) ->
+        #        t.popovers.not(this).popover("hide")
+        #        $(this).popover("show")
+        #        e.stopPropagation()
+        #        e.preventDefault()
+        #    )
         # make it a DataTable
+        # TODO use Scroller for history
+        # See: http://datatables.net/release-datatables/extras/Scroller/server-side_processing.html
         @dataTable = $(@baseElement).dataTable
-            sDom: 'R<"H"fir>t<"F"lp>'
+            sDom: 'R<"H"<"span4"i><"span2"r><"span6"p>>t<"F"lf>'
             bDestroy: true
             bAutoWidth: false
+            bProcessing: true
             bServerSide: true
-            sAjaxSource: "#{_3X_ServiceBaseURL}/api/#{@batchId}/.DataTables"
+            sAjaxSource: "#{_3X_ServiceBaseURL}/api/#{@queueId}/.DataTables"
+            bFilter: false
             bLengthChange: false
-            bPaginate: false
-            bScrollInfinite: true
-            bScrollCollapse: true
-            sScrollY: "#{Math.max(400, .618 * window.innerHeight)}px"
-            aaSortingFixed: [[2, "asc"]]
+            iDisplayLength: 25
+            #bScrollInfinite: true
+            #bScrollCollapse: true
+            #sScrollY: "#{Math.max(400, .618 * window.innerHeight)}px"
+            bSort: false
+            #aaSortingFixed: [[2, "asc"]]
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
-            fnStateSave: (oSettings, oData) => localStorage["#{@planTableId}DataTablesState"] = JSON.stringify oData
-            fnStateLoad: (oSettings       ) => try JSON.parse localStorage["#{@planTableId}DataTablesState"]
+            fnStateSave: (oSettings, oData) => localStorage["#{@queueId}DataTablesState"] = JSON.stringify oData
+            fnStateLoad: (oSettings       ) => try JSON.parse localStorage["#{@queueId}DataTablesState"]
             bStateSave: true
+            # manipulate header columns
+            #fnServerData: (sSource, aoData, fnCallback, oSettings) =>
+            #    $.getJSON(sSource, aoData).success((data) =>
+            #        log "fnServerData", data
+            #        columnIndex = {}
+            #        columnIndex[name] = idx for name,idx in data.aColumnNames
+            #        metaColumnNames = {}
+            #        for name,idx in data.aColumnNames
+            #            if (m = name.match /^(.*)#$/)?
+            #                nm = switch name
+            #                    when STATE_COLUMN_NAME
+            #                        "state"
+            #                    when SERIAL_COLUMN_NAME
+            #                        "serial"
+            #                    when TARGET_COLUMN_NAME
+            #                        "target"
+            #                    #when RUN_COLUMN_NAME
+            #                    #    "run#"
+            #                    else
+            #                        m[1]
+            #                metaColumnNames[nm] = idx
+            #        ordUB = data.iTotalRecords
+            #        fnCallback data
+            #    )
+            ## manipulate rows before they are rendered
+            #fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
+            #    log "fnRowCallback", aData
+            #    $row = $(nRow)
+            #    metadata = {}
+            #    for name,idx of metaColumnNames
+            #        metadata[name] = aData[idx]
+            #    metadata.className = CLASS_BY_STATE[metadata.state]
+            #    #$row.html(StatusTable.ROW_SKELETON.render(_.extend(metadata,
+            #    #        ordinal: iDisplayIndexFull
+            #    #        ordinalGroup: if metadata.state == "PLANNED" then ordUB else iDisplayIndexFull
+            #    #        icon: ICON_BY_STATE[metadata.state]
+            #    #        columns:
+            #    #            for name in columnNames
+            #    #                value: aData[columnIndex[name]]
+            #    #    ), extraData))
+            #    nRow.ordinal = iDisplayIndexFull
             # Workaround for DataTables resetting the scrollTop after sorting/reordering
             # TODO port this to the jquery.dataTables.rowReordering project
-            fnPreDrawCallback: =>
-                @scrollTop = @scrollBody?.scrollTop
-            fnDrawCallback: =>
-                @scrollBody?.scrollTop = @scrollTop
-                _.defer =>
-                    # detect and reflect reordering to the given data
-                    $trs = tbody.find("tr")
-                    return unless $trs.is (i) -> this.ordinal isnt i
-                    # reorder internal plan according to the order of rows in the table
-                    newRows = []; rows = @plan.rows
-                    $trs.each (i,tr) =>
-                        if tr.ordinal?
-                            newRows[i] = rows[tr.ordinal]
-                        tr.ordinal = i
-                    # finally, save the plan with reordered rows
-                    @plan.rows = newRows
-                    @trigger "reordered"
-        @scrollBody = @dataTable.closest(".dataTables_wrapper").find(".dataTables_scrollBody")[0]
-        indexColumn = @dataTable._oPluginColReorder?.fnGetCurrentOrder().indexOf(0) ? 0
-        @dataTable.fnSort [[indexColumn, "asc"]]
-        # with reordering possible
-        @dataTable.rowReordering
-            iIndexColumn: indexColumn
-        @dataTable.find("tbody").sortable
-            items:  "tr.REMAINING"
-            cancel: "tr:not(.REMAINING)"
-        @dataTable.find("tbody tr").disableSelection()
-        # update buttons
-        do @updateButtons
+        #    fnPreDrawCallback: =>
+        #        @scrollTop = @scrollBody?.scrollTop
+        #    fnDrawCallback: =>
+        #        @scrollBody?.scrollTop = @scrollTop
+        #        _.defer =>
+        #            # detect and reflect reordering to the given data
+        #            $trs = @baseElement.find("tbody tr")
+        #            return unless $trs.is (i) -> this.ordinal isnt i
+        #            ## reorder internal plan according to the order of rows in the table
+        #            #newRows = []; rows = @plan.rows
+        #            #$trs.each (i,tr) =>
+        #            #    if tr.ordinal?
+        #            #        newRows[i] = rows[tr.ordinal]
+        #            #    tr.ordinal = i
+        #            ## finally, save the plan with reordered rows
+        #            #@plan.rows = newRows
+        #            @trigger "reordered"
+        #@scrollBody = @dataTable.closest(".dataTables_wrapper").find(".dataTables_scrollBody")[0]
+        #indexColumn = @dataTable._oPluginColReorder?.fnGetCurrentOrder().indexOf(0) ? 0
+        #@dataTable.fnSort [[indexColumn, "asc"]]
+        ## with reordering possible
+        #@dataTable.rowReordering
+        #    iIndexColumn: indexColumn
+        #    # TODO server side notification
+        #@dataTable.find("tbody").sortable
+        #    items:  "tr.PLANNED"
+        #    cancel: "tr:not(.PLANNED)"
+        #@dataTable.find("tbody tr").disableSelection()
 
-    updateButtons: =>
-        # turn on/off buttons
-        @optionElements.buttonClear ?.toggleClass("disabled", not @canClear())
-        @optionElements.buttonCommit?.toggleClass("disabled", not @canCommit())
-    initButtons: =>
-        (btn = @optionElements.buttonClear )?.click (e) => @handleClear (e) unless btn.hasClass("disabled")
-        (btn = @optionElements.buttonCommit)?.click (e) => @handleCommit(e) unless btn.hasClass("disabled")
-        do @updateButtons
-    handleClear: (e) => error "handleClear not implemented for", @
-    canClear: => false
-    handleCommit: (e) => error "handleCommit not implemented for", @
-    canCommit: => false
+        #log "showing queue status", @queueId, @plan
+        #@isReordered = false
+        ## scroll to the first PLANNED row
+        #if (firstREMAININGrow = @dataTable.find("tbody tr.PLANNED:nth(0)")[0])?
+        #    @scrollBody?.scrollTop = firstREMAININGrow.offsetTop - firstREMAININGrow.offsetHeight * 3.5
 
 
-class StatusTable extends PlanTableBase
-    constructor: (args...) ->
-        super args...
-        @plan = null
-        @batchId = null
-        @on "reordered", =>
-            # TODO see if it's actually different from the original
-            @isReordered = true
-            do @updateButtons
-        # TODO check if there's uncommitted changes beforeunload of document
-
-    load: (@batchId) =>
-        do @display
-        #$.getJSON("#{_3X_ServiceBaseURL}/api/#{@batchId}")
-        #    .success(@display)
-
-    render: (args...) =>
-        # display the name of the batch
-        @optionElements.nameDisplay?.text(@batchId)
-        # render table
-        super args...
-        log "showing batch status", @batchId, @plan
-        @isReordered = false
-        # scroll to the first REMAINING row
-        if (firstREMAININGrow = @dataTable.find("tbody tr.REMAINING:nth(0)")[0])?
-            @scrollBody?.scrollTop = firstREMAININGrow.offsetTop - firstREMAININGrow.offsetHeight * 3.5
-
-    canClear: => @batchId? and @isReordered
-    handleClear: (e) =>
-        do @load @batchId
-    canCommit: => @batchId? and @isReordered
-    handleCommit: (e) =>
-        # send plan to server to create a new batch
-        $.post("#{_3X_ServiceBaseURL}/api/#{@batchId}",
-            shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
-            plan: JSON.stringify @plan
-        )
-            .success(@load)
-            .fail (err) =>
-                error err # TODO better error presentation
-
-
-
-class PlanTable extends PlanTableBase
-    constructor: (args...) ->
-        super args...
-        # load plan and display it
-        @plan = (try JSON.parse localStorage[@planTableId]) ? @newPlan()
-        # intialize UI and hook events
-        do @attachToResultsTable
-        @on "reordered", @persist
-        # finally, show the current plan in table, and display count
-        @display @plan
-        do @updateCountDisplay
-
-    persist: =>
-        #log "saving plan for later", @plan
-        do @updateCountDisplay
-        # persist in localStorage
-        localStorage[@planTableId] = JSON.stringify @plan
-
-    render: (args...) =>
-        super args...
+        ## FIXME from PlanTable
         # scroll to the last row
-        if (lastRow = @dataTable.find("tbody tr").last()[0])?
-            @scrollBody?.scrollTop = lastRow.offsetTop
+        #if (lastRow = @dataTable.find("tbody tr").last()[0])?
+        #    @scrollBody?.scrollTop = lastRow.offsetTop
 
-    newPlan: =>
-        names: [SERIAL_COLUMN_NAME, STATE_COLUMN_NAME, (name for name of @conditions.conditions)...]
-        rows: []
-        lastSerial: 0
 
-    updatePlan: (plan) =>
-        @plan = plan
-        do @persist
-        _.defer =>
-            @display @plan
 
-    updateCountDisplay: =>
-        count = @plan.rows.length
-        @optionElements.countDisplay
-            ?.text(count)
-             .toggleClass("hide", count == 0)
-
-    canClear: => @plan?.rows.length > 0
-    handleClear: (e) =>
-        @updatePlan @newPlan()
-    canCommit: => @plan?.rows.length > 0
-    handleCommit: (e) =>
-        # send plan to server to create a new batch
-        $.post("#{_3X_ServiceBaseURL}/api/run/queue/",
-            shouldStart: if @optionElements.toggleShouldStart?.is(":checked") then true
-            plan: JSON.stringify @plan
-        )
-            .success (batchId) =>
-                @updatePlan @newPlan()
-                # FIXME clean this dependency by listening to batch changes directly via socket.io
-                _3X_.batches.openBatchStatus batchId
-                do _3X_.batches.reload
-            .fail (err) =>
-                error err # TODO better error presentation
 
     attachToResultsTable: =>
         # add a popover to the attached results table
@@ -2277,7 +2231,7 @@ class PlanTable extends PlanTableBase
         )
 
 
-    @STATE: "REMAINING"
+    @STATE: "PLANNED"
     addPlanFromRowHandler: =>
         add = (strategy) =>
             popover = @resultsActionPopover
@@ -2296,8 +2250,8 @@ class PlanTable extends PlanTableBase
             rows = @plan.rows
             prevSerialLength = String(rows.length).length
             # add to plans using the given strategy
-            PlanTable.PLAN_ADDITION_STRATEGY[strategy](popover) valuesArray, (comb) =>
-                rows.push [++@plan.lastSerial, PlanTable.STATE, comb...]
+            StatusTable.PLAN_ADDITION_STRATEGY[strategy](popover) valuesArray, (comb) =>
+                rows.push [++@plan.lastSerial, StatusTable.STATE, comb...]
             # rewrite serial numbers if needed
             serialLength = String(rows.length).length
             if serialLength > prevSerialLength
@@ -2307,6 +2261,7 @@ class PlanTable extends PlanTableBase
                 for row in rows
                     row[serialIdx] = rewriteSerial row[serialIdx]
             @updatePlan @plan
+            # FIXME use API directly
         (e) ->
             # find which btn was pressed
             for c in $(this).closest(".add").attr("class")?.split(/\s+/)
@@ -2322,6 +2277,7 @@ class PlanTable extends PlanTableBase
             forEachCombination valuesArray, (comb) -> allCombos.push comb
             numRandom = +popover.find(".num-random").text()
             choose(numRandom, allCombos).forEach addCombination
+
 
 
 
@@ -2354,27 +2310,17 @@ $ ->
                 toggleOriginX           : $("#chart-toggle-origin-x")
                 toggleOriginY1          : $("#chart-toggle-origin-y1")
                 toggleOriginY2          : $("#chart-toggle-origin-y2")
-            # plan
-            _3X_.planner = new PlanTable "currentPlan", $("#plan-table"),
-                _3X_.conditions,
+            # queue status
+            _3X_.status = new StatusTable $("#status-table"), _3X_.conditions,
+                nameDisplay : $("#status-name")
+                # TODO status -> HistoryTable and PlanTable
                 resultsTable: _3X_.results
-                countDisplay: $("#plan-count.label")
-                buttonCommit: $("#plan-submit")
-                buttonClear : $("#plan-clear")
-                toggleShouldStart: $("#plan-start-after-create")
-        # runs
-        _3X_.status = new StatusTable "status", $("#status-table"),
-            _3X_.conditions,
-            nameDisplay : $("#status-name")
-            buttonCommit: $("#status-submit")
-            buttonClear : $("#status-clear")
-            toggleShouldStart: $("#status-start-after-create")
-        _3X_.targets = new TargetsUI $("#targets")
-        _3X_.queues = new QueuesUI $("#queues"), $("#run-count.label"), _3X_.status, _3X_.targets,
-            addNewQueue: $("#queue-create")
-            sortByName: $("#queue-sortby-name")
-            sortByTime: $("#queue-sortby-time")
-            toggleAbsoluteProgress: $("#queue-toggle-absolute-progress")
+            _3X_.targets = new TargetsUI $("#targets")
+            _3X_.queues = new QueuesUI $("#queues"), $("#run-count.label"), _3X_.status, _3X_.targets,
+                addNewQueue: $("#queue-create")
+                sortByName: $("#queue-sortby-name")
+                sortByTime: $("#queue-sortby-time")
+                toggleAbsoluteProgress: $("#queue-toggle-absolute-progress")
     do initTitle
     do initBaseURLControl
     do initTabs
