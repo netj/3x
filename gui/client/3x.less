@@ -301,14 +301,38 @@ body > .navbar .brand .icon {
   }
 }
 
-#status-table, #plan-table {
-  thead th.fixed, tbody td.state { text-align: center; }
+div.dataTables_scrollBody {
+  // fix for DataTables Scroller auto rowHeight calculation
+  .table-bordered tbody:first-child tr:first-child {
+    th, td {
+      border-top: 1px solid;
+    }
+  }
+  // margin at the bottom of the table
+  table {
+    margin-bottom: (2*@baseLineHeight) !important;
+    .DTS & + div {
+      width: 100% !important;
+      border-bottom: (2*@baseLineHeight) solid @white;
+      z-index: -1;
+    }
+  }
+}
+.dataTables_info, .dataTables_processing {
+  display: inline-block;
+}
+.dataTables_processing {
+  padding-top: 8px;
+}
+
+#status-table {
   tbody {
-    td.order { color: @grayLight; }
-    td.order,
-    td.serial { text-align: right; }
-    td.state .popover { width: auto; text-align: initial; }
-    tr.ui-sortable-helper td.order { visibility: hidden; }
+    tr.ui-selected, tr.ui-selecting {
+      background-color: @infoBackground;
+      td, th {
+        background-color: @infoBackground;
+      }
+    }
   }
 }
 .popover {

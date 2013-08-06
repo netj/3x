@@ -977,7 +977,7 @@ class ResultsTable extends CompositeElement
             bAutoWidth: true
             bScrollCollapse: true
             sScrollX: "100%"
-            sScrollY: "#{window.innerHeight - @baseElement.position().top}px"
+            sScrollY: "#{window.innerHeight - @baseElement.offset().top}px"
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             # TODO isolate localStorage key
             fnStateSave: (oSettings, oData) -> localStorage.resultsDataTablesState = JSON.stringify oData
@@ -996,8 +996,12 @@ class ResultsTable extends CompositeElement
         @dataTable.on "draw.ResultsTable", _.debounce (=> @trigger "updated"), 100
 
     maximizeDataTable: =>
-        @dataTable.fnSettings().oScroll.sY = "#{window.innerHeight - @baseElement.position().top}px"
+        s = @dataTable.fnSettings()
+        s.oScroll.sY = "#{window.innerHeight - @baseElement.offset().top}px"
         @dataTable.fnDraw()
+        # XXX above doesn't guarantee full height, so force it
+        scrollBody = $(s.nTableWrapper).find(".#{s.oClasses.sScrollBody}")
+        scrollBody.css height: "#{window.innerHeight - scrollBody.offset().top}px"
 
     updateColumnIndexMappings: =>
         # Construct column index mappings for others to build functions on top of it.
@@ -1905,23 +1909,13 @@ class TargetsUI extends CompositeElement
 class StatusTable extends CompositeElement
     constructor: (@baseElement, @conditions, @optionElements) ->
         super @baseElement
-        $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
-                @popovers?.popover("hide")
-            )
-
         @queueId = null
-        @on "reordered", =>
-            # TODO see if it's actually different from the original
-            @isReordered = true
-            do @updateButtons
+
+        $(window).resize(_.throttle @maximizeDataTable, 100)
+            .resize(_.debounce @display, 500)
 
         # intialize UI and hook events
         do @attachToResultsTable
-        @on "reordered", @persist
-
-    persist: =>
-        # TODO persist to server
-        log "TODO persist status/plan to server"
 
     load: (@queueName) =>
         @queueId = "run/queue/#{queueName}"
@@ -2004,53 +1998,26 @@ class StatusTable extends CompositeElement
         #        e.preventDefault()
         #    )
         # make it a DataTable
-        # TODO use Scroller for history
-        # See: http://datatables.net/release-datatables/extras/Scroller/server-side_processing.html
         @dataTable = $(@baseElement).dataTable
-            sDom: 'RirftS'
+            sDom: '<"row-fluid"<"span6 muted"ir><"span6"f>>tS'
             bDestroy: true
-            bAutoWidth: false
-            bProcessing: true
             bServerSide: true
             sAjaxSource: "#{_3X_ServiceBaseURL}/api/#{@queueId}/.DataTables"
+            bProcessing: true
+            sScrollY:  "#{window.innerHeight - @baseElement.offset().top}px"
+            oScroller:
+                loadingIndicator: true
+                # TODO better loading progress indicator
+                # See: http://stackoverflow.com/a/9144827/390044
+                serverWait: 100
+            bDeferRender: true
+            bAutoWidth: true
             bFilter: false
-            bLengthChange: false
-            #bScrollInfinite: true
-            #bScrollCollapse: true
-            sScrollY: "#{Math.max(400, .618 * window.innerHeight)}px"
             bSort: false
-            #aaSortingFixed: [[2, "asc"]]
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             fnStateSave: (oSettings, oData) => localStorage["#{@queueId}DataTablesState"] = JSON.stringify oData
             fnStateLoad: (oSettings       ) => try JSON.parse localStorage["#{@queueId}DataTablesState"]
             bStateSave: true
-            oScroller:
-                loadingIndicator: true
-            # manipulate header columns
-            #fnServerData: (sSource, aoData, fnCallback, oSettings) =>
-            #    $.getJSON(sSource, aoData).success((data) =>
-            #        log "fnServerData", data
-            #        columnIndex = {}
-            #        columnIndex[name] = idx for name,idx in data.aColumnNames
-            #        metaColumnNames = {}
-            #        for name,idx in data.aColumnNames
-            #            if (m = name.match /^(.*)#$/)?
-            #                nm = switch name
-            #                    when STATE_COLUMN_NAME
-            #                        "state"
-            #                    when SERIAL_COLUMN_NAME
-            #                        "serial"
-            #                    when TARGET_COLUMN_NAME
-            #                        "target"
-            #                    #when RUN_COLUMN_NAME
-            #                    #    "run#"
-            #                    else
-            #                        m[1]
-            #                metaColumnNames[nm] = idx
-            #        ordUB = data.iTotalRecords
-            #        fnCallback data
-            #    )
-            ## manipulate rows before they are rendered
             #fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
             #    log "fnRowCallback", aData
             #    $row = $(nRow)
@@ -2067,50 +2034,27 @@ class StatusTable extends CompositeElement
             #    #                value: aData[columnIndex[name]]
             #    #    ), extraData))
             #    nRow.ordinal = iDisplayIndexFull
-            # Workaround for DataTables resetting the scrollTop after sorting/reordering
-            # TODO port this to the jquery.dataTables.rowReordering project
-        #    fnPreDrawCallback: =>
-        #        @scrollTop = @scrollBody?.scrollTop
-        #    fnDrawCallback: =>
-        #        @scrollBody?.scrollTop = @scrollTop
-        #        _.defer =>
-        #            # detect and reflect reordering to the given data
-        #            $trs = @baseElement.find("tbody tr")
-        #            return unless $trs.is (i) -> this.ordinal isnt i
-        #            ## reorder internal plan according to the order of rows in the table
-        #            #newRows = []; rows = @plan.rows
-        #            #$trs.each (i,tr) =>
-        #            #    if tr.ordinal?
-        #            #        newRows[i] = rows[tr.ordinal]
-        #            #    tr.ordinal = i
-        #            ## finally, save the plan with reordered rows
-        #            #@plan.rows = newRows
-        #            @trigger "reordered"
-        #@scrollBody = @dataTable.closest(".dataTables_wrapper").find(".dataTables_scrollBody")[0]
-        #indexColumn = @dataTable._oPluginColReorder?.fnGetCurrentOrder().indexOf(0) ? 0
-        #@dataTable.fnSort [[indexColumn, "asc"]]
-        ## with reordering possible
-        #@dataTable.rowReordering
-        #    iIndexColumn: indexColumn
-        #    # TODO server side notification
-        #@dataTable.find("tbody").sortable
-        #    items:  "tr.PLANNED"
-        #    cancel: "tr:not(.PLANNED)"
-        #@dataTable.find("tbody tr").disableSelection()
+            fnInitComplete: =>
+                do @maximizeDataTable
 
-        #log "showing queue status", @queueId, @plan
-        #@isReordered = false
-        ## scroll to the first PLANNED row
-        #if (firstREMAININGrow = @dataTable.find("tbody tr.PLANNED:nth(0)")[0])?
-        #    @scrollBody?.scrollTop = firstREMAININGrow.offsetTop - firstREMAININGrow.offsetHeight * 3.5
+        @dataTable.closest(".dataTables_wrapper")
+            .find(".dataTables_processing").html("""
+                    &nbsp;<i class="icon icon-download-alt"></i>
+                """).end()
+            #.find(".DTS_Loading").html("""
+            #        Loading... <i class="icon icon-bolt"></i>
+            #    """)
 
+        # make rows selectable
+        @dataTable.find("tbody").selectable
+            filter: "tr"
+        # TODO keep track of which runs are selected
 
-        ## FIXME from PlanTable
-        # scroll to the last row
-        #if (lastRow = @dataTable.find("tbody tr").last()[0])?
-        #    @scrollBody?.scrollTop = lastRow.offsetTop
-
-
+    maximizeDataTable: =>
+        oScroller = @dataTable.fnSettings().oScroller
+        oScroller.dom.scroller.style.height =
+            "#{window.innerHeight - $(oScroller.dom.scroller).offset().top}px"
+        oScroller.fnMeasure()
 
 
     attachToResultsTable: =>

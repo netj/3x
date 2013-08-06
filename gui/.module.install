@@ -38,6 +38,7 @@ DataTables.Scroller/media/images/loading-background.png                         
 jquery-ui/ui/jquery.ui.core.js                                                          $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.widget.js                                                        $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.mouse.js                                                         $GUIDIR/client/resource/
+jquery-ui/ui/jquery.ui.selectable.js                                                    $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.sortable.js                                                      $GUIDIR/client/resource/
 DataTables.RowReorder/media/js/jquery.dataTables.rowReordering.js                       $GUIDIR/client/resource/
 
