@@ -2007,7 +2007,7 @@ class StatusTable extends CompositeElement
         # TODO use Scroller for history
         # See: http://datatables.net/release-datatables/extras/Scroller/server-side_processing.html
         @dataTable = $(@baseElement).dataTable
-            sDom: 'R<"H"<"span4"i><"span2"r><"span6"p>>t<"F"lf>'
+            sDom: 'RirftS'
             bDestroy: true
             bAutoWidth: false
             bProcessing: true
@@ -2015,16 +2015,17 @@ class StatusTable extends CompositeElement
             sAjaxSource: "#{_3X_ServiceBaseURL}/api/#{@queueId}/.DataTables"
             bFilter: false
             bLengthChange: false
-            iDisplayLength: 25
             #bScrollInfinite: true
             #bScrollCollapse: true
-            #sScrollY: "#{Math.max(400, .618 * window.innerHeight)}px"
+            sScrollY: "#{Math.max(400, .618 * window.innerHeight)}px"
             bSort: false
             #aaSortingFixed: [[2, "asc"]]
             # Use localStorage instead of cookies (See: http://datatables.net/blog/localStorage_for_state_saving)
             fnStateSave: (oSettings, oData) => localStorage["#{@queueId}DataTablesState"] = JSON.stringify oData
             fnStateLoad: (oSettings       ) => try JSON.parse localStorage["#{@queueId}DataTablesState"]
             bStateSave: true
+            oScroller:
+                loadingIndicator: true
             # manipulate header columns
             #fnServerData: (sSource, aoData, fnCallback, oSettings) =>
             #    $.getJSON(sSource, aoData).success((data) =>

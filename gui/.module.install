@@ -31,6 +31,9 @@ DataTables.Plugins/sorting/num-html.js                                          
 DataTables.ColReorder/media/js/ColReorder.js                                            $GUIDIR/client/resource/jquery.dataTables.ColReorder.js
 DataTables.ColReorder/media/css/ColReorder.css                                          $GUIDIR/client/resource/DataTables/css/
 DataTables.ColReorder/media/images/insert.png                                           $GUIDIR/client/resource/DataTables/images/
+DataTables.Scroller/media/js/dataTables.scroller.js                                     $GUIDIR/client/resource/jquery.dataTables.Scroller.js
+DataTables.Scroller/media/css/dataTables.scroller.css                                   $GUIDIR/client/resource/DataTables/css/
+DataTables.Scroller/media/images/loading-background.png                                 $GUIDIR/client/resource/DataTables/images/
 
 jquery-ui/ui/jquery.ui.core.js                                                          $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.widget.js                                                        $GUIDIR/client/resource/

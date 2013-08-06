@@ -34,3 +34,6 @@
 [submodule "gui/jquery.appear"]
 	path = gui/jquery.appear
 	url = https://github.com/morr/jquery.appear.git
+[submodule "gui/DataTables.Scroller"]
+	path = gui/DataTables.Scroller
+	url = https://github.com/DataTables/Scroller.git
