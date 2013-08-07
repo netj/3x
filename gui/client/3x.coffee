@@ -1935,7 +1935,7 @@ class StatusTable extends CompositeElement
             FAILED: "error"
             RUNNING: "info"
             PAUSED: "warning"
-            PLANNED: ""
+            PLANNED: "warning"
 
         # prepare to distinguish metadata from input parameter columns
         columnNames = (name for name of @conditions.conditions)
@@ -1946,15 +1946,16 @@ class StatusTable extends CompositeElement
 
         ## define the table structure
         columnDefs = [
-            { sTitle:  "State" , sName: STATE_COLUMN_NAME  , sClass:"state"  , mData: 0, aTargets:[0] }
-            { sTitle:      "#" , sName: SERIAL_COLUMN_NAME , sClass:"serial" , mData: 1, aTargets:[1] }
-            { sTitle: "Target" , sName: TARGET_COLUMN_NAME , sClass:"target" , mData: 2, aTargets:[2] }
-            { sTitle:   "run#" , sName: RUN_COLUMN_NAME    , sClass:"run"    , mData: 3, aTargets:[3], bVisible: false }
+            { sTitle:  "State" , sName: STATE_COLUMN_NAME  , sClass:"state"        , mData: 0, aTargets:[1]                    , sWidth: "100px" }
+            { sTitle:      "#" , sName: SERIAL_COLUMN_NAME , sClass:"muted serial" , mData: 1, aTargets:[0]                    , sWidth:  "60px" }
+            { sTitle: "Target" , sName: TARGET_COLUMN_NAME , sClass:"muted target" , mData: 2, aTargets:[3+columnNames.length] , bVisible: false }
+            { sTitle:   "run#" , sName: RUN_COLUMN_NAME    , sClass:"muted run"    , mData: 3, aTargets:[2]                    , bVisible: false }
         ]
-        columnDefs.push (
-            for name,i in columnNames
-                { sTitle: name, sName: name, mData: i+columnDefs.length, aTargets: [i+columnDefs.length] }
-        )...
+        i = 0
+        for name in columnNames
+            # find the next vacant column index
+            i++ while columnDefs.some (col) -> ~col.aTargets.indexOf(i)
+            columnDefs.push { sTitle: name, sName: name, mData: columnDefs.length, aTargets: [i] }
         columnIndex = {}; columnIndex[col.sName] = col.mData for col,i in columnDefs
 
         # make it a DataTable
@@ -1982,8 +1983,9 @@ class StatusTable extends CompositeElement
             fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
                 $row = $(nRow)
                 return if $row.find("i.icon").length
-                runId = aData[columnIndex[RUN_COLUMN_NAME]]
-                state = aData[columnIndex[STATE_COLUMN_NAME]]
+                state  = aData[columnIndex[STATE_COLUMN_NAME]]
+                runId  = aData[columnIndex[RUN_COLUMN_NAME]]
+                target = aData[columnIndex[TARGET_COLUMN_NAME]]
                 # icon and style class
                 $state = $row.find(".state")
                     .prepend(" ")
@@ -1991,15 +1993,19 @@ class StatusTable extends CompositeElement
                     .wrapInner($("<span>").addClass("text-#{CLASS_BY_STATE[state]}"))
                 # tooltip with run# and other messages
                 if runId?
-                    $state.wrapInner(
-                        $("<a/>").addClass("state-detail").attr(
-                            href: "#{_3X_ServiceBaseURL}/#{runId}/overview"
-                            title: runId
+                    $state
+                        .wrapInner($("<a/>").attr(href: "#{_3X_ServiceBaseURL}/#{runId}/overview"))
+                        .attr(
+                                title: "#{runId}\n at target #{target}"
                                 # TODO embed error messages here for some states
-                            "data-toggle": "tooltip"
-                            "data-container": "body"
-                        )
-                        # TODO popover
+                                "data-toggle": "tooltip"
+                                "data-placement": "left"
+                                "data-container": "body"
+                            )
+                        .addClass("state-detail")
+                        .tooltip("hide")
+                        # TODO prevent tooltip from appearing when scrolling
+                        # TODO use popover instead of tooltip?
                         #$("<span/>").addClass("state-detail").attr(
                         #    title: runId
                         #    "data-html": true
@@ -2010,7 +2016,6 @@ class StatusTable extends CompositeElement
                         #        """
                         #    # TODO embed error messages here for some states
                         #)
-                    ).find(".state-detail").tooltip("hide")
             fnInitComplete: =>
                 do @maximizeDataTable
 

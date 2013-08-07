@@ -325,7 +325,7 @@ div.dataTables_scrollBody {
   padding-top: 8px;
 }
 
-#status-table {
+#status-table, #status-table_wrapper {
   tbody {
     tr.ui-selected {
       background-color: @infoBackground;
@@ -339,12 +339,18 @@ div.dataTables_scrollBody {
         background-color: darken(@infoBackground, 5%);
       }
     }
-    .state {
-      font-weight: bold;
-      a {
-        color: inherit;
-        text-decoration: inherit;
-      }
+  }
+  .serial {
+    max-width: (10*@baseFontSize);
+    text-align: right;
+  }
+  .state {
+    max-width: (10*@baseFontSize);
+    text-align: left;
+    font-weight: bold;
+    a {
+      color: inherit;
+      text-decoration: inherit;
     }
   }
 }
