@@ -413,17 +413,18 @@ parseStatusOutput = normalizeNamedColumnLines (line) ->
                         formatValue = (name, v) ->
                             "#{name}#{if v? then "=#{v}" else "!"}"
                         [
-                            (formatValue SERIAL_COLUMN_NAME, serial)
-                            # TODO order columns by 3x-condition
-                            columns...
                             (formatValue  STATE_COLUMN_NAME, state)
+                            (formatValue SERIAL_COLUMN_NAME, serial)
                             (formatValue TARGET_COLUMN_NAME, target)
                             (formatValue    RUN_COLUMN_NAME, runId)
+                            # TODO order columns by 3x-condition
+                            columns...
                         ]
 
 app.get "/api/run/queue/*/.DataTables", (req, res) ->
     [queueName] = req.params
     query = req.param("sSearch") ? null
+    # TODO use column order sColumns
     getHistory = (cmd, args, next) ->
         cliEnv res, {
                 _3X_QUEUE: queueName

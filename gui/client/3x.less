@@ -327,10 +327,23 @@ div.dataTables_scrollBody {
 
 #status-table {
   tbody {
-    tr.ui-selected, tr.ui-selecting {
+    tr.ui-selected {
       background-color: @infoBackground;
       td, th {
         background-color: @infoBackground;
+      }
+    }
+    tr.ui-selecting, tr.ui-selected:hover {
+      background-color: darken(@infoBackground, 5%);
+      td, th {
+        background-color: darken(@infoBackground, 5%);
+      }
+    }
+    .state {
+      font-weight: bold;
+      a {
+        color: inherit;
+        text-decoration: inherit;
       }
     }
   }

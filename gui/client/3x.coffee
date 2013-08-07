@@ -1921,82 +1921,42 @@ class StatusTable extends CompositeElement
         @queueId = "run/queue/#{queueName}"
         do @display
 
-    @HEAD_SKELETON: $("""
-        <script type="text/x-jsrender">
-          <tr>
-            <th class="fixed">#</th>
-            {{for columns}}
-            <th>{{>name}}</th>
-            {{/for}}
-            <th class="fixed">State</th>
-            <th class="fixed">Target</th>
-            <th class="fixed">run#</th>
-          </tr>
-        </script>
-        """)
-    @ROW_SKELETON: $("""
-        <script type="text/x-jsrender">
-          <tr class="run {{>className}} {{>state}}" id="{{>~queueId}}-{{>serial}}">
-            <td class="order">{{>ordinal}}</td>
-            <td class="serial">{{>serial}}</td>
-            <td class="state"><div class="detail"
-            {{if run}}
-            title="Detailed Info"
-            data-placement="bottom" data-html="true" data-trigger="click"
-            data-content='<a href="{{>~_3X_ServiceBaseURL}}/{{>run}}/overview">{{>run}}</a>'
-            {{/if}}><span class="hide">{{>ordinalGroup}}</span><i class="icon icon-{{>icon}}"></i></div></td>
-            {{for columns}}
-            <td>{{>value}}</td>
-            {{/for}}
-          </tr>
-        </script>
-        """)
-
     render: (args...) =>
         # display the name of the batch
         @optionElements.nameDisplay?.text(@queueName)
 
         ICON_BY_STATE =
             DONE: "ok"
-            RUNNING: "spin icon-spinner"
+            FAILED: "remove"
+            RUNNING: "cog icon-spin"
             PLANNED: "time"
         CLASS_BY_STATE =
             DONE: "success"
+            FAILED: "error"
             RUNNING: "info"
             PAUSED: "warning"
             PLANNED: ""
-        extraData =
-            queueId: @queueId
-            _3X_ServiceBaseURL: _3X_ServiceBaseURL
 
         # prepare to distinguish metadata from input parameter columns
         columnNames = (name for name of @conditions.conditions)
-        metaColumnNames = null
-
-        columnIndex = null
-        ordUB = null
 
         # fold any artifacts left by previous DataTables construction
+        @dataTable?.find(".state .state-detail").tooltip("destroy")
         @dataTable?.dataTable bDestroy:true
-        # populate header columns
-        @baseElement?.find("thead")
-            .find("tr").remove().end()
-            .append(StatusTable.HEAD_SKELETON.render(
-                columns:
-                    for name in columnNames
-                        name: name
-            ))
 
-        ## popover detail (link to run)
-        #t = @
-        #@popovers = tbody.find(".state .detail")
-        #    .popover(trigger: "manual")
-        #    .click((e) ->
-        #        t.popovers.not(this).popover("hide")
-        #        $(this).popover("show")
-        #        e.stopPropagation()
-        #        e.preventDefault()
-        #    )
+        ## define the table structure
+        columnDefs = [
+            { sTitle:  "State" , sName: STATE_COLUMN_NAME  , sClass:"state"  , mData: 0, aTargets:[0] }
+            { sTitle:      "#" , sName: SERIAL_COLUMN_NAME , sClass:"serial" , mData: 1, aTargets:[1] }
+            { sTitle: "Target" , sName: TARGET_COLUMN_NAME , sClass:"target" , mData: 2, aTargets:[2] }
+            { sTitle:   "run#" , sName: RUN_COLUMN_NAME    , sClass:"run"    , mData: 3, aTargets:[3], bVisible: false }
+        ]
+        columnDefs.push (
+            for name,i in columnNames
+                { sTitle: name, sName: name, mData: i+columnDefs.length, aTargets: [i+columnDefs.length] }
+        )...
+        columnIndex = {}; columnIndex[col.sName] = col.mData for col,i in columnDefs
+
         # make it a DataTable
         @dataTable = $(@baseElement).dataTable
             sDom: '<"row-fluid"<"span6 muted"ir><"span6"f>>tS'
@@ -2018,22 +1978,39 @@ class StatusTable extends CompositeElement
             fnStateSave: (oSettings, oData) => localStorage["#{@queueId}DataTablesState"] = JSON.stringify oData
             fnStateLoad: (oSettings       ) => try JSON.parse localStorage["#{@queueId}DataTablesState"]
             bStateSave: true
-            #fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
-            #    log "fnRowCallback", aData
-            #    $row = $(nRow)
-            #    metadata = {}
-            #    for name,idx of metaColumnNames
-            #        metadata[name] = aData[idx]
-            #    metadata.className = CLASS_BY_STATE[metadata.state]
-            #    #$row.html(StatusTable.ROW_SKELETON.render(_.extend(metadata,
-            #    #        ordinal: iDisplayIndexFull
-            #    #        ordinalGroup: if metadata.state == "PLANNED" then ordUB else iDisplayIndexFull
-            #    #        icon: ICON_BY_STATE[metadata.state]
-            #    #        columns:
-            #    #            for name in columnNames
-            #    #                value: aData[columnIndex[name]]
-            #    #    ), extraData))
-            #    nRow.ordinal = iDisplayIndexFull
+            aoColumnDefs: columnDefs
+            fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
+                $row = $(nRow)
+                return if $row.find("i.icon").length
+                runId = aData[columnIndex[RUN_COLUMN_NAME]]
+                state = aData[columnIndex[STATE_COLUMN_NAME]]
+                # icon and style class
+                $state = $row.find(".state")
+                    .prepend(" ")
+                    .prepend($("<i>").addClass("icon icon-#{ICON_BY_STATE[state]}"))
+                    .wrapInner($("<span>").addClass("text-#{CLASS_BY_STATE[state]}"))
+                # tooltip with run# and other messages
+                if runId?
+                    $state.wrapInner(
+                        $("<a/>").addClass("state-detail").attr(
+                            href: "#{_3X_ServiceBaseURL}/#{runId}/overview"
+                            title: runId
+                                # TODO embed error messages here for some states
+                            "data-toggle": "tooltip"
+                            "data-container": "body"
+                        )
+                        # TODO popover
+                        #$("<span/>").addClass("state-detail").attr(
+                        #    title: runId
+                        #    "data-html": true
+                        #    "data-trigger": "hover"
+                        #    "data-container": ".state-detail"
+                        #    "data-content": """
+                        #            <a href="#{_3X_ServiceBaseURL}/#{runId}/overview">See Details</a>
+                        #        """
+                        #    # TODO embed error messages here for some states
+                        #)
+                    ).find(".state-detail").tooltip("hide")
             fnInitComplete: =>
                 do @maximizeDataTable
 
@@ -2048,6 +2025,7 @@ class StatusTable extends CompositeElement
         # make rows selectable
         @dataTable.find("tbody").selectable
             filter: "tr"
+            cancel: "a, .cancel"
         # TODO keep track of which runs are selected
 
     maximizeDataTable: =>
