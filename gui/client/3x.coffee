@@ -1958,6 +1958,8 @@ class StatusTable extends CompositeElement
             columnDefs.push { sTitle: name, sName: name, mData: columnDefs.length, aTargets: [i] }
         columnIndex = {}; columnIndex[col.sName] = col.mData for col,i in columnDefs
 
+        dtWrapperSelector = "##{@baseElement.prop("id")}_wrapper"
+
         # make it a DataTable
         @dataTable = $(@baseElement).dataTable
             sDom: '<"row-fluid"<"span6 muted"ir><"span6"f>>tS'
@@ -1968,8 +1970,6 @@ class StatusTable extends CompositeElement
             sScrollY:  "#{window.innerHeight - @baseElement.offset().top}px"
             oScroller:
                 loadingIndicator: true
-                # TODO better loading progress indicator
-                # See: http://stackoverflow.com/a/9144827/390044
                 serverWait: 100
             bDeferRender: true
             bAutoWidth: true
@@ -1995,16 +1995,14 @@ class StatusTable extends CompositeElement
                 if runId?
                     $state
                         .wrapInner($("<a/>").attr(href: "#{_3X_ServiceBaseURL}/#{runId}/overview"))
-                        .attr(
-                                title: "#{runId}\n at target #{target}"
-                                # TODO embed error messages here for some states
-                                "data-toggle": "tooltip"
-                                "data-placement": "left"
-                                "data-container": "body"
-                            )
                         .addClass("state-detail")
-                        .tooltip("hide")
-                        # TODO prevent tooltip from appearing when scrolling
+                        .attr(
+                            title: "#{runId}\n at target #{target}"
+                                # TODO embed error messages here for some states
+                            "data-toggle": "tooltip"
+                            "data-placement": "left"
+                            "data-container": dtWrapperSelector
+                        ).tooltip("hide")
                         # TODO use popover instead of tooltip?
                         #$("<span/>").addClass("state-detail").attr(
                         #    title: runId
@@ -2018,14 +2016,42 @@ class StatusTable extends CompositeElement
                         #)
             fnInitComplete: =>
                 do @maximizeDataTable
+                dtScrollBG.css(backgroundImage: "none")
+                loadingIndicator.hide()
 
+        # better loading progress indicator on scroll
+        # + preventing tooltip from appearing when scrolling
+        # See: http://stackoverflow.com/a/9144827/390044
+        dtWrapper =
         @dataTable.closest(".dataTables_wrapper")
             .find(".dataTables_processing").html("""
                     &nbsp;<i class="icon icon-download-alt"></i>
                 """).end()
-            #.find(".DTS_Loading").html("""
-            #        Loading... <i class="icon icon-bolt"></i>
-            #    """)
+        loadingIndicator = dtWrapper.find(".DTS_Loading").removeClass("DTS_Loading")
+            .html("""
+                    <h4>Loading...</h4>
+                    <br>
+                    <div class="progress progress-striped active">
+                        <div class="bar" style="width:100%;"></div>
+                    </div>
+                """)
+            .addClass("loading alert alert-block alert-info")
+        dtScrollBG =
+        dtWrapper.find(".dataTables_scroll")
+            .find(".dataTables_scrollBody")
+                .on("scroll", (_.debounce =>
+                        @dataTable.find(".state-detail").tooltip("destroy")
+                        dtScrollBG.css(backgroundImage: loadingBackground)
+                        loadingIndicator.show()
+                    , 250, true))
+                .on("scroll", (_.debounce =>
+                        loadingIndicator.hide()
+                        dtScrollBG.css(backgroundImage: "none")
+                        dtWrapper.find(".tooltip").remove()
+                        @dataTable.find(".state-detail").tooltip("hide")
+                    , 250))
+            .end()
+        loadingBackground = dtScrollBG.css("backgroundImage")
 
         # make rows selectable
         @dataTable.find("tbody").selectable

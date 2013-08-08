@@ -100,6 +100,10 @@ body > .navbar .brand .icon {
   }
 }
 
+.alert-block {
+  padding-right: 14px;
+}
+
 #setup {
   h4 {
     margin-bottom: 4px;
@@ -301,6 +305,14 @@ body > .navbar .brand .icon {
   }
 }
 
+.dataTables_scroll .loading.alert-block {
+  position: absolute;
+  @width: 40%; @height: 4*@baseLineHeight;
+  top: 38.2%; left: 50%;
+  width: @width; margin-left: -@width/2;
+  height: @height; margin-top: -@height*.382;
+  text-align: center;
+}
 div.dataTables_scrollBody {
   // fix for DataTables Scroller auto rowHeight calculation
   .table-bordered tbody:first-child tr:first-child {
@@ -312,8 +324,7 @@ div.dataTables_scrollBody {
   table {
     margin-bottom: (2*@baseLineHeight) !important;
     .DTS & + div {
-      width: 100% !important;
-      border-bottom: (2*@baseLineHeight) solid @white;
+      border-bottom: (2*@baseLineHeight) solid transparent;
       z-index: -1;
     }
   }
