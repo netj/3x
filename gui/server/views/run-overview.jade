@@ -2,6 +2,8 @@ extends layout
 
 block content
 
+  - function sanitizeId(s) { return s.replace(/[^_A-Za-z0-9-]/, "-"); }
+
   div.span2
     div.span2.bs-docs-sidebar
       ul.nav.nav-list(data-spy='affix').bs-docs-sidenav
@@ -15,7 +17,7 @@ block content
             | output
         each content,file in files
           li
-            a(href='##{file}')
+            a(href='##{sanitizeId(file)}')
               i.icon-chevron-right
               = " "
               = file
@@ -56,7 +58,7 @@ block content
                       small.unit  (#{o.unit})
 
     each content,file in files
-      div.row-fluid(id='#{file}')
+      div.row-fluid(id='#{sanitizeId(file)}')
         h3
           a(href='#{file}')
             = file
