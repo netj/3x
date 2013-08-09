@@ -1941,8 +1941,10 @@ class StatusTable extends CompositeElement
         columnNames = (name for name of @conditions.conditions)
 
         # fold any artifacts left by previous DataTables construction
-        @dataTable?.find(".state .state-detail").tooltip("destroy")
-        @dataTable?.dataTable bDestroy:true
+        @dataTable
+           ?.find(".state-detail").tooltip("destroy").end()
+            .find("tbody").addClass("hide").end()
+            .dataTable bDestroy:true
 
         ## define the table structure
         columnDefs = [
@@ -2015,6 +2017,7 @@ class StatusTable extends CompositeElement
                         #    # TODO embed error messages here for some states
                         #)
             fnInitComplete: =>
+                @dataTable?.find("tbody").removeClass("hide")
                 do @maximizeDataTable
                 dtScrollBG.css(backgroundImage: "none")
                 loadingIndicator.hide()
