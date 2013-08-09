@@ -35,6 +35,7 @@ DataTables.Scroller/media/js/dataTables.scroller.js                             
 DataTables.Scroller/media/css/dataTables.scroller.css                                   $GUIDIR/client/resource/DataTables/css/
 DataTables.Scroller/media/images/loading-background.png                                 $GUIDIR/client/resource/DataTables/images/
 
+jquery-ui/themes/base                                                                   $GUIDIR/client/resource/jquery-ui
 jquery-ui/ui/jquery.ui.core.js                                                          $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.widget.js                                                        $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.mouse.js                                                         $GUIDIR/client/resource/

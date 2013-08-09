@@ -4,6 +4,9 @@
  * Created: 2012-11-11
  */
 
+// jQuery UI
+@import "jquery-ui/jquery.ui.all.css";
+
 // Bootstrap
 @import "bootstrap/less/bootstrap.less";
 @import "bootstrap/less/responsive.less";
@@ -305,28 +308,20 @@ body > .navbar .brand .icon {
   }
 }
 
-.dataTables_scroll .loading.alert-block {
-  position: absolute;
-  @width: 40%; @height: 4*@baseLineHeight;
-  top: 38.2%; left: 50%;
-  width: @width; margin-left: -@width/2;
-  height: @height; margin-top: -@height*.382;
-  text-align: center;
+div.dataTables_scrollBody table.dataTable {
+  margin-bottom: (2*@baseLineHeight) !important;
 }
-div.dataTables_scrollBody {
-  // fix for DataTables Scroller auto rowHeight calculation
+
+// DataTables Scroller fixes
+.DTS div.dataTables_scrollBody {
+  // fix for auto rowHeight calculation
   .table-bordered tbody:first-child tr:first-child {
-    th, td {
-      border-top: 1px solid;
-    }
+    th, td { border-top: 1px solid; }
   }
   // margin at the bottom of the table
-  table {
-    margin-bottom: (2*@baseLineHeight) !important;
-    .DTS & + div {
-      border-bottom: (2*@baseLineHeight) solid transparent;
-      z-index: -1;
-    }
+  table.dataTable + div {
+    border-bottom: (2*@baseLineHeight) solid transparent;
+    z-index: -1;
   }
 }
 .dataTables_info, .dataTables_processing {
@@ -334,6 +329,27 @@ div.dataTables_scrollBody {
 }
 .dataTables_processing {
   padding-top: 8px;
+}
+
+.DTS .dataTables_scroll {
+    .dataTables_scrollBody {
+      background-color: @bodyBackground;
+      z-index: 2;
+      table.dataTable { z-index: 3; }
+    }
+  &.loading {
+    .dataTables_scrollBody { background-color: transparent; }
+  }
+  .loading.alert-block {
+    position: absolute;
+    @width: 2*@fluidGridColumnWidth; @height: @fluidGridColumnWidth;
+    top: 38.2%; left: 50%;
+    width: @width; margin-left: -@width/2;
+    height: @height; margin-top: -@height*.382;
+    text-align: center;
+    padding-top: @height/2;
+    z-index: 1;
+  }
 }
 
 #status-table, #status-table_wrapper {

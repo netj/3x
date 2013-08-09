@@ -2019,7 +2019,7 @@ class StatusTable extends CompositeElement
             fnInitComplete: =>
                 @dataTable?.find("tbody").removeClass("hide")
                 do @maximizeDataTable
-                dtScrollBG.css(backgroundImage: "none")
+                dtScrollBG.removeClass("loading")
                 loadingIndicator.hide()
 
         # better loading progress indicator on scroll
@@ -2031,30 +2031,35 @@ class StatusTable extends CompositeElement
                     &nbsp;<i class="icon icon-download-alt"></i>
                 """).end()
         loadingIndicator = dtWrapper.find(".DTS_Loading").removeClass("DTS_Loading")
+            .addClass("loading alert alert-block alert-info")
             .html("""
                     <h4>Loading...</h4>
+                """)
+            ### active, striped progress bar is sluggish
                     <br>
                     <div class="progress progress-striped active">
                         <div class="bar" style="width:100%;"></div>
                     </div>
                 """)
-            .addClass("loading alert alert-block alert-info")
+            # as well as spinning icons
+            #  <i class="icon icon-spinner icon-spin"></i>
+            ###
         dtScrollBG =
         dtWrapper.find(".dataTables_scroll")
+            .addClass("loading")
             .find(".dataTables_scrollBody")
                 .on("scroll", (_.debounce =>
                         @dataTable.find(".state-detail").tooltip("destroy")
-                        dtScrollBG.css(backgroundImage: loadingBackground)
+                        dtScrollBG.addClass("loading")
                         loadingIndicator.show()
                     , 250, true))
                 .on("scroll", (_.debounce =>
                         loadingIndicator.hide()
-                        dtScrollBG.css(backgroundImage: "none")
+                        dtScrollBG.removeClass("loading")
                         dtWrapper.find(".tooltip").remove()
                         @dataTable.find(".state-detail").tooltip("hide")
                     , 250))
             .end()
-        loadingBackground = dtScrollBG.css("backgroundImage")
 
         # make rows selectable
         @dataTable.find("tbody").selectable
