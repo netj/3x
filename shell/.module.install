@@ -20,6 +20,7 @@ edit                        $TOOLSDIR/
 customize                   $TOOLSDIR/
 limitOffset                 $TOOLSDIR/
 no-comments                 $TOOLSDIR/
+serialOnEachLine            $TOOLSDIR/
 extract-regexp              $TOOLSDIR/
 .build/coalesce-values-by-name $TOOLSDIR/
 

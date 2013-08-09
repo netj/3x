@@ -26,6 +26,7 @@ set -eu
 
     # runs planned
     if [ -r plan ]; then
-        sed "s:$PREFIXPATT:PLANNED :; s:$: ?:" <plan
+        serialOnEachLine plan $(cat .count 2>/dev/null) |
+        sed "s:$PREFIXPATT:PLANNED :"
     fi
 } | column -t

@@ -404,7 +404,8 @@ parseStatusOutput = normalizeNamedColumnLines (line) ->
                     [state, columns...] = line.split /\s+/
                     switch state
                         when "PLANNED"
-                            serial = target = runId = null
+                            [columns..., serial] = columns
+                            target = runId = null
                         else
                             [columns..., serial, target, runId] = columns
                     serial = (serial?.replace /^#/, "")
