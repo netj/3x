@@ -1667,18 +1667,15 @@ class QueuesUI extends CompositeElement
         # subscribe to queue change notifications
         @socket = io.connect("#{_3X_ServiceBaseURL}/run/queue/")
             .on "listing-update", ([queueId, createOrDelete]) =>
-                # TODO any non intrusive way to give feedback?
                 log "queue #{queueId} #{createOrDelete}"
-                do @reload
+                # refresh status table when it's showing the updated queue
+                if @queueOnFocus? and queueId is "run/queue/#{@queueOnFocus}"
+                    @status.load @queueOnFocus
+                do @refresh
 
             .on "state-update", ([queueId, newStatus]) =>
-                log queueId, newStatus
-                # TODO update only when the batch is visible on current page
-                # TODO rate limit?
-                do @reload
-
-                # TODO when the batch is opened in status table, and unless it's dirty, update it
-                #@openBatchStatus queueId
+                log "queue #{queueId} #{newStatus}"
+                do @refresh
 
             .on "running-count", (count) =>
                 log "running-count", count
@@ -1689,10 +1686,11 @@ class QueuesUI extends CompositeElement
 
         # listen to events
         @baseElement
-            .on("click", ".queue-start", @handleQueueAction @startQueue)
-            .on("click", ".queue-stop", @handleQueueAction @stopQueue)
+            .on("click", ".queue-start"  , @handleQueueAction   @startQueue)
+            .on("click", ".queue-stop"   , @handleQueueAction    @stopQueue)
+            .on("click", ".queue-reset"  , @handleQueueAction   @resetQueue)
             .on("click", ".queue-refresh", @handleQueueAction @refreshQueue)
-            .on("click", ".queue", @handleQueueAction @focusQueue)
+            .on("click", ".queue"        , @handleQueueAction   @focusQueue)
 
         # TODO @optionElements.addNewQueue?. ...
         @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
@@ -1726,46 +1724,48 @@ class QueuesUI extends CompositeElement
             .on("sortstart", (e, ui) => ui.item.find(".progress, .bar").tooltip("destroy"))
             .on("sortstop",  (e, ui) => ui.item.find(".progress, .bar").tooltip("hide"))
 
-        # then load
-        do @reload
+        # finally load the queue list
+        do @refresh
+        # as well as the status of queue on focus
+        @status.load @queueOnFocus if @queueOnFocus?
 
-    reload: =>
+    refresh: =>
         # TODO loading feedback
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/")
             .success((@queues) =>
                 do @display
-                @focusQueue (@queueOnFocus ? @queues[0])
             )
 
-    handleQueueAction: (action) -> (e) ->
-        queueName = $(@).closest(".queue").find(".queue-name").text()
-        action queueName, e
+    focusQueue: (queueName, e) =>
+        if not e? or $(e?.target).closest("button").length is 0
+            localStorage.queueOnFocus =
+            @queueOnFocus = queueName
+            @baseElement.find(".queue").removeClass("alert-info")
+                .filter("[data-name='#{queueName}']").addClass("alert-info")
+            @status.load queueName
+            @target.currentTarget = @queues[queueName].target
+            do @target.display
 
     @QUEUE_SKELETON: $("""
         <script type="text/x-jsrender">
             <li class="queue {{if state == "ACTIVE"}}active{{/if}} well alert-block" data-name="{{>queue}}">
-                <h5 {{if state == "ACTIVE"}}class="text-error"{{/if}}>
-                    {{if state == "ACTIVE"}}<i class="icon icon-cog icon-spin"></i>{{/if}}
+                <h5 class="queue-label">
+                    <i class="icon icon-cog icon-spin"></i>
                     <span class="queue-name">{{>queue}}</span>
                 </h5>
-                <div class="progress {{if state == "ACTIVE XXX disabled due to high CPU usage"}}progress-striped active{{/if}}"
-                    {{if ~showAbsoluteProgress}} style="width: {{>100 * +numTotal / ~maxTotal}}%"{{/if}}>
-                    <div class="bar bar-success" style="width:{{>100 * ratioDone}}%;"    data-toggle="tooltip" data-placement="bottom" data-container="body" title="{{>numDone}} done"      ></div>
-                    <div class="bar"             style="width:{{>100 * ratioRunning}}%;" data-toggle="tooltip" data-placement="bottom" data-container="body" title="{{>numRunning}} running"></div>
-                    <div class="bar bar-warning" style="width:{{>100 * ratioPlanned}}%;" data-toggle="tooltip" data-placement="right"  data-container="body" title="{{>numPlanned}} planned"></div>
+                <div class="progress">
+                    <div class="bar bar-success" data-toggle="tooltip" data-placement="bottom" data-container="body"></div>
+                <!--<div class="bar bar-error"   data-toggle="tooltip" data-placement="bottom" data-container="body"></div>-->
+                    <div class="bar"             data-toggle="tooltip" data-placement="bottom" data-container="body"></div>
+                    <div class="bar bar-warning" data-toggle="tooltip" data-placement="right"  data-container="body"></div>
                 </div>
                 <div class="actions">
                     <div class="pull-left">
-                    {{if numRunning > 0}}
-                        <button class="queue-stop btn btn-small btn-danger"
-                        title="{{if state == "ACTIVE"}}Stop this queue and clean up{{else}}Clean up runs that were executing{{/if}}"><i
-                        class="icon icon-{{if state == "ACTIVE"}}stop{{else}}undo{{/if}}"></i></button>
-                    {{/if}}
+                        <button class="queue-reset btn btn-small btn-danger"><i class="icon icon-undo"></i></button>
                     </div>
-                    <button class="queue-refresh btn btn-small" disabled
-                        title="Refresh queue"><i class="icon icon-refresh"></i></button>
-                    <button class="queue-{{if state == "ACTIVE"}}stop{{else}}start{{/if}} btn btn-small btn-primary"
-                        title="Turn this queue {{if state == "ACTIVE"}}off{{else}}on{{/if}}"><i class="icon icon-{{if state == "ACTIVE"}}pause{{else}}play{{/if}}"></i></button>
+                    <button class="queue-refresh btn btn-small" disabled title="Refresh queue"><i class="icon icon-refresh"></i></button>
+                    <button class="queue-stop btn btn-small btn-primary" title="Turn this queue off"><i class="icon icon-pause"></i></button>
+                    <button class="queue-start btn btn-small btn-primary" title="Turn this queue on"><i class="icon icon-play"></i></button>
                 </div>
             </li>
         </script>
@@ -1780,51 +1780,87 @@ class QueuesUI extends CompositeElement
         if @queuesDisplayOrder?.length > 0
             queueNames = @queuesDisplayOrder.concat(_.difference(queueNames, @queuesDisplayOrder))
         maxTotal = _.max _.pluck @queues, "numTotal"
-        queuesList = @baseElement.find("ul:first")
-        unless queuesList.length > 0
-            queuesList = $("<ul>")
+        $queuesList = @baseElement.find("ul:first")
+        unless $queuesList.length > 0
+            $queuesList = $("<ul>")
                 .addClass("clearfix unstyled")
                 .appendTo(@baseElement)
-        queuesList
-            .find("*").remove().end() # TODO render incrementally, reusing existing DOM elements
-            .append(
-                for name in queueNames when @queues[name]?
-                    queue = @queues[name]
-                    groups = ["Done", "Running", "Planned"]
-                    total = 0; total += +queue["num#{g}"] for g in groups
-                    for g in groups
-                        queue["ratio#{g}"] = if total is 0 then 0 else +queue["num#{g}"] / total
-                    QueuesUI.QUEUE_SKELETON.render queue, {
-                        _3X_ServiceBaseURL
-                        maxTotal
-                        showAbsoluteProgress: @showAbsoluteProgress
-                    }
-            )
-            .find(".progress, .bar").tooltip("hide").end()
-            .sortable()
+                .sortable()
+        progressGroups = ["Done", "Running", "Planned"]
+        MIN_VISIBLE_RATIO = 0.05
+        for name,i in queueNames when @queues[name]?
+            # compute queue data for display
+            queue = @queues[name]
+            isActive = queue.state is "ACTIVE"
+            #  count the total number of runs in this queue
+            total = 0
+            for g in progressGroups
+                total += queue["num#{g}"] = +queue["num#{g}"]
+            #  compute ratio for progress bar display
+            ratioTotal = 0
+            for g in progressGroups
+                ratioTotal += queue["ratio#{g}"] =
+                    if total is 0 or queue["num#{g}"] is 0 then 0
+                    else Math.max MIN_VISIBLE_RATIO, (queue["num#{g}"] / total)
+            #  normalize to account the residuals created by MIN_VISIBLE_RATIO
+            for g in progressGroups
+                queue["ratio#{g}"] = queue["ratio#{g}"] / ratioTotal
+            # update DOM
+            $queue = $queuesList.find(".queue[data-name='#{name}']")
+            unless $queue.length > 0
+                $queue = $(QueuesUI.QUEUE_SKELETON.render queue, { _3X_ServiceBaseURL })
+                    .appendTo($queuesList)
+            else if i isnt $queue.index()
+                $queue.insertBefore($queuesList.find(".queue").eq(i))
+            $queue
+                .find(".queue-label")
+                    .toggleClass("text-error", isActive)
+                    .find(".icon").toggleClass("hide", not isActive).end()
+                .end()
+                .find(".progress")
+                    .css(width: if @showAbsoluteProgress then "#{100 * (Math.max MIN_VISIBLE_RATIO, (queue.numTotal/maxTotal))}%" else "auto")
+                    .find(".bar"        ).attr(title: "#{queue.numRunning} running").css(width: "#{100 * queue.ratioRunning}%").end()
+                    .find(".bar-success").attr(title: "#{queue.numDone   } done"   ).css(width: "#{100 * queue.ratioDone   }%").end()
+                    #.find(".bar-error"  ).attr(title: "#{queue.numFailed } failed" ).css(width: "#{100 * queue.ratioFailed }%").end()
+                    .find(".bar-warning").attr(title: "#{queue.numPlanned} planned").css(width: "#{100 * queue.ratioPlanned}%").end()
+                .end()
+                .find(".actions")
+                    .find(".queue-start").toggleClass("hide",     isActive).end()
+                    .find(".queue-stop" ).toggleClass("hide", not isActive).end()
+                    .find(".queue-reset")
+                        .toggleClass("hide", queue.numRunning is 0)
+                        .attr(title:
+                            if isActive then "Stop this queue and clean up"
+                            else "Clean up runs that were executing"
+                        )
+                        .find(".icon")
+                            .toggleClass("icon-stop",     isActive)
+                            .toggleClass("icon-undo", not isActive)
+                        .end()
+                    .end()
+                .end()
+                .find(".progress, .bar").tooltip("destroy").tooltip("hide").end()
 
         # indicate which queue is on focus
         if @queueOnFocus
-            queuesList.find(".queue")
+            $queuesList.find(".queue")
                 .removeClass("alert-info")
                 .filter("[data-name='#{@queueOnFocus}']").addClass("alert-info")
 
-    focusQueue: (queueName, e) =>
-        if not e? or $(e?.srcElement).closest("button").length is 0
-            localStorage.queueOnFocus =
-            @queueOnFocus = queueName
-            @baseElement.find(".queue").removeClass("alert-info")
-                .filter("[data-name='#{queueName}']").addClass("alert-info")
-            @status.load queueName
-            @target.currentTarget = @queues[queueName].target
-            do @target.display
+
+    handleQueueAction: (action) -> (e) ->
+        queueName = $(@).closest(".queue").find(".queue-name").text()
+        action queueName, e
 
     startQueue:    (queueName) => @doQueueAction queueName, "start"
     stopQueue:     (queueName) => @doQueueAction queueName, "stop"
+    resetQueue:    (queueName) => @doQueueAction queueName, "stop"
     refreshQueue:  (queueName) => @doQueueAction queueName, "refresh"
     doQueueAction: (queueName, action) =>
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/#{queueName}:#{action}")
             # TODO show feedback in case of failure
+
+
 
 class TargetsUI extends CompositeElement
     constructor: (@baseElement) ->
@@ -1833,9 +1869,9 @@ class TargetsUI extends CompositeElement
 
         super @baseElement
 
-        do @reload
+        do @refresh
 
-    reload: =>
+    refresh: =>
         # TODO loading feedback
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/")
             .success((@targets) =>
@@ -1917,9 +1953,15 @@ class StatusTable extends CompositeElement
         # intialize UI and hook events
         do @attachToResultsTable
 
-    load: (@queueName) =>
-        @queueId = "run/queue/#{queueName}"
-        do @display
+    load: (queueName) =>
+        if @queueName is queueName
+            log "status refreshing queue #{queueName}"
+            do @dataTable.fnDraw
+        else
+            log "status loading queue #{queueName}"
+            @queueName = queueName
+            @queueId = "run/queue/#{queueName}"
+            do @display
 
     render: (args...) =>
         # display the name of the batch
