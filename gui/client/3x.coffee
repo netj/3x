@@ -71,6 +71,7 @@ choose = (n, items) ->
             indexes.splice _.random(0, indexes.length - 1), 1
     indexesChosen.map (i) -> items[i]
 
+indexMap = (vs) -> m = {}; m[v] = i for v,i in vs; m
 
 enumerate = (vs) -> vs.joinTextsWithShy ","
 
@@ -699,7 +700,7 @@ class ResultsTable extends CompositeElement
             @on "renderEnded", => @optionElements.containerForStateDisplay?.removeClass("displaying")
         do @displayProcessed # initializing results table with empty data first
         $(window).resize(_.throttle @maximizeDataTable, 100)
-            .resize(_.debounce @display, 500)
+            .resize(_.debounce (=> do @dataTable?.fnDraw), 500)
         @conditions.on("activeMenuItemsChanged", @load)
                    .on("activeMenusChanged", @displayProcessedHandler)
         @measurements.on("activeMenuItemsChanged", @displayProcessedHandler)
@@ -1964,6 +1965,14 @@ class StatusTable extends CompositeElement
             @queueId = "run/queue/#{queueName}"
             do @display
 
+    @STATES: """
+        PLANNED
+        RUNNING
+        PAUSED
+        FAILED
+        DONE
+    """.trim().split /\s+/
+    @CODE_BY_STATE: indexMap StatusTable.STATES
     @ICON_BY_STATE:
         DONE: "ok"
         FAILED: "remove"
@@ -2032,14 +2041,26 @@ class StatusTable extends CompositeElement
                 state  = aData[columnIndex[STATE_COLUMN_NAME]]
                 runId  = aData[columnIndex[RUN_COLUMN_NAME]]
                 target = aData[columnIndex[TARGET_COLUMN_NAME]]
+                stateCode = StatusTable.CODE_BY_STATE[state]
                 # restore selection
-                $row.addClass("ui-selected") if @selectedRuns[serial]?
+                if @selectedRuns[serial]?
+                    $row.addClass("ui-selected")
+                    # observe state change
+                    if stateCode isnt @selectedRuns[serial]
+                        oldState = StatusTable.STATES[@selectedRuns[serial]]
+                        log "state change #{serial} #{runId} #{oldState} -> #{state}", @selectedRuns
+                        @selectedRuns[serial] = stateCode
+                        @selectedRuns[oldState]--
+                        @selectedRuns[state] ?= 0
+                        @selectedRuns[state]++
+                        do @persistSelectedRuns
+                        do @updateAvailableActionsForSelection
                 # avoid decorating a row multiple times
                 return if $row.find("i.icon").length
                 # tag serial for selection tracking
                 $row.attr
                     "data-serial": serial
-                    "data-state" : state
+                    "data-state" : state, "data-statecode": stateCode
                     "data-runId" : runId
                     "data-target": target
                 # icon and style class
@@ -2131,24 +2152,28 @@ class StatusTable extends CompositeElement
                 unless @selectedRuns[runData.serial]?
                     @selectedRuns[runData.state] ?= 0
                     @selectedRuns[runData.state]++
-                    @selectedRuns[runData.serial] = 1
+                    @selectedRuns[runData.serial] = +runData.statecode
                     log "selected", @queueId, runData.serial, e
                     do @updateAvailableActionsForSelection
             )
             .on("selectableunselected", (e, ui) =>
                 runData = ui.unselected.dataset
                 if @selectedRuns[runData.serial]?
+                    state = StatusTable.STATES[@selectedRuns[runData.serial]]
                     delete @selectedRuns[runData.serial]
-                    @selectedRuns[runData.state]--
+                    @selectedRuns[state]--
                     log "unselected", @queueId, runData.serial, e
                     do @updateAvailableActionsForSelection
             )
             # persist each time it's done
             .on("selectablestop", (e, ui) =>
-                localStorage["#{@queueId}SelectedRuns"] =
-                    JSON.stringify @selectedRuns
+                do @persistSelectedRuns
             )
         do @updateAvailableActionsForSelection
+
+    persistSelectedRuns: =>
+        localStorage["#{@queueId}SelectedRuns"] =
+            JSON.stringify @selectedRuns
 
     updateAvailableActionsForSelection: =>
         return unless @optionElements.selectionSummary? or @optionElements.actions?
