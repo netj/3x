@@ -2019,7 +2019,7 @@ class StatusTable extends CompositeElement
             sDom: '<"row-fluid"<"span6 muted"ir><"span6"f>>tS'
             bDestroy: true
             bServerSide: true
-            sAjaxSource: "#{_3X_ServiceBaseURL}/api/#{@queueId}/.DataTables"
+            sAjaxSource: "#{_3X_ServiceBaseURL}/api/#{@queueId}.DataTables"
             bProcessing: true
             sScrollY:  "#{window.innerHeight - @baseElement.offset().top}px"
             oScroller:

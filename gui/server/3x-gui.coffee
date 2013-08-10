@@ -167,9 +167,11 @@ app.get "/run/*", (req, res, next) ->
 #   { names:[k1,k2,k3,...], rows:[[v1,v2,null],[v3,null,v4],...] }
 normalizeNamedColumnLines = (
         lineToKVPairs = (line) -> line.split /\s+/
+      , columnNames = []
 ) -> (lazyLines, next) ->
     columnIndex = {}
-    columnNames = []
+    for name,i in columnNames
+        columnIndex[name] = i
     lazyLines
         .map(String)
         .map(lineToKVPairs)
@@ -400,7 +402,8 @@ app.get "/api/run/target/:name", (req, res) ->
     ) (respondJSON res)
 
 
-parseStatusOutput = normalizeNamedColumnLines (line) ->
+parseStatusOutput = (columnOrder) ->
+    normalizeNamedColumnLines (line) ->
                     [state, columns...] = line.split /\s+/
                     switch state
                         when "PLANNED"
@@ -421,11 +424,17 @@ parseStatusOutput = normalizeNamedColumnLines (line) ->
                             # TODO order columns by 3x-condition
                             columns...
                         ]
+                , columnOrder
 
-app.get "/api/run/queue/*/.DataTables", (req, res) ->
+app.get "/api/run/queue/*.DataTables", (req, res) ->
     [queueName] = req.params
     query = req.param("sSearch") ? null
-    # TODO use column order sColumns
+    columnOrder =
+        if (columns = req.param("sColumns")?.split /,/)?
+            columnOrder = []
+            for name,i in columns when j = req.param("mDataProp_#{i}")
+                columnOrder[+j] = name
+            columnOrder
     getHistory = (cmd, args, next) ->
         cliEnv res, {
                 _3X_QUEUE: queueName
@@ -434,7 +443,7 @@ app.get "/api/run/queue/*/.DataTables", (req, res) ->
             }, cmd, args, next
     async.parallel [
             getHistory "limitOffset", ["3x-status"]
-                , parseStatusOutput
+                , parseStatusOutput columnOrder
         ,
             getHistory "sh", ["-c", "3x-status | wc -l"]
                 , (lazyLines, next) ->
@@ -470,7 +479,7 @@ app.get "/api/run/queue/*", (req, res) ->
         cliEnv(res, {
             _3X_QUEUE: queueName
         }, "3x-status", [queueId]
-            , parseStatusOutput
+            , parseStatusOutput null
         ) (respondJSON res)
 
 app.post "/api/run/queue/*", (req, res) ->
