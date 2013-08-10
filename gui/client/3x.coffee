@@ -2159,9 +2159,12 @@ class StatusTable extends CompositeElement
             totalCount += count = @selectedRuns[state]
             $actionButtons.filter(".for-#{state}:disabled").prop(disabled: count is 0)
             summary.push "#{count} #{state}"
-        @optionElements.selectionSummary?.text(
+        @optionElements.selectionSummary?.html(
             if summary.length is 0 then ""
-            else "With selected #{summary.join ", "} run#{if totalCount > 1 then "s" else ""}, "
+            else "With selected #{
+                if totalCount <= 1 then "run"
+                else "#{totalCount} runs"
+            } <small>(#{summary.join ", "})</small>, "
         )
 
     maximizeDataTable: =>

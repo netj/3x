@@ -223,19 +223,19 @@
           <h4 class="section-title pull-left"><i
               class="icon-list-ol icon"></i>Execution History of <span id="status-name">N/A</span></h3>
           <div id="status-actions" class="section-actions clearfix">
-            <small id="status-selection-summary" class="muted"></small>
-            <button class="btn btn-mini action action-duplicate for-PLANNED for-RUNNING for-DONE for-FAILED" disabled
+            <span id="status-selection-summary"></span>
+            <button class="btn btn-small btn-primary action action-duplicate for-PLANNED for-RUNNING for-DONE for-FAILED" disabled
               title="Add copies of selected runs to repeat execution"
               ><i class="icon icon-copy"></i> Duplicate</button>
-            <button class="btn btn-mini action action-prioritize for-PLANNED" disabled
+            <button class="btn btn-small btn-info action action-prioritize for-PLANNED" disabled
               title="Move selected PLANNED runs up so they are executed first"
               ><i class="icon icon-level-up"></i> Prioritize</button>
-            <button class="btn btn-mini action action-postpone for-PLANNED" disabled
+            <button class="btn btn-small btn-warning action action-postpone for-PLANNED" disabled
               title="Move selected PLANNED runs down so they are executed later"
               ><i class="icon icon-level-down"></i> Postpone</button>
-            <button class="btn btn-mini action action-remove for-PLANNED" disabled
-              title="Delete selected PLANNED runs from queue"
-              ><i class="icon icon-trash"></i> Remove</button>
+            <button class="btn btn-small btn-danger action action-cancel for-PLANNED" disabled
+              title="Remove selected PLANNED runs from queue"
+              ><i class="icon icon-remove"></i> Cancel</button>
           </div>
 
           <table id="status-table" class="table table-hover table-bordered table-striped"
