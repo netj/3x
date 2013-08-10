@@ -2048,7 +2048,7 @@ class StatusTable extends CompositeElement
                     # observe state change
                     if stateCode isnt @selectedRuns[serial]
                         oldState = StatusTable.STATES[@selectedRuns[serial]]
-                        log "state change #{serial} #{runId} #{oldState} -> #{state}", @selectedRuns
+                        #log "state change #{serial} #{runId} #{oldState} -> #{state}", @selectedRuns
                         @selectedRuns[serial] = stateCode
                         @selectedRuns[oldState]--
                         @selectedRuns[state] ?= 0
@@ -2153,7 +2153,7 @@ class StatusTable extends CompositeElement
                     @selectedRuns[runData.state] ?= 0
                     @selectedRuns[runData.state]++
                     @selectedRuns[runData.serial] = +runData.statecode
-                    log "selected", @queueId, runData.serial, e
+                    #log "selected", @queueId, runData.serial, e
                     do @updateAvailableActionsForSelection
             )
             .on("selectableunselected", (e, ui) =>
@@ -2162,7 +2162,7 @@ class StatusTable extends CompositeElement
                     state = StatusTable.STATES[@selectedRuns[runData.serial]]
                     delete @selectedRuns[runData.serial]
                     @selectedRuns[state]--
-                    log "unselected", @queueId, runData.serial, e
+                    #log "unselected", @queueId, runData.serial, e
                     do @updateAvailableActionsForSelection
             )
             # persist each time it's done
