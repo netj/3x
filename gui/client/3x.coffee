@@ -1961,6 +1961,7 @@ class StatusTable extends CompositeElement
         columnIndex = {}; columnIndex[col.sName] = col.mData for col,i in columnDefs
 
         dtWrapperSelector = "##{@baseElement.prop("id")}_wrapper"
+        @selectedRuns = (try JSON.parse localStorage["#{@queueId}SelectedRuns"]) ? {}
 
         # make it a DataTable
         @dataTable = $(@baseElement).dataTable
@@ -1984,10 +1985,21 @@ class StatusTable extends CompositeElement
             aoColumnDefs: columnDefs
             fnRowCallback: (nRow, aData, iDisplayIndex, iDisplayIndexFull) =>
                 $row = $(nRow)
-                return if $row.find("i.icon").length
+                # TODO why not simply use an object within aaData?
+                serial = aData[columnIndex[SERIAL_COLUMN_NAME]]
                 state  = aData[columnIndex[STATE_COLUMN_NAME]]
                 runId  = aData[columnIndex[RUN_COLUMN_NAME]]
                 target = aData[columnIndex[TARGET_COLUMN_NAME]]
+                # restore selection
+                $row.addClass("ui-selected") if @selectedRuns[serial]?
+                # avoid decorating a row multiple times
+                return if $row.find("i.icon").length
+                # tag serial for selection tracking
+                $row.attr
+                    "data-serial": serial
+                    "data-state" : state
+                    "data-runId" : runId
+                    "data-target": target
                 # icon and style class
                 $state = $row.find(".state")
                     .prepend(" ")
@@ -2062,10 +2074,35 @@ class StatusTable extends CompositeElement
             .end()
 
         # make rows selectable
-        @dataTable.find("tbody").selectable
-            filter: "tr"
-            cancel: "a, .cancel"
-        # TODO keep track of which runs are selected
+        @dataTable.find("tbody").selectable(
+                filter: "tr"
+                cancel: "a, .cancel"
+            )
+            # reset selection unless metaKey is down
+            .on("selectablestart", (e, ui) =>
+                @selectedRuns = {} unless e.metaKey
+            )
+            # keep track of which runs are selected
+            .on("selectableselected", (e, ui) =>
+                runData = ui.selected.dataset
+                unless @selectedRuns[runData.serial]?
+                    @selectedRuns[runData.state] ?= 0
+                    @selectedRuns[runData.state]++
+                    @selectedRuns[runData.serial] = 1
+                    log "selected", @queueId, runData.serial, e
+            )
+            .on("selectableunselected", (e, ui) =>
+                runData = ui.unselected.dataset
+                if @selectedRuns[runData.serial]?
+                    delete @selectedRuns[runData.serial]
+                    @selectedRuns[runData.state]--
+                    log "unselected", @queueId, runData.serial, e
+            )
+            # persist each time it's done
+            .on("selectablestop", (e, ui) =>
+                localStorage["#{@queueId}SelectedRuns"] =
+                    JSON.stringify @selectedRuns
+            )
 
     maximizeDataTable: =>
         oScroller = @dataTable.fnSettings().oScroller
