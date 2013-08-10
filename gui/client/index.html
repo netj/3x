@@ -187,7 +187,7 @@
       <div class="row-fluid">
         <div class="span2">
           <div class="span2 affix" style="height:90%;">
-            <section style="height:60%;">
+            <section class="clearfix" style="height:60%;">
               <h4 class="section-title pull-left"><i class="icon-tasks icon"></i>Queues</h4>
               <div class="section-actions clearfix">
                 <button id="queue-sortby-name" class="btn btn-mini hide"
@@ -208,7 +208,7 @@
               <div id="queues" style="max-height:90%; overflow-y:auto;"></div>
             </section>
 
-            <section style="height:30%;">
+            <section class="clearfix" style="height:30%;">
               <h4 class="section-title pull-left"><i class="icon-flag icon"></i>Targets</h4>
               <div class="section-actions clearfix">
                 <button class="target-new btn btn-mini"
@@ -220,7 +220,23 @@
         </div>
 
         <div class="span10">
-          <h4><i class="icon-list-ol icon"></i>Execution History of <span id="status-name">N/A</span></h3>
+          <h4 class="section-title pull-left"><i
+              class="icon-list-ol icon"></i>Execution History of <span id="status-name">N/A</span></h3>
+          <div id="status-actions" class="section-actions clearfix">
+            <small id="status-selection-summary" class="muted"></small>
+            <button class="btn btn-mini action action-duplicate for-PLANNED for-RUNNING for-DONE for-FAILED" disabled
+              title="Add copies of selected runs to repeat execution"
+              ><i class="icon icon-copy"></i> Duplicate</button>
+            <button class="btn btn-mini action action-prioritize for-PLANNED" disabled
+              title="Move selected PLANNED runs up so they are executed first"
+              ><i class="icon icon-level-up"></i> Prioritize</button>
+            <button class="btn btn-mini action action-postpone for-PLANNED" disabled
+              title="Move selected PLANNED runs down so they are executed later"
+              ><i class="icon icon-level-down"></i> Postpone</button>
+            <button class="btn btn-mini action action-remove for-PLANNED" disabled
+              title="Delete selected PLANNED runs from queue"
+              ><i class="icon icon-trash"></i> Remove</button>
+          </div>
 
           <table id="status-table" class="table table-hover table-bordered table-striped"
             cellpadding="0" cellspacing="0" border="0">

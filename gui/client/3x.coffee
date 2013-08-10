@@ -1754,10 +1754,10 @@ class QueuesUI extends CompositeElement
                     <span class="queue-name">{{>queue}}</span>
                 </h5>
                 <div class="progress">
-                    <div class="bar bar-success" data-toggle="tooltip" data-placement="bottom" data-container="body"></div>
-                <!--<div class="bar bar-error"   data-toggle="tooltip" data-placement="bottom" data-container="body"></div>-->
-                    <div class="bar"             data-toggle="tooltip" data-placement="bottom" data-container="body"></div>
-                    <div class="bar bar-warning" data-toggle="tooltip" data-placement="right"  data-container="body"></div>
+                    <div class="bar bar-success" data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
+                <!--<div class="bar bar-error"   data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>-->
+                    <div class="bar"             data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
+                    <div class="bar bar-warning" data-toggle="tooltip" data-placement="right"  data-container=".queues"></div>
                 </div>
                 <div class="actions">
                     <div class="pull-left">
@@ -1782,6 +1782,7 @@ class QueuesUI extends CompositeElement
         maxTotal = _.max _.pluck @queues, "numTotal"
         $queuesList = @baseElement.find("ul:first")
         unless $queuesList.length > 0
+            @baseElement.addClass("queues")
             $queuesList = $("<ul>")
                 .addClass("clearfix unstyled")
                 .appendTo(@baseElement)
@@ -1963,21 +1964,21 @@ class StatusTable extends CompositeElement
             @queueId = "run/queue/#{queueName}"
             do @display
 
+    @ICON_BY_STATE:
+        DONE: "ok"
+        FAILED: "remove"
+        RUNNING: "cog icon-spin"
+        PLANNED: "time"
+    @CLASS_BY_STATE:
+        DONE: "success"
+        FAILED: "error"
+        RUNNING: "info"
+        PAUSED: "warning"
+        PLANNED: "warning"
+
     render: (args...) =>
         # display the name of the batch
         @optionElements.nameDisplay?.text(@queueName)
-
-        ICON_BY_STATE =
-            DONE: "ok"
-            FAILED: "remove"
-            RUNNING: "cog icon-spin"
-            PLANNED: "time"
-        CLASS_BY_STATE =
-            DONE: "success"
-            FAILED: "error"
-            RUNNING: "info"
-            PAUSED: "warning"
-            PLANNED: "warning"
 
         # prepare to distinguish metadata from input parameter columns
         columnNames = (name for name of @conditions.conditions)
@@ -2002,7 +2003,6 @@ class StatusTable extends CompositeElement
             columnDefs.push { sTitle: name, sName: name, mData: columnDefs.length, aTargets: [i] }
         columnIndex = {}; columnIndex[col.sName] = col.mData for col,i in columnDefs
 
-        dtWrapperSelector = "##{@baseElement.prop("id")}_wrapper"
         @selectedRuns = (try JSON.parse localStorage["#{@queueId}SelectedRuns"]) ? {}
 
         # make it a DataTable
@@ -2045,8 +2045,8 @@ class StatusTable extends CompositeElement
                 # icon and style class
                 $state = $row.find(".state")
                     .prepend(" ")
-                    .prepend($("<i>").addClass("icon icon-#{ICON_BY_STATE[state]}"))
-                    .wrapInner($("<span>").addClass("text-#{CLASS_BY_STATE[state]}"))
+                    .prepend($("<i>").addClass("icon icon-#{StatusTable.ICON_BY_STATE[state]}"))
+                    .wrapInner($("<span>").addClass("text-#{StatusTable.CLASS_BY_STATE[state]}"))
                 # tooltip with run# and other messages
                 if runId?
                     $state
@@ -2057,7 +2057,7 @@ class StatusTable extends CompositeElement
                                 # TODO embed error messages here for some states
                             "data-toggle": "tooltip"
                             "data-placement": "left"
-                            "data-container": dtWrapperSelector
+                            "data-container": ".dataTables_wrapper"
                         ).tooltip("hide")
                         # TODO use popover instead of tooltip?
                         #$("<span/>").addClass("state-detail").attr(
@@ -2119,6 +2119,7 @@ class StatusTable extends CompositeElement
         @dataTable.find("tbody").selectable(
                 filter: "tr"
                 cancel: "a, .cancel"
+                appendTo: "##{dtWrapper.attr("id")}"
             )
             # reset selection unless metaKey is down
             .on("selectablestart", (e, ui) =>
@@ -2132,6 +2133,7 @@ class StatusTable extends CompositeElement
                     @selectedRuns[runData.state]++
                     @selectedRuns[runData.serial] = 1
                     log "selected", @queueId, runData.serial, e
+                    do @updateAvailableActionsForSelection
             )
             .on("selectableunselected", (e, ui) =>
                 runData = ui.unselected.dataset
@@ -2139,12 +2141,28 @@ class StatusTable extends CompositeElement
                     delete @selectedRuns[runData.serial]
                     @selectedRuns[runData.state]--
                     log "unselected", @queueId, runData.serial, e
+                    do @updateAvailableActionsForSelection
             )
             # persist each time it's done
             .on("selectablestop", (e, ui) =>
                 localStorage["#{@queueId}SelectedRuns"] =
                     JSON.stringify @selectedRuns
             )
+        do @updateAvailableActionsForSelection
+
+    updateAvailableActionsForSelection: =>
+        return unless @optionElements.selectionSummary? or @optionElements.actions?
+        $actionButtons = @optionElements.actions?.find("button").prop(disabled: true)
+        summary = []
+        totalCount = 0
+        for state of StatusTable.CLASS_BY_STATE when @selectedRuns[state] > 0
+            totalCount += count = @selectedRuns[state]
+            $actionButtons.filter(".for-#{state}:disabled").prop(disabled: count is 0)
+            summary.push "#{count} #{state}"
+        @optionElements.selectionSummary?.text(
+            if summary.length is 0 then ""
+            else "With selected #{summary.join ", "} run#{if totalCount > 1 then "s" else ""}, "
+        )
 
     maximizeDataTable: =>
         oScroller = @dataTable.fnSettings().oScroller
@@ -2364,6 +2382,8 @@ $ ->
                 nameDisplay : $("#status-name")
                 # TODO status -> HistoryTable and PlanTable
                 resultsTable: _3X_.results
+                actions: $("#status-actions")
+                selectionSummary: $("#status-selection-summary")
             _3X_.targets = new TargetsUI $("#targets")
             _3X_.queues = new QueuesUI $("#queues"), $("#run-count.label"), _3X_.status, _3X_.targets,
                 addNewQueue: $("#queue-create")
