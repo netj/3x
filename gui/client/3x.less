@@ -353,16 +353,22 @@ div.dataTables_scrollBody table.dataTable {
 
 #status-table, #status-table_wrapper {
   tbody {
-    tr.ui-selected {
+    > tr.ui-selected {
       background-color: @infoBackground;
-      td, th {
+      > td,
+      > th {
         background-color: @infoBackground;
       }
-    }
-    tr.ui-selecting, tr.ui-selected:hover {
-      background-color: darken(@infoBackground, 5%);
-      td, th {
+      &:nth-child(odd) > td,
+      &:nth-child(odd) > th {
         background-color: darken(@infoBackground, 5%);
+      }
+    }
+    > tr.ui-selecting, > tr.ui-selected:hover {
+      background-color: darken(@infoBackground, 10%);
+      > td,
+      > th {
+        background-color: darken(@infoBackground, 10%);
       }
     }
   }
