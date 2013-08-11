@@ -2173,6 +2173,10 @@ class StatusTable extends CompositeElement
             .on("selectablestop", (e, ui) =>
                 do @persistSelectedRuns
             )
+        # put focus on the table so it can be scrolled with keyboard as well
+        @dataTable
+            .attr(tabindex: 0)
+            .focus()
         do @updateAvailableActionsForSelection
 
     persistSelectedRuns: =>
