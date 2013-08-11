@@ -395,10 +395,10 @@ app.get "/api/run/target/:name", (req, res) ->
                     # format the attribute blocks into a nice JSON object
                     targetInfo = {name}
                     for attr in attrs
-                        v = attr.value
-                        v.pop() while v[v.length - 1]?.length is 0
-                        attr.value = v[0] if v?.length <= 1
-                        targetInfo[attr.name] = attr.value
+                        v = attr.value?.slice(0)
+                        v.pop() until v[v.length - 1]?.length
+                        v = v[0] if v?.length <= 1
+                        targetInfo[attr.name] = v
                     targetInfo.target = name
                     next targetInfo
     ) (respondJSON res)
