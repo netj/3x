@@ -15,6 +15,7 @@ base/queue-refresh              $TOOLSDIR/runner/.../
 base/queue-sync                 $TOOLSDIR/runner/.../
 base/target-define              $TOOLSDIR/runner/.../
 base/target-info                $TOOLSDIR/runner/.../
+base/diff-environ               $TOOLSDIR/runner/.../
 
 base/runner.sh                  $TOOLSDIR/runner/.../
 base/dequeue                    $TOOLSDIR/runner/.../

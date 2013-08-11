@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# diff-environ -- display deviation from default environ
+# > cd "$_3X_ROOT"/run/target/"$Target"
+# > diff-environ
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-08-10
+set -eu
+
+defaultEnviron=$(ls-super "$_3X_RUNNER_HOME" "$_3X_RUNNER" environ)
+if diff -q "$defaultEnviron" environ &>/dev/null; then
+    echo "default environment"
+else
+    echo "custom environment:"
+    comm -13 "$defaultEnviron" environ | sed 's/\(.*\)/`\1`/g'
+fi

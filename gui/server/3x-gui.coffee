@@ -161,6 +161,8 @@ app.get "/run/*", (req, res, next) ->
     do next
 
 
+isntNull = (x) -> x?
+
 # convert lines of multiple key=value pairs (or named columns) to an array of
 # arrays with a header array:
 # "k1=v1 k2=v2\nk1=v3 k3=v4\n..." ->
@@ -173,9 +175,10 @@ normalizeNamedColumnLines = (
     for name,i in columnNames
         columnIndex[name] = i
     lazyLines
+        .filter(isntNull)
         .map(String)
         .map(lineToKVPairs)
-        .filter((x) -> x?)
+        .filter(isntNull)
         .map((columns) ->
             row = []
             for column in columns
@@ -228,10 +231,9 @@ cliBare = (cmd, args
             try next _code, _error, _result...
             catch err
                 util.log err
-    cstr = (d) -> if d then String d else ""
-    withOut Lazy(p.stdout).lines.map(cstr), (result...) -> _result = result; do tryEnd
-    withErr Lazy(p.stderr).lines.map(cstr), (error)     -> _error  = error ; do tryEnd
-    p.on "exit",                            (code)      -> _code   = code  ; do tryEnd
+    withOut Lazy(p.stdout).lines.filter(isntNull).map(String), (result...) -> _result = result; do tryEnd
+    withErr Lazy(p.stderr).lines.filter(isntNull).map(String), (error)     -> _error  = error ; do tryEnd
+    p.on "exit",                                               (code)      -> _code   = code  ; do tryEnd
 
 cliBareEnv = (env, cmd, args, rest...) ->
     envArgs = ("#{name}=#{value}" for name,value of env)

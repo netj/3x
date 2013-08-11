@@ -17,5 +17,10 @@ cd "$_3X_ROOT"/run/target/"$Target"
 
 echo "# environ (environment variables):"
 cat environ 2>/dev/null || code=2
+echo
+
+echo "# description:"
+echo "Execute runs on local machine under"
+diff-environ
 
 exit $code

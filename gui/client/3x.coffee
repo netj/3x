@@ -33,6 +33,11 @@ $.views.tags({
 
 safeId = (str) -> str.replace(/[^A-Za-z0-9_-]/g, "-")
 
+markdown = (s) -> s
+    .replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/\*\*(.+?)\*\*/g, "<emph>$1</emph>")
+    .replace(/\*(.+?)\*/g, "<emph>$1</emph>")
+
 
 RUN_COLUMN_NAME = "run#"
 SERIAL_COLUMN_NAME = "serial#"
@@ -1770,7 +1775,7 @@ class QueuesUI extends CompositeElement
                 </div>
             </li>
         </script>
-        """) # TODO queue-pause
+        """)
 
     render: =>
         numQueues = _.size(@queues)
@@ -1927,18 +1932,17 @@ class TargetsUI extends CompositeElement
                     $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/#{name}")
                     .success((targetInfo) =>
                         _.extend(target, targetInfo)
-                        targetUI.find(".target-summary").text(
-                                # TODO elaborate
-                                targetInfo.remote
-                            )
+                        targetUI.find(".target-summary").html(
+                            markdown targetInfo.description?.join("\n")
                         )
+                    )
         # adjust UI for current target
         @targetKnobs?.find("li").removeClass("current")
             .filter("[data-name='#{@currentTarget}']").addClass("current")
         @targetContents.find(".target-use").prop("disabled", false)
         @targetContents.find("#target-#{@currentTarget}").find(".target-use").prop("disabled", true)
         # show current target tab if none active
-        if @targetContents.find(".pill-pane.active").length is 0
+        if true or @targetContents.find(".pill-pane.active").length is 0
             t = @targetKnobs?.find("li.current a")
             t = @targetKnobs?.find("li a:first") unless t?.length > 0
             t?.tab("show")
