@@ -705,7 +705,7 @@ class ResultsTable extends CompositeElement
             @on "renderEnded", => @optionElements.containerForStateDisplay?.removeClass("displaying")
         do @displayProcessed # initializing results table with empty data first
         $(window).resize(_.throttle @maximizeDataTable, 100)
-            .resize(_.debounce (=> do @dataTable?.fnDraw), 500)
+            .resize(_.debounce (=> @display true), 500)
         @conditions.on("activeMenuItemsChanged", @load)
                    .on("activeMenusChanged", @displayProcessedHandler)
         @measurements.on("activeMenuItemsChanged", @displayProcessedHandler)
@@ -1002,6 +1002,7 @@ class ResultsTable extends CompositeElement
         @dataTable.on "draw.ResultsTable", _.debounce (=> @trigger "updated"), 100
 
     maximizeDataTable: =>
+        return unless @dataTable?
         s = @dataTable.fnSettings()
         s.oScroll.sY = "#{window.innerHeight - @baseElement.offset().top}px"
         @dataTable.fnDraw()
@@ -1951,6 +1952,7 @@ class TargetsUI extends CompositeElement
 class StatusTable extends CompositeElement
     constructor: (@baseElement, @conditions, @optionElements) ->
         super @baseElement
+        @queueName = null
         @queueId = null
 
         # intialize UI and hook events
@@ -1975,14 +1977,15 @@ class StatusTable extends CompositeElement
             # TODO show feedback on failure
 
     load: (queueName) =>
-        if @queueName is queueName
+        if @dataTable? and @queueName is queueName
             log "status refreshing queue #{queueName}"
-            do @dataTable.fnDraw
+            @display true
         else
             log "status loading queue #{queueName}"
             @queueName = queueName
             @queueId = "run/queue/#{queueName}"
             do @display
+            @resultsActionPopover?.find(".queue-name").text(@queueId)
 
     @STATES: """
         PLANNED
@@ -2004,9 +2007,14 @@ class StatusTable extends CompositeElement
         PAUSED: "warning"
         PLANNED: "warning"
 
-    render: (args...) =>
+    render: (quickUpdate = false) =>
+        # simply redraw DataTables and skip reconstructing it
+        if quickUpdate
+            do @dataTable?.fnDraw
+            return
+
         # display the name of the batch
-        @optionElements.nameDisplay?.text(@queueName)
+        @optionElements.nameDisplay?.text(@queueId)
 
         # prepare to distinguish metadata from input parameter columns
         columnNames = (name for name of @conditions.conditions)
@@ -2111,7 +2119,7 @@ class StatusTable extends CompositeElement
                         #    # TODO embed error messages here for some states
                         #)
             fnInitComplete: =>
-                @dataTable?.find("tbody").removeClass("hide")
+                @dataTable.find("tbody").removeClass("hide")
                 do @maximizeDataTable
                 dtScrollBG.removeClass("loading")
                 loadingIndicator.hide()
@@ -2189,7 +2197,7 @@ class StatusTable extends CompositeElement
                 do @persistSelectedRuns
             )
         # put focus on the table so it can be scrolled with keyboard as well
-        @dataTable
+        @dataTable #.closest(".dataTables_scrollBody")
             .attr(tabindex: 0)
             .focus()
         do @updateAvailableActionsForSelection
@@ -2216,10 +2224,10 @@ class StatusTable extends CompositeElement
         )
 
     maximizeDataTable: =>
-        oScroller = @dataTable.fnSettings().oScroller
-        oScroller.dom.scroller.style.height =
-            "#{window.innerHeight - $(oScroller.dom.scroller).offset().top}px"
-        oScroller.fnMeasure()
+        if oScroller = @dataTable?.fnSettings().oScroller
+            oScroller.dom.scroller.style.height =
+                "#{window.innerHeight - $(oScroller.dom.scroller).offset().top}px"
+            oScroller.fnMeasure()
 
 
     attachToResultsTable: =>
@@ -2230,7 +2238,7 @@ class StatusTable extends CompositeElement
                 <div class="planner popover hide fade left">
                     <div class="arrow"></div>
                     <div class="popover-inner">
-                        <h3 class="popover-title">Add to <i class="icon icon-time"></i>Plan</h3>
+                        <h3 class="popover-title">Add to <span class="queue-name">Plan</span></h3>
                         <div class="popover-content">
                         <ul class="nav nav-list">
                             <li><a class="btn add add-all"><i class="icon icon-repeat"></i> <b class="num-all">0</b> Full Combinations</a></li>
@@ -2349,7 +2357,6 @@ class StatusTable extends CompositeElement
         )
 
 
-    @STATE: "PLANNED"
     addPlanFromRowHandler: =>
         add = (strategy) =>
             popover = @resultsActionPopover
@@ -2360,31 +2367,29 @@ class StatusTable extends CompositeElement
             valuesArray = popover.valuesArray
             # check valuesArray to see if we are actually generating some plans
             for values,idx in valuesArray when not values? or values.length is 0
-                name = (name of @conditions.conditions)[idx]
+                name = (name for name of @conditions.conditions)[idx]
                 error "Cannot add anything to plan: no values for inputs variable #{name}"
                 return
             # add generated combinations to the current plan
             #log "adding #{strategy} plans for", valuesArray
-            rows = @plan.rows
-            prevSerialLength = String(rows.length).length
+            moreRuns = []
             # add to plans using the given strategy
             StatusTable.PLAN_ADDITION_STRATEGY[strategy](popover) valuesArray, (comb) =>
-                rows.push [++@plan.lastSerial, StatusTable.STATE, comb...]
-            # rewrite serial numbers if needed
-            serialLength = String(rows.length).length
-            if serialLength > prevSerialLength
-                serialIdx = @plan.names.indexOf(SERIAL_COLUMN_NAME)
-                zeros = ""; zeros += "0" for i in [1..serialLength]
-                rewriteSerial = (serial) -> "#{zeros.substring(String(serial).length)}#{serial}"
-                for row in rows
-                    row[serialIdx] = rewriteSerial row[serialIdx]
-            @updatePlan @plan
-            # FIXME use API directly
+                moreRuns.push comb
+            @addPlan moreRuns
         (e) ->
             # find which btn was pressed
             for c in $(this).closest(".add").attr("class")?.split(/\s+/)
                 if m = c.match /^add-(.+)$/
                     return add m[1]
+    addPlan: (moreRuns) =>
+        $.post("#{_3X_ServiceBaseURL}/api/#{@queueId}:add", {
+            runs: JSON.stringify {
+                names: (name for name of @conditions.conditions)
+                rows: moreRuns
+            }
+        })
+            # TODO show feedback on failure
 
     @PLAN_ADDITION_STRATEGY:
 

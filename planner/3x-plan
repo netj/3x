@@ -127,7 +127,7 @@ else
     Command=
 fi
 case $Command in
-    with) # based on the given files
+    with|add) # based on given files
         if [ $# -gt 0 ]; then
             for f; do
                 # adjust _3X_ROOT-relative paths
@@ -139,6 +139,7 @@ case $Command in
         fi
         [ -t 0 -a -t 1 ] || EDITOR=true
         {
+            case $Command in add) cat "$_3X_QUEUE_DIR"/plan; esac
             cat "$@"
             echo
         } >"$tmp"/new
@@ -147,7 +148,7 @@ case $Command in
     duplicate)
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
         # first, collect given runs from done and plan
-        count=$(cat "$_3X_QUEUE_DIR"/.count)
+        count=$(cat "$_3X_QUEUE_DIR"/.count 2>/dev/null || echo 0)
         {
             for serial; do
                 [[ $serial -le $count ]] || continue
@@ -173,7 +174,7 @@ case $Command in
     prioritize|postpone|cancel)
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
         # first, collect and remove given runs from plan
-        count=$(cat "$_3X_QUEUE_DIR"/.count)
+        count=$(cat "$_3X_QUEUE_DIR"/.count 2>/dev/null || echo 0)
         cp -f "$_3X_QUEUE_DIR"/plan "$tmp"/others
         {
             # let ed(1) collect plan lines that correspond to given serials

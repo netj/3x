@@ -506,6 +506,36 @@ app.get "/api/run/queue/*", (req, res) ->
             , parseStatusOutput null
         ) (respondJSON res)
 
+app.post /// /api/run/queue/([^:]+):(replace|add) ///, (req, res) ->
+    [queueName, action] = req.params
+    # TODO sanitize queueName
+    try
+        plan = JSON.parse req.body.runs
+    catch err
+        return res.send 400, "Bad request\nplan must be posted in strict JSON format"
+    planCommand = switch action
+        when "replace" then "with"
+        else action
+
+    # TODO write temporary file async
+    generatePlanLines = ->
+        columns = (name for name in plan.names when name.indexOf("#") is -1)
+        (for line,idx in generateNamedColumnLines(plan, columns)
+            "run#{line}"
+        ).join "\n"
+
+    mktemp.createFile "#{_3X_ROOT}/.3x/plan.XXXXXX", (err, planFile) ->
+        andRespond = (err, [queueName]) ->
+        fs.writeFile planFile, generatePlanLines(), ->
+            cliEnv(res, {
+                _3X_QUEUE: queueName
+            }, "3x-plan", [planCommand, planFile]
+            ) (err, [queueName]) ->
+                # remove temporary file
+                try cliSimple "rm", "-f", planFile
+                unless err
+                    res.json queueName
+
 
 server.listen _3X_GUIPORT, ->
     #util.log "3X GUI started at http://localhost:#{_3X_GUIPORT}/"
