@@ -234,6 +234,7 @@ cliBare = (cmd, args
     withOut Lazy(p.stdout).lines.filter(isntNull).map(String), (result...) -> _result = result; do tryEnd
     withErr Lazy(p.stderr).lines.filter(isntNull).map(String), (error)     -> _error  = error ; do tryEnd
     p.on "exit",                                               (code)      -> _code   = code  ; do tryEnd
+    p
 
 cliBareEnv = (env, cmd, args, rest...) ->
     envArgs = ("#{name}=#{value}" for name,value of env)
@@ -472,6 +473,27 @@ app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
                 .join -> next (true)
     ) (respondJSON res)
 
+app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, (req, res) ->
+    [queueName, action] = req.params
+    # TODO sanitize queueName
+    if queueName?.length is 0
+        return res.send 400, "Bad request\nNo queue specified"
+    queueId = "run/queue/#{queueName}"
+    try
+        runs = JSON.parse req.body.runs
+    catch err
+        return res.send 400, "Bad request\nserial numbers of runs for the action must be POSTed in strict JSON format"
+
+    {stdin} =
+    cliEnv(res, {
+        _3X_QUEUE: queueName
+    }, "xargs", ["3x-plan", action]
+    ) (respondJSON res)
+
+    for serial in runs
+        stdin.write "#{serial}\n"
+    stdin.end()
+
 app.get "/api/run/queue/*", (req, res) ->
     [queueName] = req.params
     # TODO sanitize queueName
@@ -483,47 +505,6 @@ app.get "/api/run/queue/*", (req, res) ->
         }, "3x-status", [queueId]
             , parseStatusOutput null
         ) (respondJSON res)
-
-app.post "/api/run/queue/*", (req, res) ->
-    [queueName] = req.params
-    # TODO sanitize queueName
-    queueId = if queueName?.length is 0 then null else "run/queue/#{queueName}"
-    try
-        plan        = JSON.parse req.body.plan
-    catch err
-        return res.send 400, "Bad request\nplan must be posted in strict JSON format"
-    shouldStart = req.body.shouldStart?
-
-    generatePlanLines = ->
-        columns = (name for name in plan.names when name.indexOf("#") is -1)
-        serialCol = plan.names.indexOf SERIAL_COLUMN_NAME
-        (for line,idx in generateNamedColumnLines(plan, columns)
-            serial = plan.rows[idx][serialCol]
-            "3x run#{line} ##{serial}"
-        ).join "\n"
-
-    # TODO rewrite old batch stuffs for the new queue system
-    # start right away if shouldStart
-    startIfNeeded = (queueName) ->
-        if shouldStart
-            try cliSimpleEnv {
-                _3X_QUEUE: queueName
-            }, "sh", "-c", "SHLVL=0 3x-start </dev/null >>.3x/gui/log.runs 2>&1 &"
-
-    mktemp.createFile "#{_3X_ROOT}/.3x/plan.XXXXXX", (err, planFile) ->
-        andRespond = (err, [queueName]) ->
-            # remove temporary file
-            unless err
-                res.json queueName
-                startIfNeeded queueName
-            try cliSimple "rm", "-f", planFile
-        fs.writeFile planFile, generatePlanLines(), ->
-            if queueName? # modify existing one
-                cli(res, "3x-edit", [queueName, planFile]
-                ) andRespond
-            else # create a new batch
-                cli(res, "3x-plan", ["with", planFile]
-                ) andRespond
 
 
 server.listen _3X_GUIPORT, ->

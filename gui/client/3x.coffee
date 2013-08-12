@@ -1953,11 +1953,26 @@ class StatusTable extends CompositeElement
         super @baseElement
         @queueId = null
 
+        # intialize UI and hook events
         $(window).resize(_.throttle @maximizeDataTable, 100)
             .resize(_.debounce @display, 500)
 
-        # intialize UI and hook events
+        @optionElements.actions?.on("click", ".action", (e) =>
+            $action = $(e.target).closest(".action")
+            for c in $action.attr("class").split(/\s+/)
+                if (m = /^action-(.+)$/.exec c)?
+                    action = m[1]
+                    @doStatusAction @selectedRuns, action
+        )
+
         do @attachToResultsTable
+
+    doStatusAction: (selectedRuns, action) =>
+        runSerials = (serial for serial of selectedRuns when not StatusTable.CODE_BY_STATE[serial]?)
+        $.post("#{_3X_ServiceBaseURL}/api/#{@queueId}:#{action}", {
+            runs: JSON.stringify runSerials
+        })
+            # TODO show feedback on failure
 
     load: (queueName) =>
         if @queueName is queueName
