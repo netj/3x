@@ -38,8 +38,7 @@ clean-stale-running-dirs() {
 
         # and remove
         ! [ -e $staleRunDir/run/ ] || unarchive "$_3X_ARCHIVE" $staleRunDir/run/
-        ! [ -e runs/$serial/     ] || unarchive "$_3X_ARCHIVE" runs/$serial/
-        rm -rf $staleRunDir runs/$serial/ runs/$serial
+        rm -rf $staleRunDir/run/ $staleRunDir
     done
 }
 synchronized running.lock  clean-stale-running-dirs

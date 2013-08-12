@@ -58,10 +58,8 @@ record-running() {
     # book-keep the running list and symlink to actual run
     [ -e running ] && grep -q " #$serial " running ||
         queue-record >>running
-    mkdir -p runs
     runRelPath="../../../${runId#run/}"
-    ln -sfn "$runRelPath" runs/$serial
-    ln -sfn "../runs/$serial" $runDir/run
+    ln -sfn "$runRelPath" $runDir/run
 }
 synchronized running.lock  record-running
 
@@ -73,8 +71,8 @@ synchronized running.lock  record-running
 rsync -aH --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" $runDir/target/
 
 # XXX clean $runId first, in case we are retrying one that failed last time
-! [ -e runs/$serial/ ] || unarchive "$_3X_ARCHIVE" runs/$serial/
-rm -rf runs/$serial/ 2>/dev/null || true
+! [ -e $runDir/run/ ] || unarchive "$_3X_ARCHIVE" $runDir/run/
+rm -rf $runDir/run/ 2>/dev/null || true
 
 
 # execute the picked one

@@ -36,9 +36,6 @@ for a; do
     p=$(readlink -f "$a")
     p=${p#$_3X_ROOT/}
     case $p in
-        run/queue/*)
-            runs+=("${a%/}"/runs/*/)
-            ;;
         run/*)
             runs+=("$a")
             ;;
