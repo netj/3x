@@ -30,6 +30,14 @@
 # that is also possible with `3x plan skip`.  In this alternative usage, you
 # can plan more runs conditioning on the outputs so far.
 # 
+# 
+# It is possible to quickly duplicate, move, or remove entries in the plan with
+# reference to serial numbers of runs, shown in the output of `3x status`.
+# > 3x plan duplicate  SERIAL...
+# > 3x plan prioritize SERIAL...
+# > 3x plan postpone   SERIAL...
+# > 3x plan cancel     SERIAL...
+# 
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-11-07
@@ -43,6 +51,46 @@ update-assembly-script >/dev/null
 # create the queue directory if needed
 mkdir -p -- "$_3X_QUEUE_DIR"
 [ -e "$_3X_QUEUE_DIR"/plan ] || touch "$_3X_QUEUE_DIR"/plan
+
+# how to generate example usages
+showExampleUsages() {
+    msg "# Try commands similar to these examples:"
+    3x-inputs -v | shuf | {
+        NUM_EXAMPLES=4 MAX_VALUES=8
+        i=1 j=1 args=
+        while IFS='='; read name values; do
+            IFS=,; set -- $values
+            n=$(($RANDOM % $# % $MAX_VALUES))
+            case $n in
+                [0-3])
+                    let ++n
+                    let j+=$n
+                    vs=$(printf '%s\n' "$@" |
+                        shuf | head -n $n | tr '\n' ,)
+                    args+="  $name=${vs%,}"
+                    ;;
+                *)
+                    args+="  $name"
+                    let ++j
+                    ;;
+            esac
+            p=$(($RANDOM % 2))
+            [[ $j -lt $MAX_VALUES ]] || p=0
+            case $p in
+                0)
+                    msg "3x run$args"
+                    j=0 args=
+                    [[ $i -lt $NUM_EXAMPLES ]] || break
+                    let ++i
+                    ;;
+                *)
+                    ;;
+            esac
+        done
+        [ -z "$args" ] || msg "3x run$args"
+    }
+    false
+}
 
 # knowing how to generate combinations is important
 permute() {
@@ -66,13 +114,20 @@ permute() {
 
 tmp=$(mktemp -d "$_3X_QUEUE_DIR"/plan.XXXXXX)
 trap "rm -rf -- $tmp" EXIT
+computePlanHash() {
 planSHA1orig=$(sha1sum <"$_3X_QUEUE_DIR"/plan)
+}
+computePlanHash
 planWithFiles=()
 
 # decide how we want to plan
-case ${1:-} in
+if [ $# -gt 0 ]; then
+    Command=$1; shift
+else
+    Command=
+fi
+case $Command in
     with) # based on the given files
-        shift
         if [ $# -gt 0 ]; then
             for f; do
                 # adjust _3X_ROOT-relative paths
@@ -89,8 +144,62 @@ case ${1:-} in
         } >"$tmp"/new
         ;;
 
+    duplicate)
+        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
+        # first, collect given runs from done and plan
+        count=$(cat "$_3X_QUEUE_DIR"/.count)
+        {
+            for serial; do
+                [[ $serial -le $count ]] || continue
+                echo "/ #${serial} /W $tmp/more"
+            done
+            echo q
+        } | ed "$_3X_QUEUE_DIR"/done >/dev/null
+        {
+            for serial; do
+                [[ $serial -gt $count ]] || continue
+                lineNum=$(( $serial - $count ))
+                echo "${lineNum}W $tmp/more"
+            done
+            echo q
+        } | ed "$_3X_QUEUE_DIR"/plan >/dev/null
+        # then append them at the end of current plan
+        {
+            cat "$_3X_QUEUE_DIR"/plan
+            sed 's/ #.*$//' "$tmp"/more
+        } >"$tmp"/new
+        ;;
+
+    prioritize|postpone|cancel)
+        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
+        # first, collect and remove given runs from plan
+        count=$(cat "$_3X_QUEUE_DIR"/.count)
+        cp -f "$_3X_QUEUE_DIR"/plan "$tmp"/others
+        {
+            # let ed(1) collect plan lines that correspond to given serials
+            lineNums=()
+            for serial; do
+                [[ $serial -gt $count ]] || continue
+                lineNum=$(( $serial - $count ))
+                lineNums+=($lineNum)
+                echo "${lineNum}W $tmp/selected"
+            done
+            # and delete the collected lines (in reverse order!)
+            for serial in "${lineNums[@]}"; do echo $serial; done |
+            sort -n -r | sed 's/$/d/'
+            echo wq
+        } | ed "$tmp"/others >/dev/null
+        # then decide how to layout the new plan depending on given command
+        case $Command in
+            prioritize) order=(selected  others) ;;
+            postpone)   order=(others  selected) ;;
+            cancel)     order=(others          ) ;;
+        esac
+        (cd "$tmp" && cat "${order[@]}") >"$tmp"/new
+        ;;
+
     results|skip) # based on query over results
-        results=$1; shift
+        results=$Command
         invertResults=false; case $results in skip) invertResults=true ;; esac
 
         # record the query and fetch the results
@@ -111,60 +220,30 @@ case ${1:-} in
         sed 's/^[^[:space:]]*[[:space:]]*/run  /' | column -t >"$tmp"/new
         ;;
 
+    help|"-h")
+        usage "$0"
+        showExampleUsages
+        exit
+        ;;
+
     "") # edit the current plan
         if [ -s "$_3X_QUEUE_DIR"/plan ]; then
             cat "$_3X_QUEUE_DIR"/plan >"$tmp"/new
         else # show usage first if empty
-            usage "$0" "Plan is empty for $_3X_QUEUE_ID; specify input variables to add." || {
-                msg "# Try commands similar to these examples:"
-                3x-inputs -v | shuf | {
-                    NUM_EXAMPLES=4 MAX_VALUES=8
-                    i=1 j=1 args=
-                    while IFS='='; read name values; do
-                        IFS=,; set -- $values
-                        n=$(($RANDOM % $# % $MAX_VALUES))
-                        case $n in
-                            [0-3])
-                                let ++n
-                                let j+=$n
-                                vs=$(printf '%s\n' "$@" |
-                                    shuf | head -n $n | tr '\n' ,)
-                                args+="  $name=${vs%,}"
-                                ;;
-                            *)
-                                args+="  $name"
-                                let ++j
-                                ;;
-                        esac
-                        p=$(($RANDOM % 2))
-                        [[ $j -lt $MAX_VALUES ]] || p=0
-                        case $p in
-                            0)
-                                msg "3x run$args"
-                                j=0 args=
-                                [[ $i -lt $NUM_EXAMPLES ]] || break
-                                let ++i
-                                ;;
-                            *)
-                                ;;
-                        esac
-                    done
-                    [ -z "$args" ] || msg "3x run$args"
-                }
-                false
-            }
+            usage "$0" "Plan is empty for $_3X_QUEUE_ID; specify input variables to add." ||
+                showExampleUsages
         fi
         ;;
 
     *) # by editing combinations generated from given input values
         # normalize command-line arguments
-        args=($(normalize-inputs -nv "$@"))
+        args=($(normalize-inputs -nv "$Command" "$@"))
         [ ${#args[@]} -eq 0 ] && set -- || set -- "${args[@]}"
 
         # permute the arguments and generate a plan
         msg "Permuting inputs for ${@%%=*}..."
         permute "run" "$@" | column -t >"$tmp"/more
-        planSHA1orig=$(sha1sum <"$_3X_QUEUE_DIR"/plan)
+        computePlanHash
         cat "$_3X_QUEUE_DIR"/plan "$tmp"/more >"$tmp"/new
         ;;
 esac
