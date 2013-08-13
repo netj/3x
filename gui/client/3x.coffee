@@ -1259,7 +1259,7 @@ class ResultsChart extends CompositeElement
         @chartOptions = (try JSON.parse localStorage["chartOptions"]) ? {}
         persistOptions = => localStorage["chartOptions"] = JSON.stringify @chartOptions
         optionToggleHandler = (e) =>
-            btn = $(e.srcElement).closest(".btn")
+            btn = $(e.target).closest(".btn")
             return e.preventDefault() if btn.hasClass("disabled")
             chartOption = btn.attr("data-toggle-option")
             @chartOptions[chartOption] = not btn.hasClass("active")
@@ -1331,7 +1331,7 @@ class ResultsChart extends CompositeElement
 
     actionHandlerForAxisControl: (action) => (e) =>
         e.preventDefault()
-        $this = $(e.srcElement)
+        $this = $(e.target)
         $axisControl = $this.closest(".axis-control")
         ord = +$axisControl.attr("data-order")
         name = $this.closest(".axis-var").attr("data-name")
@@ -2367,7 +2367,7 @@ class StatusTable extends CompositeElement
                     )
                 .on("click", ".planner.popover .add.btn", @addPlanFromRowHandler())
         $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
-            if rt.baseElement.has(e.srcElement).length is 0
+            if rt.baseElement.has(e.target).length is 0
                 popover.showDelay = POPOVER_SHOW_DELAY_INITIAL
         )
 
