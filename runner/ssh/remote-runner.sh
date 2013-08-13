@@ -61,7 +61,6 @@ requiresSSHCommand() {
 sshRemote() {
     parseRemote
     requiresSSHCommand
-    # TODO use ControlMaster ControlPersist
     $remoteSSHCommand ${remotePort:+-p $remotePort} \
         ${remoteUser:+$remoteUser@}$remoteHost \
         "$@"

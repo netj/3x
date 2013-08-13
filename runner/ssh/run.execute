@@ -7,13 +7,33 @@ set -eu
 . remote-runner.sh
 parseRemote
 
-trap 'msg "$_3X_RUN: interrupted"; exit 127' HUP INT QUIT TERM
+stderrLog="$_3X_LOGERROR".log
+rm -f "$stderrLog"
+tail -qF "$stderrLog" --pid=$$ 1>&2 2>/dev/null &
+exec 3>&2 2>"$stderrLog"
+error() { command error 2>&3 "$@"; }
+errorWithSTDERR() { error "$@" "$(cat "$stderrLog")"; }
+
+# abort on signals
+for sig in INT QUIT TERM; do
+    trap 'set +e
+        error "$_3X_RUN: interrupted with SIG'$sig'"
+        exit 127
+        ' $sig
+done
+
 
 cd "$_3X_ROOT"
 
+rsyncVerbose=
+be-quiet +2 || rsyncVerbose="--stats"
+be-quiet +3 || rsyncVerbose="--stats --verbose"
+
 msg "$_3X_RUN: transferring to remote"
-sshRemote mkdir -p "$remoteRoot/.3x"
-rsyncToRemote . --archive --hard-links --omit-dir-times --delete --relative "$_3X_RUN"
+sshRemote mkdir -p "$remoteRoot/.3x" ||
+    errorWithSTDERR "Could not reach $remoteHost via ssh or initialize 3X root at $remoteRoot/"
+rsyncToRemote . --archive --hard-links --omit-dir-times --delete --relative $rsyncVerbose "$_3X_RUN" ||
+    errorWithSTDERR "Could not transfer assembled runnable to $remoteHost via ssh"
 
 
 cd "$_3X_ROOT/$_3X_RUN"
@@ -28,14 +48,18 @@ set +e
 tail -qF stdout --pid=$$      2>/dev/null &
 tail -qF stderr --pid=$$ 1>&2 2>/dev/null &
 '
-    echo "exec $verbose ./execute.sh"
+    echo "$verbose ./execute.sh || true"
+    echo "exit 0"
 } |
-sshRemote env _3X_ROOT="$remoteRoot" _3X_RUN="$_3X_RUN" bash -s || true
+sshRemote env _3X_ROOT="$remoteRoot" _3X_RUN="$_3X_RUN" bash -s ||
+    error "Could not execute runnable at $remoteHost via ssh"
 
 
 msg "$_3X_RUN: retrieving from remote"
-rsyncFromRemote "$_3X_RUN"/ --archive --hard-links --remove-source-files .
-sshRemote find "$remoteRoot/$_3X_RUN" -exec rmdir -p {} + 2>/dev/null
+rsyncFromRemote "$_3X_RUN"/ --archive --hard-links --remove-source-files $rsyncVerbose . ||
+    errorWithSTDERR "Could not retrieve execution result from $remoteHost via ssh"
+sshRemote find "$remoteRoot/$_3X_RUN" -exec rmdir -p {} + 2>/dev/null ||
+    true # ignore any error during clean up
 
 
 if [ -e exitstatus ]; then

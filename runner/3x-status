@@ -12,21 +12,15 @@ set -eu
 # TODO add CLI switch to selectively show DONE/RUNNING/PLANNED
 
 {
-    PREFIXPATT='^run[[:space:]][[:space:]]*'
-
     # runs already finished
-    if [ -r done ]; then
-        sed "s:$PREFIXPATT:DONE :" <"done"
-    fi
+    cat done 2>/dev/null || true
 
     # runs running now
-    if [ -r running ]; then
-        sed "s:$PREFIXPATT:RUNNING :" <running
-    fi
+    cat running 2>/dev/null || true
 
     # runs planned
     if [ -r plan ]; then
         serialOnEachLine plan $(( $(cat .count 2>/dev/null || echo 0) + 1 )) |
-        sed "s:$PREFIXPATT:PLANNED :"
+        sed 's:^run[[:space:]][[:space:]]*:PLANNED :'
     fi
 } | column -t

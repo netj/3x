@@ -16,11 +16,12 @@ block content
             i.icon-chevron-right
             | output
         each content,file in files
-          li
-            a(href='##{sanitizeId(file)}')
-              i.icon-chevron-right
-              = " "
-              = file
+          if content
+            li
+              a(href='##{sanitizeId(file)}')
+                i.icon-chevron-right
+                = " "
+                = file
 
   div#main.span10.run-overview
 
@@ -58,11 +59,12 @@ block content
                       small.unit  (#{o.unit})
 
     each content,file in files
-      div.row-fluid(id='#{sanitizeId(file)}')
-        h3
-          a(href='#{file}')
-            = file
-        pre= content
+      if content
+        div.row-fluid(id='#{sanitizeId(file)}')
+          h3
+            a(href='#{file}')
+              = file
+          pre= content
 
 
 

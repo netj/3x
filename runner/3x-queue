@@ -72,6 +72,8 @@ if $ListDetails; then
         "STATE" \
         "#PLANNED" \
         "#RUNNING" \
+        "#ABORTED" \
+        "#FAILED" \
         "#DONE" \
         "TARGET" \
         #
@@ -90,7 +92,11 @@ if $ListDetails; then
             numPlanned=$(wc -l <$queue/plan    || echo 0)
             numRunning=$(wc -l <$queue/running || echo 0)
             numDone=$(   wc -l <$queue/done    || echo 0)
-            target=$(    readlink $queue/target || echo '?')
+            numAborted=$(grep -c '^ABORTED' <$queue/running || true)
+            numFailed=$( grep -c '^FAILED'  <$queue/done    || true)
+            let numRunning+=-${numAborted:=0} || true
+            let numDone+=-${numFailed:=0}     || true
+            target=$(readlink $queue/target || echo '?')
             target=${target##*/}
         } 2>/dev/null
         # output in tab-separated columns
@@ -100,6 +106,8 @@ if $ListDetails; then
             "$state" \
             "$numPlanned" \
             "$numRunning" \
+            "$numAborted" \
+            "$numFailed" \
             "$numDone" \
             "$target" \
             #

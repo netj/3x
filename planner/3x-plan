@@ -167,7 +167,7 @@ case $Command in
         # then append them at the end of current plan
         {
             cat "$_3X_QUEUE_DIR"/plan
-            sed 's/ #.*$//' "$tmp"/more
+            sed 's/^[^[:space:]]*[[:space:]]/run /; s/ #.*$//' "$tmp"/more
         } >"$tmp"/new
         ;;
 
@@ -196,7 +196,9 @@ case $Command in
             postpone)   order=(others  selected) ;;
             cancel)     order=(others          ) ;;
         esac
-        (cd "$tmp" && cat "${order[@]}") >"$tmp"/new
+        (cd "$tmp" &&
+            sed -e 's/^[^[:space:]]*[[:space:]]/run /' -- "${order[@]}"
+        ) >"$tmp"/new
         ;;
 
     results|skip) # based on query over results

@@ -17,7 +17,10 @@ cmdln=
 serial=
 runId=
 
-queue-record() { echo $cmdln "#$serial $_3X_TARGET $runId"; }
+queue-record() {
+    local state=$1
+    echo $state ${cmdln#run } "#$serial $_3X_TARGET $runId"
+}
 
 pick-next() {
     # check if there were anything running which isn't alive
@@ -46,8 +49,8 @@ pick-next() {
         # determine a fresh run id
         runId=$(new-run-id | tee $runDir/runId)
         # dequeue one planned run
-        cmdln=$(head -n 1 plan | tee $runDir/cmdln)
-        { echo 1d; echo wq; } | ed plan &>/dev/null
+        { echo "1w $runDir/cmdln"; echo 1d; echo wq; } | ed plan &>/dev/null
+        cmdln=$(cat $runDir/cmdln)
         # increment serial counter
         echo $serial >$SERIAL_COUNTER
     fi
@@ -56,8 +59,14 @@ synchronized plan.lock  pick-next || continue
 
 record-running() {
     # book-keep the running list and symlink to actual run
-    [ -e running ] && grep -q " #$serial " running ||
-        queue-record >>running
+    {
+        ! grep -q " #$serial " running ||
+            echo "g/ #$serial /d"
+        echo '$a'
+        queue-record RUNNING
+        echo .
+        echo wq
+    } | ed running >/dev/null
     runRelPath="../../../${runId#run/}"
     ln -sfn "$runRelPath" $runDir/run
 }
@@ -73,29 +82,58 @@ rsync -aH --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" $runDi
 # XXX clean $runId first, in case we are retrying one that failed last time
 ! [ -e $runDir/run/ ] || unarchive "$_3X_ARCHIVE" $runDir/run/
 rm -rf $runDir/run/ 2>/dev/null || true
+errorRecord="$_3X_QUEUE_DIR"/$runDir/error
+rm -f "$errorRecord"
 
 
 # execute the picked one
 # XXX count=$(($(wc -l <done) + $(wc -l <running) + $(wc -l <plan)))
 count=$(( $serial + $(wc -l <plan) ))
 runner-msg "Executing #$serial/$count as $runId"
-
+# NOTE the following invokes the run command, which in turn invokes run.assemble, run.execute and run.store
+_3X_LOGERROR=$errorRecord \
 _3X_RUNNER_DIR=$runDir \
 _3X_RUN=$runId \
-$cmdln # NOTE this invokes the run command
+$cmdln || {
+    c=$?
+    # "run" finishing with non-zero exit status indicates runner error, i.e.,
+    # runner not being able to finish execution properly.  So, mark the run as
+    # aborted, and keep it intact in the running list for later resumption.
+    state=ABORTED
+    record-aborted() {
+        {
+            ! grep -q " #$serial " running ||
+                echo "g/ #$serial /d"
+            echo '$a'
+            queue-record ABORTED
+            echo .
+            echo wq
+        } | ed running >/dev/null
+    }
+    synchronized running.lock  record-aborted
+    # the cause is recorded in $runDir/error
+    chmod +w $runDir/run/
+    ln -fn "$errorRecord" $runDir/run/target.aborted
+    chmod -w $runDir/run/
+    exit $c
+}
 
-# make sure execution finished properly
-[ -s $runDir/run/output ]
+# we can determine the resulting state of the run after execution
+state=DONE
+# it is a user program failure when the output isn't complete
+[[ ! -s $runDir/run/outputs.failed && -s $runDir/run/output ]] ||
+    state=FAILED
 
 
-# after it ends, record the run in the "done" list
+# record the run in the "done" list with its state
 record-finished() {
-    queue-record >>"done"
+    queue-record  $state >>"done"
     # book-keep the running list
     {
-        echo "g/ #$serial /d"
+        ! grep -q " #$serial " running ||
+            echo "g/ #$serial /d"
         echo wq
-    } | ed running &>/dev/null
+    } | ed running >/dev/null
 }
 synchronized running.lock  record-finished
 

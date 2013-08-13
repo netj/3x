@@ -224,7 +224,7 @@
               class="icon-list-ol icon"></i>Execution History of <span id="status-name">N/A</span></h3>
           <div id="status-actions" class="section-actions clearfix">
             <span id="status-selection-summary"></span>
-            <button class="btn btn-small btn-primary action action-duplicate for-PLANNED for-RUNNING for-DONE for-FAILED" disabled
+            <button class="btn btn-small btn-primary action action-duplicate for-PLANNED for-RUNNING for-ABORTED for-DONE for-FAILED" disabled
               title="Add copies of selected runs to repeat execution"
               ><i class="icon icon-copy"></i> Duplicate</button>
             <button class="btn btn-small btn-info action action-prioritize for-PLANNED" disabled
@@ -235,7 +235,7 @@
               ><i class="icon icon-level-down"></i> Postpone</button>
             <button class="btn btn-small btn-danger action action-cancel for-PLANNED" disabled
               title="Remove selected PLANNED runs from queue"
-              ><i class="icon icon-remove"></i> Cancel</button>
+              ><i class="icon icon-trash"></i> Cancel</button> <!-- TODO support cancel for-ABORTED -->
           </div>
 
           <table id="status-table" class="table table-hover table-bordered table-striped"

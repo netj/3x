@@ -1760,11 +1760,12 @@ class QueuesUI extends CompositeElement
                     <i class="icon icon-cog icon-spin"></i>
                     <span class="queue-name">{{>queue}}</span>
                 </h5>
-                <div class="progress">
-                    <div class="bar bar-success" data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
-                <!--<div class="bar bar-error"   data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>-->
-                    <div class="bar"             data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
-                    <div class="bar bar-warning" data-toggle="tooltip" data-placement="right"  data-container=".queues"></div>
+                <div class="progress for-PLANNED" data-toggle="tooltip" data-placement="right"  data-container=".queues">
+                    <div class="bar bar-success    for-DONE" data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
+                    <div class="bar bar-danger   for-FAILED" data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
+                    <div class="bar             for-RUNNING" data-toggle="tooltip" data-placement="top"    data-container=".queues"></div>
+                    <div class="bar bar-warning for-ABORTED" data-toggle="tooltip" data-placement="top"    data-container=".queues"></div>
+                <!--<div class="bar bar-muted   for-PLANNED" data-toggle="tooltip" data-placement="right"  data-container=".queues"></div>-->
                 </div>
                 <div class="actions">
                     <div class="pull-left">
@@ -1794,7 +1795,7 @@ class QueuesUI extends CompositeElement
                 .addClass("clearfix unstyled")
                 .appendTo(@baseElement)
                 .sortable()
-        progressGroups = ["Done", "Running", "Planned"]
+        progressGroups = ["Done", "Failed", "Aborted", "Running", "Planned"]
         MIN_VISIBLE_RATIO = 0.05
         for name,i in queueNames when @queues[name]?
             # compute queue data for display
@@ -1802,8 +1803,8 @@ class QueuesUI extends CompositeElement
             isActive = queue.state is "ACTIVE"
             #  count the total number of runs in this queue
             total = 0
-            for g in progressGroups
-                total += queue["num#{g}"] = +queue["num#{g}"]
+            for g in progressGroups when queue["num#{g}"]?
+                total += queue["num#{g}"]
             #  compute ratio for progress bar display
             ratioTotal = 0
             for g in progressGroups
@@ -1827,10 +1828,14 @@ class QueuesUI extends CompositeElement
                 .end()
                 .find(".progress")
                     .css(width: if @showAbsoluteProgress then "#{100 * (Math.max MIN_VISIBLE_RATIO, (queue.numTotal/maxTotal))}%" else "auto")
-                    .find(".bar"        ).attr(title: "#{queue.numRunning} running").css(width: "#{100 * queue.ratioRunning}%").end()
-                    .find(".bar-success").attr(title: "#{queue.numDone   } done"   ).css(width: "#{100 * queue.ratioDone   }%").end()
-                    #.find(".bar-error"  ).attr(title: "#{queue.numFailed } failed" ).css(width: "#{100 * queue.ratioFailed }%").end()
-                    .find(".bar-warning").attr(title: "#{queue.numPlanned} planned").css(width: "#{100 * queue.ratioPlanned}%").end()
+                    .find(".bar")
+                    .filter(".for-DONE"   ).attr(title: "#{queue.numDone   } done"   ).css(width: "#{100 * queue.ratioDone   }%").end()
+                    .filter(".for-FAILED" ).attr(title: "#{queue.numFailed } failed" ).css(width: "#{100 * queue.ratioFailed }%").end()
+                    .filter(".for-ABORTED").attr(title: "#{queue.numAborted} aborted").css(width: "#{100 * queue.ratioAborted}%").end()
+                    .filter(".for-RUNNING").attr(title: "#{queue.numRunning} running").css(width: "#{100 * queue.ratioRunning}%").end()
+                    #.filter(".for-PLANNED").attr(title: "#{queue.numPlanned} planned").css(width: "#{100 * queue.ratioPlanned}%").end()
+                    .end()
+                    .attr(title: "#{queue.numPlanned} planned")
                 .end()
                 .find(".actions")
                     .find(".queue-start").toggleClass("hide",     isActive).end()
@@ -1988,24 +1993,25 @@ class StatusTable extends CompositeElement
             @resultsActionPopover?.find(".queue-name").text(@queueId)
 
     @STATES: """
-        PLANNED
-        RUNNING
-        PAUSED
-        FAILED
         DONE
+        FAILED
+        RUNNING
+        ABORTED
+        PLANNED
     """.trim().split /\s+/
     @CODE_BY_STATE: indexMap StatusTable.STATES
     @ICON_BY_STATE:
         DONE: "ok"
         FAILED: "remove"
         RUNNING: "cog icon-spin"
+        ABORTED: "warning-sign"
         PLANNED: "time"
     @CLASS_BY_STATE:
-        DONE: "success"
-        FAILED: "error"
-        RUNNING: "info"
-        PAUSED: "warning"
-        PLANNED: "warning"
+        DONE: "text-success"
+        FAILED: "text-error"
+        RUNNING: "text-info"
+        ABORTED: "text-warning"
+        PLANNED: "muted"
 
     render: (quickUpdate = false) =>
         # simply redraw DataTables and skip reconstructing it
@@ -2094,7 +2100,7 @@ class StatusTable extends CompositeElement
                 $state = $row.find(".state")
                     .prepend(" ")
                     .prepend($("<i>").addClass("icon icon-#{StatusTable.ICON_BY_STATE[state]}"))
-                    .wrapInner($("<span>").addClass("text-#{StatusTable.CLASS_BY_STATE[state]}"))
+                    .wrapInner($("<span>").addClass("#{StatusTable.CLASS_BY_STATE[state]}"))
                 # tooltip with run# and other messages
                 if runId?
                     $state

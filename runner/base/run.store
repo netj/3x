@@ -57,7 +57,8 @@ if [ -s exitstatus -a -e execute.sh -a ! -x execute.sh ]; then
     done >output
     # see if all output extractors ended successfully
     ! [ -s outputs.failed ] ||
-        error "$_3X_RUN: failed extracting outputs:" "$(cat outputs.failed)"
+        error "$_3X_RUN: failed extracting outputs:" "$(cat outputs.failed)" ||
+        true # it's not a runner error to have failures while extracting outputs
 
     # incrementally update the index with this run
     msg "$_3X_RUN: indexing"

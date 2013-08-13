@@ -46,9 +46,10 @@ express.static.mime.define
 
 RUN_OVERVIEW_FILENAMES = """
     input output
-    stdout stderr exitstatus rusage
-    env args stdin
-    assembly
+    target.aborted outputs.failure
+    exitstatus stderr stdout
+    stdin args env
+    rusage assembly
     target.name target/type
 """.split(/\s+/).filter((f) -> f?.length > 0)
 
@@ -357,7 +358,7 @@ formatStatusTable = (lines, firstColumnName = "isCurrent", indexColumnName = nul
             row[name] = line[i]
             if /^num.+/.test name
                 total ?= 0
-                total += +line[i]
+                total += row[name] = +line[i]
         row.numTotal = total if total?
     rows
 
