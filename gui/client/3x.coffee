@@ -746,8 +746,8 @@ class ResultsTable extends CompositeElement
           <tr>
             {{for columns}}
             <th class="{{>className}}" data-index="{{>index}}" data-dataIndex="{{>dataIndex}}"><span class="dataName">{{>dataName}}</span>
-                {{if unit}}(<span class="unit">{{>unit}}</span>){{/if}}
                 {{if isMeasured && !isExpanded}}<small>[<span class="aggregationName">{{>aggregation.name}}</span>]</small>{{/if}}
+                {{if unit}}(<span class="unit">{{>unit}}</span>){{/if}}
                 {{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
                 icon icon-folder-{{if isExpanded}}open{{else}}close{{/if}}-alt"
                 title="{{if isExpanded}}Aggregate and fold the values of {{>name}}{{else
