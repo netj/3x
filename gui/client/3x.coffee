@@ -2112,7 +2112,7 @@ class StatusTable extends CompositeElement
                         .attr(
                             title: runId
                             "data-content": """
-                                    <p>At <i class="icon icon-flag"></i> target:
+                                    <p><small><i class="icon icon-flag"></i> Target</small>
                                         <span class="label label-info">#{target}</span></p>
                                 """ + switch state
                                 when "ABORTED", "FAILED"
