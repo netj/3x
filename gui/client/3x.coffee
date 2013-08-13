@@ -2018,6 +2018,7 @@ class StatusTable extends CompositeElement
         # simply redraw DataTables and skip reconstructing it
         if quickUpdate
             do @dataTable?.fnDraw
+            do @dataTable?.focus
             return
 
         # display the name of the batch
