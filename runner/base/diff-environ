@@ -8,7 +8,7 @@
 set -eu
 
 defaultEnviron=$(ls-super "$_3X_RUNNER_HOME" "$_3X_RUNNER" environ)
-if diff -q "$defaultEnviron" environ &>/dev/null; then
+if ! [[ -e environ ]] || diff -q "$defaultEnviron" environ &>/dev/null; then
     echo "default environment"
 else
     echo "custom environment:"

@@ -22,7 +22,7 @@ echo "$remote"
 echo
 
 echo "# environ (environment for execution):"
-cat environ 2>/dev/null || code=2
+cat environ 2>/dev/null || true
 echo
 
 parseRemote $remote

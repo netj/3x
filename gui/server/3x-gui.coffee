@@ -246,7 +246,7 @@ handleNonZeroExitCode = (res, next) -> (code, err, result...) ->
     if code is 0
         next null, result...
     else
-        res.send 500, (err?.join "\n") ? err
+        res.send 500, ("command exit status=#{code}" + err?.join "\n") ? err
         next err ? code, result...
 
 cli    =  (res, rest...) -> (next) ->
@@ -399,8 +399,8 @@ app.get "/api/run/target/:name", (req, res) ->
                     targetInfo = {name}
                     for attr in attrs
                         v = attr.value?.slice(0)
-                        v.pop() until v[v.length - 1]?.length
-                        v = v[0] if v?.length <= 1
+                        v.pop() until v.length is 0 or v[v.length - 1]?.length
+                        v = v[0] if v.length is 1
                         targetInfo[attr.name] = v
                     targetInfo.target = name
                     next targetInfo
