@@ -2136,7 +2136,7 @@ class StatusTable extends CompositeElement
             fnInitComplete: =>
                 @dataTable.find("tbody").removeClass("hide")
                 do @maximizeDataTable
-                dtScrollBG.removeClass("loading")
+                dtScrollBG.removeClass("loading initializing")
                 loadingIndicator.hide()
 
         # better loading progress indicator on scroll
@@ -2163,7 +2163,7 @@ class StatusTable extends CompositeElement
             ###
         dtScrollBG =
         dtWrapper.find(".dataTables_scroll")
-            .addClass("loading")
+            .addClass("initializing loading")
             .find(".dataTables_scrollBody")
                 .on("scroll", (_.debounce =>
                         @dataTable.find(".state-detail").popover("destroy")
@@ -2172,7 +2172,7 @@ class StatusTable extends CompositeElement
                     , 250, true))
                 .on("scroll", (_.debounce =>
                         loadingIndicator.hide()
-                        dtScrollBG.removeClass("loading")
+                        dtScrollBG.not(".initializing").removeClass("loading")
                         dtWrapper.find(".popover").remove()
                         @dataTable.find(".state-detail").popover("hide")
                     , 250))
