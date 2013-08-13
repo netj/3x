@@ -10,8 +10,17 @@
 set -eu
 shopt -s extglob
 
-defaultPort=38917
 host=$(hostname -f)
+
+basePort=38796
+computeDefaultPort() {
+    # randomize default port deterministically per user
+    local sha1=$(sha1sum <<<"$USER")
+    local port=$(printf "%d" 0x${sha1:0:4})
+    local q=$(( 65536 - $basePort ))
+    port=$(( $port % $q + $basePort ))
+    echo $port
+}
 
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
@@ -36,7 +45,7 @@ case $cmd in
         launchNew=false
         if [ -z "$pids" ]; then
             # use given port or reuse the last port or the default
-            port=${1:-${port:-$defaultPort}}
+            port=${1:-${port:-$(computeDefaultPort)}}
             launchNew=true
         else
             msg "3X GUI already running at http://$host:$port/"
