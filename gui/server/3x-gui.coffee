@@ -495,6 +495,17 @@ app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
                 .join -> next (true)
     ) (respondJSON res)
 
+app.post /// /api/run/queue/([^:]+):(target) ///, (req, res) ->
+    [queueName, action] = req.params
+    # TODO sanitize queueName
+    target = req.body.target
+    cliEnv(res, {
+        _3X_QUEUE: queueName
+    }, "3x-target", [target]
+        , (lazyLines, next) ->
+            lazyLines.join -> next (true)
+    ) (respondJSON res)
+
 app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, (req, res) ->
     [queueName, action] = req.params
     # TODO sanitize queueName
@@ -569,16 +580,16 @@ server.listen _3X_GUIPORT, ->
 queueSockets =
 io.of("/run/queue/")
     .on "connection", (socket) ->
-        updateRunningCount socket
+        updateActiveCount socket
 
-updateRunningCount = (socket = queueSockets) ->
+updateActiveCount = (socket = queueSockets) ->
     cliBare("sh", ["-c", "ls run/queue/*/.is-active.* | wc -l"]
         , (lazyLines, next) ->
             lazyLines
                 .take(1)
                 .join ([line]) -> next (+line?.trim())
     ) (code, err, count) ->
-        socket.volatile.emit "running-count", count
+        socket.volatile.emit "active-count", count
 
 queueRootDir = "#{_3X_ROOT}/run/queue/"
 queueNotifyChange = (event, fullpath) ->
@@ -591,11 +602,15 @@ queueNotifyChange = (event, fullpath) ->
     if /// ^/( plan | running | done )$ ///.test filename
         queueSockets.volatile.emit "listing-update", [queueId, event]
     else if /// ^/( \.is-active\..* )$ ///.test filename
-        do updateRunningCount
+        do updateActiveCount
         queueSockets.volatile.emit "state-update", [
             queueId
-            if event is "deleted" then "PAUSED" else "RUNNING"
+            if event is "deleted" then "INACTIVE" else "ACTIVE"
             # TODO pass new progress: running/done/remaining/total
+        ]
+    else if /// ^$ ///.test filename # FIXME empty filename does not indicate only target change. make this more precise
+        queueSockets.volatile.emit "target-update", [
+            queueId
         ]
 
 # Use Python watchdog to monitor filesystem changes

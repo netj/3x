@@ -1682,11 +1682,15 @@ class QueuesUI extends CompositeElement
                 do @refresh
 
             .on "state-update", ([queueId, newStatus]) =>
-                log "queue #{queueId} #{newStatus}"
+                log "queue #{queueId} became #{newStatus}"
                 do @refresh
 
-            .on "running-count", (count) =>
-                log "running-count", count
+            .on "target-update", ([queueId]) =>
+                log "queue #{queueId} target changed"
+                do @refresh
+
+            .on "active-count", (count) =>
+                log "queue active-count", count
                 # update how many batches are running
                 @countDisplay
                     ?.text(count)
@@ -1734,26 +1738,30 @@ class QueuesUI extends CompositeElement
 
         # finally load the queue list
         do @refresh
-        # as well as the status of queue on focus
-        @status.load @queueOnFocus if @queueOnFocus?
 
     refresh: =>
         # TODO loading feedback
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/")
             .success((@queues) =>
+                if @queueOnFocus?
+                    @status.currentQueue =
+                    @target.currentQueue =
+                        @queues[@queueOnFocus]
                 do @display
-                @status.queueStats = @queues[@status.queueName]
             )
 
     focusQueue: (queueName, e) =>
         if not e? or $(e?.target).closest("button").length is 0
             localStorage.queueOnFocus =
             @queueOnFocus = queueName
-            @baseElement.find(".queue").removeClass("alert-info")
-                .filter("[data-name='#{queueName}']").addClass("alert-info")
-            @status.load queueName, @queues[queueName]
-            @target.currentTarget = @queues[queueName].target
-            do @target.display
+            do @updateFocusedQueue
+
+    updateFocusedQueue: =>
+        @status.load @queueOnFocus, @queues[@queueOnFocus]
+        @target.load @queues[@queueOnFocus]
+        @baseElement.find(".queue")
+            .removeClass("alert-info")
+            .filter("[data-name='#{@queueOnFocus}']").addClass("alert-info")
 
     @QUEUE_SKELETON: $("""
         <script type="text/x-jsrender">
@@ -1858,10 +1866,7 @@ class QueuesUI extends CompositeElement
                 .find(".progress, .bar").tooltip("destroy").tooltip("hide").end()
 
         # indicate which queue is on focus
-        if @queueOnFocus
-            $queuesList.find(".queue")
-                .removeClass("alert-info")
-                .filter("[data-name='#{@queueOnFocus}']").addClass("alert-info")
+        do @updateFocusedQueue
 
 
     handleQueueAction: (action) -> (e) ->
@@ -1880,12 +1885,33 @@ class QueuesUI extends CompositeElement
 
 class TargetsUI extends CompositeElement
     constructor: (@baseElement) ->
+        @currentQueue = null
         @targetKnobs    = $(TargetsUI.TARGET_KNOB_CONTAINER_SKELETON   ).appendTo(@baseElement)
         @targetContents = $(TargetsUI.TARGET_CONTENT_CONTAINER_SKELETON).appendTo(@baseElement)
 
         super @baseElement
 
+        @targetContents.on "click", ".target .btn", (e) =>
+            $btn = $(e.target).closest(".btn")
+            $target = $btn.closest(".target")
+            target = $target.attr("data-name")
+            log "click", target
+            for c in $btn.attr("class").split(/\s+/)
+                if (m = /^action-(.+)$/.exec c)?
+                    action = m[1]
+                    @doTargetAction target, action, e, $target
+
         do @refresh
+
+    doTargetAction: (target, action, e, $target) =>
+        log "target action", target, action
+        switch action
+            when "use"
+                $.post("#{_3X_ServiceBaseURL}/api/run/queue/#{@currentQueue.queue}:target", {
+                        target
+                    })
+            when "edit"
+                TODO
 
     refresh: =>
         # TODO loading feedback
@@ -1894,6 +1920,9 @@ class TargetsUI extends CompositeElement
                 @currentTarget = _.where(@targets, isCurrent:true)[0]?.target
                 do @display
             )
+
+    load: (@currentQueue) =>
+        do @display
 
     @TARGET_KNOB_CONTAINER_SKELETON: """
         <ul class="nav nav-pills"></ul>
@@ -1911,15 +1940,15 @@ class TargetsUI extends CompositeElement
         """
     @TARGET_CONTENT_SKELETON: $("""
         <script type="text/x-jsrender">
-            <div id="target-{{>target}}" class="target pill-pane">
+            <div id="target-{{>target}}" class="target pill-pane" data-name="{{>target}}">
                 <div class="well alert-block">
                     <span class="target-summary"></span>
                     <div class="actions">
                         <div class="pull-left">
-                            <button class="target-edit btn btn-small"
+                            <button class="action-edit btn btn-small"
                                 title="Edit current target configuration"><i class="icon icon-edit"></i></button>
                         </div>
-                        <button class="target-use btn btn-small btn-danger"
+                        <button class="action-use btn btn-small btn-primary"
                             title="Use this target for executing runs in current queue"><i class="icon icon-ok"></i></button>
                     </div>
                 </div>
@@ -1936,20 +1965,21 @@ class TargetsUI extends CompositeElement
                     _3X_ServiceBaseURL
                 }
                 $(TargetsUI.TARGET_KNOB_SKELETON.render target, ctx).appendTo(@targetKnobs)
-                targetUI = $(TargetsUI.TARGET_CONTENT_SKELETON.render target, ctx).appendTo(@targetContents)
-                do (targetUI) =>
+                $target = $(TargetsUI.TARGET_CONTENT_SKELETON.render target, ctx).appendTo(@targetContents)
+                do ($target) =>
                     $.getJSON("#{_3X_ServiceBaseURL}/api/run/target/#{name}")
                     .success((targetInfo) =>
                         _.extend(target, targetInfo)
-                        targetUI.find(".target-summary").html(
+                        $target.find(".target-summary").html(
                             markdown targetInfo.description?.join("\n")
                         )
                     )
         # adjust UI for current target
-        @targetKnobs?.find("li").removeClass("current")
-            .filter("[data-name='#{@currentTarget}']").addClass("current")
-        @targetContents.find(".target-use").prop("disabled", false)
-        @targetContents.find("#target-#{@currentTarget}").find(".target-use").prop("disabled", true)
+        if @currentQueue?
+            @targetKnobs.find("li").removeClass("current")
+                .filter("[data-name='#{@currentQueue?.target}']").addClass("current")
+            @targetContents.find(".action-use").prop(disabled: false)
+            @targetContents.find(".target[data-name='#{@currentQueue?.target}']").find(".action-use").prop(disabled: true)
         # show current target tab if none active
         if true or @targetContents.find(".pill-pane.active").length is 0
             t = @targetKnobs?.find("li.current a")
@@ -1962,7 +1992,7 @@ class StatusTable extends CompositeElement
         super @baseElement
         @queueName = null
         @queueId = null
-        @queueStats = null
+        @currentQueue = null
 
         # intialize UI and hook events
         $(window).resize(_.throttle @maximizeDataTable, 100)
@@ -1987,13 +2017,13 @@ class StatusTable extends CompositeElement
                 # scroll to the runs of interest and update selection
                 switch action
                     when "prioritize"
-                        row = (@queueStats.numDone + @queueStats.numFailed)
+                        row = (@currentQueue.numDone + @currentQueue.numFailed)
                         # @selectedRuns = {...} # TODO select the first runs
                     when "duplicate"
-                        row = (@queueStats.numTotal)
+                        row = (@currentQueue.numTotal)
                         # @selectedRuns = {...} # TODO select newly added runs
                     when "postpone"
-                        row = (@queueStats.numTotal)
+                        row = (@currentQueue.numTotal)
                         # @selectedRuns = {...} # TODO select the last runs
                         # XXX We may not need to do anything for @selectedRuns
                         # if every run were identified by serial.  However that
@@ -2008,7 +2038,7 @@ class StatusTable extends CompositeElement
             )
             # TODO show feedback on failure
 
-    load: (queueName, @queueStats) =>
+    load: (queueName, @currentQueue) =>
         if @dataTable? and @queueName is queueName
             log "status refreshing queue #{queueName}"
             @display true
@@ -2017,7 +2047,6 @@ class StatusTable extends CompositeElement
             @queueName = queueName
             @queueId = "run/queue/#{queueName}"
             do @display
-            @resultsActionPopover?.find(".queue-name").text(@queueId)
 
     @STATES: """
         DONE
@@ -2047,8 +2076,9 @@ class StatusTable extends CompositeElement
             do @dataTable?.focus
             return
 
-        # display the name of the batch
+        # display the name of the queue
         @optionElements.nameDisplay?.text(@queueId)
+        @resultsActionPopover?.find(".queue-name").text(@queueId)
 
         # prepare to distinguish metadata from input parameter columns
         columnNames = (name for name of @conditions.conditions)
