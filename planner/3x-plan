@@ -156,6 +156,7 @@ case $Command in
             done
             echo q
         } | ed "$_3X_QUEUE_DIR"/done >/dev/null
+        # TODO collect from running
         {
             for serial; do
                 [[ $serial -gt $count ]] || continue

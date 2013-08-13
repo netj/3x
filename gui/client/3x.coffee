@@ -1678,7 +1678,7 @@ class QueuesUI extends CompositeElement
                 log "queue #{queueId} #{createOrDelete}"
                 # refresh status table when it's showing the updated queue
                 if @queueOnFocus? and queueId is "run/queue/#{@queueOnFocus}"
-                    @status.load @queueOnFocus
+                    @status.load @queueOnFocus, @queues?[@queueOnFocus]
                 do @refresh
 
             .on "state-update", ([queueId, newStatus]) =>
@@ -1742,6 +1742,7 @@ class QueuesUI extends CompositeElement
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/")
             .success((@queues) =>
                 do @display
+                @status.queueStats = @queues[@status.queueName]
             )
 
     focusQueue: (queueName, e) =>
@@ -1750,7 +1751,7 @@ class QueuesUI extends CompositeElement
             @queueOnFocus = queueName
             @baseElement.find(".queue").removeClass("alert-info")
                 .filter("[data-name='#{queueName}']").addClass("alert-info")
-            @status.load queueName
+            @status.load queueName, @queues[queueName]
             @target.currentTarget = @queues[queueName].target
             do @target.display
 
@@ -1961,6 +1962,7 @@ class StatusTable extends CompositeElement
         super @baseElement
         @queueName = null
         @queueId = null
+        @queueStats = null
 
         # intialize UI and hook events
         $(window).resize(_.throttle @maximizeDataTable, 100)
@@ -1981,9 +1983,32 @@ class StatusTable extends CompositeElement
         $.post("#{_3X_ServiceBaseURL}/api/#{@queueId}:#{action}", {
             runs: JSON.stringify runSerials
         })
+            .success((result) =>
+                # scroll to the runs of interest and update selection
+                switch action
+                    when "prioritize"
+                        row = (@queueStats.numDone + @queueStats.numFailed)
+                        # @selectedRuns = {...} # TODO select the first runs
+                    when "duplicate"
+                        row = (@queueStats.numTotal)
+                        # @selectedRuns = {...} # TODO select newly added runs
+                    when "postpone"
+                        row = (@queueStats.numTotal)
+                        # @selectedRuns = {...} # TODO select the last runs
+                        # XXX We may not need to do anything for @selectedRuns
+                        # if every run were identified by serial.  However that
+                        # is not the case until we migrate queue
+                        # done/running/plan lists to SQLite tables.  It is
+                        # tricky to know the exact serial without passing the
+                        # queue's serial counter value (.count).
+                    when "cancel"
+                        row = null
+                        @selectedRuns = {}
+                @dataTableScroller?.fnScrollToRow row if row?
+            )
             # TODO show feedback on failure
 
-    load: (queueName) =>
+    load: (queueName, @queueStats) =>
         if @dataTable? and @queueName is queueName
             log "status refreshing queue #{queueName}"
             @display true
@@ -2217,6 +2242,8 @@ class StatusTable extends CompositeElement
             .focus()
         do @updateAvailableActionsForSelection
 
+        @dataTableScroller = @dataTable.fnSettings().oScroller
+
     persistSelectedRuns: =>
         localStorage["#{@queueId}SelectedRuns"] =
             JSON.stringify @selectedRuns
@@ -2239,10 +2266,10 @@ class StatusTable extends CompositeElement
         )
 
     maximizeDataTable: =>
-        if oScroller = @dataTable?.fnSettings().oScroller
-            oScroller.dom.scroller.style.height =
-                "#{window.innerHeight - $(oScroller.dom.scroller).offset().top}px"
-            oScroller.fnMeasure()
+        if @dataTableScroller?
+            @dataTableScroller.dom.scroller.style.height =
+                "#{window.innerHeight - $(@dataTableScroller.dom.scroller).offset().top}px"
+            @dataTableScroller.fnMeasure()
 
 
     attachToResultsTable: =>
