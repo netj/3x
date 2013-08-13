@@ -43,6 +43,7 @@ RUN_COLUMN_NAME = "run#"
 SERIAL_COLUMN_NAME = "serial#"
 STATE_COLUMN_NAME  = "state#"
 TARGET_COLUMN_NAME  = "target#"
+DETAILS_COLUMN_NAME = "details#"
 
 
 mapReduce = (map, red) -> (rows) ->
@@ -230,7 +231,7 @@ do ->
         (v, rowIdxs, data, col, runColIdx) ->
             if typeof rowIdxs is "number"
                 """
-                <a href="#{_3X_ServiceBaseURL}/#{v}/overview">#{v}</a>
+                <a href="#{_3X_ServiceBaseURL}/#{v}/overview" target="run-details">#{v}</a>
                 """
             else
                 v
@@ -768,7 +769,7 @@ class ResultsTable extends CompositeElement
         </script>
         """)
     @CELL_SKELETON: """
-        {{if ~column.isRunIdColumn}}<a href="{{>~_3X_ServiceBaseURL}}/{{>~value}}/overview">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
+        {{if ~column.isRunIdColumn}}<a href="{{>~_3X_ServiceBaseURL}}/{{>~value}}/overview" target="run-details">{{>~value}}</a>{{else}}{{>~value}}{{/if}}
         """
 
     _enumerateAll: (name) =>
@@ -1065,7 +1066,7 @@ class ResultsTable extends CompositeElement
             pos = $td.position()
             provenancePopover
                 .find(".provenance-link").text(runId)
-                    .attr(href:"#{_3X_ServiceBaseURL}/#{runId}/overview").end()
+                    .attr(href:"#{_3X_ServiceBaseURL}/#{runId}/overview", target: "run-details").end()
                 .removeClass("hide")
                 .css
                     top:  "#{pos.top              - (provenancePopover.height())}px"
@@ -2027,15 +2028,16 @@ class StatusTable extends CompositeElement
 
         # fold any artifacts left by previous DataTables construction
         @dataTable
-           ?.find(".state-detail").tooltip("destroy").end()
+           ?.find(".state-detail").popover("destroy").end()
             .find("tbody").addClass("hide").end()
             .dataTable bDestroy:true
 
         ## define the table structure
         columnDefs = [
-            { sTitle:  "State" , sName: STATE_COLUMN_NAME  , sClass:"state"        , mData: 0, aTargets:[1]                    , sWidth: "100px" }
             { sTitle:      "#" , sName: SERIAL_COLUMN_NAME , sClass:"muted serial" , mData: 1, aTargets:[0]                    , sWidth:  "60px" }
+            { sTitle:  "State" , sName: STATE_COLUMN_NAME  , sClass:"state"        , mData: 0, aTargets:[1]                    , sWidth: "100px" }
             { sTitle: "Target" , sName: TARGET_COLUMN_NAME , sClass:"muted target" , mData: 2, aTargets:[3+columnNames.length] , bVisible: false }
+            { sTitle: "Details", sName: DETAILS_COLUMN_NAME, sClass:"muted details", mData: 4, aTargets:[4+columnNames.length] , bVisible: false }
             { sTitle:   "run#" , sName: RUN_COLUMN_NAME    , sClass:"muted run"    , mData: 3, aTargets:[2]                    , bVisible: false }
         ]
         i = 0
@@ -2101,29 +2103,34 @@ class StatusTable extends CompositeElement
                     .prepend(" ")
                     .prepend($("<i>").addClass("icon icon-#{StatusTable.ICON_BY_STATE[state]}"))
                     .wrapInner($("<span>").addClass("#{StatusTable.CLASS_BY_STATE[state]}"))
-                # tooltip with run# and other messages
+                # popover with run# and other messages
                 if runId?
                     $state
-                        .wrapInner($("<a/>").attr(href: "#{_3X_ServiceBaseURL}/#{runId}/overview"))
+                        .wrapInner($("<a/>").attr(href: "#{_3X_ServiceBaseURL}/#{runId}/overview", target: "run-details"))
                         .addClass("state-detail")
                         .attr(
-                            title: "#{runId}\n at target #{target}"
-                                # TODO embed error messages here for some states
-                            "data-toggle": "tooltip"
+                            title: runId
+                            "data-content": """
+                                    <p>At <i class="icon icon-flag"></i> target:
+                                        <span class="label label-info">#{target}</span></p>
+                                """ + switch state
+                                when "ABORTED", "FAILED"
+                                    details = aData[columnIndex[DETAILS_COLUMN_NAME]]
+                                    unless details then ""
+                                    else """
+                                        <p class="well well-small text-error"><small><tt>
+                                            #{
+                                                details.replace /\n/g, "<br>"
+                                            }
+                                        </tt></small></p>
+                                    """
+                                else ""
+                            "data-html": "true"
+                            "data-toggle": "popover"
+                            "data-trigger": "hover"
                             "data-placement": "left"
                             "data-container": ".dataTables_wrapper"
-                        ).tooltip("hide")
-                        # TODO use popover instead of tooltip?
-                        #$("<span/>").addClass("state-detail").attr(
-                        #    title: runId
-                        #    "data-html": true
-                        #    "data-trigger": "hover"
-                        #    "data-container": ".state-detail"
-                        #    "data-content": """
-                        #            <a href="#{_3X_ServiceBaseURL}/#{runId}/overview">See Details</a>
-                        #        """
-                        #    # TODO embed error messages here for some states
-                        #)
+                        ).popover("hide")
             fnInitComplete: =>
                 @dataTable.find("tbody").removeClass("hide")
                 do @maximizeDataTable
@@ -2131,7 +2138,7 @@ class StatusTable extends CompositeElement
                 loadingIndicator.hide()
 
         # better loading progress indicator on scroll
-        # + preventing tooltip from appearing when scrolling
+        # + preventing popover from appearing when scrolling
         # See: http://stackoverflow.com/a/9144827/390044
         dtWrapper =
         @dataTable.closest(".dataTables_wrapper")
@@ -2157,15 +2164,15 @@ class StatusTable extends CompositeElement
             .addClass("loading")
             .find(".dataTables_scrollBody")
                 .on("scroll", (_.debounce =>
-                        @dataTable.find(".state-detail").tooltip("destroy")
+                        @dataTable.find(".state-detail").popover("destroy")
                         dtScrollBG.addClass("loading")
                         loadingIndicator.show()
                     , 250, true))
                 .on("scroll", (_.debounce =>
                         loadingIndicator.hide()
                         dtScrollBG.removeClass("loading")
-                        dtWrapper.find(".tooltip").remove()
-                        @dataTable.find(".state-detail").tooltip("hide")
+                        dtWrapper.find(".popover").remove()
+                        @dataTable.find(".state-detail").popover("hide")
                     , 250))
             .end()
 

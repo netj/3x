@@ -34,6 +34,7 @@ RUN_COLUMN_NAME = "run#"
 STATE_COLUMN_NAME = "state#"
 SERIAL_COLUMN_NAME = "serial#"
 TARGET_COLUMN_NAME = "target#"
+DETAILS_COLUMN_NAME = "details#"
 
 # use text/plain MIME type for 3X artifacts in run/
 express.static.mime.define
@@ -456,12 +457,32 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
                         .join ([line]) -> next (+line?.trim())
         ], (err, [table, totalCount, filteredCount]) ->
             unless err
-                res.json
-                    sEcho: req.param("sEcho")
-                    iTotalRecords: totalCount
-                    iTotalDisplayRecords: totalCount # FIXME filteredCount
-                    aColumnNames: table.names
-                    aaData: table.rows
+                # attach details for erroneous runs
+                runIdColumn = table.names.indexOf RUN_COLUMN_NAME
+                stateColumn = table.names.indexOf STATE_COLUMN_NAME
+                detailsColumn = table.names.indexOf DETAILS_COLUMN_NAME
+                if detailsColumn is -1
+                    detailsColumn = table.names.length
+                    table.names.push DETAILS_COLUMN_NAME
+                erroneousRows =
+                    for row,i in table.rows when row[stateColumn] is "ABORTED" # TODO in ["ABORTED, "FAILED"]
+                        [i, row[runIdColumn], row[stateColumn]]
+                async.parallel (
+                    for [i, runId] in erroneousRows
+                        (next) -> fs.readFile "#{_3X_ROOT}/#{runId}/target.aborted", next
+                ), (err, details) ->
+                    if err
+                        util.log err
+                        res.send 500, (err?.join "\n") ? err
+                        return
+                    for [i],j in erroneousRows
+                        table.rows[i][detailsColumn] = String details[j]
+                    res.json
+                        sEcho: req.param("sEcho")
+                        iTotalRecords: totalCount
+                        iTotalDisplayRecords: totalCount # FIXME filteredCount
+                        aColumnNames: table.names
+                        aaData: table.rows
 
 app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
     [queueName, action] = req.params
