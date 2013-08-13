@@ -1795,7 +1795,8 @@ class QueuesUI extends CompositeElement
             $queuesList = $("<ul>")
                 .addClass("clearfix unstyled")
                 .appendTo(@baseElement)
-                .sortable()
+                .sortable
+                    distance: 5
         progressGroups = ["Done", "Failed", "Aborted", "Running", "Planned"]
         MIN_VISIBLE_RATIO = 0.05
         for name,i in queueNames when @queues[name]?
