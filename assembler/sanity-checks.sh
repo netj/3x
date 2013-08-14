@@ -57,10 +57,10 @@ extractUnitFromName() {
     local un=${1:-}
     case $Name in
         *"("*")"*)
-            local afterUnit=${Name#*)}
+            local afterUnit=${Name#*")"}
             Unit=${Name#*"("}
             Unit=${Unit%%")"*}
-            Name="${Name%%(*}$afterUnit"
+            Name="${Name%%"("*}$afterUnit"
             ;;
         *) # assign default unit when not found
             Unit=$un
@@ -72,8 +72,8 @@ extractTypeFromName() {
     local ty=${1:-}
     case $Name in
         *:*)
-            Type=${Name#*:}
-            Name=${Name%:$Type}
+            Type=${Name#*":"}
+            Name=${Name%":$Type"}
             ;;
         *) # assign default type when not found
             Type=$ty

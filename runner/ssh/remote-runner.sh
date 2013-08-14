@@ -14,32 +14,32 @@ parseRemote() {
         error "$_3X_TARGET: target has no remote defined")}
     case $remote in
         ssh://?(+([^@:/])@)+([^@:/])?(:+([0-9]))/*)
-            local remoteUserHostPortRoot=${remote#ssh://}
-            remoteRoot=${remoteUserHostPortRoot#*/}
+            local remoteUserHostPortRoot=${remote#"ssh://"}
+            remoteRoot=${remoteUserHostPortRoot#*"/"}
             case $remoteRoot in
                 "~"*) ;;
                 *) remoteRoot="/$remoteRoot" ;;
             esac
 
-            local remoteUserHostPort=${remoteUserHostPortRoot%/$remoteRoot}
-            local remoteHostPort=${remoteUserHostPort#*@}
-            remoteUser=${remoteUserHostPort%$remoteHostPort}
-            remoteUser=${remoteUser%@}
-            remoteHost=${remoteHostPort%:*}
-            remotePort=${remoteHostPort#$remoteHost}
-            remotePort=${remotePort#:}
+            local remoteUserHostPort=${remoteUserHostPortRoot%"/$remoteRoot"}
+            local remoteHostPort=${remoteUserHostPort#*"@"}
+            remoteUser=${remoteUserHostPort%"$remoteHostPort"}
+            remoteUser=${remoteUser%"@"}
+            remoteHost=${remoteHostPort%":"*}
+            remotePort=${remoteHostPort#"$remoteHost"}
+            remotePort=${remotePort#":"}
             return 0
             ;;
         +([^:])://*) # other URLs are not allowed
             ;;
         ?(+([^@:])@)+(+([^@:]))?(:*))
-            local remoteUserHost=${remote%%:*}
-            remoteRoot=${remote#$remoteUserHost}
-            remoteRoot=${remoteRoot#:}
-            remoteRoot=${remoteRoot:-.}
-            remoteHost=${remoteUserHost#*@}
-            remoteUser=${remoteUserHost%$remoteHost}
-            remoteUser=${remoteUser%@}
+            local remoteUserHost=${remote%%":"*}
+            remoteRoot=${remote#"$remoteUserHost"}
+            remoteRoot=${remoteRoot#":"}
+            remoteRoot=${remoteRoot:-"."}
+            remoteHost=${remoteUserHost#*"@"}
+            remoteUser=${remoteUserHost%"$remoteHost"}
+            remoteUser=${remoteUser%"@"}
             remotePort= # no port can be specified in this syntax
             return 0
             ;;

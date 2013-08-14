@@ -128,16 +128,16 @@ trap "rm -rf $tmp" EXIT
                     extract)
                         WHITESPACE=$'[ \t]'
                         LDELIM='{{' MDELIM='=~' RDELIM='}}'
-                        regexpBefore=${arg%%$LDELIM*}
-                        rest=${arg#$regexpBefore$LDELIM}
+                        regexpBefore=${arg%%"$LDELIM"*}
+                        rest=${arg#"$regexpBefore$LDELIM"}
                         rest=${rest/#+([ 	])/}
-                        Name=${rest%%$MDELIM*}
-                        rest=${rest#$Name$MDELIM}
+                        Name=${rest%%"$MDELIM"*}
+                        rest=${rest#"$Name$MDELIM"}
                         rest=${rest/#+([ 	])/}
                         Name=${Name/%+([ 	])/}
-                        regexp=${rest%%$RDELIM*}
+                        regexp=${rest%%"$RDELIM"*}
                         regexp=${regexp/%+([ 	])/}
-                        regexpAfter=${rest#*$RDELIM}
+                        regexpAfter=${rest#*"$RDELIM"}
                         how+=("$regexpBefore" "$regexp" "$regexpAfter")
                         # TODO support multiple Names in a single extract pattern
                         extractUnitFromName
@@ -147,8 +147,8 @@ trap "rm -rf $tmp" EXIT
                         ;;
 
                     file)
-                        Name=${arg%%=*}
-                        how+=("${arg#$Name=}")
+                        Name=${arg%%"="*}
+                        how+=("${arg#"$Name="}")
                         extractUnitFromName
                         extractTypeFromName
                         checkIfNameIsSane "$Name" "--outputs $Name"
