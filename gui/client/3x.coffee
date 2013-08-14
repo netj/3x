@@ -1743,6 +1743,7 @@ class QueuesUI extends CompositeElement
         # TODO loading feedback
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/")
             .success((@queues) =>
+                # TODO trigger "queue-refreshed" event to decouple @status and @target from QueuesUI and let them manage things on their own
                 if @queueOnFocus?
                     @status.currentQueue =
                     @target.currentQueue =
@@ -1852,7 +1853,7 @@ class QueuesUI extends CompositeElement
                     .find(".queue-start").toggleClass("hide",     isActive).end()
                     .find(".queue-stop" ).toggleClass("hide", not isActive).end()
                     .find(".queue-reset")
-                        .toggleClass("hide", queue.numRunning is 0)
+                        .toggleClass("hide", (queue.numRunning + queue.numAborted) is 0)
                         .attr(title:
                             if isActive then "Stop this queue and clean up"
                             else "Clean up runs that were executing"
@@ -2010,7 +2011,7 @@ class StatusTable extends CompositeElement
 
     doStatusAction: (selectedRuns, action) =>
         runSerials = (serial for serial of selectedRuns when not StatusTable.CODE_BY_STATE[serial]?)
-        $.post("#{_3X_ServiceBaseURL}/api/#{@queueId}:#{action}", {
+        $.post("#{_3X_ServiceBaseURL}/api/run/queue/#{@currentQueue.queue}:#{action}", {
             runs: JSON.stringify runSerials
         })
             .success((result) =>
