@@ -2,7 +2,8 @@ extends layout
 
 block content
 
-  - function sanitizeId(s) { return s.replace(/[^_A-Za-z0-9-]/, "-"); }
+  - function sanitizeId(s) { return s.replace(/[^_A-Za-z0-9-]/g, "-"); }
+  - function insertShys(s) { return s.replace(/([^_A-Za-z0-9-])/g, "$1&shy;"); }
 
   div.span2
     div.span2.bs-docs-sidebar
@@ -21,7 +22,7 @@ block content
               a(href='##{sanitizeId(file)}')
                 i.icon-chevron-right
                 = " "
-                = file
+                = insertShys(file)
 
   div#main.span10.run-overview
 

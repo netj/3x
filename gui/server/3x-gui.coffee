@@ -47,7 +47,7 @@ express.static.mime.define
 
 RUN_OVERVIEW_FILENAMES = """
     input output
-    target.aborted outputs.failure
+    target.aborted outputs.failed
     exitstatus stderr stdout
     stdin args env
     rusage assembly
@@ -129,30 +129,37 @@ app.get "/run/*/overview", (req, res) ->
             if err then next null, null
             else next null, contents
     async.parallel [
-        (next) -> async.map ("#{_3X_ROOT}/#{runId}/#{filename}" for filename in RUN_OVERVIEW_FILENAMES), readFileIfExists, next
         getInputs  res, "-ut"
         getOutputs res, "-ut"
-    ], (err, [results, inputs, outputs]) ->
-        files = {}
-        for filename,i in RUN_OVERVIEW_FILENAMES
-            files[filename] = results[i]
-        parseKeyValuePairs = (lines, map) ->
-            for kvp in String(lines).split /\n+/ when (m = /// ([^=]+) = (.*) ///.exec kvp)?
-                ty = map[m[1]]?.type
-                name: m[1]
-                value: m[2]
-                type: ty
-                unit: map[m[1]]?.unit
-                presentation: (
-                    if /// ^image/.* ///.test ty then "image"
-                    else if /// .* / .* ///.test ty then "file"
-                    else "scalar"
-                )
-        input  = parseKeyValuePairs files.input,  inputs
-        output = parseKeyValuePairs files.output, outputs
-        delete files.input
-        delete files.output
-        res.render "run-overview", {_3X_DESCRIPTOR, title:runId, runId, files, input, output}
+    ], (err, [inputs, outputs]) ->
+        filenames = RUN_OVERVIEW_FILENAMES.slice(0)
+        # add output extractor stderrs after outputs.failed
+        filenames.splice (filenames.indexOf "outputs.failed") + 1, 0,
+            ("outputs/#{outputName}/stderr" for outputName of outputs)...
+        paths = 
+            for filename in filenames
+                "#{_3X_ROOT}/#{runId}/#{filename}"
+        async.map paths, readFileIfExists, (err, results) ->
+            files = {}
+            for filename,i in filenames
+                files[filename] = results[i]
+            parseKeyValuePairs = (lines, map) ->
+                for kvp in String(lines).split /\n+/ when (m = /// ([^=]+) = (.*) ///.exec kvp)?
+                    ty = map[m[1]]?.type
+                    name: m[1]
+                    value: m[2]
+                    type: ty
+                    unit: map[m[1]]?.unit
+                    presentation: (
+                        if /// ^image/.* ///.test ty then "image"
+                        else if /// .* / .* ///.test ty then "file"
+                        else "scalar"
+                    )
+            input  = parseKeyValuePairs files.input,  inputs
+            output = parseKeyValuePairs files.output, outputs
+            delete files.input
+            delete files.output
+            res.render "run-overview", {_3X_DESCRIPTOR, title:runId, runId, files, input, output}
 
 
 # Override content type for run directory
