@@ -39,6 +39,7 @@ if [ -s exitstatus -a -e execute.sh -a ! -x execute.sh ]; then
             v=$(
                 # running extractor under the same env
                 export $(cat ./env) _3X_MEASURE=${ox%/$_3X_API_EXTRACTOR}
+                PATH="$PATH:$TOOLSDIR"
                 if "$ox" 2>"$oerr"; then
                     # only keep non-empty stderr logs
                     [ -s "$oerr" ] || rm -f "$oerr"
