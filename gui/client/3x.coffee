@@ -705,7 +705,6 @@ class ResultsTable extends CompositeElement
         if @optionElements.containerForStateDisplay?
             @on "renderBegan processingBegan", => @optionElements.containerForStateDisplay?.addClass("displaying")
             @on "renderEnded", => @optionElements.containerForStateDisplay?.removeClass("displaying")
-        do @displayProcessed # initializing results table with empty data first
         $(window).resize(_.throttle @maximizeDataTable, 100)
             .resize(_.debounce (=> @display true), 500)
         @conditions.on("activeMenuItemsChanged", @load)
@@ -2496,6 +2495,7 @@ $ ->
                 containerForStateDisplay    : $("#results")
                 buttonRefresh               : $("#results-refresh")
             _3X_.results.load()
+                .success(-> # XXX always load chart after results table, since timing issues may happen otherwise
             # chart
             _3X_.chart = new ResultsChart $("#chart-body"),
                 $("#chart-type"), $("#chart-axis-controls"), _3X_.results,
@@ -2507,6 +2507,7 @@ $ ->
                 toggleOriginX           : $("#chart-toggle-origin-x")
                 toggleOriginY1          : $("#chart-toggle-origin-y1")
                 toggleOriginY2          : $("#chart-toggle-origin-y2")
+            )
             # queue status
             _3X_.status = new StatusTable $("#status-table"), _3X_.conditions,
                 nameDisplay : $("#status-name")
