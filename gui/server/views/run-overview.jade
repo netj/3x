@@ -35,9 +35,13 @@ block content
             tr
               td= i.name
               th
-                span.value= i.value
-                if i.unit
-                  small.unit  (#{i.unit})
+                if i.value.length == 0
+                  span.value.null
+                    i.muted N/A
+                else
+                  span.value= i.value
+                  if i.value.length && i.unit
+                    small.unit  (#{i.unit})
 
     div.row-fluid(id='output')
       h3
@@ -48,16 +52,20 @@ block content
             tr
               td= o.name
               th
-                case o.presentation
-                  when "image"
-                    img(src='workdir/#{o.value}', alt='#{o.value}')
-                  when "file"
-                    a(href='workdir/#{o.value}')= o.value
-                  // when "scalar"
-                  default
-                    span.value= o.value
-                    if o.unit
-                      small.unit  (#{o.unit})
+                if o.value.length == 0
+                  span.value.null
+                    i.muted N/A
+                else
+                  case o.presentation
+                    when "image"
+                      img(src='workdir/#{o.value}', alt='#{o.value}')
+                    when "file"
+                      a(href='workdir/#{o.value}')= o.value
+                    // when "scalar"
+                    default
+                      span.value= o.value
+                      if o.unit
+                        small.unit  (#{o.unit})
 
     each content,file in files
       if content
