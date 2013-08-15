@@ -47,8 +47,10 @@ express.static.mime.define
 
 RUN_OVERVIEW_FILENAMES = """
     input output
-    target.aborted outputs.failed
-    exitstatus stderr stdout
+    target.aborted
+    exitstatus stderr
+    outputs.failed
+    stdout
     stdin args env
     rusage assembly
     target.name target/type
