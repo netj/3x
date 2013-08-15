@@ -400,10 +400,11 @@ class CompositeElement
         @deferredDisplay ?= $.Deferred()
         @deferredDisplayArgs = args if args.length > 0
         if @baseElement.is(":visible")
+            # TODO if @isRendering then reserve a quick rerendering after the current @render finishes?
             unless @isRendering
+                @isRendering = yes
                 _.defer =>
                     log "#{@baseElement.prop("id")}: renderBegan"
-                    @isRendering = yes
                     @trigger "renderBegan"
                     _.delay =>
                         @render (@deferredDisplayArgs ? [])...
