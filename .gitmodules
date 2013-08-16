@@ -3,7 +3,7 @@
 	url = https://github.com/netj/buildkit.git
 [submodule "gui/bootstrap"]
 	path = gui/bootstrap
-	url = git://github.com/twitter/bootstrap.git
+	url = https://github.com/twbs/bootstrap.git
 [submodule "gui/Font-Awesome"]
 	path = gui/Font-Awesome
 	url = https://github.com/FortAwesome/Font-Awesome.git
@@ -16,6 +16,9 @@
 [submodule "gui/jquery-ui"]
 	path = gui/jquery-ui
 	url = https://github.com/jquery/jquery-ui.git
+[submodule "gui/jquery.appear"]
+	path = gui/jquery.appear
+	url = https://github.com/morr/jquery.appear.git
 [submodule "gui/DataTables"]
 	path = gui/DataTables
 	url = https://github.com/DataTables/DataTables.git
@@ -28,12 +31,9 @@
 [submodule "gui/DataTables.RowReorder"]
 	path = gui/DataTables.RowReorder
 	url = https://github.com/netj/DataTables.RowReorder.git
-[submodule "gui/d3"]
-	path = gui/d3
-	url = git://github.com/mbostock/d3.git
-[submodule "gui/jquery.appear"]
-	path = gui/jquery.appear
-	url = https://github.com/morr/jquery.appear.git
 [submodule "gui/DataTables.Scroller"]
 	path = gui/DataTables.Scroller
 	url = https://github.com/netj/DataTables.Scroller.git
+[submodule "gui/d3"]
+	path = gui/d3
+	url = https://github.com/mbostock/d3.git
