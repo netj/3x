@@ -4,5 +4,9 @@
 .build
 /@prefix@
 /3x-*.sh
+/.depends/*
+!/.depends/*.commands
+!/.depends/*.paths
+!/.depends/*.sh
 
 /test*

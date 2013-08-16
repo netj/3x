@@ -64,7 +64,11 @@ cd "$clientDst"
 
 # build bootstrap
 [ -s bootstrap.js ] || {
-    make -C $clientSrc/../bootstrap bootstrap
+    (
+    cd $clientSrc/../bootstrap
+    npm install
+    make bootstrap
+    )
     mkdir -p bootstrap/js
     mv -f $clientSrc/../bootstrap/bootstrap/js/bootstrap.js .
     rm -rf $clientSrc/../bootstrap/bootstrap

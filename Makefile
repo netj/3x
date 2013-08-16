@@ -11,7 +11,7 @@ export DATADIR        := data
 export GUIDIR         := gui
 export DOCSDIR        := docs
 
-#DEPENDSDIR := .depends
+DEPENDSDIR := .depends
 
 PACKAGENAME := 3x
 PACKAGEEXECUTES := bin/3x
