@@ -3,7 +3,7 @@
 " Created: 2013-01-22
 
 let $SourceRoot = expand("<sfile>:h")
-let modules = split("shell setup assembler planner batch runner results gui docs")
+let modules = split("assembler docs gui planner results runner setup shell")
 
 let $_3X_ROOT = $SourceRoot."/test-exp"
 
