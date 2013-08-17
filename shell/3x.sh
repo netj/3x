@@ -60,6 +60,7 @@ if [ -z "${_3X_HOME:-}" ]; then
     # Keep a backup of some environment variables
     for v in PATH NODE_PATH
     do  vbak=_3X_ORIG_$v
+          declare -p $v    &>/dev/null || continue
         ! declare -p $vbak &>/dev/null || continue
         export $vbak=${!v}
     done
