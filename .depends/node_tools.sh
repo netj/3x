@@ -10,6 +10,7 @@ cd "$DEPENDSDIR"
 mkdir -p "$name"
 cd ./"$name"
 cp -f ../"$name".json package.json
+rm -rf node_modules
 date >README.md
 npm install
 cd - >/dev/null

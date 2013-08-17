@@ -24,22 +24,24 @@ npm install
     dir_easy_install="$PWD/python-packages.easy_install"
     export PYTHONPATH="$dir_pypkgs"
     mkdir -p -- "$dir_pypkgs"
-    type easy_install &>/dev/null || {
+    python_version=$(python -V 2>&1 | sed 's/.*Python \([0-9]*\.[0-9]*\).*/\1/')
+    easy_install=easy_install-$python_version
+    type $easy_install &>/dev/null || {
         # use a local copy of easy_install
         export PYTHONPATH="$dir_easy_install:$PYTHONPATH"
         export PATH="$dir_easy_install:$PATH"
-        type easy_install &>/dev/null || {
+        type $easy_install &>/dev/null || {
             # install a local copy of easy_install
             mkdir -p -- "$dir_easy_install"
             curl -s http://peak.telecommunity.com/dist/ez_setup.py |
             python -- - --install-dir "$dir_easy_install"
-            type easy_install &>/dev/null || {
-                echo >&2 "easy_install: command not found"
+            type $easy_install &>/dev/null || {
+                echo >&2 "$easy_install: command not found"
                 exit 127
             }
         }
     }
-    easy_install --install-dir "$dir_pypkgs" --always-copy \
+    $easy_install --install-dir "$dir_pypkgs" --always-copy \
         watchdog \
         #
 }
