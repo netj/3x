@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -eu
+
+mkdir -p .build
+cd .build
+
+# compile a runtime dependency checker
+mkdir -p runtime
+cp -f ../runtime/* runtime/
+generate-depends-checker ../runtime >runtime/.check
+chmod +x runtime/.check
+
+# prepare embedded dependencies
+export DEPENDSDIR=embedded
+mkdir -p "$DEPENDSDIR"
+without-comments ../embedded.conf |
+while read -r dep; do
+    cp -f ../embedded/"$dep".* "$DEPENDSDIR"/
+    x="$DEPENDSDIR/$dep".sh
+    [ -x "$x" ] || continue
+    "$x"
+done

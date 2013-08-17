@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# check-runtime-depends-once -- Check runtime dependencies once
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-08-17
+set -eu
+
+cd "$LIBEXECDIR"/depends.runtime
+if ! [ .found -nt .check ]; then
+    DEPENDSDIR=. ./.check >.check.out 2>.check.err ||
+        error "$(cat .check.err)"
+    touch .found
+fi

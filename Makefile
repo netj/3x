@@ -7,6 +7,7 @@ export PATH := $(PWD)/node_modules/.bin:$(PATH)
 export BINDIR         := bin
 export TOOLSDIR       := tools
 export LIBDIR         := lib
+export LIBEXECDIR     := libexec
 export DATADIR        := data
 export GUIDIR         := gui
 export DOCSDIR        := docs

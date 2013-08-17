@@ -72,14 +72,29 @@ if [ -z "${_3X_HOME:-}" ]; then
     export DATADIR="$_3X_HOME/@DATADIR@"
     export GUIDIR="$_3X_HOME/@GUIDIR@"
     export LIBDIR="$_3X_HOME/@LIBDIR@"
+    export LIBEXECDIR="$_3X_HOME/@LIBEXECDIR@"
     export DOCSDIR="$_3X_HOME/@DOCSDIR@"
     export NODE_PATH="$LIBDIR/node_modules${NODE_PATH:+:$NODE_PATH}"
-    export PATH="$TOOLSDIR:$LIBDIR/node_modules/.bin:$PATH"
+    insertOptionalPATH() {
+        local dir=
+        for dir; do
+            [ -d "$dir" ] || continue
+            PATH="$dir:$PATH"
+        done
+    }
+    insertOptionalPATH \
+        "$LIBEXECDIR"/depends.runtime/bin \
+        "$LIBEXECDIR"/depends/bin \
+        "$LIBDIR"/node_modules/.bin \
+        #
+    export PATH="$TOOLSDIR:$PATH"
     unset CDPATH
     export SHLVL=0 _3X_LOGLVL=${_3X_LOGLVL:-1}
     # export _3X_LOG_TO_NONTTY=
 fi
 
+# make sure everything we need is available
+check-runtime-depends-once
 
 while getopts "vtq" opt; do
     case $opt in

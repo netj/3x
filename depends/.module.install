@@ -1,0 +1,3 @@
+check-runtime-depends-once      $TOOLSDIR/
+.build/runtime                  $LIBEXECDIR/depends.runtime
+.build/embedded                 $LIBEXECDIR/depends
