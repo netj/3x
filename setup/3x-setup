@@ -67,11 +67,11 @@ trap "rm -rf $tmp" EXIT
         case $what in
             program)
                 echo "$(
-                escape-args-for-shell  3x define $what "${how[@]}"
+                escape-args-for-shell  3x-define $what "${how[@]}"
                 ) || true"
                 ;;
             input|output)
-                escape-args-for-shell  3x define $what \
+                escape-args-for-shell  3x-define $what \
                     "$Name${Unit:+($Unit)}${Type:+:$Type}" "${how[@]}"
                 ;;
             *)
@@ -168,7 +168,8 @@ trap "rm -rf $tmp" EXIT
     # coalesce --inputs  x=a,b  y=c,d  x=e,f,g  -->  x=a,b,e,f,g  y=c,d
     what=input
     if [[ ${#inputArgs[@]} -gt 0 ]]; then
-        eval "set -- $(coalesce-values-by-name = , "${inputArgs[@]}")"
+        inputArgsCoalesced=$(coalesce-values-by-name = , "${inputArgs[@]}")
+        eval "set -- $inputArgsCoalesced"
     else
         set --
     fi
