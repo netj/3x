@@ -43,7 +43,10 @@ express.static.mime.define
         pl py rb js coffee
         c h cc cpp hpp cxx C i ii
         Makefile
-    """.split /\s+/
+        """.split /\s+/
+    "text/x-markdown; charset=UTF-8": """
+        md markdown mkd
+        """.split /\s+/
 
 RUN_OVERVIEW_FILENAMES = """
     input output
@@ -84,9 +87,10 @@ app.configure ->
     app.use express.bodyParser()
     #app.use express.methodOverride()
     app.use app.router
-    app.use "/run", express.static    "#{_3X_ROOT}/run"
-    app.use "/run", express.directory "#{_3X_ROOT}/run"
-    app.use         express.static    "#{__dirname}/../client"
+    app.use "/run/",    express.static    "#{_3X_ROOT}/run/"
+    app.use "/run/",    express.directory "#{_3X_ROOT}/run/"
+    app.use             express.static    "#{__dirname}/../client"
+    app.use "/docs/",   express.static    "#{process.env.DOCSDIR}/"
 
 app.configure "development", ->
     app.use express.errorHandler({ dumpExceptions: true, showStack: true })
@@ -96,31 +100,39 @@ app.configure "production", ->
     app.use express.errorHandler()
     io.set "log level", 0
 
+
+###
+# Some helpers
+###
+
+sendError = (res, err) ->
+    res.send 500, err
+
+isntNull = (x) -> x?
+
+
 ###
 # Some routes
 ###
 
-docsCache = {}
-app.get "/docs/*", (req, res) ->
+## Online documentation with Markdown
+app.get "/docs/*", (req, res, next) ->
     path = req.params[0]
     title = path
     filepath = "#{process.env.DOCSDIR}/#{path}.md"
-    markdown = (filename) ->
-        marked String(fs.readFileSync filename)
-    res.render "docs", {_3X_DESCRIPTOR, title, markdown, path, filepath}
-    #if filepath in docsCache
-    #    respond docsCache[filepath]
-    #else
-    #    fs.readFile filepath, (err, contents) ->
-    #        return res.send 404, "Not found #{err}" if err
-    #        docsCache[filepath] = contents
-    #        respond contents
-
-
-# Redirect to its canonical location when a run is requested via serial of a queue
-app.get "/run/queue/:queueName/runs/:serial", (req, res, next) ->
-    fs.realpath "#{_3X_ROOT}/#{req.path}", (err, path) ->
-        res.redirect path.replace(_3X_ROOT, "")
+    fs.exists filepath, (doesExist) ->
+        if doesExist
+            # use Markdown if possible
+            fs.readFile filepath, (err, content) ->
+                return sendError res, err if err?
+                res.render "docs", {
+                    _3X_DESCRIPTOR, title, path, filepath,
+                    markdown: marked
+                    content: String content
+                }
+        else
+            # or simply serve requested files
+            do next
 
 
 # Show an overview page for runs
@@ -171,8 +183,6 @@ app.get "/run/*", (req, res, next) ->
         res.type "text/plain"
     do next
 
-
-isntNull = (x) -> x?
 
 # convert lines of multiple key=value pairs (or named columns) to an array of
 # arrays with a header array:
@@ -482,7 +492,7 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
                 ), (err, details) ->
                     if err
                         util.log err
-                        res.send 500, (err?.join "\n") ? err
+                        sendError res, err
                         return
                     for [i],j in erroneousRows
                         table.rows[i][detailsColumn] = String details[j]
