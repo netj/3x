@@ -80,7 +80,20 @@ case $cmd in
             pids="$pid $(get-pid || true)"
             echo $pids >$pidfile
             echo $port >$portfile
-            msg "3X GUI started at $url"
+            started=false
+            for ((i=0; $i<10; i++)); do
+                if nc -z localhost $port &>/dev/null; then
+                    started=true; break
+                else
+                    sleep 0.1
+                fi
+            done
+            if $started; then
+                msg "3X GUI started at $url"
+            else
+                cat >&2 $logfile
+                error "3X GUI could not be started"
+            fi
         else
             url="http://$host:$port/"
         fi
@@ -89,7 +102,6 @@ case $cmd in
         # and launch web browser on known platforms
         case $(uname) in
             Darwin) # Mac
-                until nc -z localhost $port &>/dev/null; do sleep 0.1; done
                 open "$url"
                 ;;
         esac
