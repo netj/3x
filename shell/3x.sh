@@ -94,7 +94,7 @@ if [ -z "${_3X_HOME:-}" ]; then
 fi
 
 # make sure everything we need is available
-check-runtime-depends-once
+check-runtime-deps-once
 
 while getopts "vtq" opt; do
     case $opt in
