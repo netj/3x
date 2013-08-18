@@ -28,9 +28,6 @@
 [submodule "gui/DataTables.ColReorder"]
 	path = gui/DataTables.ColReorder
 	url = https://github.com/netj/DataTables.ColReorder.git
-[submodule "gui/DataTables.RowReorder"]
-	path = gui/DataTables.RowReorder
-	url = https://github.com/netj/DataTables.RowReorder.git
 [submodule "gui/DataTables.Scroller"]
 	path = gui/DataTables.Scroller
 	url = https://github.com/netj/DataTables.Scroller.git

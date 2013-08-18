@@ -41,6 +41,5 @@ jquery-ui/ui/jquery.ui.widget.js                                                
 jquery-ui/ui/jquery.ui.mouse.js                                                         $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.selectable.js                                                    $GUIDIR/client/resource/
 jquery-ui/ui/jquery.ui.sortable.js                                                      $GUIDIR/client/resource/
-DataTables.RowReorder/media/js/jquery.dataTables.rowReordering.js                       $GUIDIR/client/resource/
 
 d3/d3.js                                                $GUIDIR/client/resource/
