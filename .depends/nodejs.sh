@@ -3,6 +3,8 @@
 set -eu
 
 version=v0.10.16
+sha1sum=80c45c1850b1ecc6237b6b587f469da8ef743876
+md5sum=b8d9ac16c4d6eea1329e018fbca63e50
 
 self=$0
 name=`basename "$0" .sh`
@@ -23,11 +25,13 @@ prefix="$name"/prefix
 
 mkdir -p "$name"
 cd ./"$name"
-set -x
 
-# fetch nodejs source
-curl -C- -RLO "http://nodejs.org/dist/${version}/node-${version}.tar.gz"
-tar xfz "node-${version}.tar.gz"
+# fetch nodejs source if necessary and prepare source tree
+tarball="node-${version}.tar.gz"
+[ x"$(sha1sum <"$tarball" 2>/dev/null)" = x"$sha1sum  -" ] ||
+[ x"$(md5 <"$tarball" 2>/dev/null)" = x"$md5sum" ] ||
+    curl -C- -RLO "http://nodejs.org/dist/${version}/$tarball"
+tar xfz "$tarball"
 cd ./"node-${version}"
 
 # configure and build
