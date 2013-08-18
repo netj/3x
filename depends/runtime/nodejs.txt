@@ -1,0 +1,3 @@
+nodejs installation is required.
+
+See http://nodejs.org for how to install it on your system.
