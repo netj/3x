@@ -8,7 +8,7 @@ cd .build
 # compile a runtime dependency checker
 mkdir -p runtime
 rsync -rlH ../runtime/ --exclude=*.{commands,paths,test.sh,sh,txt} runtime/ --delete
-generate-depends-checker ../runtime "Missing dependency: " >runtime/.check
+generate-depends-checker ../runtime "Missing dependency: " "3X " >runtime/.check
 chmod +x runtime/.check
 
 # prepare embedded dependencies
