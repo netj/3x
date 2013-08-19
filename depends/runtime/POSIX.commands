@@ -1,0 +1,6 @@
+# commands that aren't included in GNU coreutils
+diff
+column
+xargs
+find
+ps

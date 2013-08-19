@@ -24,10 +24,3 @@ comm
 
 date
 kill
-
-# non GNU coreutils
-diff
-column
-xargs
-find
-ps

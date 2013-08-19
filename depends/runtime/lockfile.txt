@@ -1,0 +1,12 @@
+Any of the following file locking command is required:
+
+ * lockfile
+    from procmail (http://www.procmail.org)
+
+ * dotlockfile
+    from the liblockfile package in Homebrew for Mac
+      or the liblockfile-bin package in Debian/Ubuntu
+
+ * lockfile-create and lockfile-remove
+    from lockfile-progs package in Debian/Ubuntu
+
