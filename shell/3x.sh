@@ -82,12 +82,13 @@ if [ -z "${_3X_HOME:-}" ]; then
             PATH="$dir:$PATH"
         done
     }
+    PATH="$LIBEXECDIR/depends.runtime/bin:$PATH"
     insertOptionalPATH \
-        "$LIBEXECDIR"/depends.runtime/bin \
         "$LIBEXECDIR"/depends/bin \
         "$LIBDIR"/node_modules/.bin \
         #
-    export PATH="$TOOLSDIR:$PATH"
+    PATH="$TOOLSDIR:$PATH"
+    export PATH
     unset CDPATH
     export SHLVL=0 _3X_LOGLVL=${_3X_LOGLVL:-1}
     # export _3X_LOG_TO_NONTTY=
