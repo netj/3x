@@ -15,7 +15,7 @@ chmod +x runtime/.check
 embeddir=embedded
 dependsdir=embedded.build
 mkdir -p "$embeddir" "$dependsdir"
-without-comments ../embedded.conf |
+without-comments ../embed.conf |
 while read -r dep; do
     echo "### Preparing for embedding dependency $dep"
     prepared="$dependsdir/$dep"
