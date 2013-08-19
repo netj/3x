@@ -7,6 +7,8 @@
 /.depends/*
 !/.depends/*.commands
 !/.depends/*.paths
+!/.depends/*.test.sh
 !/.depends/*.sh
+!/.depends/*.depends
 
 /test*

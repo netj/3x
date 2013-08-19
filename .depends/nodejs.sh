@@ -36,7 +36,7 @@ cd ./"node-${version}"
 
 # configure and build
 $python ./configure --prefix="$PWD/../../$prefix"
-make -j install PORTABLE=1
+make -j $(nproc 2>/dev/null) install PORTABLE=1
 
 cd ../..
 }
