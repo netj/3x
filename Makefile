@@ -16,6 +16,7 @@ DEPENDSDIR := .depends
 
 PACKAGENAME := 3x
 PACKAGEEXECUTES := bin/3x
+PACKAGEVERSIONSUFFIX := -$(shell uname)-$(shell uname -m)
 
 include buildkit/modules.mk
 
