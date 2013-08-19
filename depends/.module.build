@@ -11,25 +11,26 @@ rsync -rlH ../runtime/ --exclude=*.{commands,paths,test.sh,sh,txt} runtime/ --de
 generate-depends-checker ../runtime "Missing dependency: " "3X " >runtime/.check
 chmod +x runtime/.check
 
-# prepare embedded dependencies
-embeddir=embedded
-dependsdir=embedded.build
-mkdir -p "$embeddir" "$dependsdir"
-without-comments ../embed.conf |
+# prepare bundled dependencies
+bundledir=bundled
+prepdir=bundled.prep
+rm -rf "$bundledir"
+mkdir -p "$bundledir" "$prepdir"
+without-comments ../bundle.conf |
 while read -r dep; do
-    echo "### Preparing for embedding dependency $dep"
-    prepared="$dependsdir/$dep"
+    echo "### Preparing for bundling dependency $dep"
+    prepared="$prepdir/$dep"
     # reuse prepared dependency if available
-    if [ -L ../embedded/"$dep".sh ]; then
-        origin=$(dirname "$(readlink ../embedded/"$dep".sh)")
+    if [ -L ../bundled/"$dep".sh ]; then
+        origin=$(dirname "$(readlink ../bundled/"$dep".sh)")
         # TODO keep some sort of flag to indicate a complete dependency
         prepared="$origin/$dep"
         echo "# Reusing $prepared for dependency $dep"
     fi
     # otherwise, prepare the dependency
     if ! [ -d "$prepared" ]; then
-        rsync -rlH ../embedded/"$dep".* --exclude=/*.embed.sh "$dependsdir"/ --delete
-        prep="$dependsdir/$dep".sh
+        rsync -rlH ../bundled/"$dep".* --exclude=/*.bundle.sh "$prepdir"/ --delete
+        prep="$prepdir/$dep".sh
         if [ -x "$prep" ]; then
             echo "# Preparing dependency $dep"
             "$prep"
@@ -39,13 +40,13 @@ while read -r dep; do
         echo >&2 "Unable to prepare dependency $dep"
         false
     fi
-    # then, embed only the necessary files
-    embed=../embedded/"$dep".embed.sh
-    if [ -x "$embed" ]; then
-        echo "# Using custom embedding rule for dependency $dep"
-        "$embed" "$prepared" "$embeddir"/
+    # then, bundle only the necessary files
+    bundle=../bundled/"$dep".bundle.sh
+    if [ -x "$bundle" ]; then
+        echo "# Using custom bundling rule for dependency $dep"
+        "$bundle" "$prepared" "$bundledir"/
     else
-        echo "# Embedding everything prepared for dependency $dep"
-        rsync -aH "$prepared" "$embeddir"/ --delete
+        echo "# Bundling everything prepared for dependency $dep"
+        rsync -aH "$prepared" "$bundledir"/ --delete
     fi
 done
