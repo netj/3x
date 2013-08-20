@@ -1,1 +1,3 @@
-tutorial.md                 $DOCSDIR/
+tutorial.md                                 $DOCSDIR/
+examples/sorting-algos/program/sort.py      $DOCSDIR/examples/sorting-algos/program/
+examples/sorting-algos/program/measure.py   $DOCSDIR/examples/sorting-algos/program/

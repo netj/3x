@@ -25,8 +25,8 @@ def bubbleSort(A):
         n -= 1
 
     return {
-            "#comparisons" : numComp,
-            "#accesses"    : numAccess,
+            "number of compares" : numComp,
+            "number of accesses"    : numAccess,
             }
 
 
@@ -51,8 +51,8 @@ def selectionSort(A):
         swap(A, i, k)
 
     return {
-            "#comparisons" : numComp,
-            "#accesses"    : numAccess,
+            "number of compares" : numComp,
+            "number of accesses"    : numAccess,
             }
 
 
@@ -79,8 +79,8 @@ def insertionSort(A):
         A[j] = a
 
     return {
-            "#comparisons" : numComp,
-            "#accesses"    : numAccess,
+            "number of compares" : numComp,
+            "number of accesses"    : numAccess,
             }
 
 
@@ -118,8 +118,8 @@ def quickSort(A):
     qsort(A, 0, len(A)-1)
 
     return {
-            "#comparisons" : numComp,
-            "#accesses"    : numAccess,
+            "number of compares" : numComp,
+            "number of accesses"    : numAccess,
             }
 
 
@@ -168,7 +168,7 @@ def mergeSort(C):
     C[:] = A
 
     return {
-            "#comparisons" : numComp,
-            "#accesses"    : numAccess,
+            "number of compares" : numComp,
+            "number of accesses"    : numAccess,
             }
 
