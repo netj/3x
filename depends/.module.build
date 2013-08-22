@@ -11,42 +11,45 @@ rsync -rlH ../runtime/ --exclude=*.{commands,paths,test.sh,sh,txt} runtime/ --de
 generate-depends-checker ../runtime "Missing dependency: " "3X " >runtime/.check
 chmod +x runtime/.check
 
-# prepare bundled dependencies
+# prepare dependencies to be bundled
 bundledir=bundled
 prepdir=bundled.prep
 rm -rf "$bundledir"
 mkdir -p "$bundledir" "$prepdir"
+rsync -rlH ../bundled/ --exclude=/*.{commands,paths,{test,bundle}.sh} "$prepdir"/ #--delete
 without-comments ../bundle.conf |
 while read -r dep; do
     echo "### Preparing for bundling dependency $dep"
-    prepared="$prepdir/$dep"
+    ln -sfn ../../bundled/"$dep".sh "$prepdir"/
     # reuse prepared dependency if available
-    if [ -L ../bundled/"$dep".sh ]; then
+    if [ -L ../bundled/"$dep".sh -a ! -e "$prepdir/$dep" ]; then
         origin=$(dirname "$(readlink ../bundled/"$dep".sh)")
-        # TODO keep some sort of flag to indicate a complete dependency
-        prepared="$origin/$dep"
-        echo "# Reusing $prepared for dependency $dep"
+        ln -sfn "$(relpath "$prepdir" "$origin/$dep")" "$prepdir/$dep"
     fi
-    # otherwise, prepare the dependency
-    if ! [ -d "$prepared" ]; then
-        rsync -rlH ../bundled/"$dep".* --exclude=/*.bundle.sh "$prepdir"/ --delete
-        prep="$prepdir/$dep".sh
-        if [ -x "$prep" ]; then
-            echo "# Preparing dependency $dep"
-            "$prep"
-        fi
-    fi
-    if ! [ -d "$prepared" ]; then
-        echo >&2 "Unable to prepare dependency $dep"
-        false
-    fi
-    # then, bundle only the necessary files
+    {
+        echo '
+        prepared="$DEPENDSDIR/'"$dep"'"
+        [ -d "$prepared" -a -e "$prepared"/.prepared ]
+        '
+    } >"$prepdir"/"$dep".test.sh
+    chmod +x "$prepdir/$dep".test.sh
+done
+generate-depends-checker "$prepdir" |
+DEPENDSDIR="$prepdir" bash -eux
+
+# then, bundle only the necessary files from each dependency
+without-comments ../bundle.conf |
+while read -r dep; do
     bundle=../bundled/"$dep".bundle.sh
     if [ -x "$bundle" ]; then
         echo "# Using custom bundling rule for dependency $dep"
-        "$bundle" "$prepared" "$bundledir"/
+        "$bundle" "$prepdir/$dep"/ "$bundledir/$dep"/
     else
-        echo "# Bundling everything prepared for dependency $dep"
-        rsync -aH "$prepared" "$bundledir"/ --delete
+        echo "# Bundling everything prepared under prefix for dependency $dep"
+        rsync -aH "$prepdir/$dep"/prefix "$bundledir/$dep"/ --delete
     fi
 done
+
+# and the ones to be exposed
+rsync -aH "$prepdir"/.all "$bundledir"/ --delete
+

@@ -15,7 +15,7 @@ date >README.md
 npm install
 cd - >/dev/null
 
-mkdir -p bin
+mkdir -p .all/bin
 for x in "$name"/node_modules/.bin/*; do
-    ln -sfn ../"$x" bin/
+    ln -sfn ../../"$x" .all/bin/
 done

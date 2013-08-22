@@ -82,9 +82,9 @@ if [ -z "${_3X_HOME:-}" ]; then
             PATH="$dir:$PATH"
         done
     }
-    PATH="$LIBEXECDIR/depends.runtime/bin:$PATH"
+    PATH="$LIBEXECDIR/depends.runtime/.all/bin:$PATH"
     insertOptionalPATH \
-        "$LIBEXECDIR"/depends/bin \
+        "$LIBEXECDIR"/depends/.all/bin \
         "$LIBDIR"/node_modules/.bin \
         #
     PATH="$TOOLSDIR:$PATH"

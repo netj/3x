@@ -41,9 +41,9 @@ make -j $(nproc 2>/dev/null) install PORTABLE=1
 cd ../..
 }
 
-# place symlinks to $DEPENDSDIR/bin/
-mkdir -p bin
+# place symlinks for commands to $DEPENDSDIR/.all/bin/
+mkdir -p .all/bin
 for x in "$prefix"/bin/*; do
     [ -x "$x" ] || continue
-    ln -sfn ../"$x" bin/
+    ln -sfn ../../"$x" .all/bin/
 done

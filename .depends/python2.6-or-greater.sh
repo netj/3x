@@ -4,10 +4,10 @@ set -eu
 
 cd "$DEPENDSDIR"
 
-mkdir -p bin
+mkdir -p .all/bin
 for python in python2.7 python2.6; do
     pythonpath=`type -p $python 2>/dev/null` || continue
-    ln -sfn "$pythonpath" bin/python
+    ln -sfn "$pythonpath" .all/bin/python
     exit 0
 done
 
