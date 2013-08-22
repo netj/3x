@@ -110,6 +110,10 @@ sendError = (res, err) ->
 
 isntNull = (x) -> x?
 
+readFileIfExists = (filename, next) ->
+    fs.readFile filename, (err, contents) ->
+        if err then next null, null
+        else next null, contents
 
 ###
 # Some routes
@@ -138,10 +142,6 @@ app.get "/docs/*", (req, res, next) ->
 # Show an overview page for runs
 app.get "/run/*/overview", (req, res) ->
     runId = "run/#{req.params[0]}"
-    readFileIfExists = (filename, next) ->
-        fs.readFile filename, (err, contents) ->
-            if err then next null, null
-            else next null, contents
     async.parallel [
         getInputs  res, "-ut"
         getOutputs res, "-ut"
@@ -488,7 +488,7 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
                         [i, row[runIdColumn], row[stateColumn]]
                 async.parallel (
                     for [i, runId] in erroneousRows
-                        (next) -> fs.readFile "#{_3X_ROOT}/#{runId}/target.aborted", next
+                        (next) -> readFileIfExists "#{_3X_ROOT}/#{runId}/target.aborted", next
                 ), (err, details) ->
                     if err
                         util.log err

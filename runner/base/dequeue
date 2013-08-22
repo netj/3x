@@ -16,11 +16,57 @@ runDir=
 cmdln=
 serial=
 runId=
+errorRecord=
 
 queue-record() {
     local state=$1
     echo $state ${cmdln#run } "#$serial $_3X_TARGET $runId"
 }
+
+# mark as ABORTED upon queue-stop or interrupt
+exit-after-marking-as-aborted() {
+    c=$?
+    if [ -n "$serial" -a -n "$runDir" ]; then
+        # "run" finishing with non-zero exit status indicates runner error, i.e.,
+        # runner not being able to finish execution properly.  So, mark the run as
+        # aborted, and keep it intact in the running list for later resumption.
+        state=ABORTED
+        record-aborted() {
+            touch running
+            {
+                ! grep -q " #$serial " running ||
+                    echo "g/ #$serial /d"
+                echo '$a'
+                queue-record ABORTED
+                echo .
+                echo wq
+            } | ed running >/dev/null
+        }
+        synchronized running.lock  record-aborted
+        # the cause is recorded in $runDir/error
+        if [ -e "$errorRecord" -o $# -gt 0 ]; then
+            chmod +w $runDir/run/
+            if [ $# -gt 0 ]; then
+                {
+                    printf '%s\n' "$@"
+                    ! [ -r "$errorRecord" ] || cat "$errorRecord"
+                } >$runDir/run/target.aborted
+            else
+                ln -fn "$errorRecord" $runDir/run/target.aborted
+            fi
+            # TODO archive $runDir/run/target.aborted again?
+            chmod -w $runDir/run/
+        fi
+    fi
+    exit $c
+}
+for sig in INT QUIT TERM; do
+    case $sig in
+        TERM) msg="Execution stopped" ;;
+        *) msg="Execution interrupted" ;;
+    esac
+    trap 'exit-after-marking-as-aborted "'"$msg"'"' $sig
+done
 
 pick-next() {
     # check if there were anything running which isn't alive
@@ -54,6 +100,7 @@ pick-next() {
         # increment serial counter
         echo $serial >$SERIAL_COUNTER
     fi
+    errorRecord="$_3X_QUEUE_DIR"/$runDir/error
 }
 synchronized plan.lock  pick-next || continue
 
@@ -73,17 +120,15 @@ record-running() {
 }
 synchronized running.lock  record-running
 
-
 # prepare to execute the one we picked for next
 # TODO make sure the $cmdln starts with "run "
 
 # keep a copy of the target execution environment configuration and target name for later maintenance
-rsync -aH --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" $runDir/target/
+rsync -aH --delete --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" $runDir/target/
 
 # XXX clean $runId first, in case we are retrying one that failed last time
 ! [ -e $runDir/run/ ] || unarchive "$_3X_ARCHIVE" $runDir/run/
 rm -rf $runDir/run/ 2>/dev/null || true
-errorRecord="$_3X_QUEUE_DIR"/$runDir/error
 rm -f "$errorRecord"
 
 
@@ -95,30 +140,8 @@ runner-msg "Executing #$serial/$count as $runId"
 _3X_LOGERROR=$errorRecord \
 _3X_RUNNER_DIR=$runDir \
 _3X_RUN=$runId \
-$cmdln || {
-    c=$?
-    # "run" finishing with non-zero exit status indicates runner error, i.e.,
-    # runner not being able to finish execution properly.  So, mark the run as
-    # aborted, and keep it intact in the running list for later resumption.
-    state=ABORTED
-    record-aborted() {
-        touch running
-        {
-            ! grep -q " #$serial " running ||
-                echo "g/ #$serial /d"
-            echo '$a'
-            queue-record ABORTED
-            echo .
-            echo wq
-        } | ed running >/dev/null
-    }
-    synchronized running.lock  record-aborted
-    # the cause is recorded in $runDir/error
-    chmod +w $runDir/run/
-    ln -fn "$errorRecord" $runDir/run/target.aborted
-    chmod -w $runDir/run/
-    exit $c
-}
+$cmdln ||
+    exit-after-marking-as-aborted
 
 # we can determine the resulting state of the run after execution
 state=DONE
@@ -139,6 +162,9 @@ record-finished() {
     } | ed running >/dev/null
 }
 synchronized running.lock  record-finished
+
+# no more ABORTED upon signals
+trap - INT QUIT TERM
 
 
 # clean up
