@@ -19,23 +19,35 @@ mkdir -p "$bundledir" "$prepdir"
 rsync -rlH ../bundled/ --exclude=/*.{commands,paths,{test,bundle}.sh} "$prepdir"/ #--delete
 without-comments ../bundle.conf |
 while read -r dep; do
-    echo "### Preparing for bundling dependency $dep"
-    ln -sfn ../../bundled/"$dep".sh "$prepdir"/
+    echo "# Preparing to bundle dependency $dep"
+    prepared="$prepdir/$dep"
+    ln -sfn "$(relpath "$prepared".sh ../../bundled/"$dep".sh)" "$prepared".sh
     # reuse prepared dependency if available
-    if [ -L ../bundled/"$dep".sh -a ! -e "$prepdir/$dep" ]; then
-        origin=$(dirname "$(readlink ../bundled/"$dep".sh)")
-        ln -sfn "$(relpath "$prepdir" "$origin/$dep")" "$prepdir/$dep"
+    if [ -L ../bundled/"$dep".sh ]; then
+        # find out where the prep script comes from
+        origin="$(dirname "$(readlink ../bundled/"$dep".sh)")/$dep"
+        origin=../bundled/"$(relpath ../bundled/"$dep".sh "$origin")"
+        if [ -e "$origin" ]; then
+            # make sure it's clear to place a symlink
+            ! [ -e "$prepared" ] || rm -rf "$prepared"
+            # point to the originally prepared dependency directory
+            ln -sfn "$(relpath "$prepared" "$origin")" "$prepared"
+        fi
+    fi
+    # remove any dangling symlinks that may remain because of the above reuse
+    if [ -L "$prepared" -a ! -e "$prepared" ]; then
+        rm -f "$prepared"
     fi
     {
         echo '
         prepared="$DEPENDSDIR/'"$dep"'"
         [ -d "$prepared" -a -e "$prepared"/.prepared ]
         '
-    } >"$prepdir"/"$dep".test.sh
-    chmod +x "$prepdir/$dep".test.sh
+    } >"$prepared".test.sh
+    chmod +x "$prepared".test.sh
 done
-generate-depends-checker "$prepdir" |
-DEPENDSDIR="$prepdir" bash -eux
+generate-depends-checker "$prepdir" "# Building to bundle, " "# Building to bundle, " |
+DEPENDSDIR="$prepdir" bash -eu
 
 # then, bundle only the necessary files from each dependency
 without-comments ../bundle.conf |
