@@ -488,7 +488,8 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
                         [i, row[runIdColumn], row[stateColumn]]
                 async.parallel (
                     for [i, runId] in erroneousRows
-                        (next) -> readFileIfExists "#{_3X_ROOT}/#{runId}/target.aborted", next
+                        do (runId) ->
+                            (next) -> readFileIfExists "#{_3X_ROOT}/#{runId}/target.aborted", next
                 ), (err, details) ->
                     if err
                         util.log err

@@ -24,10 +24,11 @@ done
 shift $(($OPTIND - 1))
 
 . find-queue.sh
-. find-runner.sh -
 
-# first, stop all executions for current queue
-setsid queue-stop
+for-each-active-runner sh -c '
+    # first, stop executions for current queue
+    queue-stop
 
-# then synchronize queue records with reality
-setsid queue-sync
+    # then synchronize queue records with whats actually there
+    setsid queue-sync
+'
