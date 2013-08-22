@@ -147,16 +147,17 @@ case $Command in
 
     duplicate)
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
-        # first, collect given runs from done and plan
+        # first, collect given runs from done, running and plan
         count=$(cat "$_3X_QUEUE_DIR"/.count 2>/dev/null || echo 0)
+        # TODO retain the order of serials in $@
         {
+            echo "e !cd $(escape-args-for-shell "$_3X_QUEUE_DIR") && cat done running"
             for serial; do
                 [[ $serial -le $count ]] || continue
-                echo "/ #${serial} /W $tmp/more"
+                echo "g/ #${serial} /.W $tmp/more"
             done
             echo q
-        } | ed "$_3X_QUEUE_DIR"/done >/dev/null
-        # TODO collect from running
+        } | ed >/dev/null || true
         {
             for serial; do
                 [[ $serial -gt $count ]] || continue
@@ -164,7 +165,7 @@ case $Command in
                 echo "${lineNum}W $tmp/more"
             done
             echo q
-        } | ed "$_3X_QUEUE_DIR"/plan >/dev/null
+        } | ed "$_3X_QUEUE_DIR"/plan >/dev/null || true
         # then append them at the end of current plan
         {
             cat "$_3X_QUEUE_DIR"/plan
@@ -190,7 +191,7 @@ case $Command in
             for serial in "${lineNums[@]}"; do echo $serial; done |
             sort -n -r | sed 's/$/d/'
             echo wq
-        } | ed "$tmp"/others >/dev/null
+        } | ed "$tmp"/others >/dev/null || true
         # then decide how to layout the new plan depending on given command
         case $Command in
             prioritize) order=(selected  others) ;;
