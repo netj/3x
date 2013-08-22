@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# 3x-reset -- stop executing current queue and revert to a clean state
+# 
+# > 3x reset -h
+# Shows this usage.  Usage varies for different types of target.
+# 
+# > 3x reset
+# Stops executing runs of current queue from all targets and revert queue
+# records to a clean state without any intermediate data for RUNNING or ABORTED
+# runs.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-08-22
+set -eu
+
+while getopts "h" o; do
+    case $o in
+        h)
+            usage "$0"
+            exit
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+. find-queue.sh
+. find-runner.sh -
+
+# first, stop all executions for current queue
+setsid queue-stop
+
+# then synchronize queue records with reality
+setsid queue-sync

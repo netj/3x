@@ -1876,7 +1876,7 @@ class QueuesUI extends CompositeElement
 
     startQueue:    (queueName) => @doQueueAction queueName, "start"
     stopQueue:     (queueName) => @doQueueAction queueName, "stop"
-    resetQueue:    (queueName) => @doQueueAction queueName, "stop"
+    resetQueue:    (queueName) => @doQueueAction queueName, "reset"
     refreshQueue:  (queueName) => @doQueueAction queueName, "refresh"
     doQueueAction: (queueName, action) =>
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/#{queueName}:#{action}")

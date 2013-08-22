@@ -503,7 +503,7 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
                         aColumnNames: table.names
                         aaData: table.rows
 
-app.get /// /api/run/queue/([^:]+):(start|stop) ///, (req, res) ->
+app.get /// /api/run/queue/([^:]+):(start|stop|reset) ///, (req, res) ->
     [queueName, action] = req.params
     # TODO sanitize queueName
     cliEnv(res, {

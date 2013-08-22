@@ -4,6 +4,7 @@
 3x-status                       $TOOLSDIR/
 3x-start                        $TOOLSDIR/
 3x-stop                         $TOOLSDIR/
+3x-reset                        $TOOLSDIR/
 
 find-queue.sh                   $TOOLSDIR/
 find-runner.sh                  $TOOLSDIR/

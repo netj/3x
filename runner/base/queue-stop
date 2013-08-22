@@ -33,5 +33,5 @@ for handle; do
     lockproc "$handle" kill
 done
 
-# then synchronize queue records with reality
-queue-sync
+# reflect the queue state
+queue-refresh
