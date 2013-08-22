@@ -1080,8 +1080,8 @@
 			<integer>190</integer>
 			<key>Points</key>
 			<array>
-				<string>{540.46440097657103, 581.89184117457376}</string>
-				<string>{444.51130940890874, 573.13800734559095}</string>
+				<string>{540.46440097657114, 581.89184117457353}</string>
+				<string>{444.51130940890926, 573.13800734559061}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -2237,7 +2237,7 @@
 {\colortbl;\red255\green255\blue255;}
 \pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\qc
 
-\f0\b\fs18 \cf0 extraction &amp; storage}</string>
+\f0\b\fs18 \cf0 storage}</string>
 			</dict>
 		</dict>
 		<dict>
@@ -3069,8 +3069,8 @@
 			<integer>78</integer>
 			<key>Points</key>
 			<array>
-				<string>{427.31422881563077, 330.68494515582466}</string>
-				<string>{567.69181126938054, 355.47591403494101}</string>
+				<string>{427.31422881563071, 330.68494515582461}</string>
+				<string>{567.69181126938054, 355.47591403494107}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -3386,8 +3386,8 @@
 			<integer>20</integer>
 			<key>Points</key>
 			<array>
-				<string>{1002.4271088531483, 310.43748165340287}</string>
-				<string>{1002.4276147221915, 345.00489694767117}</string>
+				<string>{1002.4265626435114, 310.43772646907826}</string>
+				<string>{1002.4266836862558, 345.00489695677476}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -3430,8 +3430,8 @@
 			<integer>12</integer>
 			<key>Points</key>
 			<array>
-				<string>{1002.1729044624423, 160.91718838441409}</string>
-				<string>{1002.3593912013591, 198.20978755800343}</string>
+				<string>{1002.1369051822332, 160.91719158161442}</string>
+				<string>{1002.2670067642173, 198.20978889753007}</string>
 			</array>
 			<key>Style</key>
 			<dict>
@@ -3684,7 +3684,7 @@
 	<key>MasterSheets</key>
 	<array/>
 	<key>ModificationDate</key>
-	<string>2013-07-20 04:44:56 +0000</string>
+	<string>2013-08-16 03:07:42 +0000</string>
 	<key>Modifier</key>
 	<string>재호</string>
 	<key>NotesVisible</key>
