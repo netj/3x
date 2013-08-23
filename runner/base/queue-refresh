@@ -13,8 +13,6 @@ set -eu
 for handle in $WORKER_LOCK_PREFIX*.lock $RUNDIR_PREFIX*/lock; do
     [ -e "$handle" ] || continue
     lockproc "$handle" alive || continue
-    # if so, touch the flag
-    touch $ACTIVE_FLAG
     exit
 done
 
