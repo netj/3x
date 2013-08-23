@@ -16,7 +16,7 @@ serial=$1; shift
 # TODO migrate from plain text to SQLite
 # without any runId or cmdln (they should be already in the DB when planned)
 runId=$1; shift
-cmdln=$*
+cmdln="$*"
 
 queue-record() {
     echo "$state ${cmdln#run } #$serial $_3X_TARGET $runId"
@@ -30,7 +30,7 @@ case $state in
                 ! grep -q " #$serial " running ||
                     echo "g/ #$serial /d"
                 echo '$a'
-                queue-record $state
+                queue-record
                 echo .
                 echo wq
             } | ed running >/dev/null
@@ -38,8 +38,8 @@ case $state in
         ;;
 
     DONE|FAILED)
-        record-finished() {
-            queue-record  $state >>done
+        record() {
+            queue-record  >>done
             # book-keep the running list
             touch running
             {
@@ -49,8 +49,13 @@ case $state in
             } | ed running >/dev/null
         }
         ;;
+
+    *)
+        usage "$0" "STATE must be one of: RUNNING ABORTED FAILED DONE"
+        ;;
 esac
 
 # update the list without overwriting each others' changes
-. runner.sh
-synchronized running.lock  record
+lockproc running.lock grab
+record
+lockproc running.lock release

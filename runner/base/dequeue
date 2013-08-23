@@ -20,7 +20,7 @@ errorRecord=
 
 record-this-run-as() {
     local state=$1
-    record-run-as $state $serial  $_3X_TARGET $runId $cmdln
+    record-run-as $state $serial  $runId $cmdln
 }
 
 # mark as ABORTED upon queue-stop or interrupt
