@@ -64,30 +64,33 @@ while getopts "a" o; do
 done
 shift $(($OPTIND - 1))
 
-[ $# -ge 2 ] || usage "$0" "No MODULE_ROOT and MODULE_NAME must be specified"
+[ $# -ge 2 ] || usage "$0" "MODULE_ROOT and MODULE_NAME must be specified"
 
 Root=$1; shift
 Module=$1; shift
 
 [ $# -gt 0 ] || set -- ""
 
+ancestors() {
+    local m=$1 p=
+    echo "$m"
+    for p in $(cat "$Root/$m"/parents 2>/dev/null || true); do
+        # TODO need check to prevent cycles in the parents list
+        ancestors "$p"
+    done
+}
+modulesToSearch=($(ancestors "$Module") ...)
+
 for f; do
     p=${f:+/$f}
     m=$Module
     found=false
-    while :; do
+    for m in "${modulesToSearch[@]}"; do
         if [ -e "$Root/$m$p" ]; then
             echo "$Root/$m$p"
             found=true
             $ListAll || break
         fi
-        m=$(cat "$Root/$m"/parent 2>/dev/null) || break
     done
-    if ! $found || $ListAll; then
-        if [ -e "$Root/...$p" ]; then
-            echo "$Root/...$p"
-            found=true
-        fi
-    fi
     $ListAll || $found
 done
