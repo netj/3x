@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# > repeat-dequeue WORKER_HANDLE
+# Repeats dequeue while the given command as a registered worker for the runner.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-08-22
+set -eu
+. runner.sh
+
+# repeat until all planned runs are done
+runner-msg "Starting"
+processing=false
+stopped=false
+interrupted=false
+terminated=false
+failed=false
+trap "stopped=true interrupted=true" INT QUIT
+trap "stopped=true terminated=true" TERM
+trap '$processing || runner-msg "Resuming"' $WORKER_WAITING_SIGNAL
+queue-not-empty() {
+    # check if there are planned runs, or interrupted ones in current queue
+    if [ -s plan ]; then
+        return 0 # = true
+    elif [ -s running ]; then
+        local lock=
+        for lock in $RUNDIR_PREFIX*/lock; do
+            [ -e "$lock" ] || continue
+            lockproc "$lock" alive || return 0 # = true
+        done
+    fi
+    false
+}
+until $stopped; do
+    if queue-not-empty; then
+        # process runs in the current queue
+        processing=true
+        let SHLVL--
+        dequeue || stopped=true failed=true
+        let ++SHLVL
+        processing=false
+    fi
+    # wait for plan to become non-empty
+    until $stopped || queue-not-empty; do
+        runner-msg "Waiting"
+        touch $_3X_WORKER_HANDLE$WORKER_WAITING_SUFFIX
+        sleep $WORKER_WAITING_TIMEOUT </dev/null &>/dev/null || true
+    done
+    rm -f $_3X_WORKER_HANDLE$WORKER_WAITING_SUFFIX
+done
+
+if $interrupted; then
+    runner-error "Interrupted" || true
+    queue-refresh
+    if ! [ -e $ACTIVE_FLAG ]; then
+        msg
+        msg "# To restart and resume execution, run:"
+        msg "3x start"
+        msg
+        msg "# To fully stop, and put executing runs back to plan, run:"
+        msg "3x stop"
+    fi
+    exit 1
+elif $failed && ! $terminated; then
+    runner-error "Aborted Execution" || true
+    queue-refresh
+    # TODO msg inspect worker log
+    exit 2
+else
+    runner-msg "Stopped"
+fi

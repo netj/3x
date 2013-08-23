@@ -9,16 +9,19 @@
 find-queue.sh                   $TOOLSDIR/
 find-runner.sh                  $TOOLSDIR/
 
+base/target-define              $TOOLSDIR/runner/.../
+base/target-info                $TOOLSDIR/runner/.../
+base/diff-environ               $TOOLSDIR/runner/.../
+
 base/queue-start                $TOOLSDIR/runner/.../
 base/queue-stop                 $TOOLSDIR/runner/.../
 base/queue-changed              $TOOLSDIR/runner/.../
 base/queue-refresh              $TOOLSDIR/runner/.../
 base/queue-sync                 $TOOLSDIR/runner/.../
-base/target-define              $TOOLSDIR/runner/.../
-base/target-info                $TOOLSDIR/runner/.../
-base/diff-environ               $TOOLSDIR/runner/.../
 
 base/runner.sh                  $TOOLSDIR/runner/.../
+base/as-a-worker                $TOOLSDIR/runner/.../
+base/repeat-dequeue             $TOOLSDIR/runner/.../
 base/dequeue                    $TOOLSDIR/runner/.../
 base/run                        $TOOLSDIR/runner/.../
 base/run.assemble               $TOOLSDIR/runner/.../
@@ -26,4 +29,5 @@ base/run.execute                $TOOLSDIR/runner/.../
 base/run.store                  $TOOLSDIR/runner/.../
 base/environ                    $TOOLSDIR/runner/.../
 
+record-run-as                   $TOOLSDIR/
 new-run-id                      $TOOLSDIR/

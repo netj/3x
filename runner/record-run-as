@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Reflect given run's state to the queue's done/running/plan list
+# Usage:
+# > cd "$_3X_QUEUE_DIR"
+# > record-run-as STATE SERIAL RUNID  NAME=VALUE...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-08-22
+set -eu
+
+[ $# -gt 3 ] || usage "$0" "STATE, SERIAL, RUNID and at least one NAME=VALUE pair must be given"
+state=$1; shift
+serial=$1; shift
+
+
+# TODO migrate from plain text to SQLite
+# without any runId or cmdln (they should be already in the DB when planned)
+runId=$1; shift
+cmdln=$*
+
+queue-record() {
+    echo "$state ${cmdln#run } #$serial $_3X_TARGET $runId"
+}
+
+case $state in
+    RUNNING|ABORTED)
+        record() {
+            touch running
+            {
+                ! grep -q " #$serial " running ||
+                    echo "g/ #$serial /d"
+                echo '$a'
+                queue-record $state
+                echo .
+                echo wq
+            } | ed running >/dev/null
+        }
+        ;;
+
+    DONE|FAILED)
+        record-finished() {
+            queue-record  $state >>done
+            # book-keep the running list
+            touch running
+            {
+                ! grep -q " #$serial " running ||
+                    echo "g/ #$serial /d"
+                echo wq
+            } | ed running >/dev/null
+        }
+        ;;
+esac
+
+# update the list without overwriting each others' changes
+. runner.sh
+synchronized running.lock  record

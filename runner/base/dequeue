@@ -18,9 +18,9 @@ serial=
 runId=
 errorRecord=
 
-queue-record() {
+record-this-run-as() {
     local state=$1
-    echo $state ${cmdln#run } "#$serial $_3X_TARGET $runId"
+    record-run-as $state $serial  $_3X_TARGET $runId $cmdln
 }
 
 # mark as ABORTED upon queue-stop or interrupt
@@ -31,18 +31,7 @@ exit-after-marking-as-aborted() {
         # runner not being able to finish execution properly.  So, mark the run as
         # aborted, and keep it intact in the running list for later resumption.
         state=ABORTED
-        record-aborted() {
-            touch running
-            {
-                ! grep -q " #$serial " running ||
-                    echo "g/ #$serial /d"
-                echo '$a'
-                queue-record ABORTED
-                echo .
-                echo wq
-            } | ed running >/dev/null
-        }
-        synchronized running.lock  record-aborted
+        record-this-run-as $state
         # the cause is recorded in $runDir/error
         if [ -e "$errorRecord" -o $# -gt 0 ]; then
             chmod +w $runDir/run/
@@ -102,23 +91,12 @@ pick-next() {
     fi
     errorRecord="$_3X_QUEUE_DIR"/$runDir/error
 }
-synchronized plan.lock  pick-next || continue
+synchronized plan.lock  pick-next
 
-record-running() {
-    # book-keep the running list and symlink to actual run
-    touch running
-    {
-        ! grep -q " #$serial " running ||
-            echo "g/ #$serial /d"
-        echo '$a'
-        queue-record RUNNING
-        echo .
-        echo wq
-    } | ed running >/dev/null
-    runRelPath="../../../${runId#run/}"
-    ln -sfn "$runRelPath" $runDir/run
-}
-synchronized running.lock  record-running
+# book-keep the running list and symlink to actual run
+record-this-run-as RUNNING
+runRelPath="../../../${runId#run/}"
+ln -sfn "$runRelPath" $runDir/run
 
 # prepare to execute the one we picked for next
 # TODO make sure the $cmdln starts with "run "
@@ -151,17 +129,7 @@ state=DONE
 
 
 # record the run in the "done" list with its state
-record-finished() {
-    queue-record  $state >>done
-    # book-keep the running list
-    touch running
-    {
-        ! grep -q " #$serial " running ||
-            echo "g/ #$serial /d"
-        echo wq
-    } | ed running >/dev/null
-}
-synchronized running.lock  record-finished
+record-this-run-as $state
 
 # no more ABORTED upon signals
 trap - INT QUIT TERM

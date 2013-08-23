@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# > as-a-worker COMMAND [ARG]...
+# Runs the given command as a registered worker for the runner.  Note that the
+# following environment variables will be available for the given COMMAND:
+#   _3X_WORKER_ID
+#   _3X_WORKER_DIR
+#   _3X_WORKER_HANDLE 
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-08-22
+set -eu
+
+[ $# -gt 0 ] || usage "$0" "No COMMAND given"
+
+. runner.sh
+
+# register worker pid
+_3X_WORKER_ID=
+_3X_WORKER_HANDLE=
+register-pid() {
+    _3X_WORKER_ID=0
+    local handle=
+    while handle=$WORKER_LOCK_PREFIX${_3X_WORKER_ID}.lock
+        lockproc $handle alive
+    do let ++_3X_WORKER_ID
+    done
+    lockproc $handle grab
+    _3X_WORKER_HANDLE=$handle
+}
+synchronized $WORKER_LOCK_PREFIX.lock register-pid
+
+# mark queue as active
+{
+    date +"# %FT%T%:z"
+    echo "start $*"
+} >>$ACTIVE_FLAG
+
+# create a directory for organizing worker-local stuffs
+_3X_WORKER_DIR="$_3X_QUEUE_DIR/$WORKER_DIR_PREFIX$_3X_WORKER_ID"
+mkdir -p "$_3X_WORKER_DIR"
+# TODO rotate log
+
+# keep a copy of the target execution environment configuration while for this session
+cp -a "$_3X_TARGET_DIR"/. "$_3X_WORKER_DIR"/target
+
+
+# run the command
+export _3X_WORKER_ID _3X_WORKER_DIR _3X_WORKER_HANDLE
+let SHLVL--
+"$@" || c=$?
+
+
+# unregister worker pid
+lockproc $_3X_WORKER_HANDLE release
+
+# clean up worker directory
+rm -rf "$_3X_WORKER_DIR"
+
+
+# preserve exit status
+exit $c
