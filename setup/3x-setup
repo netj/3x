@@ -192,7 +192,8 @@ be-quiet +2 ||
 
 # and run it to bootstrap an experiment
 bash "$tmp"/setup-script
-msg "Finished setup of experiment $_3X_ROOT"
-msg "You can start the GUI by running:"
-msg "  cd $(escape-args-for-shell "$_3X_ROOT")"
-msg "  3x gui start"
+msg "Finished experiment setup at ${_3X_ROOT%/}/"
+msg
+msg "# You can start the GUI by running:"
+msg "_3X_ROOT=$(escape-args-for-shell "$_3X_ROOT") \\"
+msg "$_3X_COMMAND gui"

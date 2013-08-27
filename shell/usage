@@ -17,20 +17,25 @@
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2009-11-10
-set -e
+set -eu
 
 ToolPath=$1; shift || usage "$0" "No TOOLPATH given"
 
 # show embedded usage
 # TODO only for scripts
 cat "$ToolPath" |
-sed -n '
+sed -n "
 2,/^#$/ {
+    ${USAGE_TOOL_COMMAND:+$(printf \
+        's#^\(\# [$>] \)%s #\1%s #' \
+        "${USAGE_TOOL_COMMAND//\#/\\\#}" \
+        "${USAGE_TOOL_PATH//\#/\\\#}"
+    )}
     s/^# [$>] //
     s/^# *$//
     p
 }
-'
+"
 
 # show message if available
 [ $# -eq 0 ] || error "$@"
