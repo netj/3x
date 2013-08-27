@@ -10,8 +10,9 @@ log   = (args...) -> console.log   args...; args[0]
 error = (args...) -> console.error args...; args[0]
 
 # See: http://stackoverflow.com/questions/1470810/wrapping-long-text-in-css
+# See: http://en.wikipedia.org/wiki/Soft_hyphen for &shy; or \u00AD
 Array::joinTextsWithShy = (delim) ->
-    ($("<div/>").text(v).html() for v in @).join "&shy;#{delim}"
+    ($("<div/>").text(v).html() for v in @).join "\u00AD#{delim}"
 
 # JSRender "fields" tag for handy object presentation
 # See: http://borismoore.github.com/jsrender/demos/scenarios/03_iterating-through-fields-scenario.html
@@ -325,16 +326,24 @@ initTitle = ->
                 if descr.hostname? and descr.port? then "#{descr.hostname}:#{descr.port}"
                 else simplifyURL _3X_ServiceBaseURL
             document.title = "3X — #{descr.name} — #{hostport}"
-            $("#title").text("#{descr.name} — #{hostport}")
-                .attr
-                    title: "#{descr.fileSystemPath}#{
+            $("#title")
+                .text("#{descr.name} — #{hostport}")
+                .attr(
+                    title: "#{
                         unless descr.description? then ""
-                        else "\n#{descr.description}"
-                    }"
+                        else "#{descr.description}\n\n"
+                    }#{descr.fileSystemPath
+                        .split("/").joinTextsWithShy("/")}"
+                    )
+                .tooltip(container: ".navbar")
         )
 
 
 initTabs = ->
+    # deactivate brand link since it may cause confusion
+    $("#logo")
+        .click((e) -> do e.preventDefault)
+        .css(cursor: "default")
     # re-render some tables since it could be in bad shape while the tab wasn't active
     $(".navbar a[data-toggle='tab']").on "shown", (e) ->
         tab = $(e.target).attr("href").substring(1)
