@@ -1678,7 +1678,7 @@ class ResultsChart extends CompositeElement
 
 
 class QueuesUI extends CompositeElement
-    constructor: (@baseElement, @countDisplay, @status, @target, @optionElements) ->
+    constructor: (@baseElement, @status, @target, @optionElements) ->
         super @baseElement
 
         # subscribe to queue change notifications
@@ -1701,7 +1701,7 @@ class QueuesUI extends CompositeElement
             .on "active-count", (count) =>
                 log "queue active-count", count
                 # update how many batches are running
-                @countDisplay
+                @optionElements.activeCountDisplay
                     ?.text(count)
                      .toggleClass("hide", count == 0)
 
@@ -1757,6 +1757,12 @@ class QueuesUI extends CompositeElement
                     @status.currentQueue =
                     @target.currentQueue =
                         @queues[@queueOnFocus]
+                # update badge for total number of planned runs
+                totalRemaining = 0
+                for name,queue of @queues
+                    totalRemaining += +queue.numPlanned + queue.numAborted
+                @optionElements.remainingCountDisplay?.text(totalRemaining)
+                    .toggleClass("hide", totalRemaining == 0)
                 do @display
             )
 
@@ -2525,11 +2531,13 @@ $ ->
                 actions: $("#status-actions")
                 selectionSummary: $("#status-selection-summary")
             _3X_.targets = new TargetsUI $("#targets")
-            _3X_.queues = new QueuesUI $("#queues"), $("#run-count.label"), _3X_.status, _3X_.targets,
+            _3X_.queues = new QueuesUI $("#queues"), _3X_.status, _3X_.targets,
                 addNewQueue: $("#queue-create")
                 sortByName: $("#queue-sortby-name")
                 sortByTime: $("#queue-sortby-time")
                 toggleAbsoluteProgress: $("#queue-toggle-absolute-progress")
+                activeCountDisplay: $("#active-count.label")
+                remainingCountDisplay: $("#remaining-count.label")
     do initTitle
     do initBaseURLControl
     do initTabs
