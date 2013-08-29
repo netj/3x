@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 3x -- EXecutable EXploratory EXperiments command-line interface
+# 3x -- eXecutable eXploratory eXperiments
 # Usage: 3x [-OPTION] COMMAND [ARG]...
 # 
 # COMMAND is one of the following forms:
