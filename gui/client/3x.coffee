@@ -1776,8 +1776,8 @@ class QueuesUI extends CompositeElement
         @status.load @queueOnFocus, @queues[@queueOnFocus]
         @target.load @queues[@queueOnFocus]
         @baseElement.find(".queue")
-            .removeClass("alert-info")
-            .filter("[data-name='#{@queueOnFocus}']").addClass("alert-info")
+            .removeClass("active")
+            .filter("[data-name='#{@queueOnFocus}']").addClass("active")
 
     @QUEUE_SKELETON: $("""
         <script type="text/x-jsrender">

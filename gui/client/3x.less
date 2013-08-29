@@ -265,6 +265,11 @@ body > .navbar .brand .icon {
       .queue-name { font-weight: bold; }
       h5        { margin: (@baseLineHeight / 4) 0; }
       .progress { margin-bottom: @baseLineHeight / 2; }
+      &.active {
+        color: @infoText;
+        background-color: @infoBackground;
+        border-color: @infoBorder;
+      }
     }
   }
 }
@@ -300,7 +305,7 @@ body > .navbar .brand .icon {
   text-align: right;
   opacity: 0;
   .transition(opacity .15s linear);
-  *:hover > & {
+  *:hover > &, .active > & {
     opacity: 1;
   }
 }
