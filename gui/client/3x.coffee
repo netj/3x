@@ -1752,11 +1752,14 @@ class QueuesUI extends CompositeElement
         # TODO loading feedback
         $.getJSON("#{_3X_ServiceBaseURL}/api/run/queue/")
             .success((@queues) =>
+                unless @queueOnFocus?
+                    for queueName of @queues
+                        @focusQueue queueName
+                        break
                 # TODO trigger "queue-refreshed" event to decouple @status and @target from QueuesUI and let them manage things on their own
-                if @queueOnFocus?
-                    @status.currentQueue =
-                    @target.currentQueue =
-                        @queues[@queueOnFocus]
+                @status.currentQueue =
+                @target.currentQueue =
+                    @queues[@queueOnFocus]
                 # update badge for total number of planned runs
                 totalRemaining = 0
                 for name,queue of @queues
@@ -2063,6 +2066,8 @@ class StatusTable extends CompositeElement
             @queueName = queueName
             @queueId = "run/queue/#{queueName}"
             do @display
+        # initialize results table popover's target queue
+        @resultsActionPopover?.find(".queue-name").text(@queueId)
 
     @STATES: """
         DONE
@@ -2094,7 +2099,6 @@ class StatusTable extends CompositeElement
 
         # display the name of the queue
         @optionElements.nameDisplay?.text(@queueId)
-        @resultsActionPopover?.find(".queue-name").text(@queueId)
 
         # prepare to distinguish metadata from input parameter columns
         columnNames = (name for name of @conditions.conditions)
