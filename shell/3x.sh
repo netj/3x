@@ -41,8 +41,15 @@ set -eu
 
 if [ -z "${_3X_HOME:-}" ]; then
     export _3X_COMMAND=${POJANG_ORIGINAL_COMMAND:-$0}
-    export USAGE_TOOL_COMMAND=3x  USAGE_TOOL_PATH=$_3X_COMMAND
     unset POJANG_ORIGINAL_COMMAND
+    if [ x"$_3X_COMMAND" = x"$(type -p "3x" 2>/dev/null)" ]; then
+        # no need to expand command when it's on PATH
+        _3X_COMMAND=3x
+    else
+        # resolve relative path (but no need to follow symlinks)
+        _3X_COMMAND="$(cd "$(dirname "$_3X_COMMAND")"; pwd)/$(basename "$_3X_COMMAND")"
+    fi
+    export USAGE_TOOL_COMMAND=3x  USAGE_TOOL_PATH=$_3X_COMMAND
     Self=$(readlink -f "$0" 2>/dev/null || {
         # XXX readlink -f is only available in GNU coreutils
         cd $(dirname -- "$_3X_COMMAND")
