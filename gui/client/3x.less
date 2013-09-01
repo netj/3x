@@ -263,12 +263,14 @@ body > .navbar .brand .icon {
       cursor: pointer;
       padding: (@baseLineHeight / 3) (@baseLineHeight / 2);
       .queue-name { font-weight: bold; }
+      .queue-summary { opacity: 0.4; }
       h5        { margin: (@baseLineHeight / 4) 0; }
       .progress { margin-bottom: @baseLineHeight / 2; }
       &.active {
         color: @infoText;
         background-color: @infoBackground;
         border-color: @infoBorder;
+        .queue-summary { opacity: 1; }
       }
     }
   }

@@ -34,3 +34,6 @@
 [submodule "gui/d3"]
 	path = gui/d3
 	url = https://github.com/mbostock/d3.git
+[submodule "gui/Numeral-js"]
+	path = gui/Numeral-js
+	url = https://github.com/adamwdraper/Numeral-js.git

@@ -92,6 +92,10 @@ tryConvertingToNumbers = (vs) ->
     else
         vs
 
+# See: http://numeraljs.com
+humanReadableNumber = (num, fmt = "0,0") ->
+    numeral(num).format(fmt)
+
 
 intervalContains = (lu, xs...) ->
     (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
@@ -1785,11 +1789,13 @@ class QueuesUI extends CompositeElement
     @QUEUE_SKELETON: $("""
         <script type="text/x-jsrender">
             <li class="queue {{if state == "ACTIVE"}}active{{/if}} well alert-block" data-name="{{>queue}}">
-                <h5 class="queue-label">
+                <h5 class="queue-label pull-left">
                     <i class="icon icon-cog icon-spin"></i>
                     <span class="queue-name">{{>queue}}</span>
                 </h5>
-                <div class="progress for-PLANNED" data-toggle="tooltip" data-placement="right"  data-container=".queues">
+                <small class="queue-summary pull-right"      data-toggle="tooltip" data-placement="top"    data-container=".queues"></small>
+                <div class="clearfix"></div>
+                <div class="progress for-PLANNED"            data-toggle="tooltip" data-placement="right"  data-container=".queues">
                     <div class="bar bar-success    for-DONE" data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
                     <div class="bar bar-danger   for-FAILED" data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
                     <div class="bar             for-RUNNING" data-toggle="tooltip" data-placement="top"    data-container=".queues"></div>
@@ -1831,16 +1837,17 @@ class QueuesUI extends CompositeElement
             # compute queue data for display
             queue = @queues[name]
             isActive = queue.state is "ACTIVE"
+            numRemaining = queue.numAborted + queue.numRunning + queue.numPlanned
             #  count the total number of runs in this queue
-            total = 0
+            numTotal = 0
             for g in progressGroups when queue["num#{g}"]?
-                total += queue["num#{g}"]
+                numTotal += queue["num#{g}"]
             #  compute ratio for progress bar display
             ratioTotal = 0
             for g in progressGroups
                 ratioTotal += queue["ratio#{g}"] =
-                    if total is 0 or queue["num#{g}"] is 0 then 0
-                    else Math.max MIN_VISIBLE_RATIO, (queue["num#{g}"] / total)
+                    if numTotal is 0 or queue["num#{g}"] is 0 then 0
+                    else Math.max MIN_VISIBLE_RATIO, (queue["num#{g}"] / numTotal)
             #  normalize to account the residuals created by MIN_VISIBLE_RATIO
             for g in progressGroups
                 queue["ratio#{g}"] = queue["ratio#{g}"] / ratioTotal
@@ -1856,22 +1863,37 @@ class QueuesUI extends CompositeElement
                     .toggleClass("text-error", isActive)
                     .find(".icon").toggleClass("hide", not isActive).end()
                 .end()
+                .find(".queue-summary")
+                    .text("#{humanReadableNumber numRemaining} / #{humanReadableNumber numTotal}")
+                    .attr(title: "#{
+                        if queue.numRunning == 0 then ""
+                        else "#{humanReadableNumber queue.numRunning} running "
+                    }#{
+                        if queue.numAborted == 0 then ""
+                        else "#{humanReadableNumber queue.numAborted} aborted "
+                    }#{
+                        "#{humanReadableNumber queue.numPlanned} planned "
+                    }runs remain among #{humanReadableNumber numTotal} total runs#{
+                        if queue.numFailed == 0 then ""
+                        else ", #{humanReadableNumber queue.numFailed} of which failed"
+                    }.")
+                .end()
                 .find(".progress")
                     .css(width: if @showAbsoluteProgress then "#{100 * (Math.max MIN_VISIBLE_RATIO, (queue.numTotal/maxTotal))}%" else "auto")
                     .find(".bar")
-                    .filter(".for-DONE"   ).attr(title: "#{queue.numDone   } done"   ).css(width: "#{100 * queue.ratioDone   }%").end()
-                    .filter(".for-FAILED" ).attr(title: "#{queue.numFailed } failed" ).css(width: "#{100 * queue.ratioFailed }%").end()
-                    .filter(".for-ABORTED").attr(title: "#{queue.numAborted} aborted").css(width: "#{100 * queue.ratioAborted}%").end()
-                    .filter(".for-RUNNING").attr(title: "#{queue.numRunning} running").css(width: "#{100 * queue.ratioRunning}%").end()
+                    .filter(".for-DONE"   ).attr(title: "#{humanReadableNumber queue.numDone   } done"   ).css(width: "#{100 * queue.ratioDone   }%").end()
+                    .filter(".for-FAILED" ).attr(title: "#{humanReadableNumber queue.numFailed } failed" ).css(width: "#{100 * queue.ratioFailed }%").end()
+                    .filter(".for-ABORTED").attr(title: "#{humanReadableNumber queue.numAborted} aborted").css(width: "#{100 * queue.ratioAborted}%").end()
+                    .filter(".for-RUNNING").attr(title: "#{humanReadableNumber queue.numRunning} running").css(width: "#{100 * queue.ratioRunning}%").end()
                     #.filter(".for-PLANNED").attr(title: "#{queue.numPlanned} planned").css(width: "#{100 * queue.ratioPlanned}%").end()
                     .end()
-                    .attr(title: "#{queue.numPlanned} planned")
+                    .attr(title: "#{humanReadableNumber queue.numPlanned} planned")
                 .end()
                 .find(".actions")
                     .find(".queue-start").toggleClass("hide",     isActive).end()
                     .find(".queue-stop" ).toggleClass("hide", not isActive).end()
                     .find(".queue-reset")
-                        .toggleClass("hide", (queue.numRunning + queue.numAborted) is 0)
+                        .toggleClass("hide", (queue.numRunning + queue.numAborted) == 0)
                         .attr(title:
                             if isActive then "Stop this queue and clean up"
                             else "Clean up runs that were executing"
@@ -1882,7 +1904,7 @@ class QueuesUI extends CompositeElement
                         .end()
                     .end()
                 .end()
-                .find(".progress, .bar").tooltip("destroy").tooltip("hide").end()
+                .find(".progress, .bar, .queue-summary").tooltip("destroy").tooltip("hide").end()
 
         # indicate which queue is on focus
         do @updateFocusedQueue

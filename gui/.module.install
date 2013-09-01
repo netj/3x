@@ -43,3 +43,5 @@ jquery-ui/ui/jquery.ui.selectable.js                                            
 jquery-ui/ui/jquery.ui.sortable.js                                                      $GUIDIR/client/resource/
 
 d3/d3.js                                                $GUIDIR/client/resource/
+
+Numeral-js/numeral.js                                   $GUIDIR/client/resource/
