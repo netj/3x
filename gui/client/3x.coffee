@@ -683,7 +683,12 @@ class ResultsTable extends CompositeElement
     constructor: (@baseElement, @conditions, @measurements, @optionElements = {}) ->
         super @baseElement
         # TODO isolate localStorage key
-        @columnsToExpand = (try JSON.parse localStorage.resultsColumnsToExpand) ? {}
+        @columnsToExpand = (try JSON.parse localStorage.resultsColumnsToExpand)
+        unless @columnsToExpand?
+            @columnsToExpand = {}
+            for name of @conditions.conditions
+                @columnsToExpand[name] = true
+                break
         @columnNames = null
         @dataTable = null
         @results = ResultsTable.EMPTY_RESULTS
