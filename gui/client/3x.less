@@ -184,12 +184,16 @@ body > .navbar .brand .icon {
     .measurement {
       color: darken(@errorText, 5%);
     }
-    .icon {
-      vertical-align: text-bottom;
-      margin-left: .3em;
-    }
-    .aggregation-toggler:hover {
-      text-shadow: 0px 0px 2px @orange;
+    th {
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+      .icon {
+        vertical-align: text-bottom;
+      }
+      &.sorting, &.sorting_asc, &.sorting_desc {
+        padding-right: 18px;
+      }
     }
   }
 

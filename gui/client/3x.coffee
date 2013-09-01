@@ -761,11 +761,12 @@ class ResultsTable extends CompositeElement
             <th class="{{>className}}" data-index="{{>index}}" data-dataIndex="{{>dataIndex}}"><span class="dataName">{{>dataName}}</span>
                 {{if isMeasured && !isExpanded}}<small>[<span class="aggregationName">{{>aggregation.name}}</span>]</small>{{/if}}
                 {{if unit}}(<span class="unit">{{>unit}}</span>){{/if}}
-                {{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<i class="aggregation-toggler
-                icon icon-folder-{{if isExpanded}}open{{else}}close{{/if}}-alt"
-                title="{{if isExpanded}}Aggregate and fold the values of {{>name}}{{else
-                }}Expand the aggregated values of {{>name}}{{/if}}"
-                ></i>{{/if}}</th>
+                {{if isRunIdColumn || !~isRunIdExpanded && !isMeasured }}<button
+                    class="aggregation-toggler pull-right btn btn-mini {{if isExpanded}}btn-info{{/if}}"
+                    title="{{if isExpanded}}Aggregate and fold the values of {{>name}}{{else
+                    }}Expand the aggregated values of {{>name}}{{/if}}"
+                    ><i class="icon icon-folder-{{if isExpanded}}open{{else}}close{{/if}}-alt"
+                ></i></button>{{/if}}</th>
             {{/for}}
           </tr>
         </script>
