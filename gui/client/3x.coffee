@@ -695,7 +695,7 @@ class ResultsTable extends CompositeElement
         @resultsForRendering = null
         t = @
         @optionElements.toggleIncludeEmpty
-           ?.prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? false)
+           ?.prop("checked", (try JSON.parse localStorage.resultsIncludeEmpty) ? true)
             .change((e) ->
                 # TODO isolate localStorage key
                 localStorage.resultsIncludeEmpty = JSON.stringify this.checked
