@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# queue -- Command-line interface to manipulating queue entries
+# 
+# This command must be used under a queue directory, which will keep an SQLite
+# database named 'queue.db'.  Following subcommands are available to manipulate
+# entries of such database.
+# 
+# To list all entries in the queue:
+# > queue list
+# 
+# To list only 100 entries starting from the 201st entry:
+# > LIMIT=100 OFFSET=201 \
+# > queue list
+# 
+# 
+# To add PLANNED entries to the queue:
+# > queue plan-more <<EOF
+# > x=1 y=foo z=bar
+# > x=2 y=bar z=baz
+# > EOF
+# 
+# To replace PLANNED entries of the queue with the ones supplied as input:
+# > queue plan <<EOF
+# > x=3 y=foo z=baz
+# > EOF
+# 
+# 
+# To pick the first PLANNED entry in the queue and mark it as RUNNING:
+# > serial=$(queue pick 1 RUNNING)
+# > ...
+# 
+# Similarly, to pick the first 100 PLANNED entries in the queue:
+# > queue pick 100 RUNNING |
+# > while read serial; do
+# >     ...
+# > done
+# 
+# 
+# Using the serials of entries, we can selectively
+# change the state of particular entries in the queue:
+# > queue mark-as DONE    $serial
+# > queue mark-as FAILED  98 99
+# > queue mark-as PLANNED 100 101 102
+# 
+# Move some of the PLANNED entries to the front of the queue:
+# > queue prioritize 102 104 108 ...
+# Or, to the rear:
+# > queue postpone   101 103 105 107 ...
+# 
+# And remove from the queue:
+# > queue cancel     100 106 ...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-09-17
+set -eu
+
+[ $# -gt 0 ] || usage "$0" ""
+
+DB=queue.db
+
+Cmd=$1; shift
+case $Cmd in
+
+    list)
+        usage "$0" "Not implemented"
+        ;;
+
+    plan)
+        usage "$0" "Not implemented"
+        ;;
+
+    plan-more)
+        usage "$0" "Not implemented"
+        ;;
+
+    pick)
+        usage "$0" "Not implemented"
+        ;;
+
+    mark-as)
+        usage "$0" "Not implemented"
+        ;;
+
+    prioritize)
+        usage "$0" "Not implemented"
+        ;;
+
+    postpone)
+        usage "$0" "Not implemented"
+        ;;
+
+    cancel)
+        usage "$0" "Not implemented"
+        ;;
+
+esac
