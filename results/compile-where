@@ -18,7 +18,8 @@ for cond; do
             name=${cond%%@(<>|!=)*}; values=${cond##$name@(<>|!=)}
             sqlName=$(sql-name "$name")
             ty=$(sql-type "$name")
-            vs=$(sql-csv "$ty" "$values")
+            $()
+            vs=$(OFS=$IFS; IFS=,; set -- $values; IFS=$OFS; sql-csv "$ty" "$@")
             echo "$where $sqlName NOT IN ($vs)"
             ;;
 
@@ -37,7 +38,7 @@ for cond; do
             name=${cond%%=*}; values=${cond#$name=}
             sqlName=$(sql-name "$name")
             ty=$(sql-type "$name")
-            vs=$(sql-csv "$ty" "$values")
+            vs=$(OFS=$IFS; IFS=,; set -- $values; IFS=$OFS; sql-csv "$ty" "$@")
             echo "$where $sqlName IN ($vs)"
             ;;
 

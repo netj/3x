@@ -3,7 +3,7 @@
 # Usage: . sql-vocabs.sh
 #        ty=$(sql-type NAME)
 #        sqlValue=$(sql-literal $ty "$v")
-#        sqlValues=$(sql-csv $ty "$csv")
+#        sqlValues=$(sql-csv $ty "$v1" "$v2" ...)
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-03-08
@@ -57,8 +57,6 @@ sql-literal() {
 
 sql-csv() {
     local ty=$1; shift
-    local values=$1; shift
-    local OFS=$IFS; IFS=,; set -- $values; IFS=$OFS
     local sqlValues=
     for val; do sqlValues+=", $(sql-literal $ty $val)"; done
     echo -n "${sqlValues#, }"

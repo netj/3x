@@ -131,8 +131,8 @@ case $Cmd in
             numRecs=0
             while read -r run; do
                 if [[ $numRecs -eq 0 ]]; then
-                    echo "INSERT OR REPLACE INTO queue"
-                    echo "($(printf "_%s,\t" $inputs) serial, ordinal) VALUES "
+                    echo "INSERT OR REPLACE INTO queue ($(printf "_%s,\t" $inputs) serial, ordinal)"
+                    echo "VALUES"
                 else
                     echo ","
                 fi
@@ -168,8 +168,8 @@ case $Cmd in
             numRecs=0
             while read -r run; do
                 if [[ $numRecs -eq 0 ]]; then
-                    echo "INSERT INTO queue"
-                    echo "($(printf "_%s,\t" $inputs) ordinal) VALUES"
+                    echo "INSERT INTO queue ($(printf "_%s,\t" $inputs) ordinal)"
+                    echo "VALUES"
                 else
                     echo ","
                 fi
@@ -202,23 +202,79 @@ case $Cmd in
 
 
     duplicate)
+        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Cmd"
         {
             echo "BEGIN TRANSACTION;"
+            cols=$(printf "_%s,\t" $inputs)
             for serial; do
-                echo "INSERT INTO queue"
-                cols=$(printf "_%s,\t" $inputs)
-                echo "($cols ordinal)"
+                echo "INSERT INTO queue ($cols ordinal)"
                 echo "SELECT $cols (SELECT COALESCE(MAX(ordinal),0) FROM queue)+1"
-                echo "FROM queue"
-                echo "WHERE serial=$serial"
-                echo ";"
+                echo "FROM queue WHERE serial=$serial;"
             done
             echo "COMMIT;"
         } | sqlite
         ;;
 
     prioritize)
-        error "$Cmd: Not implemented"
+        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Cmd"
+        {
+            serials=$(sql-csv NUM "$@")
+            numPLANNED="(SELECT COUNT(1) FROM queue WHERE state='PLANNED')"
+            firstOrdinal="(SELECT COALESCE(MAX(ordinal),0) FROM queue WHERE state<>'PLANNED')+1"
+            minOrdinal="(SELECT MIN(ordinal) FROM order_$$)"
+            maxOrdinal="(SELECT MAX(ordinal) FROM order_$$)"
+            #debug() { local sql=${1#(}; sql=${sql%)}; echo "$sql;"; }
+            #echo ".nullvalue \"NULL\""
+            echo "BEGIN TRANSACTION;"
+            # add the prioritized ones to a temporary table
+            echo "CREATE TEMPORARY TABLE IF NOT EXISTS order_$$ AS"
+            echo " SELECT serial, NULL AS ordinal FROM queue"
+            echo " WHERE serial IN ( $serials ) AND state='PLANNED';"
+            #debug "${firstOrdinal%+1}"
+            #debug "$minOrdinal"
+            #debug "$maxOrdinal"
+            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
+            # assign the minimum ordinal to the first of prioritized ones
+            for serial; do
+                echo "UPDATE order_$$ SET ordinal"
+                echo " =$firstOrdinal"
+                echo "WHERE serial=$serial"
+                echo "  AND $minOrdinal IS NULL;"
+            done
+            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
+            for serial; do
+                echo "UPDATE order_$$ SET ordinal"
+                echo " =1 + $maxOrdinal"
+                echo "WHERE serial=$serial"
+                echo "  AND ordinal IS NULL;"
+            done
+            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
+            # make a gap in queue's ordinals for later
+            echo "UPDATE queue SET ordinal"
+            echo " =ordinal + $numPLANNED"
+            echo "WHERE state='PLANNED';"
+            # append the rest to the temporary table
+            echo "INSERT OR REPLACE INTO order_$$ (serial, ordinal)"
+            echo " SELECT serial, ordinal FROM queue"
+            echo " WHERE state='PLANNED' AND serial NOT IN ( $serials )"
+            echo " ORDER BY ordinal;"
+            #debug "SELECT * FROM order_$$ ORDER BY ordinal;"
+            # assign consecutive ordinals
+            echo "UPDATE order_$$ SET ordinal"
+            echo " =$minOrdinal"
+            echo " +(SELECT COUNT(1) FROM order_$$ AS o"
+            echo "   WHERE o.ordinal < order_$$.ordinal)"
+            echo "WHERE ordinal >= $minOrdinal + $numPLANNED;"
+            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
+            #debug "SELECT * FROM queue ORDER BY ordinal"
+            # reflect new ordinals back to queue
+            echo "UPDATE queue SET ordinal"
+            echo " =(SELECT o.ordinal FROM order_$$ AS o WHERE o.serial = queue.serial)"
+            echo "WHERE state='PLANNED';"
+            #debug "SELECT * FROM queue ORDER BY ordinal"
+            echo "DROP TABLE order_$$;"
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
     postpone)
