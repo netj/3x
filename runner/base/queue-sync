@@ -24,17 +24,8 @@ clean-stale-running-dirs() {
         serial=${staleRunDir#$RUNDIR_PREFIX}
         msg +2 "$_3X_QUEUE_ID: moving #$serial back to plan"
 
-        # unregister from queue's running list
-        {
-            echo "g/ #$serial /d"
-            echo wq
-        } | ed running >/dev/null
-
-        # move it back to plan
-        {
-            echo "0r $staleRunDir/cmdln"
-            echo wq
-        } | ed plan >/dev/null
+        # revert the run back to PLANNED state
+        queue mark-as PLANNED $serial
 
         # and remove
         ! [ -e $staleRunDir/run/ ] || unarchive "$_3X_ARCHIVE" $staleRunDir/run/

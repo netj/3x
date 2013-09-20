@@ -15,7 +15,6 @@ set -eu
 
 # all file paths are $_3X_QUEUE_DIR-relative
 ACTIVE_FLAG=.is-active.$_3X_RUNNER
-SERIAL_COUNTER=.count
 RUNDIR_PREFIX=running.$_3X_RUNNER.
 WORKER_LOCK_PREFIX=.worker.$_3X_RUNNER.
 WORKER_DIR_PREFIX=.worker.$_3X_RUNNER.

@@ -44,6 +44,7 @@ mkdir -p "$_3X_WORKER_DIR"
 cp -a "$_3X_TARGET_DIR"/. "$_3X_WORKER_DIR"/target
 
 
+trap : $WORKER_WAITING_SIGNAL
 # run the command
 export _3X_WORKER_ID _3X_WORKER_DIR _3X_WORKER_HANDLE
 let SHLVL--

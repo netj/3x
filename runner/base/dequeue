@@ -18,11 +18,6 @@ serial=
 runId=
 errorRecord=
 
-record-this-run-as() {
-    local state=$1
-    record-run-as $state $serial  $runId $cmdln
-}
-
 # mark as ABORTED upon queue-stop or interrupt
 exit-after-marking-as-aborted() {
     c=$?
@@ -30,8 +25,7 @@ exit-after-marking-as-aborted() {
         # "run" finishing with non-zero exit status indicates runner error, i.e.,
         # runner not being able to finish execution properly.  So, mark the run as
         # aborted, and keep it intact in the running list for later resumption.
-        state=ABORTED
-        record-this-run-as $state
+        queue mark-as ABORTED $serial
         # the cause is recorded in $runDir/error
         if [ -e "$errorRecord" -o $# -gt 0 ]; then
             chmod +w $runDir/run/
@@ -70,31 +64,27 @@ pick-next() {
     done
     # resume running if so, or dequeue from the plan
     if [ -d "$runDir" ]; then
-        runId=$(cat $runDir/runId || new-run-id)
         serial=${runDir#$RUNDIR_PREFIX}
-        cmdln=$(cat $runDir/cmdln)
     else
-        # determine serial number
-        serial=$(cat $SERIAL_COUNTER 2>/dev/null || echo 0)
-        let ++serial
+        # dequeue one planned run
+        serial=$(queue pick 1 RUNNING "$_3X_TARGET")
         # prepare a run dir
         runDir=$RUNDIR_PREFIX$serial
         mkdir -p $runDir
         lockproc $runDir/lock grab
-        # determine a fresh run id
-        runId=$(new-run-id | tee $runDir/runId)
-        # dequeue one planned run
-        { echo "1w $runDir/cmdln"; echo 1d; echo wq; } | ed plan &>/dev/null
-        cmdln=$(cat $runDir/cmdln)
-        # increment serial counter
-        echo $serial >$SERIAL_COUNTER
     fi
+    runSpec=$(queue list "serial#"=$serial)
+    runId=${runSpec##*[[:space:]]}
+    echo $runId >$runDir/runId
+    cmdln="run ${runSpec#*[[:space:]]}"
+    cmdln=${cmdln%%#*}
+    echo $cmdln >$runDir/cmdln
     errorRecord="$_3X_QUEUE_DIR"/$runDir/error
 }
+# TODO can't we simply rely on queue pick?
 synchronized plan.lock  pick-next
 
 # book-keep the running list and symlink to actual run
-record-this-run-as RUNNING
 runRelPath="../../../${runId#run/}"
 ln -sfn "$runRelPath" $runDir/run
 
@@ -111,8 +101,8 @@ rm -f "$errorRecord"
 
 
 # execute the picked one
-# XXX count=$(($(wc -l <done) + $(wc -l <running) + $(wc -l <plan)))
-count=$(( $serial + $(wc -l <plan) ))
+eval "$(queue countByState PLANNED)"
+count=$(( $serial + $numPLANNED ))
 runner-msg "Executing #$serial/$count as $runId"
 # NOTE the following invokes the run command, which in turn invokes run.assemble, run.execute and run.store
 _3X_LOGERROR=$errorRecord \
@@ -129,7 +119,7 @@ state=DONE
 
 
 # record the run in the "done" list with its state
-record-this-run-as $state
+queue mark-as $state $serial
 
 # no more ABORTED upon signals
 trap - INT QUIT TERM

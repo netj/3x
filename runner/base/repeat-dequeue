@@ -19,9 +19,10 @@ trap "stopped=true terminated=true" TERM
 trap '$processing || runner-msg "Resuming"' $WORKER_WAITING_SIGNAL
 queue-not-empty() {
     # check if there are planned runs, or interrupted ones in current queue
-    if [ -s plan ]; then
+    eval "$(queue countByState PLANNED RUNNING)"
+    if [ $numPLANNED -gt 0 ]; then
         return 0 # = true
-    elif [ -s running ]; then
+    elif [ $numRUNNING -gt 0 ]; then
         local lock=
         for lock in $RUNDIR_PREFIX*/lock; do
             [ -e "$lock" ] || continue

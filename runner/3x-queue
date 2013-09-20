@@ -98,11 +98,11 @@ if $ListDetails; then
             "$current" \
             "$queue" \
             "$state" \
-            "$numPLANNED" \
-            "$numRUNNING" \
-            "$numABORTED" \
-            "$numFAILED" \
-            "$numDONE" \
+            "${numPLANNED:-0}" \
+            "${numRUNNING:-0}" \
+            "${numABORTED:-0}" \
+            "${numFAILED:-0}" \
+            "${numDONE:-0}" \
             "$target" \
             #
         )

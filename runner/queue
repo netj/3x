@@ -85,6 +85,7 @@ dedup-serials() {
 if ! [ -s $DB ]; then
     # TODO check schema to see if new columns are added
     prepare-full-query
+    [ -n "$inputs" ] || exit 0
     sqlite <<-EOF
 	BEGIN TRANSACTION;
 	CREATE TABLE IF NOT EXISTS queue
@@ -104,6 +105,8 @@ if ! [ -s $DB ]; then
 	COMMIT;
 	EOF
 fi
+
+# TODO sanitize STATE
 
 Cmd=$1; shift
 case $Cmd in
@@ -129,11 +132,8 @@ case $Cmd in
         ;;
 
     count)
-        where=$(printf "'%s', " "$@")
-        where=${where:+WHERE state IN ( ${where%, } )}
-        sqlite <<-EOF
-	SELECT COUNT(1) FROM queue $where;
-	EOF
+        prepare-full-query
+        sqlite <<<"SELECT COUNT(1) FROM queue $(compile-where "$@");"
         ;;
 
     countByState)
@@ -220,16 +220,23 @@ case $Cmd in
     pick)
         count=$1; shift
         newState=$1; shift
+        target=${1:-${_3X_TARGET:-}}; shift || true
+        runId=${1:-$(new-run-id)}; shift || true
         {
             newStateSQL="'${newState//\'/\'\'}'"
+            targetSQL="'${target//\'/\'\'}'"
             echo "BEGIN TRANSACTION;"
             serialsQuery="SELECT serial FROM queue
                           WHERE state='PLANNED'
                           ORDER BY ordinal
                           LIMIT $count"
             echo "$serialsQuery;"
+            # assign new runId and target
+            runIdSQL="'${runId//\'/\'\'}'"
             echo "UPDATE queue
                   SET state=$newStateSQL
+                    , target=$targetSQL
+                    , runId=$runIdSQL
                   WHERE serial IN ($serialsQuery);"
             echo "COMMIT;"
         } | sqlite
@@ -245,6 +252,7 @@ case $Cmd in
                 echo "UPDATE queue
                       SET state=$newStateSQL
                       WHERE serial=$serial;"
+                # TODO NULLify runId, target, and other columns when $newState=PLANNED
             done
             echo "COMMIT;"
         } | sqlite

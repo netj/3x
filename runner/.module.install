@@ -30,5 +30,4 @@ base/run.store                  $TOOLSDIR/runner/.../
 base/environ                    $TOOLSDIR/runner/.../
 
 queue                           $TOOLSDIR/
-record-run-as                   $TOOLSDIR/
 new-run-id                      $TOOLSDIR/
