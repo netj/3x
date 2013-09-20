@@ -7,20 +7,10 @@
 # Created: 2013-01-14
 set -eu
 
-. find-runner.sh -
+. find-queue.sh
 
 # TODO add CLI switch to selectively show DONE/RUNNING/PLANNED
 
-{
-    # runs already finished
-    cat done 2>/dev/null || true
-
-    # runs running now
-    cat running 2>/dev/null || true
-
-    # runs planned
-    if [ -r plan ]; then
-        serialOnEachLine plan $(( $(cat .count 2>/dev/null || echo 0) + 1 )) |
-        sed 's:^run[[:space:]][[:space:]]*:PLANNED :'
-    fi
-} | column -t
+cd "$_3X_QUEUE_DIR"
+queue list |
+column -t

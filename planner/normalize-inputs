@@ -139,4 +139,5 @@ fi
 for arg in "$@"; do
     # TODO escape whitespace?
     echo "$arg"
-done
+done |
+sort -g # normalize ordering

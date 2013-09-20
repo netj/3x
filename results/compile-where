@@ -16,26 +16,29 @@ for cond; do
         # exclusion; not equal to
         *@(<>|!=)*)
             name=${cond%%@(<>|!=)*}; values=${cond##$name@(<>|!=)}
+            sqlName=$(sql-name "$name")
             ty=$(sql-type "$name")
             vs=$(sql-csv "$ty" "$values")
-            echo "$where _$name NOT IN ($vs)"
+            echo "$where $sqlName NOT IN ($vs)"
             ;;
 
         # inequalities
         *@(<=|>=|<|>)*)
             name=${cond%%@(<=|>=|<|>)*}; value=${cond##$name@(<=|>=|<|>)}
+            sqlName=$(sql-name "$name")
             o=${cond%$value}; o=${o#$name}
             ty=$(sql-type "$name")
             v=$(sql-literal "$ty" "$value")
-            echo "$where _$name $o $v"
+            echo "$where $sqlName $o $v"
             ;;
 
         # membership; equals
         *=*)
             name=${cond%%=*}; values=${cond#$name=}
+            sqlName=$(sql-name "$name")
             ty=$(sql-type "$name")
             vs=$(sql-csv "$ty" "$values")
-            echo "$where _$name IN ($vs)"
+            echo "$where $sqlName IN ($vs)"
             ;;
 
         *)

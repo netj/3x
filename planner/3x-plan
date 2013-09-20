@@ -50,7 +50,6 @@ update-assembly-script >/dev/null
 
 # create the queue directory if needed
 mkdir -p -- "$_3X_QUEUE_DIR"
-[ -e "$_3X_QUEUE_DIR"/plan ] || touch "$_3X_QUEUE_DIR"/plan
 
 # how to generate example usages
 showExampleUsages() {
@@ -112,13 +111,24 @@ permute() {
     fi
 }
 
+list-PLANNED() {
+    queue list "state#"=PLANNED |
+    sed '
+    s/^PLANNED[[:space:]]*/run	/
+    s/[[:space:]]*$//
+    s/[[:space:]]*\(#[[:digit:]]*\)/		\1/
+    '
+}
+
 tmp=$(mktemp -d "$_3X_QUEUE_DIR"/plan.XXXXXX)
 trap "rm -rf -- $tmp" EXIT
-computePlanHash() {
-planSHA1orig=$(sha1sum <"$_3X_QUEUE_DIR"/plan)
-}
-computePlanHash
+computePlanHash() { list-PLANNED | sha1sum; }
+planSHA1orig=$(computePlanHash)
 planWithFiles=()
+planAppend=false
+
+# use $EDITOR only when we're in a terminal
+[ -t 0 -a -t 1 ] || EDITOR=true
 
 # decide how we want to plan
 if [ $# -gt 0 ]; then
@@ -137,15 +147,15 @@ case $Command in
             done
             set -- "${planWithFiles[@]}"
         fi
-        [ -t 0 -a -t 1 ] || EDITOR=true
         {
-            case $Command in add) cat "$_3X_QUEUE_DIR"/plan; esac
             cat "$@"
             echo
         } >"$tmp"/new
+        case $Command in add) planAppend=true; esac
         ;;
 
     duplicate)
+        # FIXME use queue
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
         # first, collect given runs from done, running and plan
         count=$(cat "$_3X_QUEUE_DIR"/.count 2>/dev/null || echo 0)
@@ -174,6 +184,7 @@ case $Command in
         ;;
 
     prioritize|postpone|cancel)
+        # FIXME use queue
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
         # first, collect and remove given runs from plan
         count=$(cat "$_3X_QUEUE_DIR"/.count 2>/dev/null || echo 0)
@@ -222,7 +233,8 @@ case $Command in
             comm -13 "$excl" -
         else awk '!seen[$0] {seen[$0]++;print}' # filter duplicate inputs
         fi |
-        sed 's/^[^[:space:]]*[[:space:]]*/run  /' | column -t >"$tmp"/new
+        sed 's/^/run	/' >"$tmp"/new
+        planAppend=true
         ;;
 
     help|"-h")
@@ -232,9 +244,8 @@ case $Command in
         ;;
 
     "") # edit the current plan
-        if [ -s "$_3X_QUEUE_DIR"/plan ]; then
-            cat "$_3X_QUEUE_DIR"/plan >"$tmp"/new
-        else # show usage first if empty
+        list-PLANNED >"$tmp"/new
+        if ! [ -s "$tmp"/new ]; then # show usage first if empty
             usage "$0" "Plan is empty for $_3X_QUEUE_ID; specify input variables to add." ||
                 showExampleUsages
         fi
@@ -247,16 +258,26 @@ case $Command in
 
         # permute the arguments and generate a plan
         msg "Permuting inputs for ${@%%=*}..."
-        permute "run" "$@" | column -t >"$tmp"/more
-        computePlanHash
-        cat "$_3X_QUEUE_DIR"/plan "$tmp"/more >"$tmp"/new
+        permute "run " "$@" >"$tmp"/new
+        planAppend=true
         ;;
 esac
 
+# prepare the full plan so user can edit when possible
+if $planAppend && ! [ x"${EDITOR:-}" = x"true" ]; then
+    planSHA1orig=$(computePlanHash)
+    mv -f "$tmp"/new "$tmp"/more
+    { list-PLANNED; cat "$tmp"/more; } | column -t >"$tmp"/new
+    planAppend=false
+fi
+
 cd "$_3X_QUEUE_DIR"
 
-# let user do a finish edit of the generated plan
-if edit "$tmp"/new "$tmp"/timestamp; then
+# decide whether we replace or append to current plan
+if $planAppend; then
+    queue plan-more <"$tmp"/new
+elif edit "$tmp"/new "$tmp"/timestamp; then
+    # let user do a finish edit of the generated plan
     sanitize() {
         local i=$1 o=$2
         # check if every line starts with `run '
@@ -267,7 +288,8 @@ if edit "$tmp"/new "$tmp"/timestamp; then
         # TODO check whether all input values are sane
     }
     confirm-if-changed() {
-        if ! [ x"$planSHA1orig" = x"$(sha1sum <plan)" ]; then
+        # FIXME use queue
+        if ! [ x"$planSHA1orig" = x"$(computePlanHash)" ]; then
             # show error if changed
             error "Plan for $_3X_QUEUE_ID changed since editing" || true
             if [ -t 0 -a -t 1 ]; then
@@ -294,7 +316,7 @@ if edit "$tmp"/new "$tmp"/timestamp; then
         msg "  3x plan with ${savedPlan#$_3X_ROOT/}"
         false
     }
-    cp -f "$tmp"/sanitized plan
+    cat "$tmp"/sanitized | queue plan
     if [ ${#planWithFiles[@]} -gt 0 ]; then
         # clean up any temporary file for `plan with`
         for f; do
@@ -311,7 +333,7 @@ else
 fi
 
 # and summarize the new plan for queue
-msg "3x: updated plan for $_3X_QUEUE_ID ($(wc -l <plan) runs)"
+msg "3x: updated plan for $_3X_QUEUE_ID ($(list-PLANNED | wc -l) runs)"
 
 # and notify queue-changed if already started,
 if queue-is-active; then

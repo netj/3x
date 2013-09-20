@@ -50,4 +50,5 @@ for name; do
             ;;
     esac
     echo "$name${unit:+($unit)}${type:+:$type}"
-done
+done |
+sort -g # normalize ordering

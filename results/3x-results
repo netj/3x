@@ -56,17 +56,7 @@ args=($(normalize-inputs -p "$@" | grep -v '=$' || true))
 
 ## try index first
 set -o pipefail
-if ! 3x-index query "$@" | {
-    # TODO only when not using plain tab separated format
-    read header
-    OFS=$IFS; IFS=$'\t'; set -- $header; IFS=$OFS
-    labelAwk= i=2; shift
-    for varName; do
-        labelAwk+=", \"$varName=\"\$$i"
-        let ++i
-    done
-    awk -F $'\t' '{print $1, '"${labelAwk#,}"'}'
-}; then
+if ! 3x-index query "$@"; then
 
 ## and fallback to scanning raw data
 msg +2 "Compiling filter $*"

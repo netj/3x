@@ -8,9 +8,22 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-03-08
 
+sql-name() {
+    local name=$1
+    case $name in
+        *"#") echo "${name%#}" ;;
+        *)    echo "_$name"    ;;
+    esac
+}
+
 _varTypes=
 sql-type() {
     local name=$1
+    case $name in
+        *"#") # internal columns
+            echo TEXT
+            return
+    esac
     # TODO use associative arrays if available
     : ${_varTypes:=$(3x-inputs -t; 3x-outputs -t)}
     ty=$(sed -n "/^$name:/ { s/^[^:]*://p; q; }" <<<"$_varTypes")
@@ -49,4 +62,19 @@ sql-csv() {
     local sqlValues=
     for val; do sqlValues+=", $(sql-literal $ty $val)"; done
     echo -n "${sqlValues#, }"
+}
+
+sql-values-expr() {
+    local fmtMore=$1; shift
+    local esc= vars= fmt= varName=
+    for varName; do
+        case $(sql-type $varName) in
+            TEXT)
+                esc+=" $varName=\${$varName:+\"'\"\${$varName//\"'\"/\"''\"}\"'\"}"
+                ;;
+        esac
+        vars+="\"\${$varName:-NULL}\"" fmt+="%s"
+        vars+=' ' fmt+=', '
+    done
+    echo "$esc; printf \"(${fmt%, }${fmtMore:+, $fmtMore})\" $vars"
 }

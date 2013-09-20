@@ -85,4 +85,5 @@ for path in "$@"; do
     name=$(basename "$path")
     name=${name%%=*}
     showInput $name "$path"
-done
+done |
+sort -g # normalize ordering

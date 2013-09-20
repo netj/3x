@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # queue -- Command-line interface to manipulating queue entries
 # 
-# This command must be used under a queue directory, which will keep an SQLite
-# database named 'queue.db'.  Following subcommands are available to manipulate
+# This command works with an SQLite database named 'queue.db', kept under the
+# current queue directory.  Following subcommands are available to manipulate
 # entries of such database.
 # 
 # To list all entries in the queue:
@@ -56,28 +56,150 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" ""
 
-DB=queue.db
+BATCHSIZE=256
+
+. find-queue.sh
+. sql-vocabs.sh
+
+DB="$_3X_QUEUE_DIR"/queue.db
+sqlite() { sqlite3 -bail "$DB" "$@"; }
+inputs=$(3x-inputs)
+
+dedup-serials() {
+    awk '{
+        serial=$0; sub(/^.*#/, "", serial)
+        if (seen[serial]++) {
+            sub("#" serial, "")
+        }
+        print
+    }'
+}
+
+# make sure a proper queue database exists
+if ! [ -s $DB ]; then
+    # TODO check schema to see if new columns are added
+    sqlite <<-EOF
+	BEGIN TRANSACTION;
+	CREATE TABLE IF NOT EXISTS queue
+	( serial   INTEGER PRIMARY KEY ASC AUTOINCREMENT
+	, ordinal  INTEGER UNIQUE NOT NULL
+	, state    TEXT           DEFAULT 'PLANNED'
+	, target   TEXT           DEFAULT NULL
+	, runId    TEXT    UNIQUE DEFAULT NULL
+	$(
+	for varName in $inputs; do
+	    echo ", _$varName $(sql-type $varName) DEFAULT NULL"
+	done
+	)
+	);
+	CREATE UNIQUE INDEX IF NOT EXISTS queueOrdering
+	ON queue (ordinal ASC);
+	COMMIT;
+	EOF
+fi
 
 Cmd=$1; shift
 case $Cmd in
 
     list)
-        usage "$0" "Not implemented"
+        cols="state"             #header="state#"
+        for varName in $inputs; do
+            cols+=", '$varName=' || _$varName"  #header+="\t$varName"
+        done
+        cols+=", '#' || serial"  #header+="\tserial#"
+        cols+=", target"         #header+="\ttarget#"
+        cols+=", runId"          #header+="\trun#"
+        # compile selection expression from arguments
+        where=$(compile-where "$@")
+        #echo -e "$header"
+        sqlite <<-EOF
+	.header OFF
+	.mode tabs
+	.nullvalue ""
+	SELECT $cols FROM queue $where ORDER BY ordinal;
+	EOF
         ;;
 
+
     plan)
-        usage "$0" "Not implemented"
+        dedup-serials | {
+            echo "BEGIN TRANSACTION;"
+            echo "DELETE FROM queue WHERE state='PLANNED';"
+            printRecordExpr=$(sql-values-expr "%s, (%s)" $inputs)
+            numRecs=0
+            while read -r run; do
+                if [[ $numRecs -eq 0 ]]; then
+                    echo "INSERT OR REPLACE INTO queue"
+                    echo "($(printf "_%s,\t" $inputs) serial, ordinal) VALUES "
+                else
+                    echo ","
+                fi
+                let ++numRecs
+                # parse line and print corresponding row values
+                run=${run#run}
+                case $run in
+                    *"#"[0-9]*)
+                        serial=${run##*#}
+                        serial=${serial%%[[:space:]]*}
+                        serial="'$serial'" ;;
+                    *)  serial=NULL        ;;
+                esac
+                eval "(
+                $run
+                $printRecordExpr  '$serial' \
+                    '(SELECT COALESCE(MAX(ordinal),0) FROM queue)+$numRecs'
+                )"
+                if [[ $numRecs -ge $BATCHSIZE ]]; then
+                    echo ";"
+                    numRecs=0
+                fi
+            done
+            [[ $numRecs -eq 0 ]] || echo ";"
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
     plan-more)
-        usage "$0" "Not implemented"
+        {
+            echo "BEGIN TRANSACTION;"
+            printRecordExpr=$(sql-values-expr "(%s)" $inputs)
+            numRecs=0
+            while read -r run; do
+                if [[ $numRecs -eq 0 ]]; then
+                    echo "INSERT INTO queue"
+                    echo "($(printf "_%s,\t" $inputs) ordinal) VALUES"
+                else
+                    echo ","
+                fi
+                let ++numRecs
+                # parse line and print corresponding row values
+                run=${run#run}
+                eval "(
+                $run
+                $printRecordExpr  \
+                    '(SELECT COALESCE(MAX(ordinal),0) FROM queue)+$numRecs'
+                )"
+                if [[ $numRecs -ge $BATCHSIZE ]]; then
+                    echo ";"
+                    numRecs=0
+                fi
+            done
+            [[ $numRecs -eq 0 ]] || echo ";"
+            echo "COMMIT;"
+        } | sqlite
         ;;
+
 
     pick)
         usage "$0" "Not implemented"
         ;;
 
     mark-as)
+        usage "$0" "Not implemented"
+        ;;
+
+
+    duplicate)
         usage "$0" "Not implemented"
         ;;
 

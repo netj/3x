@@ -29,7 +29,7 @@ vs=($(IFS=.; set -- $v; echo "$@"))
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
-. "$TOOLSDIR"/sql-vocabs.sh
+. sql-vocabs.sh
 
 _3X_INDEX="$_3X_ROOT"/.3x/index.db
 sqlite() { sqlite3 "$_3X_INDEX"; }
@@ -83,14 +83,13 @@ case $Cmd in
         ;;
 
     query)
-        header="run#" cols="id"
+        cols="id"                               #header="run#"
         for varName in $columns; do
-            header+="\t$varName"
-            cols+=", _$varName"
+            cols+=", '$varName=' || _$varName"  #header+="\t$varName"
         done
         # compile selection expression from arguments
         where=$(compile-where "$@")
-        echo -e "$header"
+        #echo -e "$header"
         sqlite <<-EOF
 	.header OFF
 	.mode tabs
@@ -107,26 +106,15 @@ case $Cmd in
         verbosity-isnt +1 || progress() { msg "Indexing $*..."; }
         verbosity-isnt +2 || run-sqlite() { tee /dev/stderr | sqlite "$@"; }
         be-quiet +3       || set -x
-        # prepare code for generating SQL statements
-        esc= vars= fmt=
-        for varName in $columns; do
-            case $(sql-type $varName) in
-                TEXT)
-                    esc+=" $varName=\${$varName:+\"'\"\${$varName//\"'\"/\"''\"}\"'\"}"
-                    ;;
-            esac
-            vars+="\"\${$varName:-NULL}\"" fmt+="%s"
-            vars+=' ' fmt+=',\t'
-        done
-        printRecordExpr="source input; source output;
-                    $esc; printf \"($fmt'%s')\" $vars"
         {
+            # prepare code for generating SQL statements
+            printRecordExpr=$(sql-values-expr "'%s'" $columns)
             # scan given RUNs and generate VALUES for SQL INSERT statement
             numRecs=0
             for run; do
                 if [[ $numRecs -eq 0 ]]; then
                     echo "INSERT OR REPLACE INTO run"
-                    echo "($(printf "_%s,\t" $columns)id) VALUES "
+                    echo "($(printf "_%s,\t" $columns) id) VALUES "
                 else
                     echo ","
                 fi
@@ -134,7 +122,7 @@ case $Cmd in
                     cd "$run"
                     id=$(pwd -P); id=${id#$_3X_ROOT/}
                     progress "$id"
-                    eval "$printRecordExpr '$id'"
+                    eval "source input; source output; $printRecordExpr '$id'"
                 )
                 let ++numRecs
                 if [[ $numRecs -ge $BATCHSIZE ]]; then
