@@ -84,6 +84,7 @@ dedup-serials() {
 # make sure a proper queue database exists
 if ! [ -s $DB ]; then
     # TODO check schema to see if new columns are added
+    prepare-full-query
     sqlite <<-EOF
 	BEGIN TRANSACTION;
 	CREATE TABLE IF NOT EXISTS queue
@@ -135,6 +136,15 @@ case $Cmd in
 	EOF
         ;;
 
+    countByState)
+        [ $# -gt 0 ] || set -- PLANNED RUNNING DONE ABORTED FAILED
+        {
+            echo ".header OFF"
+            for state; do
+                echo "SELECT 'num$state=' || COUNT(1) FROM queue WHERE state='$state';"
+            done
+        } | sqlite
+        ;;
 
     plan)
         prepare-full-query

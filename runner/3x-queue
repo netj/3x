@@ -89,11 +89,7 @@ if $ListDetails; then
         {
             state=INACTIVE
             ! queue-is-active || state=ACTIVE
-            numPlanned=$(queue count PLANNED || echo 0)
-            numRunning=$(queue count RUNNING || echo 0)
-            numDone=$(   queue count DONE    || echo 0)
-            numAborted=$(queue count ABORTED || echo 0)
-            numFailed=$( queue count FAILED  || echo 0)
+            eval "$(queue countByState)"
             target=$(readlink $queue/target || echo '?')
             target=${target##*/}
         }
@@ -102,11 +98,11 @@ if $ListDetails; then
             "$current" \
             "$queue" \
             "$state" \
-            "$numPlanned" \
-            "$numRunning" \
-            "$numAborted" \
-            "$numFailed" \
-            "$numDone" \
+            "$numPLANNED" \
+            "$numRUNNING" \
+            "$numABORTED" \
+            "$numFAILED" \
+            "$numDONE" \
             "$target" \
             #
         )
