@@ -215,7 +215,8 @@ case $Cmd in
         } | sqlite
         ;;
 
-    prioritize)
+
+    prioritize|postpone)
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Cmd"
         {
             serials=$(sql-csv NUM "$@")
@@ -223,63 +224,80 @@ case $Cmd in
             firstOrdinal="(SELECT COALESCE(MAX(ordinal),0) FROM queue WHERE state<>'PLANNED')+1"
             minOrdinal="(SELECT MIN(ordinal) FROM order_$$)"
             maxOrdinal="(SELECT MAX(ordinal) FROM order_$$)"
-            #debug() { local sql=${1#(}; sql=${sql%)}; echo "$sql;"; }
-            #echo ".nullvalue \"NULL\""
             echo "BEGIN TRANSACTION;"
-            # add the prioritized ones to a temporary table
-            echo "CREATE TEMPORARY TABLE IF NOT EXISTS order_$$ AS"
-            echo " SELECT serial, NULL AS ordinal FROM queue"
-            echo " WHERE serial IN ( $serials ) AND state='PLANNED';"
-            #debug "${firstOrdinal%+1}"
-            #debug "$minOrdinal"
-            #debug "$maxOrdinal"
-            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
-            # assign the minimum ordinal to the first of prioritized ones
-            for serial; do
-                echo "UPDATE order_$$ SET ordinal"
-                echo " =$firstOrdinal"
-                echo "WHERE serial=$serial"
-                echo "  AND $minOrdinal IS NULL;"
-            done
-            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
-            for serial; do
-                echo "UPDATE order_$$ SET ordinal"
-                echo " =1 + $maxOrdinal"
-                echo "WHERE serial=$serial"
-                echo "  AND ordinal IS NULL;"
-            done
-            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
-            # make a gap in queue's ordinals for later
-            echo "UPDATE queue SET ordinal"
-            echo " =ordinal + $numPLANNED"
-            echo "WHERE state='PLANNED';"
-            # append the rest to the temporary table
-            echo "INSERT OR REPLACE INTO order_$$ (serial, ordinal)"
-            echo " SELECT serial, ordinal FROM queue"
-            echo " WHERE state='PLANNED' AND serial NOT IN ( $serials )"
-            echo " ORDER BY ordinal;"
-            #debug "SELECT * FROM order_$$ ORDER BY ordinal;"
-            # assign consecutive ordinals
-            echo "UPDATE order_$$ SET ordinal"
-            echo " =$minOrdinal"
-            echo " +(SELECT COUNT(1) FROM order_$$ AS o"
-            echo "   WHERE o.ordinal < order_$$.ordinal)"
-            echo "WHERE ordinal >= $minOrdinal + $numPLANNED;"
-            #debug "SELECT * FROM order_$$ ORDER BY ordinal"
-            #debug "SELECT * FROM queue ORDER BY ordinal"
-            # reflect new ordinals back to queue
-            echo "UPDATE queue SET ordinal"
-            echo " =(SELECT o.ordinal FROM order_$$ AS o WHERE o.serial = queue.serial)"
-            echo "WHERE state='PLANNED';"
-            #debug "SELECT * FROM queue ORDER BY ordinal"
+            echo "CREATE TEMPORARY TABLE IF NOT EXISTS order_$$
+                  (serial INTEGER, ordinal INTEGER);"
+
+            # TODO cache firstOrdinal, numPLANNED
+        case $Cmd in
+            prioritize)
+                # add the prioritized ones to a temporary table
+                echo "INSERT INTO order_$$
+                        SELECT serial, NULL AS ordinal FROM queue
+                        WHERE serial IN ( $serials ) AND state='PLANNED';"
+                # assign the minimum ordinal to the first of the prioritized ones
+                for serial; do
+                    echo "UPDATE order_$$
+                          SET ordinal = $firstOrdinal
+                          WHERE serial=$serial AND $minOrdinal IS NULL;"
+                done
+                # and consecutive ordinals from that
+                for serial; do
+                    echo "UPDATE order_$$
+                          SET ordinal = 1 + $maxOrdinal
+                          WHERE serial=$serial AND ordinal IS NULL;"
+                done
+                # append the rest of PLANNED ones to the temporary table
+                echo "INSERT OR REPLACE INTO order_$$ (serial, ordinal) 
+                        SELECT serial, ordinal + $numPLANNED FROM queue 
+                        WHERE serial NOT IN ( $serials ) AND state='PLANNED'
+                        ORDER BY ordinal;"
+                # assign consecutive ordinals
+                echo "UPDATE order_$$
+                      SET ordinal = $firstOrdinal 
+                                  + (SELECT COUNT(1) FROM order_$$ AS o
+                                     WHERE o.ordinal < order_$$.ordinal)
+                      WHERE ordinal >= $firstOrdinal + $numPLANNED;"
+                ;;
+
+            postpone)
+                # add all PLANNED ones except the postponed first to a temporary table
+                echo "INSERT INTO order_$$
+                        SELECT serial, ordinal FROM queue
+                        WHERE serial NOT IN ( $serials ) AND state='PLANNED'
+                        ORDER BY ordinal;"
+                # assign consecutive ordinals
+                echo "UPDATE order_$$
+                      SET ordinal = $firstOrdinal
+                                  + (SELECT COUNT(1) FROM order_$$ AS o
+                                     WHERE o.ordinal < order_$$.ordinal)
+                      WHERE ordinal IS NOT NULL;"
+                # append the postponed ones to the temporary table
+                echo "INSERT OR REPLACE INTO order_$$ (serial, ordinal)
+                        SELECT serial, NULL FROM queue
+                        WHERE serial IN ( $serials ) AND state='PLANNED';"
+                # and assign consecutive ordinals as well
+                for serial; do
+                    echo "UPDATE order_$$
+                          SET ordinal = 1 + $maxOrdinal
+                          WHERE serial=$serial AND ordinal IS NULL;"
+                done
+                ;;
+        esac
+
+            # reflect new ordinals back to queue by making a gap first
+            echo "UPDATE queue
+                  SET ordinal = ordinal + $numPLANNED
+                  WHERE state='PLANNED';"
+            echo "UPDATE queue
+                  SET ordinal = (SELECT o.ordinal FROM order_$$ AS o
+                                 WHERE o.serial = queue.serial)
+                  WHERE state='PLANNED';"
             echo "DROP TABLE order_$$;"
             echo "COMMIT;"
         } | sqlite
         ;;
 
-    postpone)
-        error "$Cmd: Not implemented"
-        ;;
 
     cancel)
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Cmd"
