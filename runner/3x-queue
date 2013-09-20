@@ -89,16 +89,14 @@ if $ListDetails; then
         {
             state=INACTIVE
             ! queue-is-active || state=ACTIVE
-            numPlanned=$(wc -l <$queue/plan    || echo 0)
-            numRunning=$(wc -l <$queue/running || echo 0)
-            numDone=$(   wc -l <$queue/done    || echo 0)
-            numAborted=$(grep -c '^ABORTED' <$queue/running || true)
-            numFailed=$( grep -c '^FAILED'  <$queue/done    || true)
-            let numRunning+=-${numAborted:=0} || true
-            let numDone+=-${numFailed:=0}     || true
+            numPlanned=$(queue count PLANNED || echo 0)
+            numRunning=$(queue count RUNNING || echo 0)
+            numDone=$(   queue count DONE    || echo 0)
+            numAborted=$(queue count ABORTED || echo 0)
+            numFailed=$( queue count FAILED  || echo 0)
             target=$(readlink $queue/target || echo '?')
             target=${target##*/}
-        } 2>/dev/null
+        }
         # output in tab-separated columns
         tsvline \
             "$current" \

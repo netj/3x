@@ -59,14 +59,16 @@ set -eu
 BATCHSIZE=256
 
 . find-queue.sh
-. sql-vocabs.sh
 
 DB="$_3X_QUEUE_DIR"/queue.db
 sqlite() { sqlite3 -bail "$DB" "$@"; }
 be-quiet +3 ||
 sqlite() { tee /dev/stderr | sqlite3 -bail "$DB" "$@"; }
-inputs=$(3x-inputs)
 
+prepare-full-query() {
+
+. sql-vocabs.sh
+inputs=$(3x-inputs)
 dedup-serials() {
     awk '{
         serial=$0; sub(/^.*#/, "", serial)
@@ -75,6 +77,8 @@ dedup-serials() {
         }
         print
     }'
+}
+
 }
 
 # make sure a proper queue database exists
@@ -104,6 +108,7 @@ Cmd=$1; shift
 case $Cmd in
 
     list)
+        prepare-full-query
         cols="state"             #header="state#"
         for varName in $inputs; do
             cols+=", '$varName=' || _$varName"  #header+="\t$varName"
@@ -122,8 +127,17 @@ case $Cmd in
 	EOF
         ;;
 
+    count)
+        where=$(printf "'%s', " "$@")
+        where=${where:+WHERE state IN ( ${where%, } )}
+        sqlite <<-EOF
+	SELECT COUNT(1) FROM queue $where;
+	EOF
+        ;;
+
 
     plan)
+        prepare-full-query
         dedup-serials | {
             echo "BEGIN TRANSACTION;"
             echo "DELETE FROM queue WHERE state='PLANNED';"
@@ -162,6 +176,7 @@ case $Cmd in
         ;;
 
     plan-more)
+        prepare-full-query
         {
             echo "BEGIN TRANSACTION;"
             printRecordExpr=$(sql-values-expr "(%s)" $inputs)
@@ -228,6 +243,7 @@ case $Cmd in
 
     duplicate)
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Cmd"
+        prepare-full-query
         {
             echo "BEGIN TRANSACTION;"
             cols=$(printf "_%s,\t" $inputs)
@@ -244,6 +260,7 @@ case $Cmd in
 
     prioritize|postpone)
         [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Cmd"
+        prepare-full-query
         {
             serials=$(sql-csv NUM "$@")
             numPLANNED="(SELECT COUNT(1) FROM queue WHERE state='PLANNED')"

@@ -236,7 +236,6 @@ elif edit "$tmp"/new "$tmp"/timestamp; then
         # TODO check whether all input values are sane
     }
     confirm-if-changed() {
-        # FIXME use queue
         if ! [ x"$planSHA1orig" = x"$(computePlanHash)" ]; then
             # show error if changed
             error "Plan for $_3X_QUEUE_ID changed since editing" || true
