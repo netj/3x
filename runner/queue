@@ -250,9 +250,13 @@ case $Cmd in
             # TODO check if a single SQL using "serial IN ( $serials )" would be faster
             for serial; do
                 echo "UPDATE queue
-                      SET state=$newStateSQL
+                      SET state=$newStateSQL $(
+                      # NULLify runId, target, and other columns when newState is PLANNED
+                      case $newState in
+                          PLANNED) echo ", runId=NULL, target=NULL" ;;
+                      esac
+                      )
                       WHERE serial=$serial;"
-                # TODO NULLify runId, target, and other columns when $newState=PLANNED
             done
             echo "COMMIT;"
         } | sqlite
