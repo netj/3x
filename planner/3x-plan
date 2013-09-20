@@ -137,6 +137,12 @@ else
     Command=
 fi
 case $Command in
+    duplicate|prioritize|postpone|cancel)
+        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
+        queue $Command "$@"
+        ;;
+
+
     with|add) # based on given files
         if [ $# -gt 0 ]; then
             for f; do
@@ -152,66 +158,6 @@ case $Command in
             echo
         } >"$tmp"/new
         case $Command in add) planAppend=true; esac
-        ;;
-
-    duplicate)
-        # FIXME use queue
-        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
-        # first, collect given runs from done, running and plan
-        count=$(cat "$_3X_QUEUE_DIR"/.count 2>/dev/null || echo 0)
-        # TODO retain the order of serials in $@
-        {
-            echo "e !cd $(escape-args-for-shell "$_3X_QUEUE_DIR") && cat done running"
-            for serial; do
-                [[ $serial -le $count ]] || continue
-                echo "g/ #${serial} /.W $tmp/more"
-            done
-            echo q
-        } | ed >/dev/null || true
-        {
-            for serial; do
-                [[ $serial -gt $count ]] || continue
-                lineNum=$(( $serial - $count ))
-                echo "${lineNum}W $tmp/more"
-            done
-            echo q
-        } | ed "$_3X_QUEUE_DIR"/plan >/dev/null || true
-        # then append them at the end of current plan
-        {
-            cat "$_3X_QUEUE_DIR"/plan
-            sed 's/^[^[:space:]]*[[:space:]]/run /; s/ #.*$//' "$tmp"/more
-        } >"$tmp"/new
-        ;;
-
-    prioritize|postpone|cancel)
-        # FIXME use queue
-        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Command runs"
-        # first, collect and remove given runs from plan
-        count=$(cat "$_3X_QUEUE_DIR"/.count 2>/dev/null || echo 0)
-        cp -f "$_3X_QUEUE_DIR"/plan "$tmp"/others
-        {
-            # let ed(1) collect plan lines that correspond to given serials
-            lineNums=()
-            for serial; do
-                [[ $serial -gt $count ]] || continue
-                lineNum=$(( $serial - $count ))
-                lineNums+=($lineNum)
-                echo "${lineNum}W $tmp/selected"
-            done
-            # and delete the collected lines (in reverse order!)
-            for serial in "${lineNums[@]}"; do echo $serial; done |
-            sort -n -r | sed 's/$/d/'
-            echo wq
-        } | ed "$tmp"/others >/dev/null || true
-        # then decide how to layout the new plan depending on given command
-        case $Command in
-            prioritize) order=(selected  others) ;;
-            postpone)   order=(others  selected) ;;
-            cancel)     order=(others          ) ;;
-        esac
-        (cd "$tmp" &&
-            sed -e 's/^[^[:space:]]*[[:space:]]/run /' -- "${order[@]}"
-        ) >"$tmp"/new
         ;;
 
     results|skip) # based on query over results
@@ -273,6 +219,8 @@ fi
 
 cd "$_3X_QUEUE_DIR"
 
+if [ -e "$tmp"/new ]; then
+
 # decide whether we replace or append to current plan
 if $planAppend; then
     queue plan-more <"$tmp"/new
@@ -330,6 +278,8 @@ elif edit "$tmp"/new "$tmp"/timestamp; then
 else
     msg "No changes made to plan for $_3X_QUEUE_ID"
     exit 2
+fi
+
 fi
 
 # and summarize the new plan for queue

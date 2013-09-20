@@ -191,28 +191,45 @@ case $Cmd in
 
 
     pick)
-        usage "$0" "Not implemented"
+        error "$Cmd: Not implemented"
         ;;
 
     mark-as)
-        usage "$0" "Not implemented"
+        error "$Cmd: Not implemented"
         ;;
 
 
     duplicate)
-        usage "$0" "Not implemented"
+        {
+            echo "BEGIN TRANSACTION;"
+            for serial; do
+                echo "INSERT INTO queue"
+                cols=$(printf "_%s,\t" $inputs)
+                echo "($cols ordinal)"
+                echo "SELECT $cols (SELECT COALESCE(MAX(ordinal),0) FROM queue)+1"
+                echo "FROM queue"
+                echo "WHERE serial=$serial"
+                echo ";"
+            done
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
     prioritize)
-        usage "$0" "Not implemented"
+        error "$Cmd: Not implemented"
         ;;
 
     postpone)
-        usage "$0" "Not implemented"
+        error "$Cmd: Not implemented"
         ;;
 
     cancel)
-        usage "$0" "Not implemented"
+        error "$Cmd: Not implemented"
+        ;;
+
+
+    *)
+        usage "$0" "queue $Command: Unrecognized subcommand"
         ;;
 
 esac
