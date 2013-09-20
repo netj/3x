@@ -162,7 +162,8 @@ lockproc() {
             test-remote-shell ps || { c=$?; lockproc clean; exit $c; }
             pscmd=($rsh ps -o pid=,pgid=,command= -p $pgrp)
             if [ -n "$signature" ]; then
-                newSignature=$("${pscmd[@]}" 2>/dev/null | sha1sum | awk '{print $1}')
+                psout=$("${pscmd[@]}" 2>/dev/null)
+                newSignature=$(sha1sum <<<"$psout" | awk '{print $1}')
                 [ x"$newSignature" = x"$signature" ]
             else
                 "${pscmd[@]}" &>/dev/null
