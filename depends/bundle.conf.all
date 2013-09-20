@@ -1,4 +1,5 @@
 ### List of Embedded Dependencies
 
 GNU-coreutils
+sqlite3
 nodejs
