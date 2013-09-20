@@ -193,11 +193,36 @@ case $Cmd in
 
 
     pick)
-        error "$Cmd: Not implemented"
+        count=$1; shift
+        newState=$1; shift
+        {
+            newStateSQL="'${newState//\'/\'\'}'"
+            echo "BEGIN TRANSACTION;"
+            serialsQuery="SELECT serial FROM queue
+                          WHERE state='PLANNED'
+                          ORDER BY ordinal
+                          LIMIT $count"
+            echo "$serialsQuery;"
+            echo "UPDATE queue
+                  SET state=$newStateSQL
+                  WHERE serial IN ($serialsQuery);"
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
     mark-as)
-        error "$Cmd: Not implemented"
+        newState=$1; shift
+        {
+            newStateSQL="'${newState//\'/\'\'}'"
+            echo "BEGIN TRANSACTION;"
+            # TODO check if a single SQL using "serial IN ( $serials )" would be faster
+            for serial; do
+                echo "UPDATE queue
+                      SET state=$newStateSQL
+                      WHERE serial=$serial;"
+            done
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
 
@@ -206,6 +231,7 @@ case $Cmd in
         {
             echo "BEGIN TRANSACTION;"
             cols=$(printf "_%s,\t" $inputs)
+            # TODO check if a single SQL using "serial IN ( $serials )" would be faster
             for serial; do
                 echo "INSERT INTO queue ($cols ordinal)"
                 echo "SELECT $cols (SELECT COALESCE(MAX(ordinal),0) FROM queue)+1"
