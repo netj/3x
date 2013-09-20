@@ -63,6 +63,8 @@ BATCHSIZE=256
 
 DB="$_3X_QUEUE_DIR"/queue.db
 sqlite() { sqlite3 -bail "$DB" "$@"; }
+be-quiet +3 ||
+sqlite() { tee /dev/stderr | sqlite3 -bail "$DB" "$@"; }
 inputs=$(3x-inputs)
 
 dedup-serials() {
@@ -224,7 +226,14 @@ case $Cmd in
         ;;
 
     cancel)
-        error "$Cmd: Not implemented"
+        [ $# -gt 0 ] || usage "$0" "No SERIAL given to $Cmd"
+        {
+            echo "BEGIN TRANSACTION;"
+            for serial; do
+                echo "DELETE FROM queue WHERE serial=$serial AND state='PLANNED';"
+            done
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
 
