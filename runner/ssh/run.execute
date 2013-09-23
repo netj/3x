@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ssh/run.execute -- execute the run locally
+# ssh/run.execute -- execute the run remotely
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-07-13

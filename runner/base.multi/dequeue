@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# dequeue -- execute runs in the plan and running list of current queue and
+#            move finished ones to the done list
+# See runner.sh for extending and overriding base runners behavior.
+# 
+# Usage:
+# > . runner.sh
+# > dequeue
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-07-11
+set -eu
+. runner.sh
+
+: ${BATCH_SIZE:=100}
+
+# dequeue the runs 
+queue pick "$BATCH_SIZE" RUNNING >"$_3X_WORKER_DIR"/runSerials
+
+if [ -z "$_3X_WORKER_DIR"/runSerials ]; then
+    runner-msg "No PLANNED runs in queue"
+    exit 0
+fi
+
+# keep a shorthand for running queue commands on the picked runs
+for-picked-runs() {
+    xargs <"$_3X_WORKER_DIR"/runSerials \
+        bash -c 'IFS=,; queue '"$*"' "serial#=$*"' -
+}
+# and keep a full listing of the runs to be executed
+for-picked-runs list |
+sed 's/^[^[:space:]]*[[:space:]]/run	/' >"$_3X_WORKER_DIR"/runs
+
+
+# mark as ABORTED upon queue-stop or interrupt
+exit-after-marking-as-aborted() {
+    c=$?
+    {
+        echo "$*"
+        cat "$_3X_WORKER_DIR"/error 2>/dev/null
+    } >"$_3X_WORKER_DIR"/target.aborted
+    # mark all runs as ABORTED
+    xargs <"$_3X_WORKER_DIR"/runSerials         queue mark-as ABORTED
+    # create target.aborted in each run dir
+    for-picked-runs list-only runIds >"$_3X_WORKER_DIR"/runIds
+    xargs <"$_3X_WORKER_DIR"/runIds         mkdir -p
+    xargs <"$_3X_WORKER_DIR"/runIds         chmod +w
+    xargs <"$_3X_WORKER_DIR"/runIds -L1     ln -f "$_3X_WORKER_DIR"/target.aborted
+    xargs <"$_3X_WORKER_DIR"/runIds         chmod -w
+    exit $c
+}
+for sig in INT QUIT TERM; do
+    case $sig in
+        TERM) msg="Execution stopped" ;;
+        *) msg="Execution interrupted" ;;
+    esac
+    trap 'exit-after-marking-as-aborted "'"$msg"'"' $sig
+done
+
+
+      count=$(wc -l   <"$_3X_WORKER_DIR"/runSerials)
+firstSerial=$(head -1 <"$_3X_WORKER_DIR"/runSerials)
+ lastSerial=$(tail -1 <"$_3X_WORKER_DIR"/runSerials)
+runner-msg "Executing #$firstSerial through #$lastSerial ($count runs)"
+
+_3X_LOGERROR="$_3X_WORKER_DIR"/error \
+run-all "$_3X_WORKER_DIR"/runs ||
+    exit-after-marking-as-aborted

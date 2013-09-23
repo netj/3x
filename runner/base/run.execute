@@ -3,7 +3,7 @@
 # Usage:
 # > . runner.sh
 # > _3X_RUN=... \
-# > . execute-run.sh
+# > run.execute
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-07-12

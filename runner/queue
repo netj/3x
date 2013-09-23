@@ -12,6 +12,12 @@
 # > LIMIT=100 OFFSET=201 \
 # > queue list
 # 
+# To list only the runIds of entries:
+# > queue list-only runId
+# 
+# To list only the serial and runIds of entries whose state is RUNNING:
+# > queue list-only serial,runIds "state#"=RUNNING
+# 
 # 
 # To add PLANNED entries to the queue:
 # > queue plan-more <<EOF
@@ -111,15 +117,23 @@ fi
 Cmd=$1; shift
 case $Cmd in
 
-    list)
+    list|list-only)
         prepare-full-query
-        cols="state"             #header="state#"
-        for varName in $inputs; do
-            cols+=", '$varName=' || _$varName"  #header+="\t$varName"
-        done
-        cols+=", '#' || serial"  #header+="\tserial#"
-        cols+=", target"         #header+="\ttarget#"
-        cols+=", runId"          #header+="\trun#"
+        case $Cmd in
+            list)
+                cols="state"             #header="state#"
+                for varName in $inputs; do
+                    cols+=", '$varName=' || _$varName"  #header+="\t$varName"
+                done
+                cols+=", '#' || serial"  #header+="\tserial#"
+                cols+=", target"         #header+="\ttarget#"
+                cols+=", runId"          #header+="\trun#"
+                ;;
+            list-only)
+                [ $# -gt 0 ] || usage "$0" "One or more COLUMNs must be specifieid"
+                cols=$1; shift
+                ;;
+        esac
         # compile selection expression from arguments
         where=$(compile-where "$@")
         #echo -e "$header"
@@ -229,14 +243,14 @@ case $Cmd in
             serialsQuery="SELECT serial FROM queue
                           WHERE state='PLANNED'
                           ORDER BY ordinal
-                          LIMIT $count"
+                          ${count:+LIMIT $count}"
             echo "$serialsQuery;"
             # assign new runId and target
             runIdSQL="'${runId//\'/\'\'}'"
             echo "UPDATE queue
                   SET state=$newStateSQL
                     , target=$targetSQL
-                    , runId=$runIdSQL
+                    , runId=$runIdSQL || '-' || serial
                   WHERE serial IN ($serialsQuery);"
             echo "COMMIT;"
         } | sqlite

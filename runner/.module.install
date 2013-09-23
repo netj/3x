@@ -29,5 +29,8 @@ base/run.execute                $TOOLSDIR/runner/.../
 base/run.store                  $TOOLSDIR/runner/.../
 base/environ                    $TOOLSDIR/runner/.../
 
+base.multi/queue-start          $TOOLSDIR/runner/base.multi/
+base.multi/dequeue              $TOOLSDIR/runner/base.multi/
+
 queue                           $TOOLSDIR/
 new-run-id                      $TOOLSDIR/

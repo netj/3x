@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# > 3x start
+# Starts executing runs in current queue.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-08-22
+exec as-a-worker dequeue
