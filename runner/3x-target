@@ -21,11 +21,13 @@
 # Created: 2013-06-26
 set -eu
 
+. find-queue.sh
+
 while getopts "h" o; do
     case $o in
         h)
             usage "$0"
-            for targetDefine in "$TOOLSDIR"/runner/*/target-define; do
+            for targetDefine in "$_3X_RUNNER_HOME"/*/target-define; do
                 [ -x "$targetDefine" ] || continue
                 usage "$targetDefine"
             done
@@ -34,8 +36,6 @@ while getopts "h" o; do
     esac
 done
 shift $(($OPTIND - 1))
-
-. find-queue.sh
 
 target-exists() {
     local t=$1

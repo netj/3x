@@ -25,10 +25,10 @@ shift $(($OPTIND - 1))
 
 . find-queue.sh
 
-for-each-active-runner sh -c '
-    # first, stop executions for current queue
-    queue-stop
+# first, stop executions for current queue
+3x-stop
 
-    # then synchronize queue records with whats actually there
-    setsid queue-sync
-'
+# then synchronize queue records with whats actually there
+for-every-runner setsid queue-sync
+
+# TODO revert ABORTED runs to PLANNED

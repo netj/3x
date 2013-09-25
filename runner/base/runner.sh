@@ -22,8 +22,6 @@ WORKER_WAITING_SUFFIX=.waiting
 WORKER_WAITING_SIGNAL=USR1
 WORKER_WAITING_TIMEOUT=600 #secs
 
-export WORKER_DIR=${WORKER_DIR:-}
-export _3X_WORKER_ID=${_3X_WORKER_ID:-}
 runner-msg()   {
     local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
     msg $level "$_3X_QUEUE_ID $_3X_TARGET${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"
@@ -80,6 +78,12 @@ findOneInTargetOrRunners() {
         fi
     done
 }
+useTargetOrRunnerConfig() {
+    local name=$1 msg=$2
+    set -- $(findOneInTargetOrRunners "$name")
+    runner-msg-withTargetOrRunnerPaths +1 "$msg" "$@"
+    cat "$@"
+}
 runner-msg-withTargetOrRunnerPaths() {
     local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
     be-quiet $level || {
@@ -99,6 +103,27 @@ runner-msg-withTargetOrRunnerPaths() {
         done
         msg $level "$msg"
     }
+}
+
+
+# some vocabularies useful when defining targets
+
+create-backup-candidate() {
+    local f=$1
+    # prepare a backup candidate, so we can keep only changed ones later
+    ! [ -e "$f" ] || mv -f "$f" "$f"~.$$
+}
+
+keep-backup-if-changed() {
+    local f=$1
+    # decide if it's worth keeping the backup candidate
+    if [ -e "$f"~.$$ ]; then
+        if [ x"$(sha1sum <"$f")" = x"$(sha1sum <"$f"~.$$)" ]; then
+            rm -f "$f"~.$$
+        else
+            mv -f "$f"~.$$ "$f"~
+        fi
+    fi
 }
 
 # allow actual runner to override/extend

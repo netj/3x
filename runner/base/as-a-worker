@@ -14,9 +14,16 @@ set -eu
 
 . runner.sh
 
-# register worker pid
 _3X_WORKER_ID=
 _3X_WORKER_HANDLE=
+
+# unregister worker pid on exit
+unregister() {
+    lockproc $_3X_WORKER_HANDLE release
+}
+trap unregister EXIT
+
+# register worker pid
 register-pid() {
     _3X_WORKER_ID=0
     local handle=
@@ -48,15 +55,8 @@ trap : $WORKER_WAITING_SIGNAL
 # run the command
 export _3X_WORKER_ID _3X_WORKER_DIR _3X_WORKER_HANDLE
 let SHLVL--
-"$@" || c=$?
+"$@"
 
-
-# unregister worker pid
-lockproc $_3X_WORKER_HANDLE release
 
 # clean up worker directory
 rm -rf "$_3X_WORKER_DIR"
-
-
-# preserve exit status
-exit $c

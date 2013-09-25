@@ -21,11 +21,8 @@ envVars=($(
     if [ -r "$envCache" ]; then
         cat "$envCache"
     else
-        envSpec=($(
-            set -- $(findOneInTargetOrRunners environ)
-            runner-msg-withTargetOrRunnerPaths +1 "assembling with environment spec:" "$@"
-            cat "$@"
-        )
+        envSpec=(
+            $(useTargetOrRunnerConfig environ "assembling with environment spec:" "$@")
         )
         trap 'rm -f "$envCache"' EXIT
         set -o pipefail

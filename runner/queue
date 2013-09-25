@@ -62,7 +62,7 @@ set -eu
 
 [ $# -gt 0 ] || usage "$0" ""
 
-BATCHSIZE=256
+SQLITE_BATCHSIZE=256
 
 . find-queue.sh
 
@@ -189,7 +189,7 @@ case $Cmd in
                 $printRecordExpr  '$serial' \
                     '(SELECT COALESCE(MAX(ordinal),0) FROM queue)+$numRecs'
                 )"
-                if [[ $numRecs -ge $BATCHSIZE ]]; then
+                if [[ $numRecs -ge $SQLITE_BATCHSIZE ]]; then
                     echo ";"
                     numRecs=0
                 fi
@@ -220,7 +220,7 @@ case $Cmd in
                 $printRecordExpr  \
                     '(SELECT COALESCE(MAX(ordinal),0) FROM queue)+$numRecs'
                 )"
-                if [[ $numRecs -ge $BATCHSIZE ]]; then
+                if [[ $numRecs -ge $SQLITE_BATCHSIZE ]]; then
                     echo ";"
                     numRecs=0
                 fi

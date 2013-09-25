@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# run-all -- run given runs using GNU parallel
+# Usage:
+# > run-all  RUN_SERIALS_FILE  RUN_IDS_FILE  RUN_ARGS_FILE
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-09-23
+set -eu
+. multi-runner.sh
+
+REMOTE_ROOT=.3x-remote
+
+FileSerials=$(readlink -f "$1"); shift
+FileRunIds=$(readlink -f "$1"); shift
+FileRunArgs=$(readlink -f "$1"); shift
+
+envSpec=(
+$(useTargetOrRunnerConfig environ "will assemble with environment spec:")
+)
+workdir=$(cat "$(findOneInTargetOrRunners workdir)")
+runner-msg-withTargetOrRunnerPaths +1 "will execute under working dir: $workdir"
+
+parallelOnRemotes() {
+    parallel --plain \
+        --sshloginfile "$_3X_TARGET_DIR"/remotes \
+        "$@"
+}
+
+# TODO can we skip transferring output?
+# TODO assemble output from run.store instead of run.assemble (base runner, generate-assembly-script)
+
+# transfer experiment definitions for assembly
+prepare-remote-root "$_3X_WORKER_DIR"
+(
+cd "$_3X_WORKER_DIR"
+parallelOnRemotes \
+    --basefile "$REMOTE_ROOT"/.3x/ \
+    --basefile "$REMOTE_ROOT"/input/ \
+    --basefile "$REMOTE_ROOT"/program/ \
+    --basefile "$REMOTE_ROOT"/output/ \
+    --nonall \
+    mkdir -p "$workdir" ::: \
+    #
+)
+
+cd "$_3X_ROOT"
+
+# clear any run directories that may get in the way
+xargs <"$FileRunIds"  unarchive "$_3X_ARCHIVE" 2>/dev/null || true
+xargs <"$FileRunIds"  rm -rf --
+
+# TODO --resume --joblog "$_3X_WORKER_DIR"/parallel.joblog.txt \
+# TODO -- env
+parallelOnRemotes \
+    --workdir "$workdir" \
+    --xapply \
+    --arg-file "$FileRunIds" \
+    --arg-file "$FileRunArgs" \
+    --no-run-if-empty \
+    --noswap \
+    --return '{1}' \
+    "$((sed 's/[[:space:]]#.*//' | grep -v '^[[:space:]]*$' | tr '\n' ';') <<<'
+set -eu
+export _3X_RUN={1}
+args={2}
+
+[ -n "$_3X_RUN" ] || exit 2
+
+runDir="$PWD/$_3X_RUN"
+rm -rf "$runDir"
+
+cd ~/'"$(escape-args-for-shell "$REMOTE_ROOT")"'
+export _3X_ROOT=$PWD
+PATH="$_3X_ROOT/.3x/bin:$PATH"
+set --
+envVars=($(bash -eu record-environ.sh '"$(escape-args-for-shell "${envSpec[@]}")"'))
+[ ${#envVars[@]} -eq 0 ] || set -- "${envVars[@]}"
+eval '\''.3x/assemble.sh "$runDir" $args'\'' -- HOSTNAME=$HOSTNAME "$@"
+
+cd "$runDir"
+exec ./execute.sh
+')"
+
+
+# clean up on remote asynchronously
+parallelOnRemotes \
+    --workdir "$workdir" \
+    --xapply \
+    --arg-file "$FileRunIds" \
+    --no-run-if-empty \
+    rm -rf -- \
+    &
+
+
+# run.store each run
+parallel \
+    --xapply \
+    --arg-file "$FileSerials" \
+    --arg-file "$FileRunIds" \
+    --no-run-if-empty \
+    '
+set -eu
+export _3X_RUN={2}
+cd "$_3X_RUN"
+run.store
+until run.mark-state {1}; do
+    sleep 0.$RANDOM
+done
+' \
+    &
+
+# wait for everything to finish
+wait

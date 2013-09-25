@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#
+# gnuparallel/target-info -- display a GNU parallel target info
+# > target-info TARGET
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-09-23
+set -eu
+. multi-runner.sh
+
+code=0
+
+super "$0" "$@" || code=$?
+echo
+
+Target=$1
+cd "$_3X_ROOT"/run/target/"$Target"
+
+echo "# remotes (list of remote hosts to use (GNU parallel --sshlogin)):"
+cat remotes 2>/dev/null || code=2
+echo
+
+echo "# workdir (the path to the working directory on each host):"
+workdir=$(cat workdir 2>/dev/null) || code=2
+echo "$workdir"
+echo
+
+echo "# environ (environment for execution):"
+cat environ 2>/dev/null || true
+echo
+
+echo "# description:"
+echo "Execute runs with GNU parallel using $(no-comments remotes | wc -l) machines"
+echo "(e.g., \`$(no-comments remotes | shuf | head -1)\`), using "
+echo "directory \`$workdir\` for temporary storage, under"
+diff-environ
+
+exit $code

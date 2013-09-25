@@ -112,14 +112,8 @@ $cmdln ||
     exit-after-marking-as-aborted
 
 # we can determine the resulting state of the run after execution
-state=DONE
-# it is a user program failure when the output isn't complete
-[[ ! -s $runDir/run/outputs.failed && -s $runDir/run/output ]] ||
-    state=FAILED
+run.mark-state $serial
 
-
-# record the run in the "done" list with its state
-queue mark-as $state $serial
 
 # no more ABORTED upon signals
 trap - INT QUIT TERM

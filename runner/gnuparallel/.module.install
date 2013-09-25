@@ -1,3 +1,6 @@
 parents                 $TOOLSDIR/runner/gnuparallel/
 
-#dequeue                 $TOOLSDIR/runner/gnuparallel/
+target-define           $TOOLSDIR/runner/gnuparallel/
+target-info             $TOOLSDIR/runner/gnuparallel/
+
+run-all                 $TOOLSDIR/runner/gnuparallel/

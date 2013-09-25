@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# > 3x target TARGET define gnuparallel  WORKDIR  SSH_LOGIN...  [NAME[=VALUE]]...
+# Defines a new target that is accessible via GNU parallel, named TARGET.
+#  
+# SSH_LOGIN is of the form, that is accepted by GNU parallel:
+# - [sshcommand [options]][username@]hostname
+# For more details, see: http://www.gnu.org/software/parallel/man.html
+#  
+# The following NAMEs or NAME=VALUE pairs specify the environment variables you
+# want to pass down to the executing runs.  VALUE in each NAME=VALUE pair is
+# the default value to use if the variable named NAME is not declared.
+#
+#
+# ssh/target-define -- define a remote (ssh) target
+# > _3X_ROOT=... \
+# > _3X_RUNNER=... \
+# > target-define TARGET SSH_LOGIN... WORKDIR [NAME[=VALUE]]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-09-23
+set -eu
+
+super "$0" "$@"
+
+. multi-runner.sh
+
+Target=$1; shift
+
+export _3X_TARGET=$Target
+export _3X_TARGET_DIR="$_3X_ROOT"/run/target/"$Target"
+
+cd "$_3X_TARGET_DIR"
+
+[ $# -gt 0 ] || usage "$0" "Missing WORKDIR"
+[ $# -gt 1 ] || usage "$0" "Missing SSH_LOGIN"
+
+# replace workdir
+create-backup-candidate workdir
+echo "$1" >workdir
+shift
+keep-backup-if-changed workdir
+
+
+
+# replace remotes
+create-backup-candidate remotes
+while [ $# -gt 0 ]; do
+    case ${1:-} in
+        *=*) break ;;
+        *)
+            # TODO check if REMOTE_SSH_LOGIN is valid
+            echo "$1"
+            shift
+            ;;
+    esac
+done >remotes
+keep-backup-if-changed remotes
+
+# replace the environment configuration
+create-backup-candidate environ
+if [ $# -gt 0 ]; then
+    for nameValuePair; do
+        echo $nameValuePair
+    done >environ
+else # use default configuration if none given
+    cp -f "$(findOneInTargetOrRunners environ)" environ
+fi
+keep-backup-if-changed environ
+
+# move a cached environment
+! [ -e environ.cached ] || mv -f environ.cached environ.cached~

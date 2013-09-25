@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# run.mark-state -- mark the state of the run based on the run directory
+# Usage:
+# > . runner.sh
+# > export _3X_RUN=...
+# > run.store
+# > run.mark-state SERIAL
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-09-24
+set -eu
+
+Serial=$1
+
+cd "$_3X_ROOT/$_3X_RUN"
+
+state=DONE
+# it is a user program failure when the output isn't complete
+[[ ! -s outputs.failed && -s output ]] ||
+    state=FAILED
+
+# record the run in the "done" list with its state
+queue mark-as $state $Serial

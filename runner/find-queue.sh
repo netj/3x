@@ -58,3 +58,14 @@ for-each-active-runner() {
         )
     done
 }
+
+for-every-runner() {
+    for runnerDir in "$_3X_RUNNER_HOME"/*/; do
+        runner=${runnerDir#$_3X_RUNNER_HOME/}
+        runner=${runner%/}
+        (
+        . find-runner.sh "$runner"
+        setsid "$@"
+        )
+    done
+}

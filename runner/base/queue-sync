@@ -10,6 +10,8 @@ set -eu
 . runner.sh
 
 clean-stale-running-dirs() {
+    # TODO don't use $runDir/lock
+
     # determine the stopped/stale ones
     set --
     for runDir in $RUNDIR_PREFIX*/; do
@@ -22,9 +24,9 @@ clean-stale-running-dirs() {
         [ -e "$staleRunDir" ] || continue
 
         serial=${staleRunDir#$RUNDIR_PREFIX}
-        msg +2 "$_3X_QUEUE_ID: moving #$serial back to plan"
+        msg +2 "$_3X_QUEUE_ID: cleaning up ABORTED run #$serial"
 
-        # revert the run back to PLANNED state
+        # revert the state back to PLANNED
         queue mark-as PLANNED $serial
 
         # and remove
@@ -33,6 +35,7 @@ clean-stale-running-dirs() {
     done
 }
 synchronized running.lock  clean-stale-running-dirs
+# TODO don't use running.lock
 
 # then, reflect the queue state
 queue-refresh
