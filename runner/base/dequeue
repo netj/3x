@@ -112,7 +112,7 @@ $cmdln ||
     exit-after-marking-as-aborted
 
 # we can determine the resulting state of the run after execution
-run.mark-state $serial
+queue mark-as $(judge-state-of-run $runId) $serial
 
 
 # no more ABORTED upon signals

@@ -27,7 +27,7 @@ base/run                        $TOOLSDIR/runner/.../
 base/run.assemble               $TOOLSDIR/runner/.../
 base/run.execute                $TOOLSDIR/runner/.../
 base/run.store                  $TOOLSDIR/runner/.../
-base/run.mark-state             $TOOLSDIR/runner/.../
+base/judge-state-of-run         $TOOLSDIR/runner/.../
 base/environ                    $TOOLSDIR/runner/.../
 
 base.multi/queue-start          $TOOLSDIR/runner/base.multi/

@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
-# run.mark-state -- mark the state of the run based on the run directory
+# judge-state-of-run -- print the final state of run based on its record
 # Usage:
-# > . runner.sh
-# > export _3X_RUN=...
-# > run.store
-# > run.mark-state SERIAL
+# > _3X_RUN=... judge-state-of-run
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
-# Created: 2013-09-24
+# Created: 2013-09-25
 set -eu
-
-Serial=$1
 
 cd "$_3X_ROOT/$_3X_RUN"
 
@@ -20,4 +15,4 @@ state=DONE
     state=FAILED
 
 # record the run in the "done" list with its state
-queue mark-as $state $Serial
+echo $state

@@ -126,6 +126,17 @@ keep-backup-if-changed() {
     fi
 }
 
+
+# a lightweight shell function for obtaining state of runs
+judge-state-of-run() {
+    local runId=${1:-$_3X_RUN}
+    local state=DONE
+    [[ ! -s "$_3X_ROOT/$runId"/outputs.failed && -s "$_3X_ROOT/$runId"/output ]] ||
+        state=FAILED
+    echo $state
+}
+
+
 # allow actual runner to override/extend
 ! type runner-config.sh &>/dev/null ||
 . runner-config.sh
