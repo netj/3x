@@ -1711,13 +1711,6 @@ class QueuesUI extends CompositeElement
                 log "queue #{queueId} target changed"
                 do @refresh
 
-            .on "active-count", (count) =>
-                log "queue active-count", count
-                # update how many batches are running
-                @optionElements.activeCountDisplay
-                    ?.text(count)
-                     .toggleClass("hide", count == 0)
-
         # listen to events
         @baseElement
             .on("click", ".queue-start"  , @handleQueueAction   @startQueue)
@@ -1773,12 +1766,19 @@ class QueuesUI extends CompositeElement
                 @status.currentQueue =
                 @target.currentQueue =
                     @queues[@queueOnFocus]
-                # update badge for total number of planned runs
-                totalRemaining = 0
-                for name,queue of @queues
-                    totalRemaining += +queue.numPlanned + queue.numAborted
-                @optionElements.remainingCountDisplay?.text(totalRemaining)
-                    .toggleClass("hide", totalRemaining == 0)
+                # update badges for total number of running and planned runs
+                if @optionElements.remainingCountDisplay?
+                    totalRemaining = 0
+                    for name,queue of @queues
+                        totalRemaining += +queue.numPlanned + queue.numAborted
+                    @optionElements.remainingCountDisplay.text(totalRemaining)
+                        .toggleClass("hide", totalRemaining == 0)
+                if @optionElements.activeCountDisplay?
+                    totalRunning = 0
+                    for name,queue of @queues
+                        totalRunning += +queue.numRunning
+                    @optionElements.activeCountDisplay.text(totalRunning)
+                        .toggleClass("hide", totalRunning == 0)
                 do @display
             )
 
@@ -1802,7 +1802,8 @@ class QueuesUI extends CompositeElement
                     <i class="icon icon-cog icon-spin"></i>
                     <span class="queue-name">{{>queue}}</span>
                 </h5>
-                <small class="queue-summary pull-right"      data-toggle="tooltip" data-placement="top"    data-container=".queues"></small>
+                <small class="queue-summary pull-right muted"
+                                                             data-toggle="tooltip" data-placement="top"    data-container=".queues"></small>
                 <div class="clearfix"></div>
                 <div class="progress for-PLANNED"            data-toggle="tooltip" data-placement="right"  data-container=".queues">
                     <div class="bar bar-success    for-DONE" data-toggle="tooltip" data-placement="bottom" data-container=".queues"></div>
@@ -1869,7 +1870,7 @@ class QueuesUI extends CompositeElement
                 $queue.insertBefore($queuesList.find(".queue").eq(i))
             $queue
                 .find(".queue-label")
-                    .toggleClass("text-error", isActive)
+                    .toggleClass("text-info", isActive)
                     .find(".icon").toggleClass("hide", not isActive).end()
                 .end()
                 .find(".queue-summary")

@@ -600,16 +600,7 @@ server.listen _3X_GUIPORT, ->
 queueSockets =
 io.of("/run/queue/")
     .on "connection", (socket) ->
-        updateActiveCount socket
-
-updateActiveCount = (socket = queueSockets) ->
-    cliBare("sh", ["-c", "ls run/queue/*/.is-active.* | wc -l"]
-        , (lazyLines, next) ->
-            lazyLines
-                .take(1)
-                .join ([line]) -> next (+line?.trim())
-    ) (code, err, count) ->
-        socket.volatile.emit "active-count", count
+        #
 
 queueRootDir = "#{_3X_ROOT}/run/queue/"
 queueNotifyChange = (event, fullpath) ->
@@ -622,7 +613,6 @@ queueNotifyChange = (event, fullpath) ->
     if /// ^/( plan | running | done )$ ///.test filename
         queueSockets.volatile.emit "listing-update", [queueId, event]
     else if /// ^/( \.is-active\..* )$ ///.test filename
-        do updateActiveCount
         queueSockets.volatile.emit "state-update", [
             queueId
             if event is "deleted" then "INACTIVE" else "ACTIVE"
