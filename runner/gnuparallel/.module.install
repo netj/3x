@@ -4,3 +4,5 @@ target-define           $TOOLSDIR/runner/gnuparallel/
 target-info             $TOOLSDIR/runner/gnuparallel/
 
 run-all                 $TOOLSDIR/runner/gnuparallel/
+
+ssh                     $TOOLSDIR/runner/gnuparallel/

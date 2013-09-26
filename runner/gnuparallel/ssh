@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# gnuparallel/ssh -- an SSH wrapper that prevents user configuration
+#                    interfering with GNU Parallel's ControlMaster
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-09-26
+exec super "$0" -o ControlMaster=no -o ControlPersist=no "$@"
