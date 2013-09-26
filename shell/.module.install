@@ -1,6 +1,7 @@
 .build/3x.sh                $BINDIR/3x
 3x-findroot                 $TOOLSDIR/
 3x-hack                     $TOOLSDIR/
+experiment-id               $TOOLSDIR/
 
 # logging, reporting
 error                       $TOOLSDIR/

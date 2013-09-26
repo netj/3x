@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# experiment-id -- a unique identifier for this experiment
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-09-26
+set -eu
+
+_3X_ROOT=$(3x-findroot)
+
+cd "$_3X_ROOT"
+if [ -e .3x/id ]; then
+    cat .3x/id
+else
+    {
+        cat .3x/description
+        3x-inputs -ut
+        #ls -l program # XXX program may not be a reliable invariant
+    } | sha1sum | cut -b1-40 |
+    tee .3x/id
+fi

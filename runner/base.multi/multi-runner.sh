@@ -13,9 +13,10 @@ for-picked-runs() {
         bash -c 'IFS=,; queue '"$*"' "serial#=$*"' -
 }
 
-# 
+REMOTE_ROOT_PREFIX=.3x-remote
 prepare-remote-root() {
-    local at=$1
+    local REMOTE_ROOT=$1
+    local at=${2:-.}
     (
     cd "$at"
     mkdir -p "$REMOTE_ROOT"/.3x/bin

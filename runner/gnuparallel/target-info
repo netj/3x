@@ -30,7 +30,7 @@ cat environ 2>/dev/null || true
 echo
 
 echo "# description:"
-echo "Execute runs with GNU parallel using $(no-comments remotes | wc -l) machines"
+echo "Execute runs with GNU Parallel using $(no-comments remotes | wc -l) machines"
 echo "(e.g., \`$(no-comments remotes | shuf | head -1)\`), using "
 echo "directory \`$workdir\` for temporary storage, under"
 diff-environ

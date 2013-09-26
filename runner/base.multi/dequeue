@@ -17,15 +17,14 @@ set -eu
 
 # resume previous work if any
 if [ -s "$_3X_WORKER_DIR"/runSerials ]; then
+    # TODO skip DONE,FAILED runs
     xargs <"$_3X_WORKER_DIR"/runSerials         queue mark-as RUNNING
 fi
 # dequeue more runs (if necessary)
 queue pick "$_3X_BATCH_SIZE" RUNNING >>"$_3X_WORKER_DIR"/runSerials
 
-if [ -z "$_3X_WORKER_DIR"/runSerials ]; then
-    runner-msg "No PLANNED runs in queue"
-    exit 0
-fi
+[ -s "$_3X_WORKER_DIR"/runSerials ] ||
+    runner-error "No PLANNED runs in queue"
 
 # keep a full listing of the runs to be executed
 for-picked-runs list |
@@ -36,6 +35,7 @@ for-picked-runs list-only runId >"$_3X_WORKER_DIR"/runIds
 # mark as ABORTED upon queue-stop or interrupt
 exit-after-marking-as-aborted() {
     c=$?
+    runner-error "${*:-Execution aborted due to error}" || true
     # mark all runs as ABORTED
     xargs <"$_3X_WORKER_DIR"/runSerials         queue mark-as ABORTED
     # create target.aborted in each run dir

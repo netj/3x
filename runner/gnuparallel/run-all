@@ -8,106 +8,202 @@
 set -eu
 . multi-runner.sh
 
-REMOTE_ROOT=.3x-remote
-
 FileSerials=$(readlink -f "$1"); shift
 FileRunIds=$(readlink -f "$1"); shift
 FileRunArgs=$(readlink -f "$1"); shift
 
-envSpec=(
-$(useTargetOrRunnerConfig environ "will assemble with environment spec:")
-)
-workdir=$(cat "$(findOneInTargetOrRunners workdir)")
-runner-msg-withTargetOrRunnerPaths +1 "will execute under working dir: $workdir"
+# some sanity checks
+[ -s "$FileSerials" -a -s "$FileRunIds" -a -s "$FileRunArgs" ] ||
+    runner-error "Nothing to run"
+numRuns=$(wc -l <"$FileSerials")
+[ $numRuns -eq $(wc -l <"$FileRunIds") -a $numRuns -eq $(wc -l <"$FileRunArgs") ] ||
+    runner-error "Number of runs mismatch in input"
 
+
+# some vocabularies
+parallelVerboseOpts=()
+[ ! -t 1 ] || be-quiet +5 || parallelVerboseOpts+=(--progress)
+              be-quiet +7 || parallelVerboseOpts+=(--verbose)
 parallelOnRemotes() {
     parallel --plain \
+        --controlmaster \
         --sshloginfile "$_3X_TARGET_DIR"/remotes \
+        "${parallelVerboseOpts[@]:---silent}" \
         "$@"
 }
+flattenScript() {
+    sed 's/^[[:space:]]*//; s/[[:space:]]#.*//' |
+    grep -v '^[[:space:]]*$' | tr '\n' ';'
+}
+postprocess-finished-runs() {
+    for-picked-runs list-only serial,runId "state#"=RUNNING |
+    parallel --jobs 50% --no-run-if-empty '
+        set -eu
+        postprocess-run() {
+            local serial=$1 _3X_RUN=$2
+            [ -e "$_3X_ROOT/$_3X_RUN".ok ]
+            export _3X_RUN
+            run.store
+            echo $(judge-state-of-run) $serial
+            rm -f "$_3X_ROOT/$_3X_RUN".ok
+        }
+        eval postprocess-run' |
+    tee runSerials-just-finished |
+    perl -Mstrict -e '
+        my $byState = {};
+        while (my $line = <>) {
+            chomp $line;
+            my ($state, $serial) = split /\s+/, $line, 2;
+            $byState->{$state} = [] unless exists $byState->{$state};
+            push @{$byState->{$state}}, $serial;
+        }
+        while (my ($state, $serials) = each %$byState) {
+            print $state, " ", (join " ", @$serials), "\n";
+        }
+    ' |
+    xargs -L1 queue mark-as
+}
 
-# TODO can we skip transferring output?
-# TODO assemble output from run.store instead of run.assemble (base runner, generate-assembly-script)
 
-# transfer experiment definitions for assembly
-prepare-remote-root "$_3X_WORKER_DIR"
-(
+# setup worker directory to run GNU Parallel in isolation
 cd "$_3X_WORKER_DIR"
-parallelOnRemotes \
-    --basefile "$REMOTE_ROOT"/.3x/ \
-    --basefile "$REMOTE_ROOT"/input/ \
-    --basefile "$REMOTE_ROOT"/program/ \
-    --basefile "$REMOTE_ROOT"/output/ \
-    --nonall \
-    mkdir -p "$workdir" ::: \
-    #
+ln -sfn "$_3X_ROOT"/run .
+
+# load target configuration
+numRemotes=$(no-comments <target/remotes | wc -l)
+runner-msg "Using $numRemotes remote hosts with GNU Parallel"
+workdir=$(cat target/workdir)
+runner-msg +1 " working under directory of each host: $workdir"
+envSpec=(
+$(useTargetOrRunnerConfig environ " assembling runs with environment spec:")
 )
 
-cd "$_3X_ROOT"
-
 # clear any run directories that may get in the way
+runner-msg +3 "Clearing stale local records of runs"
 xargs <"$FileRunIds"  unarchive "$_3X_ARCHIVE" 2>/dev/null || true
-xargs <"$FileRunIds"  rm -rf --
+xargs <"$FileRunIds"  rm -rf -- &
 
-# TODO --resume --joblog "$_3X_WORKER_DIR"/parallel.joblog.txt \
-# TODO -- env
+# transfer experiment definition to remote hosts for assembly
+# TODO can we skip transferring output?
+# TODO assemble output from run.store instead of run.assemble (base runner, generate-assembly-script)
+runner-msg +1 "Setting up remote hosts"
+remoteRoot=$REMOTE_ROOT_PREFIX/$(experiment-id)
+prepare-remote-root "$remoteRoot"
+sessionId=session.$$
+rm -rf "$remoteRoot"/.3x/session.*
+mkdir -p "$remoteRoot"/.3x/$sessionId
+mv -f "$remoteRoot"/.3x/assemble.sh "$remoteRoot"/.3x/$sessionId/
+ln -f "$FileRunIds"                 "$remoteRoot"/.3x/$sessionId/runIds
+parallelOnRemotes \
+    --nonall \
+    --basefile "$remoteRoot"/.3x/ \
+    --basefile "$remoteRoot"/input/ \
+    --basefile "$remoteRoot"/program/ \
+    --basefile "$remoteRoot"/output/ \
+    true \
+    2>/dev/null & # XXX parallel 20130924 always does --cleanup for --basefile
+
+wait # for remote setup and stale records clearing jobs to finish
+
+
+# store finished runs and reflect their states to queue asynchronously
+rm -f parallel-finished
+(
+set +e
+while numRUNNING=$(for-picked-runs count "state#"=RUNNING); [ $numRUNNING -gt 0 ]; do
+    sleep 5
+    postprocess-finished-runs
+    if [ -s runSerials-just-finished ]; then
+        be-quiet || {
+            serials=$(cut -d' ' -f2 <runSerials-just-finished | tr '\n' ,)
+            queue list-only runId,state "serial#"=${serials%,} |
+            sed 's/[[:space:]]/: /' | xargs -L1 echo >&2
+        }
+        let numRUNNING-=$(wc -l <runSerials-just-finished)
+        [[ $numRUNNING -gt 0 ]] || break
+        runner-msg "Waiting for $numRUNNING/$numRuns more runs to finish"
+    fi
+    if [ -e parallel-finished ]; then
+        postprocess-finished-runs  # for one last time for sure
+        for-picked-runs list-only serial "state#"=RUNNING |
+        xargs queue mark-as ABORTED
+        runner-msg "All finished $numRuns runs have been archived locally"
+        break
+    fi
+done
+) &
+
+
+# launch runs at remote hosts
+runner-msg +1 "Launching $numRuns runs in parallel at $numRemotes remote hosts"
+# TODO --resume --joblog parallel.joblog.txt \
 parallelOnRemotes \
     --workdir "$workdir" \
     --xapply \
     --arg-file "$FileRunIds" \
     --arg-file "$FileRunArgs" \
     --no-run-if-empty \
-    --noswap \
     --return '{1}' \
-    "$((sed 's/[[:space:]]#.*//' | grep -v '^[[:space:]]*$' | tr '\n' ';') <<<'
-set -eu
-export _3X_RUN={1}
-args={2}
+    --return '{1}.ok' \
+    "$(flattenScript <<<'
+        set -eu
+        export _3X_RUN={1}
+        args={2}
+        [ -n "$_3X_RUN" ] || exit 2
 
-[ -n "$_3X_RUN" ] || exit 2
+        '"$(escape-args-for-shell \
+            remoteRoot="$remoteRoot" \
+            sessionId="$sessionId" \
+            )"'
 
-runDir="$PWD/$_3X_RUN"
-rm -rf "$runDir"
+        runDir="$PWD/$_3X_RUN"
+        rm -rf "$runDir"
 
-cd ~/'"$(escape-args-for-shell "$REMOTE_ROOT")"'
-export _3X_ROOT=$PWD
-PATH="$_3X_ROOT/.3x/bin:$PATH"
-set --
-envVars=($(bash -eu record-environ.sh '"$(escape-args-for-shell "${envSpec[@]}")"'))
-[ ${#envVars[@]} -eq 0 ] || set -- "${envVars[@]}"
-eval '\''.3x/assemble.sh "$runDir" $args'\'' -- HOSTNAME=$HOSTNAME "$@"
+        cd ~/"$remoteRoot"
+        export _3X_ROOT=$PWD
+        PATH="$_3X_ROOT/.3x/bin:$PATH"
+        set --
+        envVars=($(bash -eu record-environ.sh '"$(escape-args-for-shell "${envSpec[@]}")"'))
+        [ ${#envVars[@]} -eq 0 ] || set -- "${envVars[@]}"
+        eval '\''.3x/$sessionId/assemble.sh "$runDir" $args'\'' -- "$@" HOSTNAME=$HOSTNAME
 
-cd "$runDir"
-exec ./execute.sh
-')"
-
+        touch "$runDir.ok" || true
+        cd "$runDir"
+        exec ./execute.sh
+        ')" \
+    || true
+touch parallel-finished  # so the postprocessor finishes as well
 
 # clean up on remote asynchronously
+runner-msg +2 "Cleaning up records of runs at $numRemotes remote hosts"
+(
 parallelOnRemotes \
-    --workdir "$workdir" \
-    --xapply \
-    --arg-file "$FileRunIds" \
-    --no-run-if-empty \
-    rm -rf -- \
-    &
+    --nonall \
+    "$(flattenScript <<<'
+        set -eu
+        '"$(escape-args-for-shell \
+            workdir="$workdir" \
+            remoteRoot="$remoteRoot" \
+            sessionId="$sessionId" \
+            )"'
+        cd "$workdir"
+        sed -e '\''p; s/$/.ok/'\'' <~/"$remoteRoot"/.3x/$sessionId/runIds | xargs rm -rf --
+    ')"
+parallelOnRemotes \
+    --nonall \
+    rm -rf $remoteRoot/.3x/$sessionId
+) &
 
 
-# run.store each run
-parallel \
-    --xapply \
-    --arg-file "$FileSerials" \
-    --arg-file "$FileRunIds" \
-    --no-run-if-empty \
-    '
-set -eu
-export _3X_RUN={2}
-cd "$_3X_RUN"
-run.store
-until run.mark-state {1}; do
-    sleep 0.$RANDOM
-done
-' \
-    &
+wait # for remote clean up jobs and postprocessor to finish
 
-# wait for everything to finish
-wait
+summary=
+addToSummary() {
+    local state=$1
+    local num=$(for-picked-runs count "state#"=$state)
+    [ $num -eq 0 ] || summary+=", $num $state"
+}
+addToSummary DONE
+addToSummary FAILED
+addToSummary ABORTED
+runner-msg "Execution finished for $numRuns runs (${summary#, })"

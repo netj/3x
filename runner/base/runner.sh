@@ -101,7 +101,7 @@ runner-msg-withTargetOrRunnerPaths() {
             esac
             msg+=" $path"
         done
-        msg $level "$msg"
+        runner-msg $level "$msg"
     }
 }
 
