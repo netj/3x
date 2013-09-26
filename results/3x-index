@@ -32,7 +32,9 @@ export _3X_ROOT
 . sql-vocabs.sh
 
 _3X_INDEX="$_3X_ROOT"/.3x/index.db
-sqlite() { sqlite3 "$_3X_INDEX"; }
+sqlite3() { command sqlite3 -bail -cmd '.timeout 10000' "$_3X_INDEX" "$@"; }
+                     sqlite() {                   sqlite3 "$@"; }
+verbosity-isnt +4 || sqlite() { tee /dev/stderr | sqlite3 "$@"; }
 
 inputs=$(3x-inputs)
 outputs=$(3x-outputs)
@@ -58,7 +60,7 @@ case $Cmd in
             sqlite <<-EOF
                 BEGIN TRANSACTION;
 		$(sql-create-table);
-		COMMIT TRANSACTION;
+		COMMIT;
 		EOF
         elif [ x"$Cmd" = x"migrate" -o "$_3X_ROOT/.3x/assemble.sh" -nt "$_3X_INDEX" ]; then
             # if $inputs and/or $outputs have changed, migrate indexed data
@@ -77,7 +79,7 @@ case $Cmd in
 		$(sql-create-table);
 		INSERT INTO run ($selectColumns) SELECT $selectColumns FROM run_$$;
 		DROP TABLE run_$$;
-		COMMIT TRANSACTION;
+		COMMIT;
 		EOF
         fi
         ;;
@@ -101,12 +103,11 @@ case $Cmd in
     update)
         [ -s "$_3X_INDEX" ] || error "No index exists"
         # prepare some vocabularies based on log level
-        run-sqlite() { sqlite "$@"; }
         progress() { :; }
         verbosity-isnt +1 || progress() { msg "Indexing $*..."; }
-        verbosity-isnt +2 || run-sqlite() { tee /dev/stderr | sqlite "$@"; }
         be-quiet +3       || set -x
         {
+            echo "BEGIN TRANSACTION;"
             # prepare code for generating SQL statements
             printRecordExpr=$(sql-values-expr "'%s'" $columns)
             # scan given RUNs and generate VALUES for SQL INSERT statement
@@ -131,7 +132,8 @@ case $Cmd in
                 fi
             done
             [[ $numRecs -eq 0 ]] || echo ";"
-        } | run-sqlite
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
     rebuild)
