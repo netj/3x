@@ -23,7 +23,7 @@ logmsg() {
     echo "$@" >>"$Log"
 }
 _recordCopiedFiles() {
-    sed -E 's/^/  copying /;  s:'"$DestDir"'/::;  s:[‘’]::g' |
+    sed 's/^/  copying /;  s:'"$DestDir"'/::;  s:[‘’]::g' |
     tee -a "$Log"
 }
 recordCopiedFiles() { _recordCopiedFiles >/dev/null; }
