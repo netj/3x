@@ -9,8 +9,19 @@
 
 # keep a shorthand for running queue commands on the picked runs
 for-picked-runs() {
-    xargs <"$_3X_WORKER_DIR"/runSerials \
-        bash -c 'IFS=,; queue '"$*"' "serial#=$*"' -
+    local serials=$(tr '\n' , <"$_3X_WORKER_DIR"/runSerials)
+    serials=${serials%,}
+    queue "$@" "serial#=$serials"
+}
+
+drop-finished-runs() {
+    # exclude finished runs from the picked ones (i.e., DONE or FAILED runs)
+    (
+    cd "$_3X_WORKER_DIR"
+    for-picked-runs list-only serial "state#"!=DONE,FAILED >runSerials.$$
+    mv -f runSerials runSerials~
+    mv -f runSerials.$$ runSerials
+    )
 }
 
 REMOTE_ROOT_PREFIX=.3x-remote

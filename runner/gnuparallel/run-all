@@ -37,31 +37,22 @@ flattenScript() {
 }
 postprocess-finished-runs() {
     for-picked-runs list-only serial,runId "state#"=RUNNING |
-    parallel --jobs 50% --no-run-if-empty '
+    parallel --max-procs 25% --noswap --no-run-if-empty '
         set -eu
         postprocess-run() {
             local serial=$1 _3X_RUN=$2
             [ -e "$_3X_ROOT/$_3X_RUN".ok ]
             export _3X_RUN
             run.store
-            echo $(judge-state-of-run) $serial
+            state=$(judge-state-of-run)
+            queue mark-as $state $serial
+            echo "$_3X_RUN: $state"
             rm -f "$_3X_ROOT/$_3X_RUN".ok
         }
-        eval postprocess-run' |
-    tee runSerials-just-finished |
-    perl -Mstrict -e '
-        my $byState = {};
-        while (my $line = <>) {
-            chomp $line;
-            my ($state, $serial) = split /\s+/, $line, 2;
-            $byState->{$state} = [] unless exists $byState->{$state};
-            push @{$byState->{$state}}, $serial;
-        }
-        while (my ($state, $serials) = each %$byState) {
-            print $state, " ", (join " ", @$serials), "\n";
-        }
-    ' |
-    xargs -L1 queue mark-as
+        eval postprocess-run' | 
+    if be-quiet; then cat
+    else tee /dev/stderr
+    fi >runs-just-finished
 }
 
 
@@ -94,6 +85,7 @@ rm -rf "$remoteRoot"/.3x/session.*
 mkdir -p "$remoteRoot"/.3x/$sessionId
 mv -f "$remoteRoot"/.3x/assemble.sh "$remoteRoot"/.3x/$sessionId/
 ln -f "$FileRunIds"                 "$remoteRoot"/.3x/$sessionId/runIds
+# TODO target config that controls rsync of $remoteRoot once to shared filesystem
 parallelOnRemotes \
     --nonall \
     --basefile "$remoteRoot"/.3x/ \
@@ -111,15 +103,10 @@ rm -f parallel-finished
 (
 set +e
 while numRUNNING=$(for-picked-runs count "state#"=RUNNING); [ $numRUNNING -gt 0 ]; do
-    sleep 5
+    sleep 5 # TODO use watchdog dirname's of runIds for *.ok instead of polling
     postprocess-finished-runs
-    if [ -s runSerials-just-finished ]; then
-        be-quiet || {
-            serials=$(cut -d' ' -f2 <runSerials-just-finished | tr '\n' ,)
-            queue list-only runId,state "serial#"=${serials%,} |
-            sed 's/[[:space:]]/: /' | xargs -L1 echo >&2
-        }
-        let numRUNNING-=$(wc -l <runSerials-just-finished)
+    if [ -s runs-just-finished ]; then
+        let numRUNNING-=$(wc -l <runs-just-finished)
         [[ $numRUNNING -gt 0 ]] || break
         runner-msg "Waiting for $numRUNNING/$numRuns more runs to finish"
     fi

@@ -17,7 +17,7 @@ set -eu
 
 # resume previous work if any
 if [ -s "$_3X_WORKER_DIR"/runSerials ]; then
-    # TODO skip DONE,FAILED runs
+    drop-finished-runs
     xargs <"$_3X_WORKER_DIR"/runSerials         queue mark-as RUNNING
 fi
 # dequeue more runs (if necessary)
@@ -36,7 +36,8 @@ for-picked-runs list-only runId >"$_3X_WORKER_DIR"/runIds
 exit-after-marking-as-aborted() {
     c=$?
     runner-error "${*:-Execution aborted due to error}" || true
-    # mark all runs as ABORTED
+    # mark all unfinished runs as ABORTED
+    drop-finished-runs
     xargs <"$_3X_WORKER_DIR"/runSerials         queue mark-as ABORTED
     # create target.aborted in each run dir
     {
@@ -44,6 +45,7 @@ exit-after-marking-as-aborted() {
         cat "$_3X_WORKER_DIR"/error 2>/dev/null || true
     } >"$_3X_WORKER_DIR"/target.aborted
     cd "$_3X_ROOT"
+    for-picked-runs list-only runId >"$_3X_WORKER_DIR"/runIds
     xargs <"$_3X_WORKER_DIR"/runIds         mkdir -p
     xargs <"$_3X_WORKER_DIR"/runIds         chmod +w
     xargs <"$_3X_WORKER_DIR"/runIds -L1     ln -f "$_3X_WORKER_DIR"/target.aborted
