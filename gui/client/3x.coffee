@@ -1832,6 +1832,7 @@ class QueuesUI extends CompositeElement
             .success((@queues) =>
                 unless @queueOnFocus?
                     for queueName of @queues
+                        # focus on the first queue as default
                         @focusQueue queueName
                         break
                 # TODO trigger "queue-refreshed" event to decouple @status and @target from QueuesUI and let them manage things on their own
@@ -1852,6 +1853,7 @@ class QueuesUI extends CompositeElement
                     @optionElements.activeCountDisplay.text(totalRunning)
                         .toggleClass("hide", totalRunning == 0)
                 do @display
+                do @updateFocusedQueue # XXX to load StatusTable and setup ResultsTable popover when it hasn't been rendered yet
             )
 
     focusQueue: (queueName, e) =>

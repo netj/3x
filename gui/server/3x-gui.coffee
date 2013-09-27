@@ -610,7 +610,7 @@ queueNotifyChange = (event, fullpath) ->
     return unless queueName?
     queueId = "run/queue/#{queueName}"
     util.log "WATCH #{queueId} #{event} #{filename}"
-    if /// ^/( plan | running | done )$ ///.test filename
+    if /// ^/queue\.db$ ///.test filename
         queueSockets.volatile.emit "listing-update", [queueId, event]
     else if /// ^/( \.is-active\..* )$ ///.test filename
         queueSockets.volatile.emit "state-update", [
