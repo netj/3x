@@ -1511,7 +1511,11 @@ class ResultsChart extends CompositeElement
             varsWithValueGetter = ([v, accessorFor(v)] for v in vars)
             getDataPointOrigin = originFor(varY)
             runColIdx = @table.results.names.indexOf RUN_COLUMN_NAME
-            getRunIds = (origin) => @table.results.rows[i][runColIdx] for i in origin
+            yIdx = varY.dataIndex
+            getRawData = (origin) =>
+                rows = @table.results.rows
+                for i in origin
+                    [rows[i][yIdx], rows[i][runColIdx]]
             (d) ->
                 origin = getDataPointOrigin(d)
                 """<table class="table table-condensed">""" + [
@@ -1527,9 +1531,12 @@ class ResultsChart extends CompositeElement
                             data-toggle="popover" data-html="true"
                             title="#{origin.length} runs" data-content="
                             <small><ol class='chart-run-details'>#{
-                                getRunIds(origin).map((runId) ->
+                                getRawData(origin).map(([yValue,runId]) ->
                                     "<li><a href='#{runId}/overview'
-                                        target='run-details'>#{runId}</a></li>"
+                                        target='run-details' title='#{runId}'>#{
+                                        # show value of varY for this particular run
+                                        yValue
+                                    }</a></li>"
                                 ).join("")
                             }</ol></small>"><span class="value">#{origin.length
                                 }</span><small class="unit"> (runs)</small></span>"""
