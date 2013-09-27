@@ -1520,10 +1520,13 @@ class ResultsChart extends CompositeElement
                 origin = getDataPointOrigin(d)
                 """<table class="table table-condensed">""" + [
                     (for [v,getValue] in varsWithValueGetter
-                        name: v.name
-                        value: """<span class="value">#{getValue(d)}</span>#{
-                            unless v.unit then ""
-                            else "<small class='unit'> (#{v.unit})<small>"}"""
+                        val = getValue(d)
+                        {
+                            name: v.name
+                            value: """<span class="value" title="#{val}">#{val}</span>#{
+                                unless v.unit then ""
+                                else "<small class='unit'> (#{v.unit})<small>"}"""
+                        }
                     )...
                     {
                         name: "run#.count"
