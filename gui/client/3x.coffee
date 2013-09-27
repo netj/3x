@@ -301,9 +301,9 @@ do ->
                     img.onload = ->
                         ctx.globalAlpha = BASE_OPACITY + divOpacity * (1.0 + VAR_OPACITY/2 * (numOverlaid/2 - i) / numOverlaid)
                         try ctx.drawImage @, 0,0, width,height
-                        do replaceCanvas if ++numLoaded is numOverlaid
+                        do replaceCanvas if ++numLoaded == numOverlaid
                     img.onerror = ->
-                        do replaceCanvas if ++numLoaded is numOverlaid
+                        do replaceCanvas if ++numLoaded == numOverlaid
                 # replace canvas with inline image
                 replaceCanvas = ->
                     return # XXX rendering inline image (data URL) is extremely slow on Safari
@@ -638,7 +638,7 @@ class MeasurementsUI extends MenuDropdown
     updateDisplay: (menuAnchor) =>
         # At least one menu item (aggregation) must be active all the time.
         # To totally hide this measure, user can simply check off.
-        if menuAnchor.find(".menu-dropdown-item.active").length is 0
+        if menuAnchor.find(".menu-dropdown-item.active").length == 0
             menuAnchor.find(".menu-dropdown-item:nth(0)").addClass("active")
 
         # then do what it's supposed to
@@ -956,7 +956,7 @@ class ResultsTable extends CompositeElement
                         # renderer can't be defined earlier because it needs to see the data
                         renderHTML: DataRenderer.htmlGeneratorForTypeAndData(col.type, @resultsForRendering, col.index)
                         renderDOM:  DataRenderer.domManipulatorForTypeAndData(col.type, @resultsForRendering, col.index)
-                        isLastColumn: col.index is @columnNames.length - 1
+                        isLastColumn: col.index == @columnNames.length - 1
             , {_3X_ServiceBaseURL, @isRunIdExpanded}
             ))
         # allow the column header to toggle aggregation
@@ -1138,7 +1138,7 @@ class ResultsTable extends CompositeElement
             brushingPos = Math.max(0, Math.min(n, Math.round(n * cursorRelPos)))
             rowIdxData  = brushingCell.origin[brushingPos]
             attachProvenancePopover $td, e, brushingPos, @results.rows[rowIdxData][@resultsRunIdIndex]
-            return if brushingLastRowIdx is rowIdxData # update only when there's change, o.w. flickering happens
+            return if brushingLastRowIdx == rowIdxData # update only when there's change, o.w. flickering happens
             brushingLastRowIdx = rowIdxData
             #log "updating", brushingLastRowIdx
             #do => # XXX debug
@@ -1154,7 +1154,7 @@ class ResultsTable extends CompositeElement
                 args = [rowIdxData, @results, c, @resultsRunIdIndex]
                 $(td).html(
                     # XXX somehow, the first row isn't refreshing even though correct html is being set
-                    (if brushingTRIndex is 0 then "<span></span>" else "") +
+                    (if brushingTRIndex == 0 then "<span></span>" else "") +
                     brushingCellHTMLRenderer[i]?(
                         @results.rows[rowIdxData][colIdxData], args...) ? ""
                 )
@@ -1182,7 +1182,7 @@ class ResultsTable extends CompositeElement
                 rowIdxProcessed = +rowIdxProcessed
                 #log "startBrushing", rowIdxProcessed
                 # setup the cells to start brushing
-                unless brushingSetupRow is rowIdxProcessed
+                unless brushingSetupRow == rowIdxProcessed
                     do endBrushing
                     #log "setting up row #{rowIdxProcessed} for brushing"
                     brushingSetupRow = rowIdxProcessed
@@ -1276,6 +1276,16 @@ class ResultsChart extends CompositeElement
         @table.on "updated", @display
 
         $(window).resize(_.throttle @display, 100)
+
+        # hide all popover when not clicked on one
+        $('html').on("click", (e) =>
+            if $(e.target).closest(".dot, .popover").length == 0
+                @baseElement.find(".dot").popover("hide")
+        )
+        # enable nested popover on-demand
+        @baseElement.on("click", ".popover [data-toggle='popover']", (e) =>
+            $(e.target).closest("[data-toggle='popover']").popover("show")
+        )
 
         # vocabularies for option persistence
         @chartOptions = (try JSON.parse localStorage["chartOptions"]) ? {}
@@ -1437,7 +1447,7 @@ class ResultsChart extends CompositeElement
                     ResultsChart.AXIS_PICK_CONTROL_SKELETON.render({
                         ord: ord
                         axis: ax
-                        variables: (if ord is ResultsChart.Y_AXIS_ORDINAL then ratioVariables else axisCandidates)
+                        variables: (if ord == ResultsChart.Y_AXIS_ORDINAL then ratioVariables else axisCandidates)
                                     # the first axis (Y) must always be of ratio type
                             .filter((col) => col not in @vars[0..ord]) # and without the current one
                         isOptional: (ord > 1) # there always has to be at least two axes
@@ -1459,7 +1469,8 @@ class ResultsChart extends CompositeElement
           }
 
           .dot {
-            stroke: #000;
+            opacity: 0.75;
+            cursor: pointer;
           }
 
           .line {
@@ -1475,6 +1486,7 @@ class ResultsChart extends CompositeElement
         resultsForRendering = @table.resultsForRendering
         return unless resultsForRendering?.length > 0
         accessorFor = (v) -> (rowIdx) -> resultsForRendering[rowIdx][v.index].value
+        originFor   = (v) -> (rowIdx) -> resultsForRendering[rowIdx][v.index].origin
         @dataBySeries = _.groupBy entireRowIndexes, (rowIdx) =>
             @varsPivot.map((pvVar) -> accessorFor(pvVar)(rowIdx)).join(", ")
         # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
@@ -1485,10 +1497,46 @@ class ResultsChart extends CompositeElement
         formatAxisLabel = (axis) ->
             unit = axis.unit
             unitStr = if unit then "(#{unit})" else ""
-            if axis.columns?.length is 1
+            if axis.columns?.length == 1
                 "#{axis.columns[0].name}#{if unitStr then " " else ""}#{unitStr}"
             else
                 unitStr
+        formatDataPoint = (varY) =>
+            vars = [varY, @varX]
+            varsImplied = vars.concat @varsPivot
+            vars = vars.concat (
+                col for col in @table.columnsRendered when \
+                    col.isExpanded and col not in varsImplied
+            )
+            varsWithValueGetter = ([v, accessorFor(v)] for v in vars)
+            getDataPointOrigin = originFor(varY)
+            runColIdx = @table.results.names.indexOf RUN_COLUMN_NAME
+            getRunIds = (origin) => @table.results.rows[i][runColIdx] for i in origin
+            (d) ->
+                origin = getDataPointOrigin(d)
+                """<table class="table table-condensed">""" + [
+                    (for [v,getValue] in varsWithValueGetter
+                        name: v.name
+                        value: """<span class="value">#{getValue(d)}</span>#{
+                            unless v.unit then ""
+                            else "<small class='unit'> (#{v.unit})<small>"}"""
+                    )...
+                    {
+                        name: "run#.count"
+                        value: """<span class="run-details"
+                            data-toggle="popover" data-html="true"
+                            title="#{origin.length} runs" data-content="
+                            <small><ol class='chart-run-details'>#{
+                                getRunIds(origin).map((runId) ->
+                                    "<li><a href='#{runId}/overview'
+                                        target='run-details'>#{runId}</a></li>"
+                                ).join("")
+                            }</ol></small>"><span class="value">#{origin.length
+                                }</span><small class="unit"> (runs)</small></span>"""
+                    }
+                    # TODO links to runIds
+                ].map((row) -> "<tr><td>#{row.name}</td><th>#{row.value}</th></tr>")
+                 .join("") + """</table>"""
         pickScale = (axis) =>
             dom = d3.extent(axis.domain)
             dom = d3.extent(dom.concat([0])) if @chartOptions["origin#{axis.name}"]
@@ -1543,7 +1591,7 @@ class ResultsChart extends CompositeElement
                     .scale(axisY.scale)
                 numDigits = Math.max _.pluck(y.ticks(axisY.axis.ticks()).map(y.tickFormat()), "length")...
                 tickWidth = Math.ceil(numDigits * 6.5) #px per digit
-                if i is 0
+                if i == 0
                     @margin.left += tickWidth
                 else
                     @margin.right += tickWidth
@@ -1595,7 +1643,7 @@ class ResultsChart extends CompositeElement
                     .range([@height, 0])
                 axisY.label = formatAxisLabel axisY
                 # draw axis
-                orientation = if i is 0 then "left" else "right"
+                orientation = if i == 0 then "left" else "right"
                 axisY.axis.orient(orientation)
                 @svg.append("g")
                     .attr("class", "y axis")
@@ -1612,34 +1660,30 @@ class ResultsChart extends CompositeElement
 
         ## Finally, draw each varY and series
         series = 0
-        xCoord = @axes[0].coord
+        axisX = @axes[0]
+        xCoord = axisX.coord
         for yVar in @varsY
             axisY = @axisByUnit[yVar.unit]
             y = axisY.scale; yData = accessorFor(yVar)
             yCoord = (d) -> y(yData(d))
 
             for seriesLabel,dataForCharting of @dataBySeries
-                if _.size(@varsY) > 1
-                    if seriesLabel
-                        seriesLabel = "#{seriesLabel} (#{yVar.name})"
-                    else
-                        seriesLabel = yVar.name
-                else
-                    unless seriesLabel
-                        seriesLabel = yVar.name
-                if _.size(@varsY) is 1 and _.size(@dataBySeries) is 1
-                    seriesLabel = null
-
                 seriesColor = (d) -> color(series)
 
                 @svg.selectAll(".dot.series-#{series}")
                     .data(dataForCharting)
                   .enter().append("circle")
                     .attr("class", "dot series-#{series}")
-                    .attr("r", 3.5)
+                    .attr("r", 5)
                     .attr("cx", xCoord)
                     .attr("cy", yCoord)
                     .style("fill", seriesColor)
+                    # popover
+                    .attr("title",        seriesLabel)
+                    .attr("data-content", formatDataPoint yVar)
+                    .attr("data-placement", (d) =>
+                        if xCoord(d) < @width/2 then "right" else "left"
+                    )
 
                 switch @chartType
                     when "lineChart"
@@ -1651,6 +1695,17 @@ class ResultsChart extends CompositeElement
                                 .attr("class", "line")
                                 .attr("d", line)
                                 .style("stroke", seriesColor)
+
+                if _.size(@varsY) > 1
+                    if seriesLabel
+                        seriesLabel = "#{seriesLabel} (#{yVar.name})"
+                    else
+                        seriesLabel = yVar.name
+                else
+                    unless seriesLabel
+                        seriesLabel = yVar.name
+                if _.size(@varsY) == 1 and _.size(@dataBySeries) == 1
+                    seriesLabel = null
 
                 # legend
                 if seriesLabel?
@@ -1669,6 +1724,13 @@ class ResultsChart extends CompositeElement
                         .text(seriesLabel)
 
                 series++
+
+        # popover
+        @baseElement.find(".dot").popover(
+            trigger: "click"
+            html: true
+            container: @baseElement
+        )
 
         ## update optional UI elements
         @optionElements.toggleLogScale.toggleClass("disabled", true)
@@ -1783,7 +1845,7 @@ class QueuesUI extends CompositeElement
             )
 
     focusQueue: (queueName, e) =>
-        if not e? or $(e?.target).closest("button").length is 0
+        if not e? or $(e?.target).closest("button").length == 0
             localStorage.queueOnFocus =
             @queueOnFocus = queueName
             do @updateFocusedQueue
@@ -1856,7 +1918,7 @@ class QueuesUI extends CompositeElement
             ratioTotal = 0
             for g in progressGroups
                 ratioTotal += queue["ratio#{g}"] =
-                    if numTotal is 0 or queue["num#{g}"] is 0 then 0
+                    if numTotal == 0 or queue["num#{g}"] == 0 then 0
                     else Math.max MIN_VISIBLE_RATIO, (queue["num#{g}"] / numTotal)
             #  normalize to account the residuals created by MIN_VISIBLE_RATIO
             for g in progressGroups
@@ -2032,7 +2094,7 @@ class TargetsUI extends CompositeElement
             @targetContents.find(".action-use").prop(disabled: false)
             @targetContents.find(".target[data-name='#{@currentQueue?.target}']").find(".action-use").prop(disabled: true)
         # show current target tab if none active
-        if true or @targetContents.find(".pill-pane.active").length is 0
+        if true or @targetContents.find(".pill-pane.active").length == 0
             t = @targetKnobs?.find("li.current a")
             t = @targetKnobs?.find("li a:first") unless t?.length > 0
             t?.tab("show")
@@ -2337,10 +2399,10 @@ class StatusTable extends CompositeElement
         totalCount = 0
         for state of StatusTable.CLASS_BY_STATE when @selectedRuns[state] > 0
             totalCount += count = @selectedRuns[state]
-            $actionButtons.filter(".for-#{state}:disabled").prop(disabled: count is 0)
+            $actionButtons.filter(".for-#{state}:disabled").prop(disabled: count == 0)
             summary.push "#{count} #{state}"
         @optionElements.selectionSummary?.html(
-            if summary.length is 0 then ""
+            if summary.length == 0 then ""
             else "With selected #{
                 if totalCount <= 1 then "run"
                 else "#{totalCount} runs"
@@ -2417,7 +2479,7 @@ class StatusTable extends CompositeElement
             attachPopover = ($tr) ->
                 # TODO display only when there is an expanded condition column
                 # try to avoid attaching to the same row more than once
-                return if popover.currentTR?.index() is $tr.index()
+                return if popover.currentTR?.index() == $tr.index()
                 popover.currentTR = $tr
                 popover.removeClass("hide in")
                 _.defer ->
@@ -2476,7 +2538,7 @@ class StatusTable extends CompositeElement
                     )
                 .on("click", ".planner.popover .add.btn", @addPlanFromRowHandler())
         $('html').on('click.popover.data-api touchstart.popover.data-api', null, (e) =>
-            if rt.baseElement.has(e.target).length is 0
+            if rt.baseElement.has(e.target).length == 0
                 popover.showDelay = POPOVER_SHOW_DELAY_INITIAL
         )
 
@@ -2485,12 +2547,12 @@ class StatusTable extends CompositeElement
         add = (strategy) =>
             popover = @resultsActionPopover
             # don't proceed if no condition is expanded
-            if popover.numAllRuns is 0
+            if popover.numAllRuns == 0
                 error "Cannot add anything to plan: no expanded inputs"
                 return
             valuesArray = popover.valuesArray
             # check valuesArray to see if we are actually generating some plans
-            for values,idx in valuesArray when not values? or values.length is 0
+            for values,idx in valuesArray when not values? or values.length == 0
                 name = (name for name of @conditions.conditions)[idx]
                 error "Cannot add anything to plan: no values for inputs variable #{name}"
                 return
