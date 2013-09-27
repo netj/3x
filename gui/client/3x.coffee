@@ -1518,6 +1518,7 @@ class ResultsChart extends CompositeElement
                     [rows[i][yIdx], rows[i][runColIdx]]
             (d) ->
                 origin = getDataPointOrigin(d)
+                return "" unless origin?
                 """<table class="table table-condensed">""" + [
                     (for [v,getValue] in varsWithValueGetter
                         val = getValue(d)
@@ -1532,7 +1533,7 @@ class ResultsChart extends CompositeElement
                         name: "run#.count"
                         value: """<span class="run-details"
                             data-toggle="popover" data-html="true"
-                            title="#{origin.length} runs" data-content="
+                            title="#{origin?.length} runs" data-content="
                             <small><ol class='chart-run-details'>#{
                                 getRawData(origin).map(([yValue,runId]) ->
                                     "<li><a href='#{runId}/overview'
