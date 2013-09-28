@@ -25,7 +25,7 @@ for _3X_WORKER_DIR in "$_3X_QUEUE_DIR"/$WORKER_DIR_PREFIX*; do
     # TODO transfer ones from remote
 
     # act upon ABORTED runs only
-    for-picked-runs list-only runId "state#"=ABORTED,RUNNING,PLANNED \
+    for-picked-runs list-only runId "state#"=ABORTED,RUNNING \
           >"$_3X_WORKER_DIR"/runIds2clean
 
     # clean up
