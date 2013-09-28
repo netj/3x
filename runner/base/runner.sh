@@ -71,7 +71,10 @@ super() {
 findOneInTargetOrRunners() {
     local f
     for f; do
-        if [ -e "$_3X_TARGET_DIR/$f" ]; then
+        if [ -n "${_3X_WORKER_DIR:-}" ] && \
+                [ -e "$_3X_WORKER_DIR/target/$f" ]; then
+            echo "$_3X_WORKER_DIR/target/$f"
+        elif [ -e "$_3X_TARGET_DIR/$f" ]; then
             echo "$_3X_TARGET_DIR/$f"
         else
             ls-super "$_3X_RUNNER_HOME" "$_3X_RUNNER" "$f"
@@ -107,7 +110,12 @@ runner-msg-withTargetOrRunnerPaths() {
 
 
 # some vocabularies useful when defining targets
-
+define-with-backup() {
+    local name=$1; shift
+    create-backup-candidate "$name"
+    echo "$@" >"$name"
+    keep-backup-if-changed "$name"
+}
 create-backup-candidate() {
     local f=$1
     # prepare a backup candidate, so we can keep only changed ones later

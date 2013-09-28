@@ -8,10 +8,12 @@
 # Created: 2013-07-11
 set -eu
 
+. runner.sh
+
 Target=$1; shift
 cd "$_3X_ROOT"
 
 mkdir -p run/target/"$Target"
 cd run/target/"$Target"
 
-echo "$_3X_RUNNER" >type
+define-with-backup type "$_3X_RUNNER"

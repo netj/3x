@@ -25,10 +25,8 @@ export _3X_TARGET_DIR="$_3X_ROOT"/run/target/"$Target"
 
 cd "$_3X_TARGET_DIR"
 
-# keep a backup
-! [ -e environ ] || mv -f environ environ~.$$
-
 # replace the environment configuration
+create-backup-candidate environ
 if [ $# -gt 0 ]; then
     for nameValuePair; do
         echo $nameValuePair
@@ -36,12 +34,4 @@ if [ $# -gt 0 ]; then
 else # use default configuration if none given
     cp -f "$(findOneInTargetOrRunners environ)" environ
 fi
-
-# decide if we need to leave a backup
-if [ -e environ~.$$ ]; then
-    if [ x"$(sha1sum <environ)" = x"$(sha1sum <environ~.$$)" ]; then
-        rm -f environ~.$$
-    else
-        mv -f environ~.$$ environ~
-    fi
-fi
+keep-backup-if-changed environ
