@@ -20,6 +20,11 @@ echo "# remotes (list of remote hosts to use (GNU parallel --sshlogin)):"
 cat remotes 2>/dev/null || code=2
 echo
 
+echo "# shareddir (the path to the shared directory across all hosts):"
+shareddir=$(cat shareddir 2>/dev/null) || code=2
+echo "$shareddir"
+echo
+
 echo "# workdir (the path to the working directory on each host):"
 workdir=$(cat workdir 2>/dev/null) || code=2
 echo "$workdir"

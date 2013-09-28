@@ -35,11 +35,13 @@ flattenScript() {
     sed 's/^[[:space:]]*//; s/[[:space:]]#.*//' |
     grep -v '^[[:space:]]*$' | tr '\n' ';'
 }
-postprocess-finished-runs() {
+postprocessFinishedRuns() {
+    # TODO "parallel" at this level is too energy inefficient: push the
+    # parallelism down into run.store by vectorizing and each operation in it
     for-picked-runs list-only serial,runId "state#"=RUNNING |
-    parallel --max-procs 25% --noswap --no-run-if-empty '
+    parallel --max-procs 50% --noswap --no-run-if-empty '
         set -eu
-        postprocess-run() {
+        postprocessRun() {
             local serial=$1 _3X_RUN=$2
             [ -e "$_3X_ROOT/$_3X_RUN".ok ]
             export _3X_RUN
@@ -49,7 +51,7 @@ postprocess-finished-runs() {
             echo "$_3X_RUN: $state"
             rm -f "$_3X_ROOT/$_3X_RUN".ok
         }
-        eval postprocess-run' | 
+        eval postprocessRun' | 
     if be-quiet; then cat
     else tee /dev/stderr
     fi >runs-just-finished
@@ -61,10 +63,14 @@ cd "$_3X_WORKER_DIR"
 ln -sfn "$_3X_ROOT"/run .
 
 # load target configuration
-numRemotes=$(no-comments <target/remotes | wc -l)
+remotesFile=$(findOneInTargetOrRunners remotes)
+numRemotes=$(no-comments <"$remotesFile" | wc -l)
 runner-msg "Using $numRemotes remote hosts with GNU Parallel"
-workdir=$(cat target/workdir)
+workdir=$(cat "$(findOneInTargetOrRunners workdir)")
 runner-msg +1 " working under directory of each host: $workdir"
+shareddir=$(cat "$(findOneInTargetOrRunners shareddir)")
+[ -z "$shareddir" ] ||
+    runner-msg +1 " using shared directory across hosts: $shareddir"
 envSpec=(
 $(useTargetOrRunnerConfig environ " assembling runs with environment spec:")
 )
@@ -78,22 +84,54 @@ xargs <"$FileRunIds"  rm -rf -- &
 # TODO can we skip transferring output?
 # TODO assemble output from run.store instead of run.assemble (base runner, generate-assembly-script)
 runner-msg +1 "Setting up remote hosts"
-remoteRoot=$REMOTE_ROOT_PREFIX/$(experiment-id)
-prepare-remote-root "$remoteRoot"
-sessionId=session.$$
-rm -rf "$remoteRoot"/.3x/session.*
-mkdir -p "$remoteRoot"/.3x/$sessionId
-mv -f "$remoteRoot"/.3x/assemble.sh "$remoteRoot"/.3x/$sessionId/
-ln -f "$FileRunIds"                 "$remoteRoot"/.3x/$sessionId/runIds
-# TODO target config that controls rsync of $remoteRoot once to shared filesystem
-parallelOnRemotes \
-    --nonall \
-    --basefile "$remoteRoot"/.3x/ \
-    --basefile "$remoteRoot"/input/ \
-    --basefile "$remoteRoot"/program/ \
-    --basefile "$remoteRoot"/output/ \
-    true \
-    2>/dev/null & # XXX parallel 20130924 always does --cleanup for --basefile
+mobileRepo=$REMOTE_ROOT_PREFIX/$(experiment-id)
+prepare-remote-root "$mobileRepo"
+sessionId=$(cat sessionId 2>/dev/null ||
+    echo session.$$ | tee sessionId)
+rm -rf "$mobileRepo"/.3x/session.*
+mkdir -p "$mobileRepo"/.3x/$sessionId
+mv -f "$mobileRepo"/.3x/assemble.sh "$mobileRepo"/.3x/$sessionId/
+ln -f "$FileRunIds"                 "$mobileRepo"/.3x/$sessionId/runIds
+if [ -n "$shareddir" ]; then
+    # we can rsync $mobileRepo to the $shareddir only once
+    remoteRoot=$(
+        let SHLVL+=2
+        {
+            . find-runner.sh ssh
+            . remote-runner.sh
+            cd "$_3X_WORKER_DIR"
+            parseRemote $shareddir
+            rsyncToRemote "$remoteRoot"/ --archive --hard-links --relative \
+                "$mobileRepo"/{.3x,input,program,output}/
+        } >&2
+        echo "$remoteRoot/$mobileRepo"
+    )
+    cleanupRemoteRoot() {
+        (
+        let SHLVL+=2
+        . find-runner.sh ssh
+        . remote-runner.sh
+        parseRemote $shareddir
+        sshRemote rm -rf "$remoteRoot"/.3x/$sessionId
+        )
+    }
+else
+    # send $mobileRoot to all hosts in parallel when there's no shared filesystem
+    remoteRoot="$mobileRepo"
+    parallelOnRemotes \
+        --nonall \
+        --basefile "$remoteRoot"/.3x/ \
+        --basefile "$remoteRoot"/input/ \
+        --basefile "$remoteRoot"/program/ \
+        --basefile "$remoteRoot"/output/ \
+        true \
+        2>/dev/null & # XXX parallel 20130924 always does --cleanup for --basefile
+    cleanupRemoteRoot() {
+        parallelOnRemotes \
+            --nonall \
+            rm -rf "$remoteRoot"/.3x/$sessionId
+    }
+fi
 
 wait # for remote setup and stale records clearing jobs to finish
 
@@ -103,15 +141,15 @@ rm -f parallel-finished
 (
 set +e
 while numRUNNING=$(for-picked-runs count "state#"=RUNNING); [ $numRUNNING -gt 0 ]; do
-    sleep 5 # TODO use watchdog dirname's of runIds for *.ok instead of polling
-    postprocess-finished-runs
+    sleep 5 # TODO use watchdog dirnames of runIds for *.ok instead of polling
+    postprocessFinishedRuns
     if [ -s runs-just-finished ]; then
         let numRUNNING-=$(wc -l <runs-just-finished)
         [[ $numRUNNING -gt 0 ]] || break
         runner-msg "Waiting for $numRUNNING/$numRuns more runs to finish"
     fi
     if [ -e parallel-finished ]; then
-        postprocess-finished-runs  # for one last time for sure
+        postprocessFinishedRuns  # for one last time for sure
         for-picked-runs list-only serial "state#"=RUNNING |
         xargs queue mark-as ABORTED
         runner-msg "All finished $numRuns runs have been archived locally"
@@ -146,7 +184,8 @@ parallelOnRemotes \
         runDir="$PWD/$_3X_RUN"
         rm -rf "$runDir"
 
-        cd ~/"$remoteRoot"
+        cd
+        cd "$remoteRoot"
         export _3X_ROOT=$PWD
         PATH="$_3X_ROOT/.3x/bin:$PATH"
         set --
@@ -176,9 +215,7 @@ parallelOnRemotes \
         cd "$workdir"
         sed -e '\''p; s/$/.ok/'\'' <~/"$remoteRoot"/.3x/$sessionId/runIds | xargs rm -rf --
     ')"
-parallelOnRemotes \
-    --nonall \
-    rm -rf $remoteRoot/.3x/$sessionId
+cleanupRemoteRoot
 ) &
 
 
