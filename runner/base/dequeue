@@ -65,6 +65,7 @@ pick-next() {
     # resume running if so, or dequeue from the plan
     if [ -d "$runDir" ]; then
         serial=${runDir#$RUNDIR_PREFIX}
+        queue mark-as RUNNING $serial
     else
         # dequeue one planned run
         serial=$(queue pick 1 RUNNING "$_3X_TARGET")

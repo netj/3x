@@ -94,6 +94,9 @@ runner-msg-withTargetOrRunnerPaths() {
         for path; do
             # abbreviate some known paths
             case $path in
+                "$_3X_ROOT"/*)
+                    path=${path#$_3X_ROOT/}
+                    ;;
                 "$_3X_HOME"/*)
                     path=${path#$_3X_HOME/}
                     ;;

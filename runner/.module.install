@@ -30,12 +30,14 @@ base/run.store                  $TOOLSDIR/runner/.../
 base/judge-state-of-run         $TOOLSDIR/runner/.../
 base/environ                    $TOOLSDIR/runner/.../
 
-base.multi/queue-start          $TOOLSDIR/runner/base.multi/
-base.multi/queue-sync           $TOOLSDIR/runner/base.multi/
+base/remote/remote-runner.sh    $TOOLSDIR/runner/base.remote/
 
-base.multi/multi-runner.sh      $TOOLSDIR/runner/base.multi/
-base.multi/dequeue              $TOOLSDIR/runner/base.multi/
-base.multi/run-all              $TOOLSDIR/runner/base.multi/
+base/multi/queue-start          $TOOLSDIR/runner/base.multi/
+base/multi/queue-sync           $TOOLSDIR/runner/base.multi/
+
+base/multi/multi-runner.sh      $TOOLSDIR/runner/base.multi/
+base/multi/dequeue              $TOOLSDIR/runner/base.multi/
+base/multi/run-all              $TOOLSDIR/runner/base.multi/
 
 queue                           $TOOLSDIR/
 new-run-id                      $TOOLSDIR/

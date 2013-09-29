@@ -7,6 +7,7 @@
 # Created: 2013-09-23
 set -eu
 . multi-runner.sh
+. remote-runner.sh
 
 FileSerials=$(readlink -f "$1"); shift
 FileRunIds=$(readlink -f "$1"); shift
@@ -94,42 +95,38 @@ mv -f "$mobileRepo"/.3x/assemble.sh "$mobileRepo"/.3x/$sessionId/
 ln -f "$FileRunIds"                 "$mobileRepo"/.3x/$sessionId/runIds
 if [ -n "$shareddir" ]; then
     # we can rsync $mobileRepo to the $shareddir only once
-    remoteRoot=$(
-        let SHLVL+=2
+    remoteMobileRepo=$(
+        parseRemote $shareddir &>/dev/null
+        echo "$remoteRoot/$mobileRepo"
         {
-            . find-runner.sh ssh
-            . remote-runner.sh
+            let SHLVL+=2
             cd "$_3X_WORKER_DIR"
-            parseRemote $shareddir
             rsyncToRemote "$remoteRoot"/ --archive --hard-links --relative \
                 "$mobileRepo"/{.3x,input,program,output}/
         } >&2
-        echo "$remoteRoot/$mobileRepo"
     )
     cleanupRemoteRoot() {
         (
         let SHLVL+=2
-        . find-runner.sh ssh
-        . remote-runner.sh
         parseRemote $shareddir
-        sshRemote rm -rf "$remoteRoot"/.3x/$sessionId
+        sshRemote rm -rf "$remoteMobileRepo"/.3x/$sessionId
         )
     }
 else
     # send $mobileRoot to all hosts in parallel when there's no shared filesystem
-    remoteRoot="$mobileRepo"
+    remoteMobileRepo="$mobileRepo"
     parallelOnRemotes \
         --nonall \
-        --basefile "$remoteRoot"/.3x/ \
-        --basefile "$remoteRoot"/input/ \
-        --basefile "$remoteRoot"/program/ \
-        --basefile "$remoteRoot"/output/ \
+        --basefile "$remoteMobileRepo"/.3x/ \
+        --basefile "$remoteMobileRepo"/input/ \
+        --basefile "$remoteMobileRepo"/program/ \
+        --basefile "$remoteMobileRepo"/output/ \
         true \
         2>/dev/null & # XXX parallel 20130924 always does --cleanup for --basefile
     cleanupRemoteRoot() {
         parallelOnRemotes \
             --nonall \
-            rm -rf "$remoteRoot"/.3x/$sessionId
+            rm -rf "$remoteMobileRepo"/.3x/$sessionId
     }
 fi
 
@@ -177,7 +174,7 @@ parallelOnRemotes \
         [ -n "$_3X_RUN" ] || exit 2
 
         '"$(escape-args-for-shell \
-            remoteRoot="$remoteRoot" \
+            remoteMobileRepo="$remoteMobileRepo" \
             sessionId="$sessionId" \
             )"'
 
@@ -185,7 +182,7 @@ parallelOnRemotes \
         rm -rf "$runDir"
 
         cd
-        cd "$remoteRoot"
+        cd "$remoteMobileRepo"
         export _3X_ROOT=$PWD
         PATH="$_3X_ROOT/.3x/bin:$PATH"
         set --
@@ -209,11 +206,11 @@ parallelOnRemotes \
         set -eu
         '"$(escape-args-for-shell \
             workdir="$workdir" \
-            remoteRoot="$remoteRoot" \
+            remoteMobileRepo="$remoteMobileRepo" \
             sessionId="$sessionId" \
             )"'
         cd "$workdir"
-        sed -e '\''p; s/$/.ok/'\'' <~/"$remoteRoot"/.3x/$sessionId/runIds | xargs rm -rf --
+        sed -e '\''p; s/$/.ok/'\'' <~/"$remoteMobileRepo"/.3x/$sessionId/runIds | xargs rm -rf --
     ')"
 cleanupRemoteRoot
 ) &

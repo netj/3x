@@ -10,8 +10,9 @@ shopt -s extglob
 # parse remote specification
 parseRemote() {
     [ -n "${1:-}" -o -z "${remoteHost:-}" ] || return 0
-    remote=${1:-$(cat "$_3X_TARGET_DIR"/remote 2>/dev/null ||
-        error "$_3X_TARGET: target has no remote defined")}
+    remote=${1:-}
+    [ -n "$remote" ] ||
+        error "$_3X_TARGET: target has no remote defined"
     case $remote in
         ssh://?(+([^@:/])@)+([^@:/])?(:+([0-9]))/*)
             local remoteUserHostPortRoot=${remote#"ssh://"}

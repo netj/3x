@@ -13,21 +13,22 @@ shopt -s extglob
 . runner.sh
 . remote-runner.sh
 
-parseRemote
+parseRemote "$(cat "$(findOneInTargetOrRunners remote)")"
 
 # figure out the environment to use for assembly from remote
 envVars=($(
+    envSpec=(
+        $(useTargetOrRunnerConfig environ "assembling with environment spec:" "$@")
+    )
     envCache="$_3X_TARGET_DIR"/environ.cached
-    if [ -r "$envCache" ]; then
+    if [ "$envCache" -nt "$envSpec" -a "$envCache" -nt "$0" ]; then
+        runner-msg +2 " using recorded environment previously cached"
         cat "$envCache"
     else
-        envSpec=(
-            $(useTargetOrRunnerConfig environ "assembling with environment spec:" "$@")
-        )
         trap 'rm -f "$envCache"' EXIT
         set -o pipefail
         # run record-environ.sh from the target host
-        sshRemote bash -eu -s -- "${envSpec[@]}" <"$(type -p record-environ.sh)" |
+        sshRemote bash -eu -s -- "${envSpec[@]}" HOSTNAME <"$(type -p record-environ.sh)" |
         tee "$envCache"
         trap - EXIT
     fi

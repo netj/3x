@@ -1,4 +1,4 @@
-remote-runner.sh        $TOOLSDIR/runner/ssh/
+parents                 $TOOLSDIR/runner/ssh/
 
 run.assemble            $TOOLSDIR/runner/ssh/
 

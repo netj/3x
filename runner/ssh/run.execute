@@ -4,8 +4,9 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-07-13
 set -eu
+. runner.sh
 . remote-runner.sh
-parseRemote
+parseRemote "$(cat "$(findOneInTargetOrRunners remote)")"
 
 stderrLog="$_3X_LOGERROR".log
 rm -f "$stderrLog"
