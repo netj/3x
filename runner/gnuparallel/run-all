@@ -28,7 +28,7 @@ parallelVerboseOpts=()
 parallelOnRemotes() {
     parallel --plain \
         --controlmaster \
-        --sshloginfile "$_3X_TARGET_DIR"/remotes \
+        --sshloginfile "$_3X_WORKER_DIR"/target/remotes \
         "${parallelVerboseOpts[@]:---silent}" \
         "$@"
 }
@@ -64,8 +64,9 @@ cd "$_3X_WORKER_DIR"
 ln -sfn "$_3X_ROOT"/run .
 
 # load target configuration
-remotesFile=$(findOneInTargetOrRunners remotes)
-numRemotes=$(no-comments <"$remotesFile" | wc -l)
+[ -e target/remotes.orig ] || mv -f target/remotes target/remotes.orig
+cp -f target/remotes.orig target/remotes
+numRemotes=$(no-comments <target/remotes | wc -l)
 runner-msg "Using $numRemotes remote hosts with GNU Parallel"
 workdir=$(cat "$(findOneInTargetOrRunners workdir)")
 runner-msg +1 " working under directory of each host: $workdir"
@@ -81,6 +82,22 @@ runner-msg +3 "Clearing stale local records of runs"
 xargs <"$FileRunIds"  unarchive "$_3X_ARCHIVE" 2>/dev/null || true
 xargs <"$FileRunIds"  rm -rf -- &
 
+# how to collect the list of available (or responsive) hosts
+updateResponsiveRemotes() {
+    runner-msg +1 "Finding responsive ones among $numRemotes remote hosts"
+    parallelOnRemotes \
+        --nonall \
+        --timeout 15 \
+        'hostname -f' \
+        >target/remotes.responsive \
+        || true
+    [ -s target/remotes.responsive ] ||
+        runner-error "No responsive remote hosts available"
+    grep >target/remotes.alive -iFf target/remotes.responsive <target/remotes.orig
+    runner-msg +1 " using only $(wc -l <target/remotes.responsive) responsive hosts"
+    mv -f target/remotes.alive target/remotes
+}
+
 # transfer experiment definition to remote hosts for assembly
 # TODO can we skip transferring output?
 # TODO assemble output from run.store instead of run.assemble (base runner, generate-assembly-script)
@@ -94,6 +111,7 @@ mkdir -p "$mobileRepo"/.3x/$sessionId
 mv -f "$mobileRepo"/.3x/assemble.sh "$mobileRepo"/.3x/$sessionId/
 ln -f "$FileRunIds"                 "$mobileRepo"/.3x/$sessionId/runIds
 if [ -n "$shareddir" ]; then
+    updateResponsiveRemotes &
     # we can rsync $mobileRepo to the $shareddir only once
     remoteMobileRepo=$(
         parseRemote $shareddir &>/dev/null
@@ -113,6 +131,7 @@ if [ -n "$shareddir" ]; then
         )
     }
 else
+    updateResponsiveRemotes
     # send $mobileRoot to all hosts in parallel when there's no shared filesystem
     remoteMobileRepo="$mobileRepo"
     parallelOnRemotes \
@@ -131,6 +150,7 @@ else
 fi
 
 wait # for remote setup and stale records clearing jobs to finish
+numRemotes=$(no-comments <target/remotes | wc -l)
 
 
 # store finished runs and reflect their states to queue asynchronously
