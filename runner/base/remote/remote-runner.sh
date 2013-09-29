@@ -53,8 +53,8 @@ requiresSSHCommand() {
     remoteSSHCommand=${remoteSSHCommand:-$(escape-args-for-shell \
         ssh \
         -o BatchMode=yes \
-        -o ControlMaster=auto -o ControlPersist=60 \
-        -o ControlPath="$_3X_WORKER_DIR"/ssh-master \
+        -o ControlMaster=auto  -o ControlPersist=60 \
+        -o ControlPath="${TMPDIR:-/tmp}/3x-ssh-master.%h-%p" \
         #
     )}
 }
@@ -62,7 +62,7 @@ requiresSSHCommand() {
 sshRemote() {
     parseRemote
     requiresSSHCommand
-    $remoteSSHCommand ${remotePort:+-p $remotePort} \
+    eval $remoteSSHCommand ${remotePort:+-p $remotePort} \
         ${remoteUser:+$remoteUser@}$remoteHost \
         "$@"
 }
