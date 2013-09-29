@@ -17,16 +17,20 @@ for _3X_WORKER_DIR in "$_3X_QUEUE_DIR"/$WORKER_DIR_PREFIX*; do
     ! lockproc "$workerLock" alive || continue
     lockproc "$workerLock" grab
 
+    [ -s "$_3X_WORKER_DIR"/runSerials ] || continue
+
           count=$(wc -l   <"$_3X_WORKER_DIR"/runSerials)
     firstSerial=$(head -1 <"$_3X_WORKER_DIR"/runSerials)
      lastSerial=$(tail -1 <"$_3X_WORKER_DIR"/runSerials)
-    msg +2 "$_3X_QUEUE_ID: cleaning up ABORTED runs among #$firstSerial - #$lastSerial ($count runs)"
 
     # TODO transfer ones from remote
+
 
     # act upon ABORTED runs only
     for-picked-runs list-only runId "state#"=ABORTED,RUNNING \
           >"$_3X_WORKER_DIR"/runIds2clean
+    msg +2 "$_3X_QUEUE_ID: cleaning up ABORTED runs among #$firstSerial - #$lastSerial ($(
+            wc -l <"$_3X_WORKER_DIR"/runIds2clean) runs)"
 
     # clean up
     cd "$_3X_ROOT"
