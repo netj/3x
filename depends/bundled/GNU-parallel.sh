@@ -8,13 +8,7 @@ md5sum=065ba41828644eca5dd8163446de5d64
 self=$0
 name=`basename "$0" .sh`
 
-
-{
-cd "$DEPENDSDIR"
-prefix="$name"/prefix
-
-mkdir -p "$name"
-cd ./"$name"
+prefix="$(pwd -P)"/prefix
 
 # fetch source if necessary and prepare for build
 tarball=parallel-${version}.tar.bz2
@@ -32,15 +26,12 @@ tar xf "$tarball"
 cd ./"${tarball%.tar*}"
 
 # configure and build
-./configure --prefix="$PWD/../prefix"
+./configure --prefix="$prefix"
 make -j $(nproc 2>/dev/null) install
 
-cd ../..
-}
-
-# place symlinks for commands to $DEPENDSDIR/.all/bin/
-mkdir -p .all/bin
+# place symlinks for commands to $DEPENDS_PREFIX/bin/
+mkdir -p "$DEPENDS_PREFIX"/bin
 for x in "$prefix"/bin/*; do
     [ -x "$x" ] || continue
-    ln -sfn ../../"$x" .all/bin/
+    relsymlink "$x" "$DEPENDS_PREFIX"/bin/
 done

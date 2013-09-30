@@ -1,21 +1,18 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # install node modules
 set -eu
 
 self=$0
 name=`basename "$0" .sh`
 
-cd "$DEPENDSDIR"
-
-mkdir -p "$name"
-cd ./"$name"
 cp -f ../"$name".json package.json
 rm -rf node_modules
 date >README.md
 npm install
-cd - >/dev/null
 
-mkdir -p .all/bin
-for x in "$name"/node_modules/.bin/*; do
-    ln -sfn ../../"$x" .all/bin/
+mkdir -p "$DEPENDS_PREFIX"/bin
+cp -al node_modules "$DEPENDS_PREFIX"/lib/
+cd "$DEPENDS_PREFIX"
+for x in lib/node_modules/.bin/*; do
+    relsymlink "$x" bin/
 done

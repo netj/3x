@@ -19,12 +19,7 @@ if [ -z "$python" ]; then
     exit 2
 fi
 
-{
-cd "$DEPENDSDIR"
-prefix="$name"/prefix
-
-mkdir -p "$name"
-cd ./"$name"
+prefix="$(pwd -P)"/prefix
 
 # fetch nodejs source if necessary and prepare source tree
 tarball="node-${version}.tar.gz"
@@ -35,15 +30,13 @@ tar xfz "$tarball"
 cd ./"node-${version}"
 
 # configure and build
-$python ./configure --prefix="$PWD/../../$prefix"
+$python ./configure --prefix="$prefix"
 make -j $(nproc 2>/dev/null) install PORTABLE=1
 
-cd ../..
-}
 
-# place symlinks for commands to $DEPENDSDIR/.all/bin/
-mkdir -p .all/bin
+# place symlinks for commands to $DEPENDS_PREFIX/bin/
+mkdir -p "$DEPENDS_PREFIX"/bin
 for x in "$prefix"/bin/*; do
     [ -x "$x" ] || continue
-    ln -sfn ../../"$x" .all/bin/
+    relsymlink "$x" "$DEPENDS_PREFIX"/bin/
 done

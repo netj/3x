@@ -8,12 +8,7 @@ md5sum=19d924e066b6fff0bc9d1981b4e53196
 self=$0
 name=`basename "$0" .sh`
 
-{
-cd "$DEPENDSDIR"
-prefix="$name"/prefix
-
-mkdir -p "$name"
-cd ./"$name"
+prefix="$(pwd -P)"/prefix
 
 # fetch source if necessary and prepare for build
 tarball=xz-${version}.tar.gz
@@ -27,12 +22,9 @@ cd ./"${tarball%.tar.*}"
 ./configure --prefix="$prefix"
 make -j $(nproc 2>/dev/null) install
 
-cd ../..
-}
-
 # place symlinks to $DEPENDSDIR/bin/
-mkdir -p .all/bin
+mkdir -p "$DEPENDS_PREFIX"/bin
 for x in "$prefix"/bin/*; do
     [ -x "$x" ] || continue
-    ln -sfn ../"$x" .all/bin/
+    relsymlink "$x" "$DEPENDS_PREFIX"/bin/
 done

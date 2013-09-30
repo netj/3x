@@ -14,6 +14,7 @@ chmod +x runtime/.check
 # prepare dependencies to be bundled
 bundledir=bundled
 prepdir=bundled.prep
+prepdirpath="$(pwd -P)"/"$prepdir"
 rm -rf "$bundledir"
 mkdir -p "$bundledir" "$prepdir"
 rsync -rlH ../bundled/ --exclude=/*.{commands,paths,{test,bundle}.sh} "$prepdir"/ #--delete
@@ -47,7 +48,9 @@ while read -r dep; do
     chmod +x "$prepared".test.sh
 done
 generate-depends-checker "$prepdir" "# Building to bundle, " "# Building to bundle, " |
-DEPENDSDIR="$prepdir" bash -eu
+DEPENDSDIR="$prepdirpath" \
+DEPENDS_PREFIX="$prepdirpath/.all" \
+    bash -eu
 
 # then, bundle only the necessary files from each dependency
 without-comments ../bundle.conf |

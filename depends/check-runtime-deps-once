@@ -6,7 +6,9 @@ set -eu
 
 cd "$LIBEXECDIR"/depends.runtime
 if ! [ .found -nt .check ]; then
-    DEPENDSDIR=. ./.check >.check.out 2>.check.err ||
+    DEPENDSDIR=$PWD \
+    DEPENDS_PREFIX=$PWD/.all \
+        ./.check >.check.out 2>.check.err ||
         error "$(cat .check.err)"
     touch .found
 fi

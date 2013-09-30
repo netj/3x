@@ -8,12 +8,7 @@ md5sum=af1ed6543929376ba13f0788e18ef30f
 self=$0
 name=`basename "$0" .sh`
 
-{
-cd "$DEPENDSDIR"
-prefix="$name"/prefix
-
-mkdir -p "$name"
-cd ./"$name"
+prefix="$(pwd -P)"/prefix
 
 # fetch source if necessary and prepare for build
 zip=sqlite-amalgamation-${version}.zip
@@ -25,18 +20,14 @@ unzip -o "$zip"
 cd ./"${zip%.zip}"
 
 # See: http://www.sqlite.org/howtocompile.html
-prefix="../../$prefix"
 mkdir -p "$prefix"/bin
 gcc -o "$prefix"/bin/sqlite3 \
     -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
     shell.c sqlite3.c
 
-cd ../..
-}
-
-# place symlinks for commands to $DEPENDSDIR/.all/bin/
-mkdir -p .all/bin
+# place symlinks for commands to $DEPENDS_PREFIX/bin/
+mkdir -p "$DEPENDS_PREFIX"/bin
 for x in "$prefix"/bin/*; do
     [ -x "$x" ] || continue
-    ln -sfn ../../"$x" .all/bin/
+    relsymlink "$x" "$DEPENDS_PREFIX"/bin/
 done
