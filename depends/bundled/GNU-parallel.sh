@@ -2,8 +2,8 @@
 # install GNU parallel
 set -eu
 version=20130922
-sha1sum=3fba93c72fab62f3742fe50957d3a86d4cd08176
-md5sum=065ba41828644eca5dd8163446de5d64
+sha1sum=be84aae96ee8c0a6651a3b5ca232fcb35066b3f3
+md5sum=7b522b7c51ef2a1f5c02b58d9fa50afb
 
 self=$0
 name=`basename "$0" .sh`
