@@ -22,7 +22,7 @@ without-comments ../bundle.conf |
 while read -r dep; do
     echo "# Preparing to bundle dependency $dep"
     prepared="$prepdir/$dep"
-    ln -sfn "$(relpath "$prepdir/" ../bundled/"$dep".sh)" "$prepared".sh
+    relsymlink ../bundled/"$dep".sh "$prepared".sh
     # reuse prepared dependency if available
     if [ -L ../bundled/"$dep".sh ]; then
         # find out where the prep script comes from
@@ -32,7 +32,7 @@ while read -r dep; do
             # make sure it's clear to place a symlink
             ! [ -e "$prepared" ] || rm -rf "$prepared"
             # point to the originally prepared dependency directory
-            ln -sfn "$(relpath "$prepared" "$origin")" "$prepared"
+            relsymlink "$origin" "$prepared"
         fi
     fi
     # remove any dangling symlinks that may remain because of the above reuse
