@@ -22,7 +22,7 @@ without-comments ../bundle.conf |
 while read -r dep; do
     echo "# Preparing to bundle dependency $dep"
     prepared="$prepdir/$dep"
-    ln -sfn "$(relpath "$prepared".sh ../../bundled/"$dep".sh)" "$prepared".sh
+    ln -sfn "$(relpath "$prepdir/" ../bundled/"$dep".sh)" "$prepared".sh
     # reuse prepared dependency if available
     if [ -L ../bundled/"$dep".sh ]; then
         # find out where the prep script comes from
@@ -42,12 +42,13 @@ while read -r dep; do
     {
         echo '
         prepared="$DEPENDSDIR/'"$dep"'"
-        [ -d "$prepared" -a -e "$prepared"/.prepared ]
+        [ -d "$prepared" -a "$prepared"/.prepared -nt "$prepared".sh ]
         '
     } >"$prepared".test.sh
     chmod +x "$prepared".test.sh
 done
 generate-depends-checker "$prepdir" "# Building to bundle, " "# Building to bundle, " |
+tee check-depends.sh |
 DEPENDSDIR="$prepdirpath" \
 DEPENDS_PREFIX="$prepdirpath/.all" \
     bash -eu
