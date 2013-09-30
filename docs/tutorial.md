@@ -77,8 +77,51 @@ executions and plans for future runs will be stored and managed inside this
 repository.  It is a typical directory (or folder) on the filesystem with a
 special internal structure.
 
-Let's say we want our repository to be called `sorting-algos`.  The following
-command creates an empty repository:
+3X provides two different ways to setup a new experiment repository: a quick
+one-liner setup, or a slightly more lengthy step-by-step way.  The quick setup
+will be useful for creating entirely new experiments from scratch, while the
+step-by-step setup can be useful for adjusting your existing experiment
+definitions.  You can either follow the first "Quick Setup" section and skip
+the rest, or follow the individual steps introduced in the sections that
+follows "Quick Setup".  In either ways, let's say we want our repository to be
+called `sorting-algos`.  
+
+#### Quick Setup
+
+The single command shown below will create and setup a new repository for our
+experiment on sorting algorithms.  It is simply an abbreviation for the
+multiple steps necessary to initialize the experiment repository and define its
+input and output.
+
+    # create and setup a new experiment repository
+    3x setup sorting-algos \
+        --program \
+            'python measure.py $algo $inputSize $inputType' \
+        --inputs \
+            inputSize=10,11,12,13,14,15,16,17,18 \
+            inputType=random,ordered,reversed \
+            algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
+        --outputs \
+            --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
+            --extract 'number of compares: {{numCompare =~ .+}}' \
+            --extract 'number of accesses: {{numAccess =~ .+}}' \
+            --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
+            --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
+            --extract 'validation time \(s\): {{validationTime(s) =~ .+}}' \
+        #
+
+Note that since this quick setup command creates only the skeleton part of our
+experiment repository, we still need to place additional files at the right
+place, namely, the `.py` files of our program.  Refer to the [instructions for
+registering the program (§2.3)](#registertheprogram) to prepare the `program/`
+directory.  You can safely ignore the rest of the steps, since they were
+already taken care by the `3x setup` command above.  We'll all set to start
+running our experiment.
+
+
+#### 2.1. Create an Experiment Repository
+
+The following command creates an empty repository:
 
     3x init sorting-algos
 
@@ -87,7 +130,7 @@ We can now move into the repository to further define our experiment.
     cd sorting-algos
 
 
-#### 2.1. Define Inputs & Outputs
+#### 2.2. Define Inputs & Outputs
 Next, we shall tell 3X what are the input parameters to our experimental
 program, and the output values of interest.
 
@@ -217,7 +260,7 @@ the values of interest in the case of this experiment with sorting algorithms.
         3x define output  'validationTime(s)'  'validation time \(s\): '  '.+'  ''
 
 
-#### 2.2. Register the Program
+#### 2.3. Register the Program
 
 The only thing 3X needs to know about our program in order to run experiments
 on behalf of us is the exact command we type into our terminal to start them
@@ -258,39 +301,6 @@ follows:
 
 Now, we're all set to start running our experiment.
 
-
-#### 2.3. Quick Setup
-
-In fact, most of the seemingly lengthy steps above for creating and setting up
-a new experiment repository can be done in a single command shown below.  You
-can safely skip this step if you had already completed the previous steps so
-far.  This section is here to give you an idea of how simple it could be to
-setup your next experiment.  The individual steps explained before can be
-useful because they can tweak your experiment definition even after this quick
-initial setup.
-
-    # create and setup a new experiment repository
-    3x setup sorting-algos \
-        --program \
-            'python measure.py $algo $inputSize $inputType' \
-        --inputs \
-            inputSize=10,11,12,13,14,15,16,17,18 \
-            inputType=random,ordered,reversed \
-            algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
-        --outputs \
-            --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
-            --extract 'number of compares: {{numCompare =~ .+}}' \
-            --extract 'number of accesses: {{numAccess =~ .+}}' \
-            --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
-            --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
-            --extract 'validation time \(s\): {{validationTime(s) =~ .+}}' \
-        #
-
-This quick setup command creates only the skeleton part of our experiment
-repository, so we still need to place additional files at the right place,
-namely, the .py files of our program.  Refer to the previous step (§2.2) to
-find instructions on downloading the necessary .py files into the `program/`
-directory.
 
 
 ### 3. Start GUI
