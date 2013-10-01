@@ -1,5 +1,12 @@
 # <i class="icon-beaker"></i> 3X Tutorial: Step-through Examples
 <style>@import url(http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css);</style>
+<style>
+figcaption {
+    font-size: 80%;
+    text-align: center;
+}
+</style>
+
 
 In this document, we explain how you can setup and conduct computational
 experiments using a few examples.  This step-by-step guide will introduce
@@ -7,6 +14,8 @@ important features of 3X with detailed instructions.
 
 
 ## Example 1: Studying Sorting Algorithms
+
+![](tutorial/sorting-algos.png "A chart showing how much time each sorting algorithm took to sort different sizes of inputs")
 
 Anyone who received computer science education or studied basic algorithms
 would be familiar with different algorithms for sorting an array of data
@@ -20,7 +29,7 @@ Suppose we want to see such an empirical result ourselves of how different
 sorting algorithms, namely, *bubble sort*, *selection sort*, *insertion sort*,
 *quick sort*, and *merge sort* behave on several sizes and types of inputs,
 e.g., when the input is already ordered, reversed, or randomly shuffled.
-Implementing those algorithms correctly is obviously important, but what's
+Implementing these algorithms correctly is obviously important, but what's
 equally important to obtain a credible result is running different combinations
 of inputs and recording every detail in a systematic manner.  Using 3X, we can
 easily obtain robust, repeatable experimental results with minimal effort.
@@ -107,13 +116,13 @@ input and output.
             --extract 'number of accesses: {{numAccess =~ .+}}' \
             --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
             --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
-            --extract 'validation time \(s\): {{validationTime(s) =~ .+}}' \
+            --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
         #
 
 Note that since this quick setup command creates only the skeleton part of our
 experiment repository, we still need to place additional files at the right
 place, namely, the `.py` files of our program.  Refer to the [instructions for
-registering the program (§2.3)](#registertheprogram) to prepare the `program/`
+plugging the program in to 3X (§2.3)](#plugintheprogram) to prepare the `program/`
 directory.  You can safely ignore the rest of the steps, since they were
 already taken care by the `3x setup` command above.  We'll all set to start
 running our experiment.
@@ -252,15 +261,15 @@ the values of interest in the case of this experiment with sorting algorithms.
     
         3x define output  'inputTime(s)'  'input generation time \(s\): '  '.+'  ''
 
-6. **`validationTime`**
+6. **`verificationTime`**
 
     And the wall clock time that took for checking whether the output array is
     correctly sorted.
     
-        3x define output  'validationTime(s)'  'validation time \(s\): '  '.+'  ''
+        3x define output  'verificationTime(s)'  'verification time \(s\): '  '.+'  ''
 
 
-#### 2.3. Register the Program
+#### 2.3. Plug in the Program
 
 The only thing 3X needs to know about our program in order to run experiments
 on behalf of us is the exact command we type into our terminal to start them
@@ -285,7 +294,8 @@ GitHub with the following commands:
 
     # copy our example Python program into the repository
     exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos"
-    curl -LO $exampleURL/program/{measure.py,sort.py}
+    curl -LO $exampleURL/program/measure.py
+    curl -LO $exampleURL/program/sort.py
 
 (You can probably use `wget` instead of `curl -LO` if your system doesn't have
 `curl` installed.)
@@ -303,19 +313,180 @@ Now, we're all set to start running our experiment.
 
 
 
-### 3. Start GUI
+
+
+
+
+### 3. Running Experiments
+
+3X provides two ways to execute your experiments: You can use its *graphical
+user interface (GUI)*, or the *command-line interface (CLI)*.  The GUI is easy
+and intuitive to use, but you might want to have more sophisticated control
+over your execution, or control 3X from other systems and further automate
+parts of your experiment using the CLI.  However, it is perfectly fine for you
+to use both GUI and CLI at the same time, and any changes you make on one-side
+will be reflected to the other.
+
+#### 3.1. Start GUI
+
+To start the GUI, run the following command within the experiment repository:
+
+    3x gui
+
+When successfully started, it will output a URL you can open in your web
+browser to access the GUI.  On a Mac, or a GNU/Linux system running a proper
+GUI system, 3X will launch the browser for you.
+
+![Initial screen of 3X GUI on an empty experiment repository for studying sorting algorithms.](tutorial/gui-started.png)
+
+As shown in the above screenshot, the GUI has four tabs: Results, Charts, Plan,
+and Runs.  The first two tabs are for exploring the results of execution
+collected so far, while the last two are for controlling the execution.
+
+#### 3.2. Queue Runs
+
+From the results table, we can click on a row which needs to be filled or more
+execution should be done, and queue up new runs for execution.  You can repeat
+this process from the results table to add necessary runs to fill the output
+columns colored red.  Note that the button on each input column header can be
+used to expand and collapse the rows, so that you can add only part of the runs
+or a larger group of runs at a time.
+
+![New runs can be queued from the results table.](tutorial/gui-plan-from-results.png)
+
+
+##### Queue Runs from Command Line
+
+From the command line, within the experiment repository, the following command will achieve the same result as we did in the GUI:
+
+    3x plan algo=quickSort
+
+Different sets of runs can be easily queued with commands similar to the following:
+
+    3x plan algo=bubbleSort,insertionSort inputSize=10,11,12
+
+
+#### 3.3. Start Runs
+
+The Runs tab shows a list of queues defined in the repository and the target
+execution environment associated to them on the left-hand side.  On the
+right-hand side table, all the runs added to the currently selected queue are
+shown with their states and value bindings for input variables in the order
+they will be executed.
+
+![Queues, targets, and queued runs are shown in the Runs tab.](tutorial/gui-runs.png)
+
+The buttons on the queue from the left-hand side list will let you to start and
+stop the execution of the runs in it.  Pressing the play <i
+class="icon-play"></i> button on the main queue starts the execution.
+
+
+##### Start Runs from Command Line
+
+From the command line, you can run the following command to view what runs are
+in the current queue:
+
+    3x status
+
+It will output the table of runs in the current queue that resembles the GUI as
+follows:
+
+    PLANNED  algo=quickSort  inputSize=10  inputType=ordered   #1
+    PLANNED  algo=quickSort  inputSize=10  inputType=random    #2
+    PLANNED  algo=quickSort  inputSize=10  inputType=reversed  #3
+    PLANNED  algo=quickSort  inputSize=11  inputType=ordered   #4
+    [...]
+    PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
+    PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+
+To start execution, run:
+
+    3x start
+
+
+#### 3.4. Stop Runs
+
+To stop the execution, press the pause <i class="icon-pause"></i> or stop <i
+class="icon-stop"></i> button on the main queue.
+
+
+##### Stop Runs from Command Line
+
+To stop execution from the command line, either interrupt the `3x start`
+process with Ctrl-C, or run the following command:
+
+    3x stop
+
+
+
+#### 3.5. Monitor Progress
+
+As execution progresses, the state of runs will change from `PLANNED` to
+`RUNNING`, then to either `DONE` or `FAILED` after finishing.
+
+![Execution in progress.](tutorial/gui-runs-progress.png)
+
+
+##### Monitor Progress from Command Line
+From the command line, you can use the same command to view the state of runs
+in the current queue:
+
+    3x status
+
+It will output the table of runs with updated states:
+
+    DONE     algo=quickSort  inputSize=10  inputType=ordered   #1   local  run/2013/1001/01/1836.424138000-1
+    DONE     algo=quickSort  inputSize=10  inputType=random    #2   local  run/2013/1001/01/1839.494897000-2
+    DONE     algo=quickSort  inputSize=10  inputType=reversed  #3   local  run/2013/1001/01/1841.888092000-3
+    DONE     algo=quickSort  inputSize=11  inputType=ordered   #4   local  run/2013/1001/01/1844.200499000-4
+    DONE     algo=quickSort  inputSize=11  inputType=random    #5   local  run/2013/1001/01/1846.514245000-5
+    [...]
+    PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
+    PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+
+
+#### 3.6. Trace Failures
+
+If your program does not finish with clean (zero) exit status, or any error
+occurs, their states become `FAILED`.  For example, if you forget to plug the
+`.py` files into the `program/` directory, all runs fail as shown in the
+following screenshot.  Additionally, if you stop the execution, runs can be
+marked as `ABORTED`.
+
+![Runs may fail and require further investigation.](tutorial/gui-runs-failed.png)
+
+By following the link of a run in the state column (`FAILED`, `DONE`, or
+`ABORTED`) of the execution history table, it is possible to access the full
+record of the execution.
+
+![Every run's detailed record of execution is easily accessible from the
+history table.](tutorial/gui-runs-failed-details.png)
+
+
+#### 3.7. Switch Target
+...
+
+    3x target -h
+
+
+<!--
+#### 3.8. Switch Queue
+...
+
+    3x queue -h
+-->
+
+
+
+
+### 4. Viewing Results and Beyond
+
+
+#### 4.1. Tabulate Results
 
 ...
 
-### 4. Plan Runs
-
-...
-
-### 5. Tabulate Results
-
-...
-
-### 6. Chart Results
+#### 4.2. Chart Results
 
 ...
 
@@ -326,7 +497,3 @@ Now, we're all set to start running our experiment.
 ...
 
 
-* * *
-
-## Example 3: Finding a Good Word-Cloud
-...
