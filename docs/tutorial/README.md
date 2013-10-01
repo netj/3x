@@ -153,13 +153,13 @@ parameters for our experiment in the following steps.
     The particular sorting algorithms we are interested in are the following
     five, which are already implemented in [`sort.py`][].  We will use the name
     of the algorithms as the value for this input parameter.
-
+    
     * `bubbleSort`      for [Bubble Sort](http://en.wikipedia.org/wiki/Bubble_sort#Pseudocode_implementation)
     * `selectionSort`   for [Selection Sort](http://en.wikipedia.org/wiki/Selection_sort)
     * `insertionSort`   for [Insertion Sort](http://en.wikipedia.org/wiki/Insertion_sort#Algorithm)
     * `quickSort`       for [Quick Sort (in-place version)](http://en.wikipedia.org/wiki/Quicksort#In-place_version)
     * `mergeSort`       for [Merge Sort (bottom-up implementation)](http://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation)
-
+    
     The following command tells 3X to add this parameter to the experiment definition:
 
         3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort 
@@ -172,12 +172,12 @@ parameters for our experiment in the following steps.
     unique numbers, and double the size of the arrays up to size 262,144
     (2<sup><small>18</small></sup>).  Let's omit the base and use the powers of
     two as the value for this input parameter:
-
+    
     * `10` for 2<sup><small>10</small></sup>,
     * `11` for 2<sup><small>11</small></sup>,
     * ...,
     * `18` for 2<sup><small>18</small></sup>.
-
+    
     We should run the following command to add this parameter:
 
         3x define input  inputSize  10 11 12 13 14 15 16 17 18
@@ -189,11 +189,11 @@ parameters for our experiment in the following steps.
     different types of arrays as well as their sizes.  We will use the
     following three values of this input parameter to indicate which type of
     input we want to use:
-
+    
     * `ordered` that is already sorted,
     * `reversed` that is sorted but in the reversed direction,
     * `random` that is shuffled randomly.
-
+    
     The following command will add this last parameter:
 
         3x define input  inputType  ordered reversed random
