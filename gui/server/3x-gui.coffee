@@ -123,6 +123,9 @@ readFileIfExists = (filename, next) ->
 app.get "/docs/*", (req, res, next) ->
     path = req.params[0]
     title = path
+    if /// /$ ///.test path
+        path += "README"
+        title = title.replace /// /$ ///g, ""
     filepath = "#{process.env.DOCSDIR}/#{path}.md"
     fs.exists filepath, (doesExist) ->
         if doesExist
