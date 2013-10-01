@@ -15,7 +15,7 @@ important features of 3X with detailed instructions.
 
 ## Example 1: Studying Sorting Algorithms
 
-![](tutorial/sorting-algos.png "A chart showing how much time each sorting algorithm took to sort different sizes of inputs")
+![](sorting-algos.png "A chart showing how much time each sorting algorithm took to sort different sizes of inputs")
 
 Anyone who received computer science education or studied basic algorithms
 would be familiar with different algorithms for sorting an array of data
@@ -59,8 +59,8 @@ experimenting with sorting algorithms as following two files:
     containing code that measures how long a chosen sorting algorithm takes to
     finish for a generated input.
 
-[`sort.py`]:    examples/sorting-algos/program/sort.py
-[`measure.py`]: examples/sorting-algos/program/measure.py
+[`sort.py`]:    ../examples/sorting-algos/program/sort.py
+[`measure.py`]: ../examples/sorting-algos/program/measure.py
 
 To obtain a single measurement with this program, we would a run command such
 as:
@@ -337,7 +337,7 @@ When successfully started, it will output a URL you can open in your web
 browser to access the GUI.  On a Mac, or a GNU/Linux system running a proper
 GUI system, 3X will launch the browser for you.
 
-![Initial screen of 3X GUI on an empty experiment repository for studying sorting algorithms.](tutorial/gui-started.png)
+![Initial screen of 3X GUI on an empty experiment repository for studying sorting algorithms.](gui-started.png)
 
 As shown in the above screenshot, the GUI has four tabs: Results, Charts, Plan,
 and Runs.  The first two tabs are for exploring the results of execution
@@ -352,7 +352,7 @@ columns colored red.  Note that the button on each input column header can be
 used to expand and collapse the rows, so that you can add only part of the runs
 or a larger group of runs at a time.
 
-![New runs can be queued from the results table.](tutorial/gui-plan-from-results.png)
+![New runs can be queued from the results table.](gui-plan-from-results.png)
 
 
 ##### Queue Runs from Command Line
@@ -374,7 +374,7 @@ right-hand side table, all the runs added to the currently selected queue are
 shown with their states and value bindings for input variables in the order
 they will be executed.
 
-![Queues, targets, and queued runs are shown in the Runs tab.](tutorial/gui-runs.png)
+![Queues, targets, and queued runs are shown in the Runs tab.](gui-runs.png)
 
 The buttons on the queue from the left-hand side list will let you to start and
 stop the execution of the runs in it.  Pressing the play <i
@@ -424,7 +424,7 @@ process with Ctrl-C, or run the following command:
 As execution progresses, the state of runs will change from `PLANNED` to
 `RUNNING`, then to either `DONE` or `FAILED` after finishing.
 
-![Execution in progress.](tutorial/gui-runs-progress.png)
+![Execution in progress.](gui-runs-progress.png)
 
 
 ##### Monitor Progress from Command Line
@@ -453,14 +453,14 @@ occurs, their states become `FAILED`.  For example, if you forget to plug the
 following screenshot.  Additionally, if you stop the execution, runs can be
 marked as `ABORTED`.
 
-![Runs may fail and require further investigation.](tutorial/gui-runs-failed.png)
+![Runs may fail and require further investigation.](gui-runs-failed.png)
 
 By following the link of a run in the state column (`FAILED`, `DONE`, or
 `ABORTED`) of the execution history table, it is possible to access the full
 record of the execution.
 
 ![Every run's detailed record of execution is easily accessible from the
-history table.](tutorial/gui-runs-failed-details.png)
+history table.](gui-runs-failed-details.png)
 
 
 #### 3.7. Switch Target
