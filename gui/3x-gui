@@ -104,6 +104,16 @@ case $cmd in
             Darwin) # Mac
                 open "$url"
                 ;;
+            *) # Linux and other systems
+                if [ -n "$DISPLAY" ]; then
+                    # See: http://stackoverflow.com/questions/5116473/linux-command-to-open-url-in-default-browser
+                    if type sensible-browser &>/dev/null; then
+                        sensible-browser "$url"
+                    elif type xdg-open &>/dev/null; then
+                        xdg-open "$url"
+                    fi
+                fi
+                ;;
         esac
         trap "kill -TERM \$(for pid in $pids; do echo -\$pid; done)" INT QUIT TERM
         wait
