@@ -52,8 +52,8 @@ if [ -z "${_3X_HOME:-}" ]; then
     export USAGE_TOOL_COMMAND=3x  USAGE_TOOL_PATH=$_3X_COMMAND
     Self=$(readlink -f "$0" 2>/dev/null || {
         # XXX readlink -f is only available in GNU coreutils
-        cd $(dirname -- "$_3X_COMMAND")
-        n=$(basename -- "$_3X_COMMAND")
+        cd $(dirname -- "$0")
+        n=$(basename -- "$0")
         if [ -L "$n" ]; then
             L=$(readlink "$n")
             if [ x"$L" = x"${L#/}" ]; then
