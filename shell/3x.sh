@@ -92,9 +92,9 @@ if [ -z "${_3X_HOME:-}" ]; then
             PATH="$dir:$PATH"
         done
     }
-    PATH="$LIBEXECDIR/depends.runtime/.all/bin:$PATH"
+    PATH="$LIBEXECDIR/depends/runtime/.all/bin:$PATH"
     insertOptionalPATH \
-        "$LIBEXECDIR"/depends/.all/bin \
+        "$LIBEXECDIR"/depends/bundled/.all/bin \
         "$LIBDIR"/node_modules/.bin \
         #
     PATH="$TOOLSDIR:$PATH"
@@ -105,7 +105,7 @@ if [ -z "${_3X_HOME:-}" ]; then
 fi
 
 # make sure everything we need is available
-check-runtime-deps-once
+"$LIBEXECDIR"/depends/check-runtime-depends-once
 
 while getopts "vtq" opt; do
     case $opt in

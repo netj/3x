@@ -11,6 +11,7 @@ export LIBEXECDIR     := libexec
 export DATADIR        := data
 export GUIDIR         := gui
 export DOCSDIR        := docs
+export RUNTIMEDEPENDSDIR := $(LIBEXECDIR)/depends
 
 DEPENDSDIR := .depends
 
