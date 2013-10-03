@@ -206,7 +206,7 @@ in seconds and print that out in a line that begins with `sorting time (s):
 `.  Therefore 3X can easily extract the value that follows if we define the
 output variable as shown in the following command:
 
-    3x define output  'inputTime(s)'  'sorting time \(s\): '  '.+'  ''
+    3x define output  'inputTime(s)'  extract  'sorting time \(s\): '  '.+'  ''
 
 Here, there are four arguments to the `3x define output` command:
 
@@ -224,14 +224,14 @@ text for the unit as long as it's surrounded by parentheses.
 Similarly, we can teach 3X to extract the number of compares for the value
 of an output variable using the following command:
 
-    3x define output  'numCompare'  'number of compares: '  '.+'  ''
+    3x define output  'numCompare'  extract  'number of compares: '  '.+'  ''
 
 
 ##### Output 3. `numAccess`
 
 As well as the number of accesses to the input array of numbers with:
 
-    3x define output  'numAccess'  'number of accesses: '  '.+'  ''
+    3x define output  'numAccess'  extract  'number of accesses: '  '.+'  ''
 
 
 ##### Output 4. `ratioSorted`
@@ -243,7 +243,7 @@ sorting algorithm was implemented correctly.  When this value comes out
 less than 1.0, it means the the algorithm is incorrect.  The following
 command adds this output variable to the experiment definition.
 
-    3x define output  'ratioSorted'  'ratio sorted: '  '.+'  ''
+    3x define output  'ratioSorted'  extract  'ratio sorted: '  '.+'  ''
 
 
 ##### Output 5. `inputTime`
@@ -251,7 +251,7 @@ command adds this output variable to the experiment definition.
 We also record the wall clock time that took for generating the input array
 to sort.
 
-    3x define output  'inputTime(s)'  'input generation time \(s\): '  '.+'  ''
+    3x define output  'inputTime(s)'  extract  'input generation time \(s\): '  '.+'  ''
 
 
 ##### Output 6. `verificationTime`
@@ -259,7 +259,7 @@ to sort.
 And the wall clock time that took for checking whether the output array is
 correctly sorted.
 
-    3x define output  'verificationTime(s)'  'verification time \(s\): '  '.+'  ''
+    3x define output  'verificationTime(s)'  extract  'verification time \(s\): '  '.+'  ''
 
 
 
