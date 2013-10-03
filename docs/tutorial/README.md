@@ -1,12 +1,4 @@
 # <i class="icon-beaker"></i> 3X Tutorial: Step-through Examples
-<style>@import url(http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css);</style>
-<style>
-figcaption {
-    font-size: 80%;
-    text-align: center;
-}
-</style>
-
 
 In this document, we explain how you can setup and conduct computational
 experiments using a few examples.  This step-by-step guide will introduce
@@ -143,60 +135,60 @@ We can now move into the repository to further define our experiment.
 Next, we shall tell 3X what are the input parameters to our experimental
 program, and the output values of interest.
 
-##### Define Input Parameters
 Suppose we want to vary the input size, the initial order of input for
 different sorting algorithms.  We can tell 3X that we have three input
 parameters for our experiment in the following steps.
 
-1. **`algo`** for choosing the sorting algorithm to test
+##### Input 1. `algo` for choosing the sorting algorithm to test
 
-    The particular sorting algorithms we are interested in are the following
-    five, which are already implemented in [`sort.py`][].  We will use the name
-    of the algorithms as the value for this input parameter.
-    * `bubbleSort`      for [Bubble Sort](http://en.wikipedia.org/wiki/Bubble_sort#Pseudocode_implementation)
-    * `selectionSort`   for [Selection Sort](http://en.wikipedia.org/wiki/Selection_sort)
-    * `insertionSort`   for [Insertion Sort](http://en.wikipedia.org/wiki/Insertion_sort#Algorithm)
-    * `quickSort`       for [Quick Sort (in-place version)](http://en.wikipedia.org/wiki/Quicksort#In-place_version)
-    * `mergeSort`       for [Merge Sort (bottom-up implementation)](http://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation)
-    
-    The following command tells 3X to add this parameter to the experiment definition:
+The particular sorting algorithms we are interested in are the following
+five, which are already implemented in [`sort.py`][].  We will use the name
+of the algorithms as the value for this input parameter.
 
-        3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort 
+* `bubbleSort`      for [Bubble Sort](http://en.wikipedia.org/wiki/Bubble_sort#Pseudocode_implementation)
+* `selectionSort`   for [Selection Sort](http://en.wikipedia.org/wiki/Selection_sort)
+* `insertionSort`   for [Insertion Sort](http://en.wikipedia.org/wiki/Insertion_sort#Algorithm)
+* `quickSort`       for [Quick Sort (in-place version)](http://en.wikipedia.org/wiki/Quicksort#In-place_version)
+* `mergeSort`       for [Merge Sort (bottom-up implementation)](http://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation)
 
+The following command tells 3X to add this parameter to the experiment definition:
 
-2. **`inputSize`** for choosing the size of the array to sort
-
-    We want to test sorting algorithms on arrays of numbers with different
-    sizes.  We will start with arrays of 1,024 (2<sup><small>10</small></sup>)
-    unique numbers, and double the size of the arrays up to size 262,144
-    (2<sup><small>18</small></sup>).  Let's omit the base and use the powers of
-    two as the value for this input parameter:
-    * `10` for 2<sup><small>10</small></sup>,
-    * `11` for 2<sup><small>11</small></sup>,
-    * ...,
-    * `18` for 2<sup><small>18</small></sup>.
-    
-    We should run the following command to add this parameter:
-
-        3x define input  inputSize  10 11 12 13 14 15 16 17 18
+    3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort 
 
 
-3. **`inputType`** for choosing the type of the arrays to sort
+##### Input 2. `inputSize` for choosing the size of the array to sort
 
-    We also want to see how each sorting algorithm behaves differently for
-    different types of arrays as well as their sizes.  We will use the
-    following three values of this input parameter to indicate which type of
-    input we want to use:
-    * `ordered` that is already sorted,
-    * `reversed` that is sorted but in the reversed direction,
-    * `random` that is shuffled randomly.
-    
-    The following command will add this last parameter:
+We want to test sorting algorithms on arrays of numbers with different
+sizes.  We will start with arrays of 1,024 (2<sup><small>10</small></sup>)
+unique numbers, and double the size of the arrays up to size 262,144
+(2<sup><small>18</small></sup>).  Let's omit the base and use the powers of
+two as the value for this input parameter:
 
-        3x define input  inputType  ordered reversed random
+* `10` for 2<sup><small>10</small></sup>,
+* `11` for 2<sup><small>11</small></sup>,
+* ...,
+* `18` for 2<sup><small>18</small></sup>.
 
-    
-##### Define Output Variables
+We should run the following command to add this parameter:
+
+    3x define input  inputSize  10 11 12 13 14 15 16 17 18
+
+
+##### Input 3. `inputType` for choosing the type of the arrays to sort
+
+We also want to see how each sorting algorithm behaves differently for
+different types of arrays as well as their sizes.  We will use the
+following three values of this input parameter to indicate which type of
+input we want to use:
+
+* `ordered` that is already sorted,
+* `reversed` that is sorted but in the reversed direction,
+* `random` that is shuffled randomly.
+
+The following command will add this last parameter:
+
+    3x define input  inputType  ordered reversed random
+
 
 Next, suppose we want to measure the wall clock time as well as the number of
 compares and array accesses to finish each sorting algorithm.  We can tell
@@ -206,64 +198,69 @@ regular expressions](http://perldoc.perl.org/perlre.html#Regular-Expressions)
 syntax.  The following steps will show how exactly we can tell 3X to extract
 the values of interest in the case of this experiment with sorting algorithms.
 
-1. **`sortingTime`**
+##### Output 1. `sortingTime`
 
-    The wall clock time it takes for sorting the input array is what we are
-    mostly interested in this experiment.  We measure this time in our program
-    in seconds and print that out in a line that begins with `sorting time (s):
-    `.  Therefore 3X can easily extract the value that follows if we define the
-    output variable as shown in the following command:
-    
-        3x define output  'inputTime(s)'  'sorting time \(s\): '  '.+'  ''
-    
-    Here, there are four arguments to the `3x define output` command:
+The wall clock time it takes for sorting the input array is what we are
+mostly interested in this experiment.  We measure this time in our program
+in seconds and print that out in a line that begins with `sorting time (s):
+`.  Therefore 3X can easily extract the value that follows if we define the
+output variable as shown in the following command:
 
-    1. name of the output variable: `inputTime(s)`
-    2. regular expression for the text that comes before the value: `sorting time \(s\): `
-    3. regular expression the value matches: `.+` (any non-empty string)
-    4. regular expression for the text that comes after the value: (empty string)
-    
-    Note that we can append the *unit* of the output variable to its name
-    (first argument), which is `(s)` or seconds in this case.  We can use any
-    text for the unit as long as it's surrounded by parentheses.
+    3x define output  'inputTime(s)'  'sorting time \(s\): '  '.+'  ''
 
-2. **`numCompare`**
+Here, there are four arguments to the `3x define output` command:
 
-    Similarly, we can teach 3X to extract the number of compares for the value
-    of an output variable using the following command:
-    
-        3x define output  'numCompare'  'number of compares: '  '.+'  ''
+1. name of the output variable: `inputTime(s)`
+2. regular expression for the text that comes before the value: `sorting time \(s\): `
+3. regular expression the value matches: `.+` (any non-empty string)
+4. regular expression for the text that comes after the value: (empty string)
 
-3. **`numAccess`**
+Note that we can append the *unit* of the output variable to its name
+(first argument), which is `(s)` or seconds in this case.  We can use any
+text for the unit as long as it's surrounded by parentheses.
 
-    As well as the number of accesses to the input array of numbers with:
-    
-        3x define output  'numAccess'  'number of accesses: '  '.+'  ''
+##### Output 2. `numCompare`
 
-4. **`ratioSorted`**
+Similarly, we can teach 3X to extract the number of compares for the value
+of an output variable using the following command:
 
-    To ensure correctness, note that we compute the ratio of the numbers in the
-    array that are correctly ordered to the array size, after finishing the
-    sorting algorithm.  This is a simple measure to easily check whether the
-    sorting algorithm was implemented correctly.  When this value comes out
-    less than 1.0, it means the the algorithm is incorrect.  The following
-    command adds this output variable to the experiment definition.
-    
-        3x define output  'ratioSorted'  'ratio sorted: '  '.+'  ''
+    3x define output  'numCompare'  'number of compares: '  '.+'  ''
 
-5. **`inputTime`**
 
-    We also record the wall clock time that took for generating the input array
-    to sort.
-    
-        3x define output  'inputTime(s)'  'input generation time \(s\): '  '.+'  ''
+##### Output 3. `numAccess`
 
-6. **`verificationTime`**
+As well as the number of accesses to the input array of numbers with:
 
-    And the wall clock time that took for checking whether the output array is
-    correctly sorted.
-    
-        3x define output  'verificationTime(s)'  'verification time \(s\): '  '.+'  ''
+    3x define output  'numAccess'  'number of accesses: '  '.+'  ''
+
+
+##### Output 4. `ratioSorted`
+
+To ensure correctness, note that we compute the ratio of the numbers in the
+array that are correctly ordered to the array size, after finishing the
+sorting algorithm.  This is a simple measure to easily check whether the
+sorting algorithm was implemented correctly.  When this value comes out
+less than 1.0, it means the the algorithm is incorrect.  The following
+command adds this output variable to the experiment definition.
+
+    3x define output  'ratioSorted'  'ratio sorted: '  '.+'  ''
+
+
+##### Output 5. `inputTime`
+
+We also record the wall clock time that took for generating the input array
+to sort.
+
+    3x define output  'inputTime(s)'  'input generation time \(s\): '  '.+'  ''
+
+
+##### Output 6. `verificationTime`
+
+And the wall clock time that took for checking whether the output array is
+correctly sorted.
+
+    3x define output  'verificationTime(s)'  'verification time \(s\): '  '.+'  ''
+
 
 
 <a name="plugintheprogram"></a>
@@ -494,4 +491,13 @@ history table.](gui-runs-failed-details.png)
 ## Example 2: Simulating Network Formations
 ...
 
+
+
+<style>@import url(http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css);</style>
+<style>
+figcaption {
+    font-size: 80%;
+    text-align: center;
+}
+</style>
 
