@@ -86,7 +86,7 @@ case $What in
                 mkdir -p "$dir"
                 {
                     echo "#!/usr/bin/env bash"
-                    echo "cat stdout stderr |"
+                    echo "cat stdout stderr rusage |"
                     echo -n "extract-regexp "; escape-args-for-shell "$@"
                 } >"$extractor"
                 ;;
