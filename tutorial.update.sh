@@ -6,7 +6,9 @@ git read-tree --prefix=tutorial remotes/origin/master:docs/tutorial
 git checkout tutorial
 
 cd tutorial
-curl -X POST --data-urlencode content@README.md \
+curl -X POST \
+    --data name="3X Tutorial" \
+    --data-urlencode content@README.md \
     http://documentup.com/compiled \
     >index.html
 git add index.html
