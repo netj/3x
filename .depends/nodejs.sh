@@ -3,40 +3,77 @@
 set -eu
 
 version=v0.10.16
-sha1sum=80c45c1850b1ecc6237b6b587f469da8ef743876
-md5sum=b8d9ac16c4d6eea1329e018fbca63e50
 
 self=$0
 name=`basename "$0" .sh`
 
-# look for the latest version of python
-for python in python2.7 python2.6; do
-    ! type $python &>/dev/null || break
-    python=
-done
-if [ -z "$python" ]; then
-    echo "Python >= 2.6 is required to build nodejs" >&2
-    exit 2
-fi
-
 prefix="$(pwd -P)"/prefix
 
-# fetch nodejs source if necessary and prepare source tree
-tarball="node-${version}.tar.gz"
-[ x"$(sha1sum <"$tarball" 2>/dev/null)" = x"$sha1sum  -" ] ||
-[ x"$(md5 <"$tarball" 2>/dev/null)" = x"$md5sum" ] ||
-    curl -C- -RLO "http://nodejs.org/dist/${version}/$tarball"
-tar xfz "$tarball"
-cd ./"node-${version}"
+download() {
+    local url=$1; shift
+    local file=$1; shift
+    [ -s "$file" ] || curl -C- -RLO "$url"
+    # TODO sha1sum/md5sum/md5/shasum based on url
+}
 
-# configure and build
-$python ./configure --prefix="$prefix"
-make -j $(nproc 2>/dev/null) install PORTABLE=1
+# determine os and arch for downloading
+os=$(uname -s)
+case $os in
+    Darwin) os=darwin ;;
+    Linux)  os=linux  ;;
+    SunOS)  os=sunos  ;;
+    *)
+        echo >&2 "$os: Unsupported operating system"
+        os=
+esac
+if [ -z "$os" ]; then
+    arch=
+else
+    arch=$(uname -m)
+    case $arch in
+        x86_64|amd64|i686)
+            arch=x64 ;;
+        i386|i86pc)
+            arch=x86 ;;
+        *)
+            echo >&2 "$arch: Unsupported architecture"
+            os= arch=
+    esac
+fi
+
+if [ -n "$os" -a -n "$arch" ]; then
+    # download binary distribution
+    tarball="node-${version}-${os}-${arch}.tar.gz"
+    download "http://nodejs.org/dist/${version}/$tarball" "$tarball"
+    mkdir -p "$prefix"
+    tar xf "$tarball" -C "$prefix"
+    cd "$prefix/${tarball%.tar.gz}"
+else
+    # download source and build
+    # first, look for the latest version of python
+    for python in python2.7 python2.6; do
+        ! type $python &>/dev/null || break
+        python=
+    done
+    if [ -z "$python" ]; then
+        echo "Python >= 2.6 is required to build nodejs" >&2
+        exit 2
+    fi
+    # download the source
+    tarball="node-${version}.tar.gz"
+    download "http://nodejs.org/dist/${version}/$tarball" "$tarball"
+    tar xf "$tarball"
+    cd "./${tarball%.tar.gz}"
+    # configure and build
+    $python ./configure --prefix="$prefix"
+    make -j $(nproc 2>/dev/null) install PORTABLE=1
+    cd "$prefix"
+fi
 
 
 # place symlinks for commands to $DEPENDS_PREFIX/bin/
 mkdir -p "$DEPENDS_PREFIX"/bin
-for x in "$prefix"/bin/*; do
+for x in bin/*; do
     [ -x "$x" ] || continue
     relsymlink "$x" "$DEPENDS_PREFIX"/bin/
 done
