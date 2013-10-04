@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>undefined</title>
+    
+    <link rel="stylesheet" type="text/css" href="http://documentup.com/stylesheets/screen.css">
+    
+    
+
+    
+
+    <!-- Typekit -->
+    
+      <script type="text/javascript">
+        (function() {
+          var config = {
+            kitId: 'hjp0pft',
+            scriptTimeout: 3000
+          };
+          var h=document.getElementsByTagName("html")[0];h.className+=" wf-loading";var t=setTimeout(function(){h.className=h.className.replace(/( |^)wf-loading( |$)/g,"");h.className+=" wf-inactive"},config.scriptTimeout);var tk=document.createElement("script");tk.src='//use.typekit.net/'+config.kitId+'.js';tk.type="text/javascript";tk.async="true";tk.onload=tk.onreadystatechange=function(){var a=this.readyState;if(a&&a!="complete"&&a!="loaded")return;clearTimeout(t);try{Typekit.load(config)}catch(b){}};var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(tk,s)
+        })();
+      </script>
+    
+  </head>
+  <body><div id="container">
+  <div id="nav">
+    
+      <div id="header">
+        <a href="#" id="logo">undefined</a>
+      </div>
+    
+    <ul id="sections">
+      
+        <li>
+          <a href="#example-1-studying-sorting-algorithms">Example 1: Studying Sorting Algorithms</a>
+          
+            <ul>
+              
+                <li>
+                  <a href="#example-1-studying-sorting-algorithms/1-write-the-program">1. Write the Program</a>
+                </li>
+              
+                <li>
+                  <a href="#example-1-studying-sorting-algorithms/2-create-and-setup-an-experiment-repository">2. Create and Setup an Experiment Repository</a>
+                </li>
+              
+                <li>
+                  <a href="#example-1-studying-sorting-algorithms/3-running-experiments">3. Running Experiments</a>
+                </li>
+              
+                <li>
+                  <a href="#example-1-studying-sorting-algorithms/4-viewing-results-and-beyond">4. Viewing Results and Beyond</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a href="#example-2-simulating-network-formations">Example 2: Simulating Network Formations</a>
+          
+        </li>
+      
+    </ul>
+    
+    
+  </div>
+  <div id="content">
+    
+    <h1><i class="icon-beaker"></i> 3X Tutorial: Step-through Examples</h1>
+<p>In this document, we explain how you can setup and conduct computational
+experiments using a few examples.  This step-by-step guide will introduce
+important features of 3X with detailed instructions.</p>
+<h2 id='example-1-studying-sorting-algorithms'>Example 1: Studying Sorting Algorithms</h2 id='example-1-studying-sorting-algorithms'>
+<p><img src="sorting-algos.png" alt="" title="A chart showing how much time each sorting algorithm took to sort different sizes of inputs"></p>
+<p>Anyone who received computer science education or studied basic algorithms
+would be familiar with different algorithms for sorting an array of data
+values.  In the algorithms textbook, we learn how to analyze time and space
+complexities of such algorithms in terms of their asymptotic behavior.
+Theoretical analyses of worst or best cases can be covered clearly in text, but
+average cases require empirical studies experimenting with actual
+implementations.</p>
+<p>Suppose we want to see such an empirical result ourselves of how different
+sorting algorithms, namely, <em>bubble sort</em>, <em>selection sort</em>, <em>insertion sort</em>,
+<em>quick sort</em>, and <em>merge sort</em> behave on several sizes and types of inputs,
+e.g., when the input is already ordered, reversed, or randomly shuffled.
+Implementing these algorithms correctly is obviously important, but what&#39;s
+equally important to obtain a credible result is running different combinations
+of inputs and recording every detail in a systematic manner.  Using 3X, we can
+easily obtain robust, repeatable experimental results with minimal effort.
+Therefore more of our time and energy can be devoted to exploring the parameter
+space as well as writing the program correctly, which leads our experiments to
+yield more interesting results and less errors.</p>
+<h3 id='example-1-studying-sorting-algorithms/1-write-the-program'>1. Write the Program</h3 id='example-1-studying-sorting-algorithms/1-write-the-program'>
+<p>First of all, we need to write a program that implements the sorting algorithms
+we want to test.  Some people may prefer using a serious programming language,
+such as C, C++, or Java to write an efficient implementation.  Others may use
+simpler scripting languages, such as Python, Ruby or Perl for a quick
+evaluation.  But in the end, there will always be an executable file, or a
+command and a list of arguments to start our program regardless of the
+programming language of choice.  This is the only thing 3X needs to know about
+the program for our experiment, and we will see where this information should
+be placed after we create an <em>experiment repository</em> in the following step.</p>
+<p>To keep this tutorial simple, let&#39;s assume we already wrote Python code for
+experimenting with sorting algorithms as following two files:</p>
+<ul>
+<li><p><a href="../examples/sorting-algos/program/sort.py"><code>sort.py</code></a>
+  containing each sorting algorithm as a separate Python function.</p>
+</li>
+<li><p><a href="../examples/sorting-algos/program/measure.py"><code>measure.py</code></a>
+  containing code that measures how long a chosen sorting algorithm takes to
+  finish for a generated input.</p>
+</li>
+</ul>
+<p>To obtain a single measurement with this program, we would a run command such
+as:</p>
+<pre><code><span class="title">python</span> measure.py quickSort <span class="number">10</span> random</code></pre>
+<p>which outputs, for instance:</p>
+<pre><code><span class="title">ratio</span> sorted: <span class="number">1.0</span>
+<span class="title">sorting</span> time (s): <span class="number">0.009179</span>
+<span class="title">verification</span> time (s): <span class="number">0.000225</span>
+<span class="title">input</span> generation time (s): <span class="number">0.000580</span>
+<span class="title">number</span> <span class="keyword">of</span> compares: <span class="number">11440</span>
+<span class="title">number</span> <span class="keyword">of</span> accesses: <span class="number">30735</span></code></pre>
+<h3 id='example-1-studying-sorting-algorithms/2-create-and-setup-an-experiment-repository'>2. Create and Setup an Experiment Repository</h3 id='example-1-studying-sorting-algorithms/2-create-and-setup-an-experiment-repository'>
+<p>In order to keep everything related to our experiment well organized, we need
+to tell 3X to create a new <em>experiment repository</em> for us.  Every detail from
+the definition of input/output and program to the individual records of past
+executions and plans for future runs will be stored and managed inside this
+repository.  It is a typical directory (or folder) on the filesystem with a
+special internal structure.</p>
+<p>3X provides two different ways to setup a new experiment repository: a quick
+one-liner setup, or a slightly more lengthy step-by-step way.  The quick setup
+will be useful for creating entirely new experiments from scratch, while the
+step-by-step setup can be useful for adjusting your existing experiment
+definitions.  You can either follow the first &quot;Quick Setup&quot; section and skip
+the rest, or follow the individual steps introduced in the sections that
+follows &quot;Quick Setup&quot;.  In either ways, let&#39;s say we want our repository to be
+called <code>sorting-algos</code>.  </p>
+<h4>Quick Setup</h4>
+<p>The single command shown below will create and setup a new repository for our
+experiment on sorting algorithms.  It is simply an abbreviation for the
+multiple steps necessary to initialize the experiment repository and define its
+input and output.</p>
+<pre><code><span class="comment">#</span> <span class="comment">create</span> <span class="comment">and</span> <span class="comment">setup</span> <span class="comment">a</span> <span class="comment">new</span> <span class="comment">experiment</span> <span class="comment">repository</span>
+<span class="comment">3x</span> <span class="comment">setup</span> <span class="comment">sorting</span>-<span class="comment">algos</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">program</span> <span class="comment">\</span>
+        <span class="comment">'python</span> <span class="comment">measure</span>.<span class="comment">py</span> <span class="comment">$algo</span> <span class="comment">$inputSize</span> <span class="comment">$inputType'</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">inputs</span> <span class="comment">\</span>
+        <span class="comment">inputSize=10</span>,<span class="comment">11</span>,<span class="comment">12</span>,<span class="comment">13</span>,<span class="comment">14</span>,<span class="comment">15</span>,<span class="comment">16</span>,<span class="comment">17</span>,<span class="comment">18</span> <span class="comment">\</span>
+        <span class="comment">inputType=random</span>,<span class="comment">ordered</span>,<span class="comment">reversed</span> <span class="comment">\</span>
+        <span class="comment">algo=bubbleSort</span>,<span class="comment">selectionSort</span>,<span class="comment">insertionSort</span>,<span class="comment">quickSort</span>,<span class="comment">mergeSort</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">outputs</span> <span class="comment">\</span>
+        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'sorting</span> <span class="comment">time</span> <span class="comment">\(s\):</span> <span class="comment">{{sortingTime(s)</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
+        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'number</span> <span class="comment">of</span> <span class="comment">compares:</span> <span class="comment">{{numCompare</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
+        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'number</span> <span class="comment">of</span> <span class="comment">accesses:</span> <span class="comment">{{numAccess</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
+        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'ratio</span> <span class="comment">sorted:</span> <span class="comment">{{ratioSorted</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
+        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'input</span> <span class="comment">generation</span> <span class="comment">time</span> <span class="comment">\(s\):</span> <span class="comment">{{inputTime(s)</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
+        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'verification</span> <span class="comment">time</span> <span class="comment">\(s\):</span> <span class="comment">{{verificationTime(s)</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
+    <span class="comment">#</code></pre>
+<p>Note that since this quick setup command creates only the skeleton part of our
+experiment repository, we still need to place additional files at the right
+place, namely, the <code>.py</code> files of our program.  Refer to the <a href="#plugintheprogram">instructions for
+plugging the program in to 3X (§2.3)</a> to prepare the <code>program/</code>
+directory.  You can safely ignore the rest of the steps, since they were
+already taken care by the <code>3x setup</code> command above.  We&#39;ll all set to start
+running our experiment.</p>
+<h4>2.1. Create an Experiment Repository</h4>
+<p>The following command creates an empty repository:</p>
+<pre><code>3x init sorting-algos</code></pre>
+<p>We can now move into the repository to further define our experiment.</p>
+<pre><code><span class="title">cd</span> sorting-algos</code></pre>
+<h4>2.2. Define Inputs &amp; Outputs</h4>
+<p>Next, we shall tell 3X what are the input parameters to our experimental
+program, and the output values of interest.</p>
+<p>Suppose we want to vary the input size, the initial order of input for
+different sorting algorithms.  We can tell 3X that we have three input
+parameters for our experiment in the following steps.</p>
+<h5>Input 1. <code>algo</code> for choosing the sorting algorithm to test</h5>
+<p>The particular sorting algorithms we are interested in are the following
+five, which are already implemented in <a href="../examples/sorting-algos/program/sort.py"><code>sort.py</code></a>.  We will use the name
+of the algorithms as the value for this input parameter.</p>
+<ul>
+<li><code>bubbleSort</code>      for <a href="http://en.wikipedia.org/wiki/Bubble_sort#Pseudocode_implementation">Bubble Sort</a></li>
+<li><code>selectionSort</code>   for <a href="http://en.wikipedia.org/wiki/Selection_sort">Selection Sort</a></li>
+<li><code>insertionSort</code>   for <a href="http://en.wikipedia.org/wiki/Insertion_sort#Algorithm">Insertion Sort</a></li>
+<li><code>quickSort</code>       for <a href="http://en.wikipedia.org/wiki/Quicksort#In-place_version">Quick Sort (in-place version)</a></li>
+<li><code>mergeSort</code>       for <a href="http://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation">Merge Sort (bottom-up implementation)</a></li>
+</ul>
+<p>The following command tells 3X to add this parameter to the experiment definition:</p>
+<pre><code>3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort </code></pre>
+<h5>Input 2. <code>inputSize</code> for choosing the size of the array to sort</h5>
+<p>We want to test sorting algorithms on arrays of numbers with different
+sizes.  We will start with arrays of 1,024 (2<sup><small>10</small></sup>)
+unique numbers, and double the size of the arrays up to size 262,144
+(2<sup><small>18</small></sup>).  Let&#39;s omit the base and use the powers of
+two as the value for this input parameter:</p>
+<ul>
+<li><code>10</code> for 2<sup><small>10</small></sup>,</li>
+<li><code>11</code> for 2<sup><small>11</small></sup>,</li>
+<li>...,</li>
+<li><code>18</code> for 2<sup><small>18</small></sup>.</li>
+</ul>
+<p>We should run the following command to add this parameter:</p>
+<pre><code>3x define input  inputSize  10 11 12 13 14 15 16 17 18</code></pre>
+<h5>Input 3. <code>inputType</code> for choosing the type of the arrays to sort</h5>
+<p>We also want to see how each sorting algorithm behaves differently for
+different types of arrays as well as their sizes.  We will use the
+following three values of this input parameter to indicate which type of
+input we want to use:</p>
+<ul>
+<li><code>ordered</code> that is already sorted,</li>
+<li><code>reversed</code> that is sorted but in the reversed direction,</li>
+<li><code>random</code> that is shuffled randomly.</li>
+</ul>
+<p>The following command will add this last parameter:</p>
+<pre><code><span class="number">3</span>x define input  inputType  ordered reversed <span class="built_in">random</span></code></pre>
+<p>Next, suppose we want to measure the wall clock time as well as the number of
+compares and array accesses to finish each sorting algorithm.  We can tell
+3X to look for lines that match specific patterns in the output of our program
+to extract the values of interest.  These patterns can be specified in <a href="http://perldoc.perl.org/perlre.html#Regular-Expressions">Perl
+regular expressions</a>
+syntax.  The following steps will show how exactly we can tell 3X to extract
+the values of interest in the case of this experiment with sorting algorithms.</p>
+<h5>Output 1. <code>sortingTime</code></h5>
+<p>The wall clock time it takes for sorting the input array is what we are
+mostly interested in this experiment.  We measure this time in our program
+in seconds and print that out in a line that begins with <code>sorting time (s):</code>.  Therefore 3X can easily extract the value that follows if we define the
+output variable as shown in the following command:</p>
+<pre><code><span class="number">3</span>x define output  <span class="attribute">'inputTime</span>(s)'  extract  <span class="attribute">'sorting</span> <span class="typename">time</span> \(s\): '  '.+'  ''</code></pre>
+<p>Here, there are four arguments to the <code>3x define output</code> command:</p>
+<ol>
+<li>name of the output variable: <code>inputTime(s)</code></li>
+<li>regular expression for the text that comes before the value: <code>sorting time \(s\):</code></li>
+<li>regular expression the value matches: <code>.+</code> (any non-empty string)</li>
+<li>regular expression for the text that comes after the value: (empty string)</li>
+</ol>
+<p>Note that we can append the <em>unit</em> of the output variable to its name
+(first argument), which is <code>(s)</code> or seconds in this case.  We can use any
+text for the unit as long as it&#39;s surrounded by parentheses.</p>
+<h5>Output 2. <code>numCompare</code></h5>
+<p>Similarly, we can teach 3X to extract the number of compares for the value
+of an output variable using the following command:</p>
+<pre><code><span class="number">3</span>x define output  <span class="attribute">'numCompare</span>'  extract  <span class="attribute">'number</span> <span class="keyword">of</span> compares: '  '.+'  ''</code></pre>
+<h5>Output 3. <code>numAccess</code></h5>
+<p>As well as the number of accesses to the input array of numbers with:</p>
+<pre><code><span class="number">3</span>x define output  <span class="attribute">'numAccess</span>'  extract  <span class="attribute">'number</span> <span class="keyword">of</span> accesses: '  '.+'  ''</code></pre>
+<h5>Output 4. <code>ratioSorted</code></h5>
+<p>To ensure correctness, note that we compute the ratio of the numbers in the
+array that are correctly ordered to the array size, after finishing the
+sorting algorithm.  This is a simple measure to easily check whether the
+sorting algorithm was implemented correctly.  When this value comes out
+less than 1.0, it means the the algorithm is incorrect.  The following
+command adds this output variable to the experiment definition.</p>
+<pre><code><span class="number">3</span>x define output  <span class="attribute">'ratioSorted</span>'  extract  <span class="attribute">'ratio</span> sorted: '  '.+'  ''</code></pre>
+<h5>Output 5. <code>inputTime</code></h5>
+<p>We also record the wall clock time that took for generating the input array
+to sort.</p>
+<pre><code><span class="number">3</span>x define output  <span class="attribute">'inputTime</span>(s)'  extract  <span class="attribute">'input</span> generation <span class="typename">time</span> \(s\): '  '.+'  ''</code></pre>
+<h5>Output 6. <code>verificationTime</code></h5>
+<p>And the wall clock time that took for checking whether the output array is
+correctly sorted.</p>
+<pre><code><span class="number">3</span>x define output  <span class="attribute">'verificationTime</span>(s)'  extract  <span class="attribute">'verification</span> <span class="typename">time</span> \(s\): '  '.+'  ''</code></pre>
+<p><a name="plugintheprogram"></a></p>
+<h4>2.3. Plug in the Program</h4>
+<p>The only thing 3X needs to know about our program in order to run experiments
+on behalf of us is the exact command we type into our terminal to start them
+ourselves.  3X assumes this information is kept as an executable file named
+<strong><code>run</code></strong> under the <code>program/</code> directory of the experiment repository.  For
+each execution of <code>run</code>, 3X sets up the environment correctly, so that the
+value chosen for each input variable we defined earlier can be accessed via the
+environment variable with the same name.  3X will also make sure any additional
+files that are placed next to the <code>run</code> executable will also be available in
+the current working directory while execution.</p>
+<p>First, let&#39;s move into the <code>program/</code> directory of our repository:</p>
+<pre><code><span class="title">cd</span> program</code></pre>
+<p>As we have two Python files necessary for implementing and measuring the
+sorting algorithms, we will put both of these files under <code>program/</code>.  If you
+don&#39;t have these files readily available, let&#39;s download them directly from
+GitHub with the following commands:</p>
+<pre><code><span class="comment"># copy our example Python program into the repository</span>
+exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples/sorting-algos"</span>
+curl -LO <span class="variable">$exampleURL</span>/program/measure.py
+curl -LO <span class="variable">$exampleURL</span>/program/<span class="keyword">sort</span>.py</code></pre>
+<p>(You can probably use <code>wget</code> instead of <code>curl -LO</code> if your system doesn&#39;t have
+<code>curl</code> installed.)</p>
+<p>Next, we need to create a <code>run</code> script that starts our Python program as
+follows:</p>
+<pre><code>cat &gt;run  &lt;&lt;EOF
+<span class="shebang">#!/bin/sh</span>
+python measure.py <span class="variable">$algo</span> <span class="variable">$inputSize</span> <span class="variable">$inputType</span>
+EOF
+chmod +x run</code></pre>
+<p>Now, we&#39;re all set to start running our experiment.</p>
+<h3 id='example-1-studying-sorting-algorithms/3-running-experiments'>3. Running Experiments</h3 id='example-1-studying-sorting-algorithms/3-running-experiments'>
+<p>3X provides two ways to execute your experiments: You can use its <em>graphical
+user interface (GUI)</em>, or the <em>command-line interface (CLI)</em>.  The GUI is easy
+and intuitive to use, but you might want to have more sophisticated control
+over your execution, or control 3X from other systems and further automate
+parts of your experiment using the CLI.  However, it is perfectly fine for you
+to use both GUI and CLI at the same time, and any changes you make on one-side
+will be reflected to the other.</p>
+<h4>3.1. Start GUI</h4>
+<p>To start the GUI, run the following command within the experiment repository:</p>
+<pre><code>3x gui</code></pre>
+<p>When successfully started, it will output a URL you can open in your web
+browser to access the GUI.  On a Mac, or a GNU/Linux system running a proper
+GUI system, 3X will launch the browser for you.</p>
+<p><img src="gui-started.png" alt="Initial screen of 3X GUI on an empty experiment repository for studying sorting algorithms."></p>
+<p>As shown in the above screenshot, the GUI has four tabs: Results, Charts, Plan,
+and Runs.  The first two tabs are for exploring the results of execution
+collected so far, while the last two are for controlling the execution.</p>
+<h4>3.2. Queue Runs</h4>
+<p>From the results table, we can click on a row which needs to be filled or more
+execution should be done, and queue up new runs for execution.  You can repeat
+this process from the results table to add necessary runs to fill the output
+columns colored red.  Note that the button on each input column header can be
+used to expand and collapse the rows, so that you can add only part of the runs
+or a larger group of runs at a time.</p>
+<p><img src="gui-plan-from-results.png" alt="New runs can be queued from the results table."></p>
+<h5>Queue Runs from Command Line</h5>
+<p>From the command line, within the experiment repository, the following command will achieve the same result as we did in the GUI:</p>
+<pre><code>3x plan algo=quickSort</code></pre>
+<p>Different sets of runs can be easily queued with commands similar to the following:</p>
+<pre><code>3x plan algo=bubbleSort,insertionSort inputSize=10,11,12</code></pre>
+<h4>3.3. Start Runs</h4>
+<p>The Runs tab shows a list of queues defined in the repository and the target
+execution environment associated to them on the left-hand side.  On the
+right-hand side table, all the runs added to the currently selected queue are
+shown with their states and value bindings for input variables in the order
+they will be executed.</p>
+<p><img src="gui-runs.png" alt="Queues, targets, and queued runs are shown in the Runs tab."></p>
+<p>The buttons on the queue from the left-hand side list will let you to start and
+stop the execution of the runs in it.  Pressing the play <i
+class="icon-play"></i> button on the main queue starts the execution.</p>
+<h5>Start Runs from Command Line</h5>
+<p>From the command line, you can run the following command to view what runs are
+in the current queue:</p>
+<pre><code>3x status</code></pre>
+<p>It will output the table of runs in the current queue that resembles the GUI as
+follows:</p>
+<pre><code>PLANNED  algo=quickSort  inputSize=<span class="number">10</span>  inputType=ordered   <span class="comment">#1</span>
+PLANNED  algo=quickSort  inputSize=<span class="number">10</span>  inputType=random    <span class="comment">#2</span>
+PLANNED  algo=quickSort  inputSize=<span class="number">10</span>  inputType=reversed  <span class="comment">#3</span>
+PLANNED  algo=quickSort  inputSize=<span class="number">11</span>  inputType=ordered   <span class="comment">#4</span>
+[<span class="keyword">...</span>]
+PLANNED  algo=quickSort  inputSize=<span class="number">18</span>  inputType=random    <span class="comment">#26</span>
+PLANNED  algo=quickSort  inputSize=<span class="number">18</span>  inputType=reversed  <span class="comment">#27</span></code></pre>
+<p>To start execution, run:</p>
+<pre><code>3x <span class="operator"><span class="keyword">start</span></code></pre>
+<h4>3.4. Stop Runs</h4>
+<p>To stop the execution, press the pause <i class="icon-pause"></i> or stop <i
+class="icon-stop"></i> button on the main queue.</p>
+<h5>Stop Runs from Command Line</h5>
+<p>To stop execution from the command line, either interrupt the <code>3x start</code>
+process with Ctrl-C, or run the following command:</p>
+<pre><code>3x <span class="keyword">stop</span></code></pre>
+<h4>3.5. Monitor Progress</h4>
+<p>As execution progresses, the state of runs will change from <code>PLANNED</code> to
+<code>RUNNING</code>, then to either <code>DONE</code> or <code>FAILED</code> after finishing.</p>
+<p><img src="gui-runs-progress.png" alt="Execution in progress."></p>
+<h5>Monitor Progress from Command Line</h5>
+<p>From the command line, you can use the same command to view the state of runs
+in the current queue:</p>
+<pre><code>3x status</code></pre>
+<p>It will output the table of runs with updated states:</p>
+<pre><code>DONE     algo=quickSort  inputSize=<span class="number">10</span>  inputType=ordered   <span class="comment">#1   local  run/2013/1001/01/1836.424138000-1</span>
+DONE     algo=quickSort  inputSize=<span class="number">10</span>  inputType=random    <span class="comment">#2   local  run/2013/1001/01/1839.494897000-2</span>
+DONE     algo=quickSort  inputSize=<span class="number">10</span>  inputType=reversed  <span class="comment">#3   local  run/2013/1001/01/1841.888092000-3</span>
+DONE     algo=quickSort  inputSize=<span class="number">11</span>  inputType=ordered   <span class="comment">#4   local  run/2013/1001/01/1844.200499000-4</span>
+DONE     algo=quickSort  inputSize=<span class="number">11</span>  inputType=random    <span class="comment">#5   local  run/2013/1001/01/1846.514245000-5</span>
+[<span class="keyword">...</span>]
+PLANNED  algo=quickSort  inputSize=<span class="number">18</span>  inputType=random    <span class="comment">#26</span>
+PLANNED  algo=quickSort  inputSize=<span class="number">18</span>  inputType=reversed  <span class="comment">#27</span></code></pre>
+<h4>3.6. Trace Failures</h4>
+<p>If your program does not finish with clean (zero) exit status, or any error
+occurs, their states become <code>FAILED</code>.  For example, if you forget to plug the
+<code>.py</code> files into the <code>program/</code> directory, all runs fail as shown in the
+following screenshot.  Additionally, if you stop the execution, runs can be
+marked as <code>ABORTED</code>.</p>
+<p><img src="gui-runs-failed.png" alt="Runs may fail and require further investigation."></p>
+<p>By following the link of a run in the state column (<code>FAILED</code>, <code>DONE</code>, or
+<code>ABORTED</code>) of the execution history table, it is possible to access the full
+record of the execution.</p>
+<p><img src="gui-runs-failed-details.png" alt="Every run&#39;s detailed record of execution is easily accessible from the
+history table."></p>
+<h4>3.7. Switch Target</h4>
+<p>...</p>
+<pre><code><span class="comment">3x</span> <span class="comment">target</span> <span class="literal">-</span><span class="comment">h</code></pre>
+<!--
+#### 3.8. Switch Queue
+...
+
+    3x queue -h
+-->
+
+
+
+
+<h3 id='example-1-studying-sorting-algorithms/4-viewing-results-and-beyond'>4. Viewing Results and Beyond</h3 id='example-1-studying-sorting-algorithms/4-viewing-results-and-beyond'>
+<h4>4.1. Tabulate Results</h4>
+<p>...</p>
+<h4>4.2. Chart Results</h4>
+<p>...</p>
+<hr>
+<h2 id='example-2-simulating-network-formations'>Example 2: Simulating Network Formations</h2 id='example-2-simulating-network-formations'>
+<p>...</p>
+<style>@import url(<a href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css</a>);</style>
+<style>
+figcaption {
+    font-size: 80%;
+    text-align: center;
+}
+</style>
+
+
+  </div>
+</div>
+</body>
+</html>
