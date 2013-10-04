@@ -51,6 +51,7 @@ establishing a principle become much easier, and practicing it be less
 burdensome.
 
 
+<!--
 ## Overview of 3X Concepts and Functionality
 
 To give you a clear picture of what 3X provides, let's go through several
@@ -116,10 +117,14 @@ these three different categories.
 ## FAQ
 
 ...
+-->
 
 
 ## Further Reading
 
-* [Tutorial: Step-through Examples](docs/tutorial.md)
+* [Tutorial with step-through examples](docs/tutorial/)
+
+<!--
 * [Reference Manual](docs/manual/#readme)
+-->
 
