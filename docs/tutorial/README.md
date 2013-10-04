@@ -1,4 +1,4 @@
-# <i class="icon-beaker"></i> 3X Tutorial: Step-through Examples
+# <i class="icon-beaker"></i> 3X Tutorial with Examples
 
 In this document, we explain how you can setup and conduct computational
 experiments using a few examples.  This step-by-step guide will introduce
@@ -312,7 +312,7 @@ Now, we're all set to start running our experiment.
 
 
 
-### 3. Running Experiments
+### 3. Run Experiments
 
 3X provides two ways to execute your experiments: You can use its *graphical
 user interface (GUI)*, or the *command-line interface (CLI)*.  The GUI is easy
@@ -458,23 +458,8 @@ record of the execution.
 history table.](gui-runs-failed-details.png)
 
 
-#### 3.7. Switch Target
-...
 
-    3x target -h
-
-
-<!--
-#### 3.8. Switch Queue
-...
-
-    3x queue -h
--->
-
-
-
-
-### 4. Viewing Results and Beyond
+### 4. Explore Results
 
 
 #### 4.1. Tabulate Results
@@ -484,6 +469,115 @@ history table.](gui-runs-failed-details.png)
 #### 4.2. Chart Results
 
 ...
+
+#### 4.3. Detail On-demand
+
+...
+
+
+
+
+### 5. And Beyond
+
+#### 5.1. Use Multiple Queues
+...
+
+    3x queue -h
+
+
+#### 5.2. Define and Switch between Targets
+
+To customize the environment in which planned runs are executed, or to execute
+runs on a remote host or a cluster of hosts accessible via ssh, you can define
+new *target execution environments*, or *target* as a shorthand.
+
+##### Add another Local Target
+
+Suppose we want to run our experiments with python3, which requires us to add
+special values to some environment variables, namely `PATH` and `PYTHON3PATH`.
+
+The following command defines a target named `local2` that customizes the
+environment in the way we want.
+
+    3x target local2  define local  PATH=/opt/python3/bin:"$PATH"  PYTHON3PATH=~/python3-packages
+
+##### Add a Remote SSH Host Target
+
+Suppose for a fair measurement of `sortingTime`, we want to execute the runs on
+a shared remote machine instead of our local machine.  As long as the remote
+machine is accessible via *ssh* (*Secure SHell*), 3X can execute runs on them
+remotely and take care of the relevant data transfer forth and back.
+
+The following command defines a target named `rocky` that executes runs on host
+`rocky.Stanford.EDU` using the directory `~/3x-tmp/` for temporary storage.
+
+    3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/
+
+To specify a username in addition to the hostname, prepend the username
+followed by a `@`, e.g., `netj@rocky.Stanford.EDU`.  If your remote host uses a
+non-standard SSH port (i.e., other than 22), then you can use the URL form to
+specify its port as well, e.g., `ssh://netj@rocky.Stanford.EDU:22/3x-tmp/`.
+
+As with local targets, you can specify customizations to the environment
+variables after the URL for the remote, e.g. to tweak the `PATH` variable:
+
+    3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
+        PATH='/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'
+
+##### Add a GNU Parallel Cluster Target
+
+*[GNU Parallel][]* is a handy tool for launching multiple processes of a
+program, remotely as well as locally, in parallel to handle large amount of
+inputs.  It is especially useful when we have SSH access to a cluster of remote
+machines that does not have a dedicated job scheduler.  3X supports GNU
+Parallel as a type of execution target, so you can get results of multiple runs
+much earlier by leveraging the compute power of those ordinary machines.
+You can simply specify a list of remote hosts and use it as another target
+without knowing anything about GNU Parallel, since 3X abstracts away the
+complex operation instructions for the tool.
+
+[GNU Parallel]: https://www.gnu.org/software/parallel/
+
+Following command defines a target named `corn`:
+
+    3x target corn  define gnuparallel  /tmp/3x-tmp-netj/  .3x-remote  corn{01..30}.stanford.edu
+
+that
+
+* uses `/tmp/3x-tmp-netj/` as working directory on each machine, and 
+* puts shared data under directory `~/.3x-remote/` assuming it is accessible
+  across all machines
+* with 30 machines: `corn01.stanford.edu`, ..., `corn30.stanford.edu`.
+  <br><small>
+  (Note that `{01..30}` is a special syntax of shell, which might not be
+  supported by older versions.  In that case, enumerate all the names as
+  arguments instead.)
+  </small>
+
+
+##### Switch between Targets
+
+Now, assuming you have several targets defined in your repository, you can
+switch target for current queue by specifying only the name of the target, as
+shown in the following command for `rocky`:
+
+    3x target rocky
+
+After switching, you can start executing on the new target by running:
+
+    3x start
+
+To switch back to the `local` target, run:
+
+    3x target local
+
+
+More usage related to 3X targets can be accessed via the following command:
+
+    3x target -h
+
+
+
 
 
 * * *

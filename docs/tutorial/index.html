@@ -48,11 +48,15 @@
                 </li>
               
                 <li>
-                  <a href="#example-1-studying-sorting-algorithms/3-running-experiments">3. Running Experiments</a>
+                  <a href="#example-1-studying-sorting-algorithms/3-run-experiments">3. Run Experiments</a>
                 </li>
               
                 <li>
-                  <a href="#example-1-studying-sorting-algorithms/4-viewing-results-and-beyond">4. Viewing Results and Beyond</a>
+                  <a href="#example-1-studying-sorting-algorithms/4-explore-results">4. Explore Results</a>
+                </li>
+              
+                <li>
+                  <a href="#example-1-studying-sorting-algorithms/5-and-beyond">5. And Beyond</a>
                 </li>
               
             </ul>
@@ -70,7 +74,7 @@
   </div>
   <div id="content">
     
-    <h1><i class="icon-beaker"></i> 3X Tutorial: Step-through Examples</h1>
+    <h1><i class="icon-beaker"></i> 3X Tutorial with Examples</h1>
 <p>In this document, we explain how you can setup and conduct computational
 experiments using a few examples.  This step-by-step guide will introduce
 important features of 3X with detailed instructions.</p>
@@ -295,7 +299,7 @@ python measure.py <span class="variable">$algo</span> <span class="variable">$in
 EOF
 chmod +x run</code></pre>
 <p>Now, we&#39;re all set to start running our experiment.</p>
-<h3 id='example-1-studying-sorting-algorithms/3-running-experiments'>3. Running Experiments</h3 id='example-1-studying-sorting-algorithms/3-running-experiments'>
+<h3 id='example-1-studying-sorting-algorithms/3-run-experiments'>3. Run Experiments</h3 id='example-1-studying-sorting-algorithms/3-run-experiments'>
 <p>3X provides two ways to execute your experiments: You can use its <em>graphical
 user interface (GUI)</em>, or the <em>command-line interface (CLI)</em>.  The GUI is easy
 and intuitive to use, but you might want to have more sophisticated control
@@ -387,24 +391,78 @@ marked as <code>ABORTED</code>.</p>
 record of the execution.</p>
 <p><img src="gui-runs-failed-details.png" alt="Every run&#39;s detailed record of execution is easily accessible from the
 history table."></p>
-<h4>3.7. Switch Target</h4>
-<p>...</p>
-<pre><code><span class="comment">3x</span> <span class="comment">target</span> <span class="literal">-</span><span class="comment">h</code></pre>
-<!--
-#### 3.8. Switch Queue
-...
-
-    3x queue -h
--->
-
-
-
-
-<h3 id='example-1-studying-sorting-algorithms/4-viewing-results-and-beyond'>4. Viewing Results and Beyond</h3 id='example-1-studying-sorting-algorithms/4-viewing-results-and-beyond'>
+<h3 id='example-1-studying-sorting-algorithms/4-explore-results'>4. Explore Results</h3 id='example-1-studying-sorting-algorithms/4-explore-results'>
 <h4>4.1. Tabulate Results</h4>
 <p>...</p>
 <h4>4.2. Chart Results</h4>
 <p>...</p>
+<h4>4.3. Detail On-demand</h4>
+<p>...</p>
+<h3 id='example-1-studying-sorting-algorithms/5-and-beyond'>5. And Beyond</h3 id='example-1-studying-sorting-algorithms/5-and-beyond'>
+<h4>5.1. Use Multiple Queues</h4>
+<p>...</p>
+<pre><code><span class="comment">3x</span> <span class="comment">queue</span> <span class="literal">-</span><span class="comment">h</code></pre>
+<h4>5.2. Define and Switch between Targets</h4>
+<p>To customize the environment in which planned runs are executed, or to execute
+runs on a remote host or a cluster of hosts accessible via ssh, you can define
+new <em>target execution environments</em>, or <em>target</em> as a shorthand.</p>
+<h5>Add another Local Target</h5>
+<p>Suppose we want to run our experiments with python3, which requires us to add
+special values to some environment variables, namely <code>PATH</code> and <code>PYTHON3PATH</code>.</p>
+<p>The following command defines a target named <code>local2</code> that customizes the
+environment in the way we want.</p>
+<pre><code><span class="number">3</span>x target local2  define local  <span class="constant">PATH</span>=<span class="regexp">/opt/python</span>3/<span class="symbol">bin:</span><span class="string">"$PATH"</span>  <span class="constant">PYTHON3PATH</span>=~<span class="regexp">/python3-packages</code></pre>
+<h5>Add a Remote SSH Host Target</h5>
+<p>Suppose for a fair measurement of <code>sortingTime</code>, we want to execute the runs on
+a shared remote machine instead of our local machine.  As long as the remote
+machine is accessible via <em>ssh</em> (<em>Secure SHell</em>), 3X can execute runs on them
+remotely and take care of the relevant data transfer forth and back.</p>
+<p>The following command defines a target named <code>rocky</code> that executes runs on host
+<code>rocky.Stanford.EDU</code> using the directory <code>~/3x-tmp/</code> for temporary storage.</p>
+<pre><code><span class="number">3</span>x target rocky  define ssh  rocky<span class="variable">.Stanford</span><span class="variable">.EDU</span>:<span class="number">3</span>x-tmp/</code></pre>
+<p>To specify a username in addition to the hostname, prepend the username
+followed by a <code>@</code>, e.g., <code>netj@rocky.Stanford.EDU</code>.  If your remote host uses a
+non-standard SSH port (i.e., other than 22), then you can use the URL form to
+specify its port as well, e.g., <code>ssh://netj@rocky.Stanford.EDU:22/3x-tmp/</code>.</p>
+<p>As with local targets, you can specify customizations to the environment
+variables after the URL for the remote, e.g. to tweak the <code>PATH</code> variable:</p>
+<pre><code><span class="number">3</span>x target rocky  define ssh  rocky.Stanford.EDU:<span class="number">3</span>x-tmp/  \
+    PATH='/usr/<span class="keyword">local</span>/python3/bin:/usr/<span class="keyword">local</span>/bin:/usr/bin:/bin'</code></pre>
+<h5>Add a GNU Parallel Cluster Target</h5>
+<p><em><a href="https://www.gnu.org/software/parallel/">GNU Parallel</a></em> is a handy tool for launching multiple processes of a
+program, remotely as well as locally, in parallel to handle large amount of
+inputs.  It is especially useful when we have SSH access to a cluster of remote
+machines that does not have a dedicated job scheduler.  3X supports GNU
+Parallel as a type of execution target, so you can get results of multiple runs
+much earlier by leveraging the compute power of those ordinary machines.
+You can simply specify a list of remote hosts and use it as another target
+without knowing anything about GNU Parallel, since 3X abstracts away the
+complex operation instructions for the tool.</p>
+<p>Following command defines a target named <code>corn</code>:</p>
+<pre><code><span class="comment">3x</span> <span class="comment">target</span> <span class="comment">corn</span>  <span class="comment">define</span> <span class="comment">gnuparallel</span>  <span class="comment">/tmp/3x</span>-<span class="comment">tmp</span>-<span class="comment">netj/</span>  <span class="string">.</span><span class="comment">3x</span>-<span class="comment">remote</span>  <span class="comment">corn{01</span>.<span class="string">.</span><span class="comment">30}</span>.<span class="comment">stanford</span>.<span class="comment">edu</code></pre>
+<p>that</p>
+<ul>
+<li>uses <code>/tmp/3x-tmp-netj/</code> as working directory on each machine, and </li>
+<li>puts shared data under directory <code>~/.3x-remote/</code> assuming it is accessible
+across all machines</li>
+<li>with 30 machines: <code>corn01.stanford.edu</code>, ..., <code>corn30.stanford.edu</code>.
+<br><small>
+(Note that <code>{01..30}</code> is a special syntax of shell, which might not be
+supported by older versions.  In that case, enumerate all the names as
+arguments instead.)
+</small></li>
+</ul>
+<h5>Switch between Targets</h5>
+<p>Now, assuming you have several targets defined in your repository, you can
+switch target for current queue by specifying only the name of the target, as
+shown in the following command for <code>rocky</code>:</p>
+<pre><code>3x target rocky</code></pre>
+<p>After switching, you can start executing on the new target by running:</p>
+<pre><code>3x <span class="operator"><span class="keyword">start</span></code></pre>
+<p>To switch back to the <code>local</code> target, run:</p>
+<pre><code><span class="number">3</span>x target <span class="keyword">local</span></code></pre>
+<p>More usage related to 3X targets can be accessed via the following command:</p>
+<pre><code><span class="comment">3x</span> <span class="comment">target</span> <span class="literal">-</span><span class="comment">h</code></pre>
 <hr>
 <h2 id='example-2-simulating-network-formations'>Example 2: Simulating Network Formations</h2 id='example-2-simulating-network-formations'>
 <p>...</p>
