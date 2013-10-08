@@ -36,7 +36,7 @@ for a; do
     p=$(readlink -f "$a")
     p=${p#$_3X_ROOT/}
     case $p in
-        run/*)
+        run|run/*)
             runs+=("$a")
             ;;
         *) # neither a queue nor run dir
