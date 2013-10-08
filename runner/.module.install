@@ -6,6 +6,7 @@
 3x-stop                         $TOOLSDIR/
 3x-reset                        $TOOLSDIR/
 
+find-run-archive.sh             $TOOLSDIR/
 find-queue.sh                   $TOOLSDIR/
 find-runner.sh                  $TOOLSDIR/
 

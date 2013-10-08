@@ -8,3 +8,6 @@ sql-vocabs.sh           $TOOLSDIR/
 find-rundirs            $TOOLSDIR/
 
 3x-outputs              $TOOLSDIR/
+
+3x-archive              $TOOLSDIR/
+3x-unarchive            $TOOLSDIR/

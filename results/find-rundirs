@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # find-rundirs -- find run directories
 # 
+# > WITH=output \
 # > find-rundirs [DIR]... -- [FIND_PREDICATE]...
 # 
 # Enumerates run directories under DIRs that satisfy the FIND_PREDICATEs,
 # which are the predicates for find(1).
+# 
+# WITH is the file name used to identify run directories,
+#      e.g., output, input, or env.
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-03-08
@@ -15,13 +19,17 @@ set -eu
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
+# default for WITH for identifying run directories
+: ${WITH:=output}
+
 # collect the run DIRs up to -- or the end of args
 runs=()
 until [[ $# -eq 0 || $1 == -- ]]; do
     runs+=("$1"); shift
 done
-# search the entire runs if no DIR is given
 [[ $# -eq 0 || $1 != -- ]] || shift
+
+# search the entire runs if no DIR is given
 [[ ${#runs[@]} -gt 0 ]] || runs+=("$_3X_ROOT"/run)
 
 # enumerate all when no predicate is given
@@ -34,7 +42,10 @@ readlink -f a b &>/dev/null || readlinkXargsOpts+=(-L1)
 readlinkXargsOpts+=(--)
 
 find "${runs[@]}" \
-    -type d \( -name workdir -o -name outputs \
+    -type d \( -name workdir \
+            -o -name outputs \
             \) -prune -o \
-    -name output \( "$@" \) -print |
-sed 's:/output$::' | xargs "${readlinkXargsOpts[@]}" readlink -f | sed 's|^'"$_3X_ROOT"'/||'
+    -name "$WITH" \( "$@" \) -print |
+sed 's:/'"$WITH"'$::' |
+xargs "${readlinkXargsOpts[@]}" readlink -f |
+sed 's|^'"$_3X_ROOT"'/||'

@@ -124,7 +124,7 @@ case $Cmd in
                     id=$(pwd -P); id=${id#$_3X_ROOT/}
                     progress "$id"
                     eval "source input; source output; $printRecordExpr '$id'"
-                )
+                ) || true
                 let ++numRecs
                 if [[ $numRecs -ge $BATCHSIZE ]]; then
                     echo ";"
@@ -146,6 +146,15 @@ case $Cmd in
         find-rundirs "$_3X_ROOT"/run |
         sed 's:/output$::' |
         xargs -- 3x-index update
+        ;;
+
+    drop)
+        # drop certain runs from the index (e.g., when 3x-archive'ing)
+        {
+            echo "BEGIN TRANSACTION;"
+            echo "DELETE FROM run WHERE id IN ($(sql-csv TEXT "$@"));"
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
     *)

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# 3x-unarchive -- restore a set of runs from archive,
+#                 so they appear back on the results
+# 
+# > 3x unarchive DIR...
+# 
+# To restore all archived runs, use following command from the root of the
+# repository:
+# > 3x unarchive archive/
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-10-07
+set -eu
+
+[[ $# -gt 0 ]] || usage "$0" "At least one DIR must be given"
+
+. find-run-archive.sh
+
+WITH=input \
+find-rundirs "$@" |
+grep '^archive/' |
+{
+cd "$_3X_ROOT"
+while read archived; do
+    runId="run/${archived#archive/}"
+    chmod +w -- "$archived"
+    mkdir -p "${runId%/*}"
+    mv -f "$archived" "$runId"
+    rmdir -p "${archived%/*}" 2>/dev/null || true
+    chmod -w -- "$runId"
+    msg "$runId: unarchived"
+    echo "$runId"
+done
+} |
+xargs -- 3x-index update

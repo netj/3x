@@ -8,10 +8,7 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-06-24
 
-_3X_ROOT=$(3x-findroot)
-export _3X_ROOT
-
-export _3X_ARCHIVE="$_3X_ROOT"/.3x/files
+. find-run-archive.sh
 
 # some predefined paths
 export _3X_RUNNER_HOME="$TOOLSDIR"/runner

@@ -89,6 +89,9 @@ app.configure ->
     app.use app.router
     app.use "/run/",    express.static    "#{_3X_ROOT}/run/"
     app.use "/run/",    express.directory "#{_3X_ROOT}/run/"
+    # search for /archive/ as well for archived runs
+    app.use "/run/",    express.static    "#{_3X_ROOT}/archive/"
+    app.use "/run/",    express.directory "#{_3X_ROOT}/archive/"
     app.use             express.static    "#{__dirname}/../client"
     app.use "/docs/",   express.static    "#{process.env.DOCSDIR}/"
 
@@ -144,7 +147,20 @@ app.get "/docs/*", (req, res, next) ->
 
 # Show an overview page for runs
 app.get "/run/*/overview", (req, res) ->
-    runId = "run/#{req.params[0]}"
+    runIdProper = req.params[0]
+    runId = "run/#{runIdProper}"
+    fs.exists runId, (doesExist) ->
+        if doesExist
+            serveRunOverview res, runId, runId
+        else
+            # search for /archive/ as well for archived runs
+            archived = "archive/#{runIdProper}"
+            fs.exists archived, (doesExist) ->
+                if doesExist
+                    serveRunOverview res, runId, archived
+                else
+                    res.send 404, "#{runId} not found"
+serveRunOverview = (res, runId, path = runId) ->
     async.parallel [
         getInputs  res, "-ut"
         getOutputs res, "-ut"
@@ -155,7 +171,7 @@ app.get "/run/*/overview", (req, res) ->
             ("outputs/#{outputName}/stderr" for outputName of outputs)...
         paths = 
             for filename in filenames
-                "#{_3X_ROOT}/#{runId}/#{filename}"
+                "#{_3X_ROOT}/#{path}/#{filename}"
         async.map paths, readFileIfExists, (err, results) ->
             files = {}
             for filename,i in filenames
