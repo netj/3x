@@ -40,7 +40,7 @@ postprocessFinishedRuns() {
     # TODO "parallel" at this level is too energy inefficient: push the
     # parallelism down into run.store by vectorizing and each operation in it
     for-picked-runs list-only serial,runId "state#"=RUNNING |
-    parallel --max-procs 50% --no-run-if-empty '
+    parallel --plain --max-procs 50% --no-run-if-empty '
         set -eu
         postprocessRun() {
             local serial=$1 _3X_RUN=$2
