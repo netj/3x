@@ -86,7 +86,7 @@ case $What in
                 mkdir -p "$dir"
                 {
                     echo "#!/usr/bin/env bash"
-                    echo "cat stdout stderr rusage |"
+                    echo "cat rusage stdout stderr |"
                     echo -n "extract-regexp "; escape-args-for-shell "$@"
                 } >"$extractor"
                 ;;
@@ -123,5 +123,7 @@ esac
 # extract output from existing runs
 case $What in
     output)
-        _3X_RESCAN_ONLY=$Name  3x-rescan
+        SHLVL=$(( $SHLVL - 1 )) \
+        _3X_RESCAN_ONLY=$Name \
+        3x-rescan -f
 esac

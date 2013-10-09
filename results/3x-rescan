@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # 3x-rescan -- extract outputs from runs, optionally with new extractors
 # 
-# > 3x rescan [RUN]...
+# > 3x rescan [-f] [RUN]...
+# 
+# If -f option is given, existing output extractors will be removed and
+# replaced with the updated ones.
 #
 # To re-extract outputs whose name match a certain extglob pattern PATT:
 # > _3X_RESCAN_ONLY=PATT \
@@ -13,6 +16,16 @@ set -eu
 shopt -s extglob
 
 . find-run-archive.sh
+
+ForceExtractExisting=false
+while getopts "f" o; do
+    case $o in
+        f)
+            ForceExtractExisting=true
+            ;;
+    esac
+done
+shift $(( $OPTIND - 1 ))
 
 tmp=$(mktemp -d "${TMPDIR:-/tmp}"/3x-rescan.XXXXXX)
 trap 'rm -rf "$tmp"' EXIT
@@ -46,23 +59,31 @@ while read runId; do
         mv -f output.$$ output
         chmod +w output
     fi
+    updatedOs=
     # inject necessary ones to outputs/*/
     for newO in "$newRunDir"/outputs/*/; do
         newO=${newO%/}
         o=${newO#$newRunDir/}
+        oName=${o#outputs/}
         [[ -z "$_3X_RESCAN_ONLY" ]] ||
             [[ "$o" == outputs/$_3X_RESCAN_ONLY ]] || continue
-        msg +1 "$runId: updating $o"
-        if ! [ -e "$o" ]; then
-            mv -f "$newO" "$o"
-        else
-            # FIXME replace old output extractor when told to do so
-            rm -rf "$o"
-            mv -f "$newO" "$o"
+        if [ -e "$o" ]; then
+            if $ForceExtractExisting; then
+                rm -rf "$o"
+                # TODO backup instead of removing?
+            else
+                continue
+            fi
         fi
+        msg +1 "$runId: updating $o"
+        mv -f "$newO" "$o"
+        updatedOs+="|$oName"
     done
     # extract output and dedup and seal for storage
-    _3X_EXTRACT_ONLY=$_3X_RESCAN_ONLY \
+    extractOnlyPatt=
+    [[ -z "$_3X_RESCAN_ONLY" ]] || extractOnlyPatt="@(${updatedOs#|})"
+    SHLVL=$(( SHLVL + 1 )) \
+    _3X_EXTRACT_ONLY=$extractOnlyPatt \
     extract-output "$runId" || true
     archive "$_3X_ARCHIVE" output outputs
     chmod -w .
