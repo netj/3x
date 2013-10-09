@@ -5,32 +5,32 @@
 # COMMAND is one of the following forms:
 # 
 # > 3x setup DIR ...
+# > 3x init
+# > 3x define input
+# > 3x define output
+# > 3x define program 
 # 
 # > 3x gui
 # 
 # > 3x plan [NAME[=VALUE[,VALUE]...]]...
+# 
 # > 3x start
 # > 3x stop
 # > 3x status
-# 
 # > 3x queue [QUEUE]
 # > 3x target [TARGET]
 # 
 # > 3x results [RUN]... [QUERY]...
-# 
 # > 3x plan results RESULTS_QUERY
 # > 3x plan skip    RESULTS_QUERY
+# 
+# > 3x rescan [RUN]...
 # 
 # > 3x archive   run/*...
 # > 3x unarchive archive/*...
 # 
 # > 3x inputs  [-v] [NAME]...
 # > 3x outputs [-v] [NAME]...
-# 
-# > 3x init
-# > 3x define input
-# > 3x define output
-# > 3x define program 
 # 
 # Global OPTION is one of:
 #   -v      increase verbosity
