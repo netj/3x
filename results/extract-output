@@ -14,12 +14,10 @@ shopt -s extglob
 
 [ $# -gt 0 ] || usage "$0" "No RUN specified"
 
-_3X_API_EXTRACTOR=extract
-
 _3X_RUN=$1; shift
 : ${_3X_EXTRACT_ONLY:=}
 
-export _3X_ROOT=$(3x-findroot)
+. find-run-archive.sh
 cd "$_3X_ROOT/$_3X_RUN"
 
 [[ -n "$_3X_EXTRACT_ONLY" ]] || rm -f output

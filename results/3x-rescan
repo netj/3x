@@ -31,6 +31,16 @@ update-assembly-script >/dev/null
 
 : ${_3X_RESCAN_ONLY:=}
 
+outputNames=$(3x-outputs)
+if [[ -n "$_3X_RESCAN_ONLY" ]]; then
+    filteredOutputNames=
+    for o in $outputNames; do
+        [[ "$o" == $_3X_RESCAN_ONLY ]] || continue
+        filteredOutputNames+=" $o"
+    done
+    outputNames=${filteredOutputNames# }
+fi
+
 find-rundirs "$@" -- |
 {
 cd "$_3X_ROOT"
@@ -39,6 +49,7 @@ export \
     _3X_ASSEMBLE \
     _3X_RESCAN_ONLY \
     ForceExtractExisting \
+    outputNames \
     #
 # GNU parallel this + 3x-index update
 parallel --plain --max-procs 50% --no-run-if-empty --ungroup '
@@ -47,53 +58,55 @@ let SHLVL-=2 || true
 rescan1() {
     runId=$1
     cd "$runId"
+    # first, figure out which output variables we need to extract
+    outputsToExtractPatt=
+    for o in $outputNames; do
+        ox=outputs/$o/$_3X_API_EXTRACTOR
+        ! [ -x "$ox" ] || $ForceExtractExisting || continue
+        outputsToExtractPatt+="|$o"
+    done
+    outputsToExtractPatt=${outputsToExtractPatt#|}
+    # proceed only if we need to extract something
+    [[ -n "$outputsToExtractPatt" ]] || return 0
+    # assemble new output extractors for this run
     newRunDir=$(mktemp -d "${TMPDIR:-/tmp}"/3x-rescan.XXXXXX)
     trap "rm -rf $newRunDir" EXIT
-    # assemble output extractors for this run
-    mkdir -p "$newRunDir"/workdir
-    touch "$newRunDir"/workdir/run
-    chmod +x "$newRunDir"/workdir/run
-    SHLVL=$(( $SHLVL + 3 )) \
-    _3X_IMPORT_ONLY="output/${_3X_RESCAN_ONLY:-*}" \
-    "$_3X_ASSEMBLE" "$newRunDir" $(cat ./input) -- $(cat ./env) >/dev/null
-    # prepare for injection of updated extractors
-    chmod +w .
-    unarchive "$_3X_ARCHIVE" output outputs
-    updatedOs=
-    # inject necessary ones to outputs/*/
-    for newO in "$newRunDir"/outputs/*/; do
-        newO=${newO%/}
-        o=${newO#$newRunDir/}
-        oName=${o#outputs/}
-        [[ -z "$_3X_RESCAN_ONLY" ]] ||
-            [[ "$o" == outputs/$_3X_RESCAN_ONLY ]] || continue
-        if [ -e "$o" ]; then
-            if $ForceExtractExisting; then
-                rm -rf "$o"
-                # TODO backup instead of removing?
-            else
-                continue
-            fi
-        fi
+    (   let SHLVL+=2
+        mkdir -p "$newRunDir"/workdir
+        touch "$newRunDir"/workdir/run
+        chmod +x "$newRunDir"/workdir/run
+        _3X_IMPORT_ONLY="output/@($outputsToExtractPatt)" \
+        "$_3X_ASSEMBLE" "$newRunDir" $(cat ./input) -- $(cat ./env) >/dev/null
+        chmod +w .
+        unarchive "$_3X_ARCHIVE" output outputs
+    )
+    # inject new extractors to outputs/*/
+    OIFS=$IFS IFS="|"; set -- $outputsToExtractPatt; IFS=$OIFS
+    for o; do
+        o=outputs/$o
         msg -1 "$runId: updating $o"
+        newO="$newRunDir"/$o
+        rm -rf "$o"  # TODO backup instead of removing?
         mv -f "$newO" "$o"
-        updatedOs+="|$oName"
     done
-    # extract output and dedup and seal for storage
-    if [[ -z "$_3X_RESCAN_ONLY" ]]; then
-        extractOnlyPatt=
-    else
-        extractOnlyPatt="@(${updatedOs#|})"
-        # prepare for incremental output extraction (copy-on-write)
-        cp -f output output.$$
-        mv -f output.$$ output
-        chmod +w output
-    fi
-    SHLVL=$(( SHLVL + 1 )) \
-    _3X_EXTRACT_ONLY=$extractOnlyPatt \
-    extract-output "$runId" || true
-    archive "$_3X_ARCHIVE" output outputs
-    chmod -w .
+    # extract output, dedup, and seal back run directory for storage
+    (   let SHLVL+=2
+        if [[ -n "$_3X_RESCAN_ONLY" ]]; then
+            extractOnlyPatt="@($outputsToExtractPatt)"
+            # copy-on-write for incremental output extraction
+            cp -f output output.$$
+            mv -f output.$$ output
+            chmod +w output
+        else
+            # if no pattern were specified, extract all output variables again
+            extractOnlyPatt=
+        fi
+        _3X_EXTRACT_ONLY=$extractOnlyPatt \
+        extract-output "$runId" || true
+        archive "$_3X_ARCHIVE" output outputs
+        chmod -w .
+    )
+    # done
     echo "$runId"
 }; rescan1 ' :::
 } |
