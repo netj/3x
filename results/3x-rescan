@@ -27,10 +27,6 @@ while getopts "f" o; do
 done
 shift $(( $OPTIND - 1 ))
 
-tmp=$(mktemp -d "${TMPDIR:-/tmp}"/3x-rescan.XXXXXX)
-trap 'rm -rf "$tmp"' EXIT
-newRunDir="$tmp"/newRunDir
-
 update-assembly-script >/dev/null
 
 : ${_3X_RESCAN_ONLY:=}
@@ -38,12 +34,22 @@ update-assembly-script >/dev/null
 find-rundirs "$@" -- |
 {
 cd "$_3X_ROOT"
-# TODO GNU parallel this + 3x-index update
-while read runId; do
-    (
+export \
+    _3X_ARCHIVE \
+    _3X_ASSEMBLE \
+    _3X_RESCAN_ONLY \
+    ForceExtractExisting \
+    #
+# GNU parallel this + 3x-index update
+parallel --plain --max-procs 50% --no-run-if-empty --ungroup '
+set -eu
+let SHLVL-=2 || true
+rescan1() {
+    runId=$1
     cd "$runId"
+    newRunDir=$(mktemp -d "${TMPDIR:-/tmp}"/3x-rescan.XXXXXX)
+    trap "rm -rf $newRunDir" EXIT
     # assemble output extractors for this run
-    rm -rf "$newRunDir"
     mkdir -p "$newRunDir"/workdir
     touch "$newRunDir"/workdir/run
     chmod +x "$newRunDir"/workdir/run
@@ -53,12 +59,6 @@ while read runId; do
     # prepare for injection of updated extractors
     chmod +w .
     unarchive "$_3X_ARCHIVE" output outputs
-    if [[ -n "$_3X_RESCAN_ONLY" ]]; then
-        # prepare for incremental output extraction (copy-on-write)
-        cp -f output output.$$
-        mv -f output.$$ output
-        chmod +w output
-    fi
     updatedOs=
     # inject necessary ones to outputs/*/
     for newO in "$newRunDir"/outputs/*/; do
@@ -75,20 +75,26 @@ while read runId; do
                 continue
             fi
         fi
-        msg +1 "$runId: updating $o"
+        msg -1 "$runId: updating $o"
         mv -f "$newO" "$o"
         updatedOs+="|$oName"
     done
     # extract output and dedup and seal for storage
-    extractOnlyPatt=
-    [[ -z "$_3X_RESCAN_ONLY" ]] || extractOnlyPatt="@(${updatedOs#|})"
+    if [[ -z "$_3X_RESCAN_ONLY" ]]; then
+        extractOnlyPatt=
+    else
+        extractOnlyPatt="@(${updatedOs#|})"
+        # prepare for incremental output extraction (copy-on-write)
+        cp -f output output.$$
+        mv -f output.$$ output
+        chmod +w output
+    fi
     SHLVL=$(( SHLVL + 1 )) \
     _3X_EXTRACT_ONLY=$extractOnlyPatt \
     extract-output "$runId" || true
     archive "$_3X_ARCHIVE" output outputs
     chmod -w .
     echo "$runId"
-    )
-done
+}; rescan1 ' :::
 } |
 xargs -L10 -- 3x-index update
