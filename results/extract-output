@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# extract-output -- run output extractors on a given run
+# 
+# > extract-output RUN
+#
+# To extract output for certain variables whose name matches extglob PATT:
+# > _3X_EXTRACT_ONLY=PATT \
+# > extract-output RUN
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-10-08
+set -eu
+shopt -s extglob
+
+[ $# -gt 0 ] || usage "$0" "No RUN specified"
+
+_3X_API_EXTRACTOR=extract
+
+_3X_RUN=$1; shift
+: ${_3X_EXTRACT_ONLY:=}
+
+export _3X_ROOT=$(3x-findroot)
+cd "$_3X_ROOT/$_3X_RUN"
+
+[[ -n "$_3X_EXTRACT_ONLY" ]] || rm -f output
+
+msg "$_3X_RUN: extracting output"
+rm -f outputs.failed
+for ox in outputs/*/$_3X_API_EXTRACTOR; do
+    [[ -z "$_3X_EXTRACT_ONLY" ]] ||
+        [[ "$ox" == outputs/$_3X_EXTRACT_ONLY/$_3X_API_EXTRACTOR ]] || continue
+    if [ -x "$ox" ]; then
+        od=$(dirname "$ox")
+        o=$(basename "$od") oerr="$od/stderr"
+        v=$(
+            # running extractor under the same env
+            export $(cat ./env) _3X_MEASURE=${ox%/$_3X_API_EXTRACTOR}
+            PATH="$PATH:$TOOLSDIR"
+            if "$ox" 2>"$oerr"; then
+                # only keep non-empty stderr logs
+                [ -s "$oerr" ] || rm -f "$oerr"
+            else # keep going on any failed extractor
+                # but keep track of their names and exit status
+                echo "$o (exit status=$?)" >>outputs.failed
+            fi
+        )
+        case $v in # try not to wrap quotes around empty value
+            "") ;;
+            *) v=$(escape-args-for-shell "$v") ;;
+        esac
+        # finally record a name/value-pair line for each output
+        echo "$o=$v"
+    fi
+done >>output
+
+# see if all output extractors ended successfully
+! [ -s outputs.failed ] ||
+    error "$_3X_RUN: failed extracting outputs:" "$(cat outputs.failed)"

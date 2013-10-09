@@ -7,7 +7,7 @@
 # Created: 2013-01-31
 set -eu
 
-_3X_ROOT=$(3x-findroot)
+. find-run-archive.sh
 cd "$_3X_ROOT"
 
 let SHLVL--
@@ -33,6 +33,5 @@ update-assembly-script() {
         trap - EXIT
     fi
 }
-assembleScript=.3x/assemble.sh
-update-assembly-script $assembleScript program input/?*=* output/*
-echo $assembleScript
+update-assembly-script "$_3X_ASSEMBLE" program input/?*=* output/*
+echo "$_3X_ASSEMBLE"

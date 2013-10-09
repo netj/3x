@@ -21,6 +21,7 @@ find-rundirs "$@" |
 grep '^archive/' |
 {
 cd "$_3X_ROOT"
+# TODO GNU parallel this + 3x-index update
 while read archived; do
     runId="run/${archived#archive/}"
     chmod +w -- "$archived"
@@ -32,4 +33,4 @@ while read archived; do
     echo "$runId"
 done
 } |
-xargs -- 3x-index update
+xargs -L10 -- 3x-index update

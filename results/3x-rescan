@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# 3x-rescan -- extract outputs from runs, optionally with new extractors
+# 
+# > 3x rescan [RUN]...
+#
+# To re-extract outputs whose name match a certain extglob pattern PATT:
+# > _3X_RESCAN_ONLY=PATT \
+# > 3x rescan [RUN]...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2012-11-07
+set -eu
+shopt -s extglob
+
+. find-run-archive.sh
+
+tmp=$(mktemp -d "${TMPDIR:-/tmp}"/3x-rescan.XXXXXX)
+trap 'rm -rf "$tmp"' EXIT
+newRunDir="$tmp"/newRunDir
+
+update-assembly-script >/dev/null
+
+: ${_3X_RESCAN_ONLY:=}
+
+find-rundirs "$@" -- |
+{
+cd "$_3X_ROOT"
+# TODO GNU parallel this + 3x-index update
+while read runId; do
+    (
+    cd "$runId"
+    # assemble output extractors for this run
+    rm -rf "$newRunDir"
+    mkdir -p "$newRunDir"/workdir
+    touch "$newRunDir"/workdir/run
+    chmod +x "$newRunDir"/workdir/run
+    SHLVL=$(( $SHLVL + 3 )) \
+    _3X_IMPORT_ONLY="output/${_3X_RESCAN_ONLY:-*}" \
+    "$_3X_ASSEMBLE" "$newRunDir" $(cat ./input) -- $(cat ./env) >/dev/null
+    # prepare for injection of updated extractors
+    chmod +w .
+    unarchive "$_3X_ARCHIVE" output outputs
+    if [[ -n "$_3X_RESCAN_ONLY" ]]; then
+        # prepare for incremental output extraction (copy-on-write)
+        cp -f output output.$$
+        mv -f output.$$ output
+        chmod +w output
+    fi
+    # inject necessary ones to outputs/*/
+    for newO in "$newRunDir"/outputs/*/; do
+        newO=${newO%/}
+        o=${newO#$newRunDir/}
+        [[ -z "$_3X_RESCAN_ONLY" ]] ||
+            [[ "$o" == outputs/$_3X_RESCAN_ONLY ]] || continue
+        msg +1 "$runId: updating $o"
+        if ! [ -e "$o" ]; then
+            mv -f "$newO" "$o"
+        else
+            # FIXME replace old output extractor when told to do so
+            rm -rf "$o"
+            mv -f "$newO" "$o"
+        fi
+    done
+    # extract output and dedup and seal for storage
+    _3X_EXTRACT_ONLY=$_3X_RESCAN_ONLY \
+    extract-output "$runId" || true
+    archive "$_3X_ARCHIVE" output outputs
+    chmod -w .
+    echo "$runId"
+    )
+done
+} |
+xargs -L10 -- 3x-index update

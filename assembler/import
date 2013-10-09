@@ -55,6 +55,16 @@ copyFilesTo() {
     }
 }
 
+# filter given paths according to extglob pattern $_3X_IMPORT_ONLY when available
+if [[ -n "${_3X_IMPORT_ONLY:-}" ]]; then
+    filteredPaths=()
+    for path; do
+        [[ "$path" == $_3X_IMPORT_ONLY ]] || continue
+        filteredPaths+=("$path")
+    done
+    set --; [[ ${#filteredPaths[@]} -eq 0 ]] || set -- "${filteredPaths[@]}"
+fi
+
 for path in "$@"; do
     msg " importing $path"
     if [ -d "$path" ]; then

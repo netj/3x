@@ -119,3 +119,9 @@ esac
 
 # re-initialize index
 3x-index migrate
+# TODO re-initialize queues
+# extract output from existing runs
+case $What in
+    output)
+        _3X_RESCAN_ONLY=$Name  3x-rescan
+esac

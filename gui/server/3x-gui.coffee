@@ -177,17 +177,23 @@ serveRunOverview = (res, runId, path = runId) ->
             for filename,i in filenames
                 files[filename] = results[i]
             parseKeyValuePairs = (lines, map) ->
+                kvps = {}
                 for kvp in String(lines).split /\n+/ when (m = /// ([^=]+) = (.*) ///.exec kvp)?
-                    ty = map[m[1]]?.type
-                    name: m[1]
-                    value: m[2]
-                    type: ty
-                    unit: map[m[1]]?.unit
-                    presentation: (
-                        if /// ^image/.* ///.test ty then "image"
-                        else if /// .* / .* ///.test ty then "file"
-                        else "scalar"
-                    )
+                    name = m[1]
+                    known = map[name]
+                    ty = known?.type
+                    kvps[name] = { # deduplicate entries with same name
+                        name
+                        value: m[2]
+                        type: ty
+                        unit: known?.unit
+                        presentation: (
+                            if /// ^image/.* ///.test ty then "image"
+                            else if /// .* / .* ///.test ty then "file"
+                            else "scalar"
+                        )
+                    }
+                _.values kvps
             input  = parseKeyValuePairs files.input,  inputs
             output = parseKeyValuePairs files.output, outputs
             delete files.input

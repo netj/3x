@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # 3x-results -- enumerate experiment outputs with inputs
 # 
-# > 3x results [-t] [BATCH | RUN]... QUERY...
+# > 3x results [-t] [RUN]... QUERY...
 # 
-# You can specify from which BATCH or RUNs you want to enumerate the results.
+# You can specify from which RUNs you want to enumerate the results.
 # Otherwise, results from all runs will be filtered and listed.
 # To list all results from the entire set of runs, use:
 # 

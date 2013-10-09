@@ -26,8 +26,7 @@ vs=($(IFS=.; set -- $v; echo "$@"))
 [[ ${vs[0]} -gt 3 || ${vs[0]} -eq 3 && ( ${vs[1]} -gt 7 || \
     ${vs[1]} -eq 7 && ${vs[2]} -ge 11 ) ]] || BATCHSIZE=1
 
-_3X_ROOT=$(3x-findroot)
-export _3X_ROOT
+. find-run-archive.sh
 
 . sql-vocabs.sh
 
@@ -62,7 +61,7 @@ case $Cmd in
 		$(sql-create-table);
 		COMMIT;
 		EOF
-        elif [ x"$Cmd" = x"migrate" -o "$_3X_ROOT/.3x/assemble.sh" -nt "$_3X_INDEX" ]; then
+        elif [ x"$Cmd" = x"migrate" -o "$_3X_ASSEMBLE" -nt "$_3X_INDEX" ]; then
             # if $inputs and/or $outputs have changed, migrate indexed data
             oldColumns=$(
                 sqlite <<<".schema run" |

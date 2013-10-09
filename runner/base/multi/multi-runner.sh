@@ -31,7 +31,7 @@ prepare-remote-root() {
     (
     cd "$at"
     mkdir -p "$REMOTE_ROOT"/.3x/bin
-    ln  -fn "$_3X_ROOT"/.3x/assemble.sh    "$REMOTE_ROOT"/.3x/
+    ln  -fn "$_3X_ASSEMBLE"                "$REMOTE_ROOT"/.3x/
     ln -sfn "$_3X_ROOT"/input              "$REMOTE_ROOT"/
     ln -sfn "$_3X_ROOT"/program            "$REMOTE_ROOT"/
     ln -sfn "$_3X_ROOT"/output             "$REMOTE_ROOT"/

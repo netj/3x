@@ -11,7 +11,7 @@
 set -eu
 
 # make sure runner handler is invoked after . find-runner.sh
-: $_3X_RUNNER $_3X_QUEUE_ID $_3X_QUEUE_DIR $_3X_QUEUE $_3X_ROOT
+: $_3X_RUNNER $_3X_QUEUE_ID $_3X_QUEUE_DIR $_3X_QUEUE $_3X_ROOT $_3X_ARCHIVE $_3X_ASSEMBLE
 
 # all file paths are $_3X_QUEUE_DIR-relative
 ACTIVE_FLAG=.is-active.$_3X_RUNNER

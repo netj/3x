@@ -11,3 +11,4 @@ _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
 export _3X_ARCHIVE="$_3X_ROOT"/.3x/files
+export _3X_ASSEMBLE="$_3X_ROOT"/.3x/assemble.sh

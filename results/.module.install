@@ -6,8 +6,12 @@ compile-where           $TOOLSDIR/
 sql-vocabs.sh           $TOOLSDIR/
 
 find-rundirs            $TOOLSDIR/
+find-run-archive.sh     $TOOLSDIR/
 
 3x-outputs              $TOOLSDIR/
+
+extract-output          $TOOLSDIR/
+3x-rescan               $TOOLSDIR/
 
 3x-archive              $TOOLSDIR/
 3x-unarchive            $TOOLSDIR/

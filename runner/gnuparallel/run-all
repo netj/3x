@@ -108,6 +108,7 @@ sessionId=$(cat sessionId 2>/dev/null ||
     echo session.$$ | tee sessionId)
 rm -rf "$mobileRepo"/.3x/session.*
 mkdir -p "$mobileRepo"/.3x/$sessionId
+# TODO use $_3X_ASSEMBLE instead of hard-coding assemble.sh
 mv -f "$mobileRepo"/.3x/assemble.sh "$mobileRepo"/.3x/$sessionId/
 ln -f "$FileRunIds"                 "$mobileRepo"/.3x/$sessionId/runIds
 if [ -n "$shareddir" ]; then
