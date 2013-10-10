@@ -23,12 +23,6 @@ update-assembly-script() {
         trap "rm -f $tmp" EXIT
         generate-assembly-script "$@" >"$tmp"
         chmod +x "$tmp"
-        { vim -u NONE -i NONE -N -n -e -s "$tmp" &>/dev/null || true; } <<-EOF
-	source \$VIMRUNTIME/vimrc_example.vim
-	set ft=sh nobackup
-	norm gg=G
-	wq!
-	EOF
         mv -f "$tmp" "$scpt"
         trap - EXIT
     fi

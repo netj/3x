@@ -21,7 +21,30 @@ measuring-rusage() {
         case $("$gnutimepath" --version 2>&1) in
             "GNU time "*)
                 # and record times and resource usage with it
-                exec "$gnutimepath" -v -o rusage "$@"
+                exec "$gnutimepath" -o rusage -f "\
+User time (seconds): %U
+System time (seconds): %S
+Percent of CPU this job got: %P
+Elapsed (wall clock) time (seconds): %e
+Elapsed (wall clock) time (h:mm:ss or m:ss): %E
+Average shared text size (kbytes): %X
+Average unshared data size (kbytes): %D
+Average stack size (kbytes): %p
+Average total size (kbytes): %K
+Maximum resident set size (kbytes): %M
+Average resident set size (kbytes): %t
+Major (requiring I/O) page faults: %F
+Minor (reclaiming a frame) page faults: %R
+Voluntary context switches: %w
+Involuntary context switches: %c
+Swaps: %W
+File system inputs: %I
+File system outputs: %O
+Socket messages sent: %s
+Socket messages received: %r
+Signals delivered: %k
+Page size (bytes): %Z" \
+    "$@"
                 ;;
         esac
     done
