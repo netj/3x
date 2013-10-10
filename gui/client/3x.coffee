@@ -483,21 +483,33 @@ class MenuDropdown extends CompositeElement
             menu.find(".menu-dropdown-item")
                 .toArray().every (a) -> $(a).hasClass("active")
         menu.find(".menu-dropdown-item")
-            .click(@menuItemActionHandler do (isAllItemActive) -> ($this, menuAnchor) ->
-                $this.toggleClass("active")
-                menuAnchor.find(".menu-dropdown-toggle-all")
-                    .toggleClass("active", isAllItemActive())
-            )
             .each (i,menuitem) =>
                 $this = $(menuitem)
                 item = $this.text()
-                $this.toggleClass("active", item in (@menuItemsSelected[name] ? []))
+                $this.toggleClass("active ui-selected",
+                    item in (@menuItemsSelected[name] ? []))
         menu.find(".menu-dropdown-toggle-all")
             .toggleClass("active", isAllItemActive())
             .click(@menuItemActionHandler ($this, menuAnchor) ->
                 $this.toggleClass("active")
                 menuAnchor.find(".menu-dropdown-item")
                     .toggleClass("active", $this.hasClass("active"))
+            )
+        menu.selectable(
+                filter: ".menu-dropdown-item"
+                cancel: ".menu-dropdown-toggle-all"
+            )
+            # use .active to synchronize selection
+            .on("selectableselecting", (e, ui) =>
+                $(ui.selecting).addClass("active"))
+            .on("selectableunselecting", (e, ui) =>
+                $(ui.unselecting).removeClass("active"))
+            # persist and reflect menuAnchor after selection stops
+            .on("selectablestop",
+                @menuItemActionHandler do (isAllItemActive) ->
+                    ($this, menuAnchor, e, ui) =>
+                        menuAnchor.find(".menu-dropdown-toggle-all")
+                            .toggleClass("active", isAllItemActive())
             )
         menuAnchor.toggleClass("active", not @menusInactive[name]?)
             .find(".menu-checkbox")
@@ -513,13 +525,13 @@ class MenuDropdown extends CompositeElement
 
     menuItemActionHandler: (handle) =>
         m = @
-        (e) ->
+        (e, args...) ->
             e.stopPropagation()
             e.preventDefault()
             $this = $(this)
             menuAnchor = $this.closest(".dropdown")
             try
-                ret = handle($this, menuAnchor, e)
+                ret = handle($this, menuAnchor, e, args...)
                 m.updateDisplay menuAnchor
                 do m.persist
                 do m.triggerChangedAfterMenuBlurs
