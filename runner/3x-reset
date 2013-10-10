@@ -34,6 +34,6 @@ for-every-runner setsid queue-sync
 # revert any remaining ABORTED runs to PLANNED
 cd "$_3X_ROOT"
 set +e
-queue list-only runId  "state#"=ABORTED | xargs unarchive "$_3X_ARCHIVE" 2>/dev/null
-queue list-only runId  "state#"=ABORTED | xargs rm -rf --
-queue list-only serial "state#"=ABORTED | xargs queue mark-as PLANNED
+queue list-only runId  "state#"=RUNNING,ABORTED | xargs unarchive "$_3X_ARCHIVE" 2>/dev/null
+queue list-only runId  "state#"=RUNNING,ABORTED | xargs rm -rf --
+queue list-only serial "state#"=RUNNING,ABORTED | xargs queue mark-as PLANNED
