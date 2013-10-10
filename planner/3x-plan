@@ -77,7 +77,7 @@ showExampleUsages() {
             [[ $j -lt $MAX_VALUES ]] || p=0
             case $p in
                 0)
-                    msg "3x run$args"
+                    msg "3x plan$args"
                     j=0 args=
                     [[ $i -lt $NUM_EXAMPLES ]] || break
                     let ++i
@@ -86,7 +86,7 @@ showExampleUsages() {
                     ;;
             esac
         done
-        [ -z "$args" ] || msg "3x run$args"
+        [ -z "$args" ] || msg "3x plan$args"
     }
     false
 }
