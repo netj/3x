@@ -75,6 +75,10 @@ updateTimestamp() {
     touch "$_3X_QUEUE_DIR"/.queue.db.updated
 }
 
+abort-unless-init() {
+    # do not proceed with uninitialized queue
+    [[ -s "$DB" ]] || exit 0
+}
 prepare-full-query() {
 
 . sql-vocabs.sh
@@ -91,35 +95,108 @@ dedup-serials() {
 
 }
 
-# make sure a proper queue database exists
-if ! [ -s $DB ]; then
-    # TODO check schema to see if new columns are added
-    prepare-full-query
-    [ -n "$inputs" ] || exit 0
-    sqlite <<-EOF
-	BEGIN TRANSACTION;
-	CREATE TABLE IF NOT EXISTS queue
-	( serial   INTEGER PRIMARY KEY ASC AUTOINCREMENT
-	, ordinal  INTEGER UNIQUE NOT NULL
-	, state    TEXT           DEFAULT 'PLANNED'
-	, target   TEXT           DEFAULT NULL
-	, runId    TEXT    UNIQUE DEFAULT NULL
-	$(
-	for varName in $inputs; do
-	    echo ", _$varName $(sql-type $varName) DEFAULT NULL"
-	done
-	)
-	);
-	CREATE UNIQUE INDEX IF NOT EXISTS queueOrdering
-	ON queue (ordinal ASC);
-	COMMIT;
-	EOF
-fi
-
 # TODO sanitize STATE
 
 Cmd=$1; shift
 case $Cmd in
+    init|migrate) ;;
+    *) abort-unless-init ;;
+esac
+case $Cmd in
+
+    init|migrate)
+        prepare-full-query
+        [ -n "$inputs" ] || exit 0
+        # make sure a proper queue database exists
+        sql-create-table() {
+            cat <<-EOF
+		CREATE TABLE IF NOT EXISTS queue
+		( serial   INTEGER PRIMARY KEY ASC AUTOINCREMENT
+		, ordinal  INTEGER UNIQUE NOT NULL
+		, state    TEXT           DEFAULT 'PLANNED'
+		, target   TEXT           DEFAULT NULL
+		, runId    TEXT    UNIQUE DEFAULT NULL
+		$(
+		for varName in $inputs; do
+		    echo ", _$varName $(sql-type $varName) DEFAULT NULL"
+		done
+		for varName; do
+		    echo ", x_$varName TEXT DEFAULT NULL"  # XXX defaults to TEXT
+		done
+		)
+		);
+		CREATE UNIQUE INDEX IF NOT EXISTS queueOrdering
+		ON queue (ordinal ASC);
+		EOF
+        }
+        if ! [ -s "$DB" ]; then
+            sqlite <<-EOF
+		BEGIN TRANSACTION;
+		$(sql-create-table)
+		COMMIT;
+		EOF
+        elif [ x"$Cmd" = x"migrate" -o "$_3X_ROOT"/input -nt "$DB" ]; then
+            # if $inputs could have changed, migrate queue data
+            oldColumns=$(
+                sqlite <<<".schema queue" |
+                sed -n '/^, _/ { s/^, _//; s/ .*$//; p; }'
+                )
+            hiddenColumns=$(
+                sqlite <<<".schema queue" |
+                sed -n '/^, x_/ { s/^, x_//; s/ .*$//; p; }'
+                )
+            existingColumns="$oldColumns${hiddenColumns:+$'\n'$hiddenColumns}"
+            existingColumnsFilter=${existingColumns:- }
+            inputsFilter=${inputs:- }
+            insertColumns="serial, ordinal, state, target, runId"
+            selectColumns=$insertColumns
+            unusedColumns=$(grep -vF "$inputsFilter" <<<"$existingColumns") || true
+            newColumns=$(   grep -vF "$existingColumnsFilter" <<<"$inputs") || true
+            # find current input variables that already exist in the queue
+            for varName in $(grep -F "$inputsFilter" <<<"$oldColumns"); do
+                insertColumns+=", _$varName"
+                selectColumns+=", _$varName"
+                msg +4 "$varName: keep showing"
+            done
+            for varName in $(grep -F "$inputsFilter" <<<"$hiddenColumns"); do
+                insertColumns+=", _$varName"
+                selectColumns+=", x_$varName"
+                msg +4 "$varName: showing"
+            done
+            # find columns that exist in the queue but will become/stay hidden
+            for varName in $(grep -vF "$inputsFilter" <<<"$oldColumns"); do
+                insertColumns+=", x_$varName"
+                selectColumns+=", _$varName"
+                msg +4 "$varName: hiding"
+            done
+            for varName in $(grep -vF "$inputsFilter" <<<"$hiddenColumns"); do
+                insertColumns+=", x_$varName"
+                selectColumns+=", x_$varName"
+                msg +4 "$varName: keep hiding"
+            done
+            # run a series of SQL queries to migrate to a new schema
+            sqlite <<-EOF
+		BEGIN TRANSACTION;
+		DROP INDEX IF EXISTS queueOrdering;
+		ALTER TABLE queue RENAME TO queue_$$;
+		$(sql-create-table $unusedColumns)
+		INSERT INTO queue ($insertColumns) SELECT $selectColumns FROM queue_$$;
+		DROP TABLE queue_$$;
+		$(
+		# assign default values for new columns
+		for varName in $newColumns; do
+		    firstValue=$(3x-inputs -v $varName |
+		                    tr '=,' '\n' | head -2 | tail -1)
+		    echo "UPDATE queue SET _$varName = $(
+		            sql-literal $(sql-type $varName) "$firstValue"
+		        ) WHERE state='PLANNED';"
+		done
+		)
+		COMMIT;
+		EOF
+        fi
+        ;;
+
 
     list|list-only)
         prepare-full-query

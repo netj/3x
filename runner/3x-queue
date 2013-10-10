@@ -48,6 +48,7 @@ if $ListDetails && [ $# -gt 0 ]; then
     . find-queue.sh
     ln -sfn ../$_3X_QUEUE_ID "$_3X_ROOT"/.3x/Q
     mkdir -p "$_3X_QUEUE_DIR"
+    queue init
     # set the queue's target if given as well
     [ $# -eq 0 ] || 3x-target "$1" >/dev/null
     set --

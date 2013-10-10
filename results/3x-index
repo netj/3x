@@ -67,16 +67,17 @@ case $Cmd in
                 sqlite <<<".schema run" |
                 sed -n '/^, _/ { s/^, _//; s/ .*$//; p; }'
                 )
-            selectColumns="id"
+            insertColumns="id"
             for varName in $columns; do
                 grep -qxF "$varName" <<<"$oldColumns" || continue
-                selectColumns+=", _$varName"
+                insertColumns+=", _$varName"
             done
+            selectColumns=$insertColumns
             sqlite <<-EOF
                 BEGIN TRANSACTION;
 		ALTER TABLE run RENAME TO run_$$;
 		$(sql-create-table);
-		INSERT INTO run ($selectColumns) SELECT $selectColumns FROM run_$$;
+		INSERT INTO run ($insertColumns) SELECT $selectColumns FROM run_$$;
 		DROP TABLE run_$$;
 		COMMIT;
 		EOF

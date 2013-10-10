@@ -28,7 +28,7 @@ case $What in
         ;;
 esac
 
-. "$TOOLSDIR"/sanity-checks.sh
+. sanity-checks.sh
 
 # TODO expand glob pattern in any arguments?
 
@@ -122,8 +122,15 @@ esac
 # TODO re-initialize queues
 # extract output from existing runs
 case $What in
+    input)
+        SHLVL=$(( $SHLVL - 1 )) \
+        queue migrate
+        # TODO for every queue
+        ;;
+
     output)
         SHLVL=$(( $SHLVL - 1 )) \
         _3X_RESCAN_ONLY=$Name \
         3x-rescan -f
+        ;;
 esac
