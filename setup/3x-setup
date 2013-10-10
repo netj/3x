@@ -58,6 +58,7 @@ trap "rm -rf $tmp" EXIT
     be-quiet +4 || set -x
     echo "set -eu"
     be-quiet +1 || echo "set -x"
+    echo "export _3X_SETUP_IN_PROGRESS=true"
     . "$TOOLSDIR"/sanity-checks.sh
     # create the _3X_ROOT directory
     escape-args-for-shell 3x-init "$_3X_ROOT"
@@ -184,6 +185,7 @@ trap "rm -rf $tmp" EXIT
         done
         generate-definition
     done
+    echo "3x-define --commit"
 } >"$tmp"/setup-script
 
 msg +2 "Setting up new experiment"

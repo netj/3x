@@ -11,9 +11,7 @@
 # Created: 2013-01-24
 set -eu
 
-# Some names of executables as 3X API
-_3X_API_RUNNER=run
-_3X_API_EXTRACTOR=extract
+. find-run-archive.sh
 
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
@@ -27,6 +25,10 @@ case $What in
         Name=$1; shift
         ;;
 esac
+
+# skip maintenance of index and queues if we're in the middle of a setup
+maintainIndexes=true
+! ${_3X_SETUP_IN_PROGRESS:-false} || maintainIndexes=false
 
 . sanity-checks.sh
 
@@ -115,22 +117,28 @@ case $What in
         fi
         echo "$Type" >"$dir"/datatype
         ;;
-esac
 
-# re-initialize index
-3x-index migrate
-# TODO re-initialize queues
-# extract output from existing runs
-case $What in
-    input)
-        SHLVL=$(( $SHLVL - 1 )) \
-        queue migrate
-        # TODO for every queue
-        ;;
-
-    output)
-        SHLVL=$(( $SHLVL - 1 )) \
-        _3X_RESCAN_ONLY=$Name \
-        3x-rescan -f
+    --commit)
+        maintainIndexes=true
         ;;
 esac
+
+if $maintainIndexes; then
+    # re-initialize index
+    3x-index migrate &
+    case $What in
+        input)
+            # migrate existing queues
+            SHLVL=$(( $SHLVL - 1 )) \
+            queue migrate # TODO for every queue
+            ;;
+
+        output)
+            # extract output from existing runs
+            SHLVL=$(( $SHLVL - 1 )) \
+            _3X_RESCAN_ONLY=$Name \
+            3x-rescan -f
+            ;;
+    esac
+    wait
+fi

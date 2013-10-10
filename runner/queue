@@ -75,10 +75,6 @@ updateTimestamp() {
     touch "$_3X_QUEUE_DIR"/.queue.db.updated
 }
 
-abort-unless-init() {
-    # do not proceed with uninitialized queue
-    [[ -s "$DB" ]] || exit 0
-}
 prepare-full-query() {
 
 . sql-vocabs.sh
@@ -100,7 +96,12 @@ dedup-serials() {
 Cmd=$1; shift
 case $Cmd in
     init|migrate) ;;
-    *) abort-unless-init ;;
+    *)
+        # initialize or migrate $DB when necessary
+        [[ -s "$DB" && "$DB" -nt "$_3X_ROOT"/input ]] ||
+            queue init
+        [[ -s "$DB" ]] || exit 0  # XXX do not proceed with an empty DB
+        ;;
 esac
 case $Cmd in
 
@@ -129,13 +130,13 @@ case $Cmd in
 		ON queue (ordinal ASC);
 		EOF
         }
-        if ! [ -s "$DB" ]; then
+        if [[ ! -s "$DB" ]]; then
             sqlite <<-EOF
 		BEGIN TRANSACTION;
 		$(sql-create-table)
 		COMMIT;
 		EOF
-        elif [ x"$Cmd" = x"migrate" -o "$_3X_ROOT"/input -nt "$DB" ]; then
+        elif [[ "$Cmd" = migrate || "$_3X_ROOT"/input -nt "$DB" ]]; then
             # if $inputs could have changed, migrate queue data
             oldColumns=$(
                 sqlite <<<".schema queue" |
