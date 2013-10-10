@@ -112,6 +112,12 @@ body > .navbar .brand .icon {
   word-wrap: break-word;
 }
 
+// for the lasso by jQuery UI Selectable
+@jQueryUISelectableHelperZIndex: 2000;
+.ui-selectable-helper {
+  z-index: @jQueryUISelectableHelperZIndex;
+}
+
 #setup {
   h4 {
     margin-bottom: 4px;
@@ -133,8 +139,9 @@ body > .navbar .brand .icon {
   }
   .dropdown-menu {
     a {
+      z-index: @jQueryUISelectableHelperZIndex+1; // XXX to receive :hover events
       padding-left: 4ex;
-      &.active:before {
+      &.ui-selected:before, &.ui-selecting:before {
         margin-left: -2ex;
         content: "✓ ";
       }
@@ -171,11 +178,6 @@ body > .navbar .brand .icon {
       }
     }
   }
-}
-
-// for the lasso by jQuery UI Selectable
-.ui-selectable-helper {
-  z-index: 2000;
 }
 
 #results {

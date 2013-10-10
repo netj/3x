@@ -481,35 +481,44 @@ class MenuDropdown extends CompositeElement
         menu = menuAnchor.find(".dropdown-menu")
         isAllItemActive = do (menu) -> () ->
             menu.find(".menu-dropdown-item")
-                .toArray().every (a) -> $(a).hasClass("active")
+                .toArray().every (a) -> $(a).hasClass("ui-selected")
+        handleSelectionSession = do (isAllItemActive) ->
+            ($this, menuAnchor, e, ui) =>
+                menuAnchor.find(".menu-dropdown-toggle-all")
+                    .toggleClass("ui-selected", isAllItemActive())
+        menu.find(".menu-dropdown-toggle-all")
+            .toggleClass("ui-selected", isAllItemActive())
+            .click(@menuItemActionHandler ($this, menuAnchor) ->
+                $this.toggleClass("ui-selected")
+                menuAnchor.find(".menu-dropdown-item")
+                    .toggleClass("ui-selected", $this.hasClass("ui-selected"))
+            )
         menu.find(".menu-dropdown-item")
-            .each (i,menuitem) =>
+            .each((i,menuitem) =>
                 $this = $(menuitem)
                 item = $this.text()
-                $this.toggleClass("active ui-selected",
+                $this.toggleClass("ui-selected",
                     item in (@menuItemsSelected[name] ? []))
-        menu.find(".menu-dropdown-toggle-all")
-            .toggleClass("active", isAllItemActive())
-            .click(@menuItemActionHandler ($this, menuAnchor) ->
-                $this.toggleClass("active")
-                menuAnchor.find(".menu-dropdown-item")
-                    .toggleClass("active", $this.hasClass("active"))
+            )
+            .on("click", @menuItemActionHandler ($this, rest...) =>
+                unless @isSelectableInProgress
+                    $this.toggleClass("ui-selected")
+                    handleSelectionSession $this, rest...
             )
         menu.selectable(
                 filter: ".menu-dropdown-item"
                 cancel: ".menu-dropdown-toggle-all"
             )
-            # use .active to synchronize selection
+            .on("selectablestart", (e, ui) =>
+                @isSelectableInProgress = yes
+            )
             .on("selectableselecting", (e, ui) =>
-                $(ui.selecting).addClass("active"))
-            .on("selectableunselecting", (e, ui) =>
-                $(ui.unselecting).removeClass("active"))
+                ui.selecting.focus()
+            )
             # persist and reflect menuAnchor after selection stops
-            .on("selectablestop",
-                @menuItemActionHandler do (isAllItemActive) ->
-                    ($this, menuAnchor, e, ui) =>
-                        menuAnchor.find(".menu-dropdown-toggle-all")
-                            .toggleClass("active", isAllItemActive())
+            .on("selectablestop", @menuItemActionHandler (args...) =>
+                @isSelectableInProgress = no
+                handleSelectionSession args...
             )
         menuAnchor.toggleClass("active", not @menusInactive[name]?)
             .find(".menu-checkbox")
@@ -542,7 +551,7 @@ class MenuDropdown extends CompositeElement
 
     updateDisplay: (menuAnchor) =>
         name = menuAnchor.find(".menu-label")?.text()
-        values = menuAnchor.find(".menu-dropdown-item.active").map( -> $(this).text()).get()
+        values = menuAnchor.find(".menu-dropdown-item.ui-selected").map( -> $(this).text()).get()
         hasValues = values?.length > 0
         isInactive = not menuAnchor.hasClass("active")
         @menuItemsSelected[name] =
@@ -650,8 +659,8 @@ class MeasurementsUI extends MenuDropdown
     updateDisplay: (menuAnchor) =>
         # At least one menu item (aggregation) must be active all the time.
         # To totally hide this measure, user can simply check off.
-        if menuAnchor.find(".menu-dropdown-item.active").length == 0
-            menuAnchor.find(".menu-dropdown-item:nth(0)").addClass("active")
+        if menuAnchor.find(".menu-dropdown-item.ui-selected").length == 0
+            menuAnchor.find(".menu-dropdown-item:nth(0)").addClass("ui-selected")
 
         # then do what it's supposed to
         super menuAnchor
