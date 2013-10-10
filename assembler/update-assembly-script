@@ -27,5 +27,6 @@ update-assembly-script() {
         trap - EXIT
     fi
 }
+shopt -s nullglob
 update-assembly-script "$_3X_ASSEMBLE" program input/?*=* output/*
 echo "$_3X_ASSEMBLE"
