@@ -211,7 +211,7 @@ do ->
         sumIntegral   = 0; maxIntegral   = 0; minIntegral   = 0
         sumFractional = 0; maxFractional = 0; minFractional = 0
         count = 0
-        for row in allRows
+        for row in allRows when row[colIdx]?
             v = "#{row[colIdx].value}."
             f = v.length - 1 - v.indexOf(".")
             #i = v.length - 1 - f
@@ -1155,8 +1155,8 @@ class ResultsTable extends CompositeElement
                 $(td).html(
                     # XXX somehow, the first row isn't refreshing even though correct html is being set
                     (if brushingTRIndex == 0 then "<span></span>" else "") +
-                    brushingCellHTMLRenderer[i]?(
-                        @results.rows[rowIdxData][colIdxData], args...) ? ""
+                    (brushingCellHTMLRenderer[i]?(
+                        @results.rows[rowIdxData][colIdxData], args...) ? "")
                 )
                 brushingCellDOMRenderer[i]?(td, args...)
         endBrushing = =>
