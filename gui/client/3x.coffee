@@ -651,6 +651,9 @@ class MeasurementsUI extends MenuDropdown
                 .click(@menuItemActionHandler ($this, menuAnchor) ->
                     throw new Error "don't updateDisplay"
                 )
+            menu = menuAnchor.find(".dropdown-menu")
+            menu.selectable("option", "cancel", ".filter, #{
+                menu.selectable("option", "cancel")}")
 
             @updateDisplay menuAnchor
             try log "initMeasurement #{name}:#{type}.#{(_.keys aggregations).join ","}"
