@@ -461,20 +461,146 @@ history table.](gui-runs-failed-details.png)
 
 ### 4. Explore Results
 
+3X provides two main ways with its GUI to visualize and browse the result of
+your experiment: with tables and charts.  Although limited in its capability
+for exploration, 3X's CLI exposes many details of the result in tab-separated
+textual form, which can be more useful for processing data with other
+well-known command-line utilities.
+
 
 #### 4.1. Tabulate Results
 
-...
+The Results tab in 3X's GUI shows the desired part of the result in a tabular
+form with controls for filtering, aggregating, and projecting the input and
+output variables to the table.
+
+##### Filter results by selecting the values for input variables
+
+<!-- Selection -->
+You can select which part of the results you want to view by choosing the
+values for the input variables individually.  The default when no value is
+chosen for a input variable is to show all results of runs regardless of which
+value was used for execution.
+
+![](gui-results-filter-input.png)
+
+You can also specify what aggregate values of the output variables you want to
+see as well as simple conditions on values of them, such as equality (`=1`) or
+inequality (`<=12.345`) to a literal value.
+
+![](gui-results-filter-output.png)
+
+<!-- Projection -->
+Note that it's possible to hide an unwanted variable from appearing in the
+results by checking off its checkbox <i class="icon icon-check"></i>.<!--
+to <i class="icon icon-check-empty"></i> -->
+
+##### Aggregate results by some input variables
+
+You can easily control by which input variables the results are grouped using
+the buttons with folder icon labels <i class="icon icon-folder-open-alt"></i> <i
+class="icon icon-folder-close-alt"></i> on the table header.
+When you make a column expanded (indicated by the open folder icon <i
+class="icon icon-folder-open-alt"></i>), individual values of that variable
+will each have its own row in the results table.  All runs that were executed
+using the particular value for a row will be grouped and the aggregate values
+of their outputs will be shown in other columns.
+
+![](gui-results-aggregate.png)
+
+##### Sort results by columns and reorder columns
+
+Clicking on one of the column name in the table header will sort the results
+table by that column in ascending order.  Clicking again will reverse the order
+to descending, and clicking once again will deactivate sorting for the
+column.
+By holding the Shift Key ⇧ down while clicking on another column header, you
+can specify additional columns for sorting and give order to the results that
+were ranked equally with previously chosen columns.
+Dragging a column header to left or right direction will allow you to reorder
+the columns to shape the table for easier examination.
+
 
 #### 4.2. Chart Results
 
-...
+The Chart tab in 3X's GUI visualizes as a chart the data shown as a table in
+the Results tab.
+
+![](sorting-algos.plain.png)
+
+You can use the controls with pull down menus on the top-left corner of the
+Chart tab to associate each column to either X- or Y-axis, or let the column
+divide the data into different series.  The first variable selected is used as
+the Y-axis, and the second one as the X-axis.  When more nominal variables are
+selected, data that share common values of them will be drawn in the same
+series in the chart.  When another numerical variable is further selected, it
+may create a second Y-axis or share the first one depending on whether the
+selected variables can share the *unit* for the Y-axes.
+
 
 #### 4.3. Detail On-demand
 
-...
+Both chart and table shown in 3X's GUI are interactive: you can drill down to
+details on-demand.
+
+Clicking on any of the data points plotted in the chart shows a popover menu
+displaying details of the subset of data that contributed to that point.  The
+first row in the popover shows the Y-axis value, and the rest of the rows show
+the X-axis value and other variables' values for the series.  If you click on
+the number of runs (shown in the last row labeled `run#.count`), then you can
+browse the individual values before aggregation, and follow the link on each
+value to inspect the full record of the run that generated it.
+
+![](gui-results-drilldown-chart.png)
+
+It's also possible to inspect individual values from the table.
+By holding Shift Key ⇧ down while hovering over a cell that contains an
+aggregated value, you can inspect each value that contributed to the aggregate
+and access the full record of the run that generated the individual value as
+well.
+
+![](gui-results-drilldown-table.png)
 
 
+
+#### 4.4. Tabulate from command-line
+
+Now, let's briefly take a look at the ways using the command-line interface to
+obtain raw results data.  In fact, some of the commands shown here are exactly
+identical to how the GUI accesses the data behind the scenes.
+
+The following command will print full results of all executions containing the
+value for each input and output variable prefixed with its name in a
+tab-separated format and its run identifier on the first column.
+
+    3x results run/
+
+Part of whose output can look like:
+
+    [...]
+    run/2013/0924/18/1752.165321000-13    inputTime=0         numAccess=3069         numCompare=1023         ratioSorted=1  sortingTime=0        algo=insertionSort  inputSize=10  inputType=ordered
+    run/2013/0924/18/1752.165321000-12    inputTime=0         numAccess=134201344    numCompare=33550336     ratioSorted=1  sortingTime=22.31    algo=bubbleSort     inputSize=13  inputType=reversed
+    run/2013/0924/18/1752.165321000-15    inputTime=0         numAccess=1049598      numCompare=523776       ratioSorted=1  sortingTime=0.18     algo=insertionSort  inputSize=10  inputType=reversed
+    run/2013/0924/18/1752.165321000-14    inputTime=0         numAccess=538588       numCompare=268780       ratioSorted=1  sortingTime=0.08     algo=insertionSort  inputSize=10  inputType=random
+    run/2013/0924/18/1752.165321000-11    inputTime=0         numAccess=100600444    numCompare=33545965     ratioSorted=1  sortingTime=14.01    algo=bubbleSort     inputSize=13  inputType=random
+    [...]
+    run/2013/0930/23/5102.639230000-2064  inputTime=0         numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=7047.79  algo=selectionSort  inputSize=18  inputType=reversed
+    run/2013/0930/23/5102.639230000-2059  inputTime=0.01      numAccess=34359869439  numCompare=34359607296  ratioSorted=1  sortingTime=7168.51  algo=selectionSort  inputSize=18  inputType=ordered
+    run/2013/0930/23/5102.639230000-2060  inputTime=0.18      numAccess=34360655832  numCompare=34359607296  ratioSorted=1  sortingTime=8329.18  algo=selectionSort  inputSize=18  inputType=random
+    run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=8850.64  algo=selectionSort  inputSize=18  inputType=reversed
+
+
+You can narrow down the output if you specify filters on some variables, e.g.:
+
+    3x results algo=quickSort,mergeSort inputType'!='random numCompare'>'5900000
+
+Then it outputs only the results that match given criteria:
+
+    run/2013/0926/06/1826.875115000-888 	inputTime=0.01	numAccess=7134799	numCompare=5911655	ratioSorted=1	sortingTime=2.87	algo=quickSort	inputSize=18	inputType=ordered
+    run/2013/0926/06/2351.112734000-1070	inputTime=0.01	numAccess=12805001	numCompare=5928316	ratioSorted=1	sortingTime=3.29	algo=quickSort	inputSize=18	inputType=reversed
+    run/2013/0928/10/3748.111174000-1356	inputTime=0.01	numAccess=7168519	numCompare=5944051	ratioSorted=1	sortingTime=2.97	algo=quickSort	inputSize=18	inputType=ordered
+    run/2013/0929/11/1246.771209000-1756	inputTime=0.02	numAccess=7345424	numCompare=6123288	ratioSorted=1	sortingTime=3.19	algo=quickSort	inputSize=18	inputType=ordered
+    run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
 
 
 ### 5. And Beyond
@@ -549,9 +675,9 @@ that
   across all machines
 * with 30 machines: `corn01.stanford.edu`, ..., `corn30.stanford.edu`.
   <br><small>
-  (Note that `{01..30}` is a special syntax of shell, which might not be
-  supported by older versions.  In that case, enumerate all the names as
-  arguments instead.)
+  (Note that `{01..30}` is a special syntax for your shell to expand to 30
+  words, which might not be supported by older versions.  In that case,
+  enumerate all the names as arguments instead.)
   </small>
 
 
