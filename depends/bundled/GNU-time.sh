@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install Bash
+# install GNU time
 set -eu
 version=1.7
 
@@ -18,7 +18,9 @@ cd ./"${tarball%.tar*}"
 
 # configure and build
 ./configure --prefix="$prefix"
-make -j $(nproc 2>/dev/null) install
+nproc=$(nproc 2>/dev/null)
+make -j $nproc all
+make -j $nproc install-exec
 
 
 # place symlinks for commands to $DEPENDS_PREFIX/bin/

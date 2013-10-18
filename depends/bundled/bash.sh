@@ -23,7 +23,8 @@ patch -p0 <../"$patchesName"
 
 # configure and build
 ./configure --prefix="$prefix"
-make -j $(nproc 2>/dev/null) install
+nproc=$(nproc 2>/dev/null)
+make -j $nproc install-strip
 
 
 # place symlinks for commands to $DEPENDS_PREFIX/bin/

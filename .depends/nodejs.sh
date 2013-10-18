@@ -44,10 +44,11 @@ fi
 if [ -n "$os" -a -n "$arch" ]; then
     # download binary distribution
     tarball="node-${version}-${os}-${arch}.tar.gz"
+    name=${tarball%.tar*}
     download "http://nodejs.org/dist/${version}/$tarball" "$tarball"
     mkdir -p "$prefix"
-    tar xf "$tarball" -C "$prefix"
-    cd "$prefix/${tarball%.tar.gz}"
+    tar xf "$tarball" -C "$prefix" --exclude=$name/share
+    cd "$prefix/$name"
 else
     # download source and build
     # first, look for the latest version of python
