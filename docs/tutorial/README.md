@@ -461,37 +461,173 @@ history table.](gui-runs-failed-details.png)
 
 ### 4. Explore Results
 
+3X provides two main ways with its GUI to visualize and browse the result of
+your experiment: with tables and charts.  Although limited in its capability
+for exploration, 3X's CLI exposes many details of the result in tab-separated
+textual form, which can be more useful for processing data with other
+well-known command-line utilities.
+
 
 #### 4.1. Tabulate Results
 
-...
+The Results tab in 3X's GUI shows the desired part of the result in a tabular
+form with controls for filtering, aggregating, and projecting the input and
+output variables to the table.
+
+##### Filter results by selecting the values for input variables
+
+<!-- Selection -->
+You can select which part of the results you want to view by choosing the
+values for the input variables individually.  The default when no value is
+chosen for a input variable is to show all results of runs regardless of which
+value was used for execution.
+
+![](gui-results-filter-input.png)
+
+You can also specify what aggregate values of the output variables you want to
+see as well as simple conditions on values of them, such as equality (`=1`) or
+inequality (`<=12.345`) to a literal value.
+
+![](gui-results-filter-output.png)
+
+<!-- Projection -->
+Note that it's possible to hide an unwanted variable from appearing in the
+results by checking off its checkbox <i class="icon icon-check"></i>.<!--
+to <i class="icon icon-check-empty"></i> -->
+
+##### Aggregate results by some input variables
+
+You can easily control by which input variables the results are grouped using
+the buttons with folder icon labels <i class="icon icon-folder-open-alt"></i> <i
+class="icon icon-folder-close-alt"></i> on the table header.
+When you make a column expanded (indicated by the open folder icon <i
+class="icon icon-folder-open-alt"></i>), individual values of that variable
+will each have its own row in the results table.  All runs that were executed
+using the particular value for a row will be grouped and the aggregate values
+of their outputs will be shown in other columns.
+
+![](gui-results-aggregate.png)
+
+##### Sort results by columns and reorder columns
+
+Clicking on one of the column name in the table header will sort the results
+table by that column in ascending order.  Clicking again will reverse the order
+to descending, and clicking once again will deactivate sorting for the
+column.
+By holding the Shift Key ⇧ down while clicking on another column header, you
+can specify additional columns for sorting and give order to the results that
+were ranked equally with previously chosen columns.
+Dragging a column header to left or right direction will allow you to reorder
+the columns to shape the table for easier examination.
+
 
 #### 4.2. Chart Results
 
-...
+The Chart tab in 3X's GUI visualizes as a chart the data shown as a table in
+the Results tab.
+
+![](sorting-algos.plain.png)
+
+You can use the controls with pull down menus on the top-left corner of the
+Chart tab to associate each column to either X- or Y-axis, or let the column
+divide the data into different series.  The first variable selected is used as
+the Y-axis, and the second one as the X-axis.  When more nominal variables are
+selected, data that share common values of them will be drawn in the same
+series in the chart.  When another numerical variable is further selected, it
+may create a second Y-axis or share the first one depending on whether the
+selected variables can share the *unit* for the Y-axes.
+
 
 #### 4.3. Detail On-demand
 
+Both chart and table shown in 3X's GUI are interactive: you can drill down to
+details on-demand.
+
+Clicking on any of the data points plotted in the chart shows a popover menu
+displaying details of the subset of data that contributed to that point.  The
+first row in the popover shows the Y-axis value, and the rest of the rows show
+the X-axis value and other variables' values for the series.  If you click on
+the number of runs (shown in the last row labeled `run#.count`), then you can
+browse the individual values before aggregation, and follow the link on each
+value to inspect the full record of the run that generated it.
+
+![](gui-results-drilldown-chart.png)
+
+It's also possible to inspect individual values from the table.
+By holding Shift Key ⇧ down while hovering over a cell that contains an
+aggregated value, you can inspect each value that contributed to the aggregate
+and access the full record of the run that generated the individual value as
+well.
+
+![](gui-results-drilldown-table.png)
+
+
+
+#### 4.4. Tabulate from command-line
+
+Now, let's briefly take a look at the ways using the command-line interface to
+obtain raw results data.  In fact, some of the commands shown here are exactly
+identical to how the GUI accesses the data behind the scenes.
+
+The following command will print full results of all executions containing the
+value for each input and output variable prefixed with its name in a
+tab-separated format and its run identifier on the first column.
+
+    3x results run/
+
+Part of whose output can look like:
+
+    [...]
+    run/2013/0924/18/1752.165321000-13    inputTime=0         numAccess=3069         numCompare=1023         ratioSorted=1  sortingTime=0        algo=insertionSort  inputSize=10  inputType=ordered
+    run/2013/0924/18/1752.165321000-12    inputTime=0         numAccess=134201344    numCompare=33550336     ratioSorted=1  sortingTime=22.31    algo=bubbleSort     inputSize=13  inputType=reversed
+    run/2013/0924/18/1752.165321000-15    inputTime=0         numAccess=1049598      numCompare=523776       ratioSorted=1  sortingTime=0.18     algo=insertionSort  inputSize=10  inputType=reversed
+    run/2013/0924/18/1752.165321000-14    inputTime=0         numAccess=538588       numCompare=268780       ratioSorted=1  sortingTime=0.08     algo=insertionSort  inputSize=10  inputType=random
+    run/2013/0924/18/1752.165321000-11    inputTime=0         numAccess=100600444    numCompare=33545965     ratioSorted=1  sortingTime=14.01    algo=bubbleSort     inputSize=13  inputType=random
+    [...]
+    run/2013/0930/23/5102.639230000-2064  inputTime=0         numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=7047.79  algo=selectionSort  inputSize=18  inputType=reversed
+    run/2013/0930/23/5102.639230000-2059  inputTime=0.01      numAccess=34359869439  numCompare=34359607296  ratioSorted=1  sortingTime=7168.51  algo=selectionSort  inputSize=18  inputType=ordered
+    run/2013/0930/23/5102.639230000-2060  inputTime=0.18      numAccess=34360655832  numCompare=34359607296  ratioSorted=1  sortingTime=8329.18  algo=selectionSort  inputSize=18  inputType=random
+    run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=8850.64  algo=selectionSort  inputSize=18  inputType=reversed
+
+
+You can narrow down the output if you specify filters on some variables, e.g.:
+
+    3x results algo=quickSort,mergeSort inputType'!='random numCompare'>'5900000
+
+Then it outputs only the results that match given criteria:
+
+    run/2013/0926/06/1826.875115000-888 	inputTime=0.01	numAccess=7134799	numCompare=5911655	ratioSorted=1	sortingTime=2.87	algo=quickSort	inputSize=18	inputType=ordered
+    run/2013/0926/06/2351.112734000-1070	inputTime=0.01	numAccess=12805001	numCompare=5928316	ratioSorted=1	sortingTime=3.29	algo=quickSort	inputSize=18	inputType=reversed
+    run/2013/0928/10/3748.111174000-1356	inputTime=0.01	numAccess=7168519	numCompare=5944051	ratioSorted=1	sortingTime=2.97	algo=quickSort	inputSize=18	inputType=ordered
+    run/2013/0929/11/1246.771209000-1756	inputTime=0.02	numAccess=7345424	numCompare=6123288	ratioSorted=1	sortingTime=3.19	algo=quickSort	inputSize=18	inputType=ordered
+    run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
+
+
+<!--
+* * *
+
+## Example 2: Simulating Network Formations
 ...
 
 
 
+-->
 
-### 5. And Beyond
-
-#### 5.1. Use Multiple Queues
-...
-
-    3x queue -h
+* * *
 
 
-#### 5.2. Define and Switch between Targets
+## Advanced Usage
+
+Here we introduce a few more 3X features that are essential to more effective
+management and execution of runs in your experiment.
+
+### 1. Execute Runs in a Different Environment
 
 To customize the environment in which planned runs are executed, or to execute
 runs on a remote host or a cluster of hosts accessible via ssh, you can define
 new *target execution environments*, or *target* as a shorthand.
 
-##### Add another Local Target
+#### Add another Local Target
 
 Suppose we want to run our experiments with python3, which requires us to add
 special values to some environment variables, namely `PATH` and `PYTHON3PATH`.
@@ -501,7 +637,7 @@ environment in the way we want.
 
     3x target local2  define local  PATH=/opt/python3/bin:"$PATH"  PYTHON3PATH=~/python3-packages
 
-##### Add a Remote SSH Host Target
+#### Add a Remote SSH Host Target
 
 Suppose for a fair measurement of `sortingTime`, we want to execute the runs on
 a shared remote machine instead of our local machine.  As long as the remote
@@ -524,7 +660,7 @@ variables after the URL for the remote, e.g. to tweak the `PATH` variable:
     3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
         PATH='/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'
 
-##### Add a GNU Parallel Cluster Target
+#### Add a GNU Parallel Cluster Target
 
 *[GNU Parallel][]* is a handy tool for launching multiple processes of a
 program, remotely as well as locally, in parallel to handle large amount of
@@ -549,13 +685,13 @@ that
   across all machines
 * with 30 machines: `corn01.stanford.edu`, ..., `corn30.stanford.edu`.
   <br><small>
-  (Note that `{01..30}` is a special syntax of shell, which might not be
-  supported by older versions.  In that case, enumerate all the names as
-  arguments instead.)
+  (Note that `{01..30}` is a special syntax for your shell to expand to 30
+  words, which might not be supported by older versions.  In that case,
+  enumerate all the names as arguments instead.)
   </small>
 
 
-##### Switch between Targets
+#### Switch between Targets
 
 Now, assuming you have several targets defined in your repository, you can
 switch target for current queue by specifying only the name of the target, as
@@ -578,12 +714,71 @@ More usage related to 3X targets can be accessed via the following command:
 
 
 
+### 2. Use Multiple Queues
+
+Any 3X command related to planning or executing runs operates on the *current
+queue*.  Once you begin to use multiple targets, it could be convenient to use
+separate queues for each target.
+
+#### View Queue Status and the Current Queue
+
+To check the status of every queue as well as which is the current queue, use
+the command without any argument:
+
+    3x queue
+
+It will output something similar to:
+
+    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+    *  main        INACTIVE  22        0         0         28       2137   local
+
+The asterisk character `*` in front of the queue name indicates it is the
+current queue.
+
+#### Add and/or Switch to a Different Queue
+
+To add a new queue, simply specify the name of the queue to the `3x queue`
+command, say `test-queue`:
+
+    3x queue test-queue
+
+It will output lines similar to the following, indicating a new empty queue is
+created:
+
+    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+    *  test-queue  INACTIVE  0         0         0         0        0      ?
+       main        INACTIVE  22        0         0         28       2137   local
+
+If you specify name of an existing queue, 3X will simply change the current
+queue to that one.
 
 
-* * *
+#### Set the Target for a Queue
 
-## Example 2: Simulating Network Formations
-...
+To specify which target to use for the current queue, use the following command:
+
+    3x target corn
+
+
+You can also specify the target to be used for the queue at the time you create
+or switch to the queue:
+
+    3x queue test-queue corn
+
+It will also set the target for the queue:
+
+    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+    *  test-queue  INACTIVE  0         0         0         0        0      corn
+       main        INACTIVE  22        0         0         28       2137   local
+
+
+More usage related to 3X queues can be viewed via the following command:
+
+    3x queue -h
+
+The concept of current queue only applies to the commands of command-line
+interface: 3X GUI will provide separate buttons and listings for each queue to
+control and manage them.
 
 
 
