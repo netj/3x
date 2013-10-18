@@ -24,12 +24,21 @@ include buildkit/modules.mk
 buildkit/modules.mk:
 	git submodule update --init
 
+
+# bundled dependencies
 build: depends/bundle.conf
 depends/bundle.conf:
-	ln -sfn bundle.conf.default $@
+	ln -sfn bundle.conf.all      $@
+bundle-all:
+	ln -sfn bundle.conf.all      depends/bundle.conf
+bundle-minimal:
+	ln -sfn bundle.conf.minimal  depends/bundle.conf
+.PHONY: bundle-all bundle-minimal
+
 
 gui-test-loop:
 	while sleep .1; do _3X_ROOT="$(PWD)/test-exp"  3x -v gui; done
+.PHONY: gui-test-loop
 
 
 count-loc:
@@ -37,3 +46,4 @@ count-loc:
 	wc -l $$(find Makefile @prefix@/{tools,bin} gui/{client,server} -type f) shell/package.json \
 	    $$(find * \( -name .build -o -name node_modules \) -prune -false -o -name '.module.*') \
 	    | sort -n
+.PHONY: count-loc
