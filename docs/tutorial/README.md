@@ -603,21 +603,31 @@ Then it outputs only the results that match given criteria:
     run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
 
 
-### 5. And Beyond
+<!--
+* * *
 
-#### 5.1. Use Multiple Queues
+## Example 2: Simulating Network Formations
 ...
 
-    3x queue -h
 
 
-#### 5.2. Define and Switch between Targets
+-->
+
+* * *
+
+
+## Advanced Usage
+
+Here we introduce a few more 3X features that are essential to more effective
+management and execution of runs in your experiment.
+
+### 1. Execute Runs in a Different Environment
 
 To customize the environment in which planned runs are executed, or to execute
 runs on a remote host or a cluster of hosts accessible via ssh, you can define
 new *target execution environments*, or *target* as a shorthand.
 
-##### Add another Local Target
+#### Add another Local Target
 
 Suppose we want to run our experiments with python3, which requires us to add
 special values to some environment variables, namely `PATH` and `PYTHON3PATH`.
@@ -627,7 +637,7 @@ environment in the way we want.
 
     3x target local2  define local  PATH=/opt/python3/bin:"$PATH"  PYTHON3PATH=~/python3-packages
 
-##### Add a Remote SSH Host Target
+#### Add a Remote SSH Host Target
 
 Suppose for a fair measurement of `sortingTime`, we want to execute the runs on
 a shared remote machine instead of our local machine.  As long as the remote
@@ -650,7 +660,7 @@ variables after the URL for the remote, e.g. to tweak the `PATH` variable:
     3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
         PATH='/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'
 
-##### Add a GNU Parallel Cluster Target
+#### Add a GNU Parallel Cluster Target
 
 *[GNU Parallel][]* is a handy tool for launching multiple processes of a
 program, remotely as well as locally, in parallel to handle large amount of
@@ -681,7 +691,7 @@ that
   </small>
 
 
-##### Switch between Targets
+#### Switch between Targets
 
 Now, assuming you have several targets defined in your repository, you can
 switch target for current queue by specifying only the name of the target, as
@@ -704,12 +714,71 @@ More usage related to 3X targets can be accessed via the following command:
 
 
 
+### 2. Use Multiple Queues
+
+Any 3X command related to planning or executing runs operates on the *current
+queue*.  Once you begin to use multiple targets, it could be convenient to use
+separate queues for each target.
+
+#### View Queue Status and the Current Queue
+
+To check the status of every queue as well as which is the current queue, use
+the command without any argument:
+
+    3x queue
+
+It will output something similar to:
+
+    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+    *  main        INACTIVE  22        0         0         28       2137   local
+
+The asterisk character `*` in front of the queue name indicates it is the
+current queue.
+
+#### Add and/or Switch to a Different Queue
+
+To add a new queue, simply specify the name of the queue to the `3x queue`
+command, say `test-queue`:
+
+    3x queue test-queue
+
+It will output lines similar to the following, indicating a new empty queue is
+created:
+
+    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+    *  test-queue  INACTIVE  0         0         0         0        0      ?
+       main        INACTIVE  22        0         0         28       2137   local
+
+If you specify name of an existing queue, 3X will simply change the current
+queue to that one.
 
 
-* * *
+#### Set the Target for a Queue
 
-## Example 2: Simulating Network Formations
-...
+To specify which target to use for the current queue, use the following command:
+
+    3x target corn
+
+
+You can also specify the target to be used for the queue at the time you create
+or switch to the queue:
+
+    3x queue test-queue corn
+
+It will also set the target for the queue:
+
+    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+    *  test-queue  INACTIVE  0         0         0         0        0      corn
+       main        INACTIVE  22        0         0         28       2137   local
+
+
+More usage related to 3X queues can be viewed via the following command:
+
+    3x queue -h
+
+The concept of current queue only applies to the commands of command-line
+interface: 3X GUI will provide separate buttons and listings for each queue to
+control and manage them.
 
 
 
