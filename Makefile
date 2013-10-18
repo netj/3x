@@ -24,6 +24,10 @@ include buildkit/modules.mk
 buildkit/modules.mk:
 	git submodule update --init
 
+build: depends/bundle.conf
+depends/bundle.conf:
+	ln -sfn bundle.conf.default $@
+
 gui-test-loop:
 	while sleep .1; do _3X_ROOT="$(PWD)/test-exp"  3x -v gui; done
 
