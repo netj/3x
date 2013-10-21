@@ -17,7 +17,7 @@ cd ./"${tarball%.tar*}"
 
 # configure and build
 ./configure --prefix="$prefix"
-nproc=$(nproc 2>/dev/null)
+nproc=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu || echo 1)
 make -j $nproc all
 make -j $nproc install-exec
 

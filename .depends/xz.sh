@@ -20,7 +20,8 @@ cd ./"${tarball%.tar.*}"
 
 # configure and build
 ./configure --prefix="$prefix"
-make -j $(nproc 2>/dev/null) install
+nproc=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu || echo 1)
+make -j $nproc install
 
 # place symlinks to $DEPENDSDIR/bin/
 mkdir -p "$DEPENDS_PREFIX"/bin

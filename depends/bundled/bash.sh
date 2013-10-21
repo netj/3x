@@ -23,7 +23,7 @@ patch -p0 <../"$patchesName"
 
 # configure and build
 ./configure --prefix="$prefix"
-nproc=$(nproc 2>/dev/null)
+nproc=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu || echo 1)
 make -j $nproc install-strip
 
 

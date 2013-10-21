@@ -67,7 +67,8 @@ else
     cd "./${tarball%.tar.gz}"
     # configure and build
     $python ./configure --prefix="$prefix"
-    make -j $(nproc 2>/dev/null) install PORTABLE=1
+    nproc=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu || echo 1)
+    make -j $nproc install PORTABLE=1
     cd "$prefix"
 fi
 
