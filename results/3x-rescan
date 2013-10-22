@@ -42,6 +42,9 @@ if [[ -n "$_3X_RESCAN_ONLY" ]]; then
     outputNames=${filteredOutputNames# }
 fi
 
+# make sure we have the index up-to-date
+3x-index init
+
 find-rundirs "$@" -- |
 {
 cd "$_3X_ROOT"
@@ -84,10 +87,13 @@ rescan1() {
     # inject new extractors to outputs/*/
     OIFS=$IFS IFS="|"; set -- $outputsToExtractPatt; IFS=$OIFS
     for o; do
+        ob=outputs/.$o
         o=outputs/$o
         msg -1 "$runId: updating $o"
         newO="$newRunDir"/$o
-        rm -rf "$o"  # TODO backup instead of removing?
+        # backup previous output extractor # TODO multiple backups?
+        rm -rf "$ob~"
+        mv -f "$o" "$ob~"
         mv -f "$newO" "$o"
     done
     # extract output, dedup, and seal back run directory for storage
