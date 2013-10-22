@@ -139,7 +139,7 @@ source() {
         [ -n "$_3X__decl" ] || continue
         _3X__v=${_3X__decl%%=*}
         case $_3X__v in _3X_*)
-            error "$_3X__f: line $_3X__l: $_3X__v: variable names cannot start with \`_3X_\`"
+            error "$_3X__f: line $_3X__l: $_3X__v: variable names cannot start with \`_3X_'\''"
         esac
         ! declare -p $_3X__v &>/dev/null || error "$_3X__f: line $_3X__l: $_3X__v: duplicate variable"
         export "$_3X__decl"
