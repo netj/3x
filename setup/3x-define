@@ -88,7 +88,7 @@ case $What in
                 mkdir -p "$dir"
                 {
                     echo "#!/usr/bin/env bash"
-                    echo "cat rusage stdout stderr |"
+                    echo "cat ../rusage ../stdout ../stderr |"
                     echo -n "extract-regexp "; escape-args-for-shell "$@"
                 } >"$extractor"
                 ;;
@@ -102,7 +102,7 @@ case $What in
                 {
                     echo "#!/bin/sh"
                     f=$(escape-args-for-shell "$1")
-                    echo "[ -e workdir/$f ] && echo $f"
+                    echo "[ -e $f ] && echo $f"
                 } >"$extractor"
                 ;;
             *)
