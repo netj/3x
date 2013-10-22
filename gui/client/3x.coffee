@@ -245,7 +245,7 @@ do ->
             td.style.fontSize = "80%"
     # aggregation/rendering for images
     fileURL = (row, col, runColIdx) =>
-        "#{_3X_ServiceBaseURL}/#{row[runColIdx]}/workdir/#{row[col.dataIndex]}"
+        "#{_3X_ServiceBaseURL}/#{row[runColIdx]}/#{row[col.dataIndex]}"
     new Aggregation "overlay", "image", Aggregation.FOR_NAME.count.func
     # TODO type alias for Aggregation
     Aggregation.registerForType "image/png",  "overlay", "count"

@@ -24,25 +24,26 @@ cd "$_3X_ROOT/$_3X_RUN"
 
 msg "$_3X_RUN: extracting output"
 rm -f outputs.failed
-{
-cd ./workdir
-for ox in ../outputs/*/$_3X_API_EXTRACTOR; do
+for ox in outputs/*/$_3X_API_EXTRACTOR; do
     [[ -z "$_3X_EXTRACT_ONLY" ]] ||
-        [[ "$ox" == ../outputs/$_3X_EXTRACT_ONLY/$_3X_API_EXTRACTOR ]] || continue
+        [[ "$ox" == outputs/$_3X_EXTRACT_ONLY/$_3X_API_EXTRACTOR ]] || continue
     if [ -x "$ox" ]; then
         od=$(dirname "$ox")
         o=$(basename "$od") oerr="$od/stderr"
         v=$(
             # running extractor under the same env
             # TODO start from a clean env?
-            export $(cat ../env) _3X_OUTPUT=${ox%/$_3X_API_EXTRACTOR}
+            export $(cat ./env) \
+                _3X_RUN=$(pwd -P) \
+                _3X_OUTPUT=${ox%/$_3X_API_EXTRACTOR} \
+                #
             PATH="$PATH:$TOOLSDIR"
             if "$ox" 2>"$oerr"; then
                 # only keep non-empty stderr logs
                 [ -s "$oerr" ] || rm -f "$oerr"
             else # keep going on any failed extractor
                 # but keep track of their names and exit status
-                echo "$o (exit status=$?)" >>../outputs.failed
+                echo "$o (exit status=$?)" >>outputs.failed
             fi
         )
         case $v in # try not to wrap quotes around empty value
@@ -52,9 +53,7 @@ for ox in ../outputs/*/$_3X_API_EXTRACTOR; do
         # finally record a name/value-pair line for each output
         echo "$o=$v"
     fi
-done
-cd ..
-} >>output
+done >>output
 
 # see if all output extractors ended successfully
 ! [ -s outputs.failed ] ||

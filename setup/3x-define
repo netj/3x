@@ -90,7 +90,7 @@ case $What in
                 mkdir -p "$dir"
                 {
                     echo "#!/usr/bin/env bash"
-                    echo "$(escape-args-for-shell cat "${@/#/../}") |"
+                    echo "$(escape-args-for-shell cat "$@") |"
                     echo -n "extract-regexp "; escape-args-for-shell "${RegExps[@]}"
                 } >"$extractor"
                 ;;
@@ -103,12 +103,12 @@ case $What in
                 mkdir -p "$dir"
                 {
                     echo "#!/bin/sh"
-                    f=$(escape-args-for-shell "$1")
+                    f=$(escape-args-for-shell "workdir/$1")
                     echo "[ -e $f ] && echo $f"
                 } >"$extractor"
                 ;;
             *)
-                usage "$0" "Unknown output type $outputType: must be \`file' or \`output'"
+                usage "$0" "Unknown output type $outputType: must be \`file' or \`extract'"
                 ;;
         esac
         chmod +x "$extractor"

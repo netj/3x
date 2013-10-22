@@ -58,9 +58,9 @@ block content
                 else
                   case o.presentation
                     when "image"
-                      img(src='workdir/#{o.value}', alt='#{o.value}')
+                      img(src='#{o.value}', alt='#{o.value}')
                     when "file"
-                      a(href='workdir/#{o.value}')= o.value
+                      a(href='#{o.value}')= o.value
                     // when "scalar"
                     default
                       span.value= o.value
