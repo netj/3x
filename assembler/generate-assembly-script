@@ -106,15 +106,15 @@ touch assembly.in-progress
 : >assembly
 
 # record and declare input parameters and environment variables
-: >env; : >input; paramIsInput=true
-for param; do
-    case $param in --) paramIsInput=false; continue ;; esac
-    echo "$param" >>env
-    $paramIsInput || continue
-    declare -r "$param"
-    echo "$param" >>input
+: >env; : >input; _3X__paramIsInput=true
+for _3X__param; do
+    case $_3X__param in --) _3X__paramIsInput=false; continue ;; esac
+    echo "$_3X__param" >>env
+    $_3X__paramIsInput || continue
+    declare -r "$_3X__param"
+    echo "$_3X__param" >>input
 done
-unset param paramIsInput
+unset _3X__param _3X__paramIsInput
 
 
 # define how each iteration of assembly works
@@ -130,27 +130,27 @@ error() {
 
 source() {
     # replace source with our function that avoids any evaluation in the definitions
-    local f=$1
-    ! grep -qxF "${f%/env}" assembly || return 0
-    local decl= v= l=1
-    while read -r decl; do
-        let l++
-        decl=${decl%%*([ 	])#*}
-        [ -n "$decl" ] || continue
-        v=${decl%%=*}
-        ! declare -p $v &>/dev/null || error "$f: line $l: $v: duplicate variable"
-        export "$decl"
-        declare -r $v
+    local _3X__f=$1 # FIXME avoid name collisions
+    ! grep -qxF "${_3X__f%/env}" assembly || return 0
+    local _3X__decl= _3X__v= _3X__l=1
+    while read -r _3X__decl; do
+        let _3X__l++
+        _3X__decl=${_3X__decl%%*([ 	])#*}
+        [ -n "$_3X__decl" ] || continue
+        _3X__v=${_3X__decl%%=*}
+        ! declare -p $_3X__v &>/dev/null || error "$_3X__f: line $_3X__l: $_3X__v: duplicate variable"
+        export "$_3X__decl"
+        declare -r $_3X__v
         _3X_ASSEMBLY_CONTINUE=true
-    done <"$_3X_ROOT/$f"
+    done <"$_3X_ROOT/$_3X__f"
 }
 import() {
-    local path
-    for path; do
-        ! grep -qxF "$path" assembly || continue
-        echo "$path" >>assembly
+    local _3X__path
+    for _3X__path; do
+        ! grep -qxF "$_3X__path" assembly || continue
+        echo "$_3X__path" >>assembly
         _3X_ASSEMBLY_CONTINUE=true
-        command import "$path"
+        command import "$_3X__path"
     done
 }
 
@@ -163,8 +163,8 @@ done
 
 # make sure all essential files exist
 [ -x workdir/run ] || error "No executable \`run'\'' was assembled"
-for f in env args stdin; do
-    [ -e "$f" ] || touch "$f"
+for _3X__f in env args stdin; do
+    [ -e "$_3X__f" ] || touch "$_3X__f"
 done
 
 echo >execute.sh '\'
