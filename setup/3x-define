@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 3x-define -- Define element of the experiment
 # 
-# > 3x define WHAT NAME HOW...
+# > 3x define [-f] WHAT NAME HOW...
 # > 3x define program  COMMAND...
 # > 3x define input    NAME[(UNIT)][:TYPE] VALUE1 [VALUE2]...
 # > 3x define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER  [FROM_FILENAME]...
@@ -16,6 +16,18 @@ set -eu
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
+# process options
+ForceRedefine=false
+while getopts "f" o; do
+    case $o in
+        f)
+            ForceRedefine=true
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+# process arguments
 [ $# -gt 0 ] || usage "$0" "WHAT to define is missing"
 What=$1; shift
 
@@ -40,7 +52,7 @@ case $What in
     program)
         dir="program"
         runner="$dir/$_3X_API_RUNNER"
-        ! [ -e "$runner" ] || error "program already defined"
+        $ForceRedefine || ! [ -e "$runner" ] || error "program already defined"
         mkdir -p "$dir"
         touch "$dir"/env
         {
@@ -57,6 +69,7 @@ case $What in
         extractTypeFromName nominal # TODO default is nominal, but may we can try recognition
         dir="input/$Name="
         checkIfNameIsSane "$Name" "$dir"
+        $ForceRedefine || ! [ -d "$dir" ] || error "$Name: input already defined"
         for Value; do
             checkIfValueIsSane "$Value" "$Name" "$dir/$Value"
         done
@@ -78,6 +91,7 @@ case $What in
         dir="output/$Name"
         checkIfNameIsSane "$Name" "$dir"
         extractor="$dir/$_3X_API_EXTRACTOR"
+        $ForceRedefine || ! [ -x "$extractor" ] || error "$Name: output already defined"
         # TODO check validity of $Unit, $Type
         case $outputType in 
             extract)
