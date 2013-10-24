@@ -34,6 +34,9 @@ filelist="$tmp"/files
 statlist="$tmp"/filestats
 find -H "$@" -type f >"$filelist" || true
 
+# remove any existing write-protection
+xargs chmod +w <"$filelist"
+
 # see which files are executables to archive separately from normal files
 # (hardlink copies cannot have separate permission modes, so when two files
 #  share the content but one is an executable and the other isn't, we'll
@@ -57,10 +60,16 @@ while (my $filename = <>) {
 	    if [ -e "\$archived" ]; then
 	        if ! [ "\$file" -ef "\$archived" ]; then
 	            touch -r "\$file" "\$archived"
+	            local dir=.
+	            case \$file in
+	                */*) dir=\${file%/*} ;;
+	            esac
+	            chmod +w "\$dir"
 	            ln -fn "\$archived" "\$file"
 	        fi
 	    else
-	        mkdir -p "\$(dirname "\$archived")"
+	        local archivedDir=\${archived%/*}
+	        mkdir -p "\$archivedDir"
 	        ln -fn "\$file" "\$archived"
 	    fi
 	    chmod a-w "\$archived"
