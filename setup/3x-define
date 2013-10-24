@@ -134,7 +134,7 @@ case $What in
         echo "$Type" >"$dir"/datatype
         ;;
 
-    --commit)
+    commit)
         maintainIndexes=true
         ;;
 esac
