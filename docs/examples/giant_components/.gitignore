@@ -1,0 +1,7 @@
+/.3x/assemble.sh
+/.3x/Q
+/.3x/index.db
+/.3x/files
+/.3x/gui
+/run/*
+!/run/target

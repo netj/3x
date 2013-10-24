@@ -603,15 +603,120 @@ Then it outputs only the results that match given criteria:
     run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
 
 
-<!--
 * * *
 
 ## Example 2: Simulating Network Formations
+
+Having a nice way to play with a few scalar values produced by your experiment
+may sound good enough.  However, you are very likely to encounter a situation
+where higher-dimensional output data, such as a time series result or a custom
+visualization must be handled as well.  In this example, we will see how 3X
+supports these requirements.
+
+Suppose we have an experiment that studies the rise of a giant connected
+component by gradually increasing the probability for creating edges between
+vertices while generating random graphs.
+We will borrow [code from an example displayed on the gallery
+page][giant_component gallery] of *[NetworkX][]*, which is a popular Python
+Library for handling Graph Data.
+
+[NetworkX]: http://networkx.github.io/
+[giant_component gallery]: http://networkx.github.io/documentation/latest/examples/drawing/giant_component.html
+
+### 1. Write the Program
+
+To be used most effectively with 3X, we make several changes to the code
+borrowed from NetworkX:
+
+1. We save the result as an image file, named `giant_component.png`, instead of showing it interactively in the GUI.
+2. We obtain the originally hard-coded `p` and `n` values from corresponding environment variables instead.
+3. We put a single generated graph in each result for a given `p` and `n` instead of iterating over several `p` values.
+4. We compute a few statistics of the connected components of the generated graph.
+5. We keep a full record of the generated random graph.
+
+Here is our code for this experiment: [`giant_component.py`][].
+When this Python script is run with `n` and `p` defined, it produces an image
+file `giant_component.png` that will look like:
+
+![](example2/giant_component.png)
+
+and a `graph.pickle` file in addition to standard output lines:
+
+    Number of Components (non-singleton):  7
+    Number of Disconnected Nodes (singleton components):  29
+    Component Sizes:  153	4	4	3	3	2	2
+    Component Size Ratios:  0.765000	0.020000	0.020000	0.015000	0.015000	0.010000	0.010000
+    
+    Generated binomial graph (n=200, p=0.0100):
+     0	[17, 60]
+     1	[130]
+     2	[129, 123, 116, 111]
+     3	[122, 60, 125]
+    [...]
+     198	[128, 49, 155, 52]
+     199	[149, 62]
+    
+    Created graph.pickle
+    Created giant_component.png
+
+
+[`giant_component.py`]: ../examples/giant_components/program/giant_component.py
+
+
+### 2. Setup an Experiment Repository
+
+We will use the following quick setup command to create a repository for this
+experiment.  On the last line for `--outputs`, `--file` tells 3X that the
+output variable `graph` is a file named `giant_component.png` with a MIME type
+`image/png`.  3X GUI can treat output image files specially based on this
+MIME-type user provides.
+
+    3x setup giant_components \
+        --program 'python ./giant_component.py' \
+        --inputs  n=100,200,300 \
+                  p=0.0{01..10} \
+        --outputs --file graph:image/png=giant_component.png \
+    #
+
+Let's make sure to put the Python code at the correct place.
+
+    cd giant_components/program/
+    curl -LO https://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
+    cd -
+
+
+### 3. Run Experiments Many Times
+
+We can move into the repository and execute full combinations of inputs by
+running following commands:
+
+    cd giant_components/
+    3x plan n p
+    3x start
+
+Here, `3x plan` will open your text editor to let you reorder or duplicate some
+of the runs.  You can simply save the presented file to confirm the runs and
+add them to the queue.  Once you do a `3x start`, 3X will execute all the
+previously planned runs in curent queue and stay executing future ones until
+stopped by `3x stop`.  Therefore, we can now simply throw more runs into the
+queue to get results from them.
+
+Since each run of this experiment is non-deterministic, we need to execute each
+input many times.  This can be done by running `3x plan` multiple times:
+
+    3x plan n p
+    3x plan n p
+    3x plan n p
+    [...]
+
+
+### 4. Explore Results
 ...
 
 
+### 5. Post-analysis
+...
 
--->
 
 * * *
 
