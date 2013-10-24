@@ -82,6 +82,7 @@ rescan1() {
         _3X_IMPORT_ONLY="output/@($outputsToExtractPatt)" \
         "$_3X_ASSEMBLE" "$newRunDir" $(cat ./input) -- $(cat ./env) >/dev/null
         chmod +w .
+        mkdir -p outputs
         unarchive "$_3X_ARCHIVE" output outputs
     )
     # inject new extractors to outputs/*/
