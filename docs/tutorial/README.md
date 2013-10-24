@@ -628,25 +628,20 @@ Library for handling Graph Data.
 To be used most effectively with 3X, we make several changes to the code
 borrowed from NetworkX:
 
-1. We save the result as an image file, named `giant_component.png`, instead of showing it interactively in the GUI.
-2. We obtain the originally hard-coded `p` and `n` values from corresponding environment variables instead.
-3. We put a single generated graph in each result for a given `p` and `n` instead of iterating over several `p` values.
-4. We compute a few statistics of the connected components of the generated graph.
-5. We keep a full record of the generated random graph.
+1. Save the result as an image file, named `giant_component.png`, instead of showing it interactively in the GUI.
+2. Obtain the originally hard-coded `p` and `n` values from corresponding environment variables instead.
+3. Put a single generated graph in each result for a given `p` and `n` instead of iterating over several `p` values.
+4. Keep a full record of the generated random graph.
 
 Here is our code for this experiment: [`giant_component.py`][].
+
 When this Python script is run with `n` and `p` defined, it produces an image
 file `giant_component.png` that will look like:
 
-![](example2/giant_component.png)
+![](giant_components/giant_component.png)
 
 and a `graph.pickle` file in addition to standard output lines:
 
-    Number of Components (non-singleton):  7
-    Number of Disconnected Nodes (singleton components):  29
-    Component Sizes:  153	4	4	3	3	2	2
-    Component Size Ratios:  0.765000	0.020000	0.020000	0.015000	0.015000	0.010000	0.010000
-    
     Generated binomial graph (n=200, p=0.0100):
      0	[17, 60]
      1	[130]
@@ -702,21 +697,63 @@ stopped by `3x stop`.  Therefore, we can now simply throw more runs into the
 queue to get results from them.
 
 Since each run of this experiment is non-deterministic, we need to execute each
-input many times.  This can be done by running `3x plan` multiple times:
+input many times.  This can be done by running `3x plan` multiple times as
+follows:
 
     3x plan n p
     3x plan n p
     3x plan n p
     [...]
 
+Alternatively, you can duplicate the desired lines as many as you want using
+your text editor without running the `3x plan` command multiple times.
+
 
 ### 4. Explore Results
+
+3X GUI is essential for browsing the results since our only output variable is
+of image type.
+
+    3x gui
+
+#### Aggregate image with *Overlay*
+
+The `graph` column in the results table displays the PNG image files generated
+by our experiment runs as in the following screenshot:
+
+![](giant_components.overlay.png)
+
+Notice here that 3X superimposes multiple images that fall into the same row,
+i.e., renders images on top of each other, so that any patterns or variations
+among them are easily discernible.  This feature is provided as a specialized
+aggregate function, we call *overlay*, for image file type output variables.
+Overlay aggregate function can be very useful when there isn't a good scalar
+metric that summarizes the result or such metric is yet to be determined, and
+the only way to judge is for humans to look at the images that visualizes the
+higher-dimensional data.
+
+#### Details on-demand
+
+Individual images can be browsed one at a time using the same *details
+on-demand* technique, hovering over the aggregate image or another aggregate
+column while holding the Shift Key ⇧ down.
+
+![](giant_components.drilldown.png)
+
+When you follow the link, the full record of the run is available as shown in
+the following screenshot:
+
+![](giant_components.details.png)
+
+The run overview page shows the image for `graph` in full resolution as well as
+the full standard output that records the exact details of the generated random
+graph.  Any other files used for the run, such as `graph.pickle`, can be
+accessed through the <i class="icon icon-briefcase"></i> "workdir/" tab at the
+top of the page.
+
+
+### 5. Analyze Results Further
 ...
-
-
-### 5. Post-analysis
-...
-
 
 * * *
 

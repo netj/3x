@@ -75,15 +75,6 @@ if True:
                                  width=5.0
                                  )         
 
-# print some statistics of the connected components
-ratio_denominator = float(n)
-Gcc_sizes = [len(Gi) for Gi in Gcc if len(Gi) > 1]
-print "Number of Components (non-singleton): "               ,            len(Gcc_sizes)
-print "Number of Disconnected Nodes (singleton components): ", len(Gcc) - len(Gcc_sizes)
-print "Component Sizes: "      , "\t".join(str(m)                         for m in Gcc_sizes)
-print "Component Size Ratios: ", "\t".join("%f" % (m / ratio_denominator) for m in Gcc_sizes)
-print
-
 # dump graph in human-readable form
 print "Generated binomial graph (n=%d, p=%5.4f):" % (n,p)
 for n,ns in nx.to_dict_of_lists(G).iteritems():
