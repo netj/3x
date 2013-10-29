@@ -5,6 +5,7 @@
 # > 3x define program  COMMAND...
 # > 3x define input    NAME[(UNIT)][:TYPE] VALUE1 [VALUE2]...
 # > 3x define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER  [FROM_FILENAME]...
+# > 3x define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER  --running COMMAND --caching FILENAME
 # > 3x define output   NAME:MIMETYPE       file     FILENAME
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
@@ -100,11 +101,46 @@ case $What in
                 [ $# -gt 2 ] || usage "$0" "Missing REGEXP_AFTER"
                 RegExps=("$1" "$2" "$3"); shift 3
                 [ $# -gt 0 ] || set -- rusage stdout stderr  # filenames to scan
+                # handle options
+                o_running=
+                o_caching=
+                case $1 in
+                    --*)
+                        while o=${1:-}; shift 2>/dev/null; do
+                            case $o in
+                                --running|--caching)
+                                    oName=${o#--}
+                                    declare "o_$oName=$1"
+                                    shift
+                                    ;;
+                                *)
+                                    error "$o: unrecognized argument"
+                            esac
+                        done
+                esac
                 : ${Type:=ratio} # default type is ratio
                 mkdir -p "$dir"
                 {
                     echo "#!/usr/bin/env bash"
-                    echo "$(escape-args-for-shell cat "$@") |"
+                    echo "set -eu"
+                    if [ -n "$o_running" ]; then
+                        if [ -n "$o_caching" ]; then
+                            f=$(escape-args-for-shell outputs/"$o_caching")
+                            echo "if [ -s $f ]"
+                            echo "then cat $f"
+                            echo "else touch $f"
+                            echo "    set -o pipefail"
+                            echo "    {"
+                            echo "$o_running"
+                            echo "    } | tee $f.\$\$"
+                            echo "    mv -f $f.\$\$ $f"
+                            echo "fi |"
+                        else
+                            echo "$o_running |"
+                        fi
+                    else
+                        echo "$(escape-args-for-shell cat "$@") |"
+                    fi
                     echo -n "extract-regexp "; escape-args-for-shell "${RegExps[@]}"
                 } >"$extractor"
                 ;;
@@ -116,7 +152,7 @@ case $What in
                 [ -z "$Unit" ] || usage "$0" "($Unit): file output variables cannot have UNIT defined"
                 mkdir -p "$dir"
                 {
-                    echo "#!/bin/sh"
+                    echo "#!/bin/sh -e"
                     f=$(escape-args-for-shell "workdir/$1")
                     echo "[ -e $f ] && echo $f"
                 } >"$extractor"

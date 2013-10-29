@@ -115,6 +115,11 @@ for path in "$@"; do
                     fi
                 done
                 ;;
+            output)
+                copyFilesTo "$DestDir"/outputs "$path" \
+                    -type d \
+                    #
+                ;;
             output/*)
                 m=$path
                 m=${m#output/}

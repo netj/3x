@@ -20,10 +20,11 @@ _3X_RUN=$1; shift
 . find-run-archive.sh
 cd "$_3X_ROOT/$_3X_RUN"
 
-[[ -n "$_3X_EXTRACT_ONLY" ]] || rm -f output
+# clean previous records only unless we're extracting selectively
+[[ -n "$_3X_EXTRACT_ONLY" ]] ||
+    rm -f output outputs.failed
 
 msg "$_3X_RUN: extracting output"
-rm -f outputs.failed
 for ox in outputs/*/$_3X_API_EXTRACTOR; do
     [[ -z "$_3X_EXTRACT_ONLY" ]] ||
         [[ "$ox" == outputs/$_3X_EXTRACT_ONLY/$_3X_API_EXTRACTOR ]] || continue

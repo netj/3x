@@ -28,5 +28,5 @@ update-assembly-script() {
     fi
 }
 shopt -s nullglob
-update-assembly-script "$_3X_ASSEMBLE" program input/?*=* output/*
+update-assembly-script "$_3X_ASSEMBLE" program input/?*=* output output/*
 echo "$_3X_ASSEMBLE"

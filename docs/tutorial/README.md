@@ -753,7 +753,131 @@ top of the page.
 
 
 ### 5. Analyze Results Further
-...
+
+Suppose you want to compute some statistics from the generated graphs after you
+have seen a number of them.  For example, the number of components and how
+large each of them may seem to be an interesting metric now.  Additionally, you
+may be also interested in how long each run took to generate the graph and
+image.
+
+3X allows you to define output variables incrementally, i.e., new output
+variables can be added later.  You can either use 3X's default options to
+extract output values, or write a custom program that computes them.  3X's
+default options are either extracting the first string that matches a triple of
+regular expressions, or finding a generated file by name.  Here, we show all
+three options.
+
+
+#### Extract Execution Time from Built-in Records
+
+As default, 3X records basic profile information for every run of your
+experiment, such as execution time and maximum memory size using the *[GNU
+time][]* utility in the file `rusage`.  You simply need to define an output
+variable with correct regular expressions to extract those values from the
+record.  For example, you can extract the elapsed wall clock time of your runs
+as `wallTime` by running the following command:
+
+    3x define output 'wallTime(s)' extract \
+        'Elapsed \(wall clock\) time \(seconds\): '  '[0-9.]+'  '' \
+        rusage
+
+3X will not only extract values for `wallTime` from future runs but also rescan
+records of past runs.
+
+[GNU time]: http://www.gnu.org/s/time/
+
+
+#### Compute Statistics
+
+If a more complex computation is necessary to collect the values of interest,
+then plugging in a custom *output extractor* code to 3X is your option.  In
+fact, the other two options provided by `3x define output`, namely `extract`
+and `file` are mere shorthands for generating output extractors from template
+codes built into 3X.  Output extractors are described in depth in the next
+section.
+
+For this experiment, let's say we want to see several statistics computed from
+the generated graph, including the number of components that have more than one
+vertex and the size of each component.  Since we dumped the graph to
+`graph.pickle`, we can load this file and easily compute the necessary values.
+[`compute-stats.py`][] is one such script that prints output similar to:
+
+    Number of Components (non-singleton):  7
+    Number of Disconnected Nodes (singleton components):  29
+    Component Sizes:  153	4	4	3	3	2	2
+    Component Size Ratios:  0.765000	0.020000	0.020000	0.015000	0.015000	0.010000	0.010000
+
+We put this script directly under `output/` of the repository so it can be
+assembled into the `outputs/` directory of each run and easily shared across
+different output variables.
+
+    cd output/
+    curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+    cd -
+
+[`compute-stats.py`]: ../examples/giant_components/output/compute-stats.py
+
+
+Next, we define an output variable, named `numCC`, by running the following
+command:
+
+    3x define output 'numCC' extract \
+        'Number of Components.*:\s*' '\d+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+
+The command above does the following:
+
+* It tells 3X to extract value for the variable `numCC`
+    - using the regular expression triple `Number of Components.*:\s*`, `\d+`, `
+      `, which are for matching the string before, of, and after the value of
+      interest, respectively.
+    - scanning the output of the `compute-stats.py` script, which is indicated
+      by the command given after the argument `--running`.
+
+* The output of the command will be cached at `outputs/compute-stats.txt`, so
+  that other variables can be extracted without running it again.
+
+Similarly, we can define several other variables, namely `numDisconnected`,
+`ratioCC1`, `ratioCC2`, and `ratioCC3` from the output of the script:
+
+    3x define output 'numDisconnected' extract \
+        'Number of Disconnected Nodes.*:\s*' '\d+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+    
+    3x define output 'ratioCC1' extract \
+        'Component Size Ratios:\s*' '[.0-9]+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+    
+    3x define output 'ratioCC2' extract \
+        'Component Size Ratios:\s*[.0-9]+\s+' '[.0-9]+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+    
+    3x define output 'ratioCC3' extract \
+        'Component Size Ratios:\s*([.0-9]+\s+){2}' '[.0-9]+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+
+
+#### Notes on Output Extractors
+
+In general, output extractor of a 3X output variable is a program that extracts
+the value for that variable.  It takes the form of an executable file whose
+name is `extract`.  You can use any language to implement it as long as the
+first line contains a [shebang][] (`#!`) and its interpreter, or you name the
+compiled executable binary accordingly.  Each output extractor is executed
+after the experiment program (`run`) finishes, or when 3X rescans records of
+past runs.  Its current working directory is set to the run directory, so all
+files of the record can be easily accessed via relative paths, e.g., `stdout`
+or `workdir/giant_component.py`.  It must not modify any files under `workdir/`
+and should contain data creation and modifications under `outputs/` only.
+
+[shebang]: https://en.wikipedia.org/wiki/Shebang_(Unix)
+
+
 
 * * *
 

@@ -22,8 +22,8 @@ codeForPatternDirs() {
         echo "# $pattDir"
         # handle some special cases
         case $pattDir in
-            # program need not any guards
-            program)
+            # program and output themselves need not any guards
+            program|output)
                 codeForMatchedPatternDir "$pattDir"
                 continue
                 ;;

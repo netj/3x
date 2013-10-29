@@ -56,6 +56,7 @@ export \
     outputNames \
     #
 # GNU parallel this + 3x-index update
+#FIXME
 parallel --plain --max-procs 50% --no-run-if-empty --ungroup '
 set -eu
 let SHLVL-=2 || true
@@ -79,7 +80,7 @@ rescan1() {
         mkdir -p "$newRunDir"/workdir
         touch "$newRunDir"/workdir/run
         chmod +x "$newRunDir"/workdir/run
-        _3X_IMPORT_ONLY="output/@($outputsToExtractPatt)" \
+        _3X_IMPORT_ONLY="output@(|/@($outputsToExtractPatt))" \
         "$_3X_ASSEMBLE" "$newRunDir" $(cat ./input) -- $(cat ./env) >/dev/null
         chmod +w .
         mkdir -p outputs
@@ -88,14 +89,27 @@ rescan1() {
     # inject new extractors to outputs/*/
     OIFS=$IFS IFS="|"; set -- $outputsToExtractPatt; IFS=$OIFS
     for o; do
-        ob=outputs/.$o
         o=outputs/$o
-        msg -1 "$runId: updating $o"
         newO="$newRunDir"/$o
-        # backup previous output extractor # TODO multiple backups?
-        rm -rf "$ob~"
-        mv -f "$o" "$ob~"
-        mv -f "$newO" "$o"
+        msg -1 "$runId: updating $o"
+        # replace the output extractor keeping previous one as numbered backup
+        if [ -e "$o" ]; then
+            mkdir -p outputs/.backup
+            mv -f --backup=numbered "$o" outputs/.backup/.
+        fi
+        mv -f --backup=none "$newO" outputs/
+    done
+    # update files right beneath outputs/
+    for newF in "$newRunDir"/outputs/*; do
+        ! [ -d "$newF" ] || continue # skip any directories
+        f=outputs/"${newF##*/}"
+        # skip backup if identical
+        if ! [ -e "$f" ] || [ x"$(git hash-object "$newF")" != x"$(git hash-object "$f")" ]; then
+            msg -1 "$runId: updating $f"
+            mkdir -p outputs/.backup
+            mv -f --backup=numbered "$f" outputs/.backup/
+            mv -f --backup=none "$newF" outputs/
+        fi
     done
     # extract output, dedup, and seal back run directory for storage
     (   let SHLVL+=2
