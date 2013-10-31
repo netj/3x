@@ -338,10 +338,10 @@ As shown in the above screenshot, the GUI has four tabs: Results, Charts, Plan,
 and Runs.  The first two tabs are for exploring the results of execution
 collected so far, while the last two are for controlling the execution.
 
-#### 3.2. Queue Runs
+#### 3.2. Plan Runs
 
 From the results table, we can click on a row which needs to be filled or more
-execution should be done, and queue up new runs for execution.  You can repeat
+execution should be done, and plan new runs for execution.  You can repeat
 this process from the results table to add necessary runs to fill the output
 columns colored red.  Note that the button on each input column header can be
 used to expand and collapse the rows, so that you can add only part of the runs
@@ -350,13 +350,13 @@ or a larger group of runs at a time.
 ![New runs can be queued from the results table.](gui-plan-from-results.png)
 
 
-##### Queue Runs from Command Line
+##### Plan Runs from Command Line
 
 From the command line, within the experiment repository, the following command will achieve the same result as we did in the GUI:
 
     3x plan algo=quickSort
 
-Different sets of runs can be easily queued with commands similar to the following:
+Different sets of runs can be easily planned with commands similar to the following:
 
     3x plan algo=bubbleSort,insertionSort inputSize=10,11,12
 
