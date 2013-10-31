@@ -57,8 +57,8 @@ fi
 showInputNamePart() {
     local name=$1; shift
     local pattDir=$1; shift
-    unit=; ! $showUnit || unit=$({ cat "$name"/unit     2>/dev/null || echo; } | tr -d '\n')
-    type=; ! $showType || type=$({ cat "$name"/datatype 2>/dev/null || echo; } | tr -d '\n')
+    unit=; ! $showUnit || unit=$({ cat "$pattDir"/unit     2>/dev/null || echo; } | tr -d '\n')
+    type=; ! $showType || type=$({ cat "$pattDir"/datatype 2>/dev/null || echo; } | tr -d '\n')
     ! $showType || [ -n "$type" ] || type=nominal
     echo "$name${unit:+($unit)}${type:+:$type}$*"
 }
