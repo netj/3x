@@ -838,6 +838,22 @@ The command above does the following:
 * The output of the command will be cached at `outputs/.shared/compute-stats.txt`, so
   that other variables can be extracted without running it again.
 
+
+We need to tell 3X to adjust other parts of the repository influenced by the
+new output variable by running the following command:
+
+    3x define sync
+
+In this case, it will rescan records of past runs to extract values for the new
+output variable `numCC`.  With the new `numCC` variable, we can easily create
+new visualizations of the experiment results, such as the following chart,
+which shows mean value of `numCC` by `p` for different `n`s.  We can see the
+number of components, i.e., `numCC` converges down to 1 as we increase the
+value for `p`.
+
+![](giant_components.chart.numCC.png)
+
+
 Similarly, we can define several other variables, namely `numDisconnected`,
 `ratioCC1`, `ratioCC2`, and `ratioCC3` from the output of the script:
 
@@ -863,6 +879,10 @@ Similarly, we can define several other variables, namely `numDisconnected`,
 
     3x define sync
 
+These new variables allow us to quickly see how the first connected component's
+size grows compared to the second one, as shown in the next chart:
+
+![](giant_components.chart.ratioCC.png)
 
 #### Notes on Output Extractors
 
