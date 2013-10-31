@@ -2,6 +2,7 @@
 set -eu
 cd "$(dirname "$0")"
 
+git fetch origin
 git rm -rf -- docs/tutorial || true
 git read-tree --prefix=docs/tutorial remotes/origin/master:docs/tutorial
 mkdir -p docs/tutorial
