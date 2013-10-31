@@ -75,7 +75,7 @@ if [ -z "${_3X_HOME:-}" ]; then
     do  vbak=_3X_ORIG_$v
           declare -p $v    &>/dev/null || continue
         ! declare -p $vbak &>/dev/null || continue
-        export $vbak=${!v}
+        export "$vbak=${!v}"
     done
 
     # Setup environment
