@@ -1,3 +1,5 @@
 tutorial                                    $DOCSDIR/
 examples/sorting-algos/program/sort.py      $DOCSDIR/examples/sorting-algos/program/
 examples/sorting-algos/program/measure.py   $DOCSDIR/examples/sorting-algos/program/
+
+.build/LEGAL.md                             $DOCSDIR/

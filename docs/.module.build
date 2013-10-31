@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -eu
+
+# generate LEGAL.md
+mkdir -p .build
+cd .build
+
+# normalize the list of 3rd party software
+(
+    sed 's/#.*$//' |
+    grep -v '^[[:space:]]*$' 
+) <../3rd-party.txt >3rd-party.txt
+
+# generate Markdown legal notices document
+cat >LEGAL.md <<-EOF
+# Third Party Software Used by 3X
+
+3X includes some of the following third party software:
+
+$(
+    IFS=$'\t'
+    i=1
+    while read name licensePath; do
+        link=${name//[^A-Za-z0-9]/-}
+        link=$(tr 'A-Z' 'a-z' <<<"$link")
+        printf '%3d. [ %-20s ](%s)\n' \
+            "$i" "$name" "#$link"
+        let ++i
+    done <3rd-party.txt
+)
+
+
+
+## Notices and Licenses
+
+$(
+    (
+        cd "$SRCROOT"
+        set +e
+        IFS=$'\t'
+        i=1
+        while read name licensePath; do
+            echo "### $i. $name"
+            echo
+            eval licenses=($licensePath)
+            license=; [ ${#licenses[@]} -eq 0 ] || license=${licenses[0]}
+            if [ -e "$license" ]; then
+                sed 's/^/    /' <"$license"
+            else
+                echo "${licenses[*]}"
+            fi
+            echo
+            echo
+            let ++i
+        done
+    ) <3rd-party.txt
+)
+
+EOF

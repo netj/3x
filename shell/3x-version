@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# 3x-version -- show 3X version and build information
+# > 3x version
+# > 3x version legal
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-10-30
+set -eu
+
+. "$_3X_HOME"/.build-info.sh
+
+cat <<-HEADER
+3X $version ($build_os $build_machine)
+  a tool for eXecutable eXploratory eXperiments 
+
+HEADER
+
+case ${1:-} in
+    legal)
+        ${PAGER:-cat} "$DOCSDIR"/LEGAL.md
+        ;;
+
+    *)
+        cat <<-VERSION
+	  Copyright (C) 2013 InfoLab, Stanford University.
+	  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+	  This is free software: you are free to change and redistribute it.
+	  There is NO WARRANTY, to the extent permitted by law.
+	  
+	  Written by Jaeho Shin.
+	  
+	  3X home page: <http://netj.github.io/3x/>
+	  3X source code repository: <http://github.com/netj/3x/>
+	  3X bug reports: <http://github.com/netj/3x/issues>
+	
+	
+	Information on this build of 3X follows.
+	
+	  3X version: $version_long
+	  3X Git commit: $version_commit
+	  
+	  Build Date: $build_timestamp
+	  Build Operating System: $build_os
+	  Build Machine: $build_machine
+	  
+	  Bundled Dependencies:
+	$(ls "$LIBEXECDIR"/depends/bundled | sed 's/^/    /')
+	
+	  Running Operating System: $(uname)
+	  Running Machine: $(uname -m)
+	  
+	Report bugs or enhancements using GitHub Issues from the source code repository.
+	Read legal notices about software included in 3X, by running: 3x version legal
+	VERSION
+esac

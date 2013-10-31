@@ -32,6 +32,8 @@
 # > 3x inputs  [-v] [NAME]...
 # > 3x outputs [-v] [NAME]...
 # 
+# > 3x version
+# 
 # Global OPTION is one of:
 #   -v      increase verbosity
 #   -q      suppress all messages

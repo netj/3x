@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# graphd-hack -- run graphd internal commands
-# Usage: graphd hack COMMAND [ARG]...
+# 3x-hack -- run commands inside 3X's environment
+# > 3x hack COMMAND [ARG]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-05-10

@@ -1,0 +1,18 @@
+GNU bash	depends/.build/bundled.prep/bash/bash-*/COPYING
+GNU coreutils	depends/.build/bundled.prep/GNU-coreutils/coreutils-*/COPYING
+GNU time	depends/.build/bundled.prep/GNU-time/time-*/COPYING
+GNU parallel	depends/.build/bundled.prep/GNU-parallel/parallel-*/COPYING
+node.js	depends/.build/bundled.prep/nodejs/prefix/node-*/LICENSE
+sqlite3	"Public domain"
+
+jQuery	gui/jquery/MIT-LICENSE.txt
+jQuery UI	gui/jquery-ui/MIT-LICENSE.txt
+Bootstrap	gui/bootstrap/LICENSE
+Font-Awesome	"SIL OFL 1.1 (font), MIT License (code)"
+DataTables	gui/DataTables/license-bsd.txt
+D3.js	gui/d3/LICENSE
+Underscore.js	gui/underscore/LICENSE
+jsrender	gui/jsrender/MIT-LICENSE.txt
+Numeral-js	gui/Numeral-js/LICENSE
+
+# vim:ts=40:tw=0:nowrap
