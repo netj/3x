@@ -1,0 +1,2 @@
+#!/bin/sh
+[ -e workdir/giant_component.png ] && echo workdir/giant_component.png

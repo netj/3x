@@ -60,6 +60,35 @@
         </li>
       
         <li>
+          <a href="#example-2-simulating-network-formations">Example 2: Simulating Network Formations</a>
+          
+            <ul>
+              
+                <li>
+                  <a href="#example-2-simulating-network-formations/1-write-the-program">1. Write the Program</a>
+                </li>
+              
+                <li>
+                  <a href="#example-2-simulating-network-formations/2-setup-an-experiment-repository">2. Setup an Experiment Repository</a>
+                </li>
+              
+                <li>
+                  <a href="#example-2-simulating-network-formations/3-run-experiments-many-times">3. Run Experiments Many Times</a>
+                </li>
+              
+                <li>
+                  <a href="#example-2-simulating-network-formations/4-explore-results">4. Explore Results</a>
+                </li>
+              
+                <li>
+                  <a href="#example-2-simulating-network-formations/5-analyze-results-further">5. Analyze Results Further</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
           <a href="#advanced-usage">Advanced Usage</a>
           
             <ul>
@@ -506,16 +535,224 @@ run/<span class="number">2013</span>/<span class="number">0930</span>/<span clas
 <span class="title">run</span>/<span class="number">2013</span>/<span class="number">0928</span>/<span class="number">10</span>/<span class="number">3748.111174000</span>-<span class="number">1356</span>    inputTime=<span class="number">0.01</span>    numAccess=<span class="number">7168519</span>    numCompare=<span class="number">5944051</span>    ratioSorted=<span class="number">1</span>    sortingTime=<span class="number">2.97</span>    algo=quickSort    inputSize=<span class="number">18</span>    inputType=ordered
 <span class="title">run</span>/<span class="number">2013</span>/<span class="number">0929</span>/<span class="number">11</span>/<span class="number">1246.771209000</span>-<span class="number">1756</span>    inputTime=<span class="number">0.02</span>    numAccess=<span class="number">7345424</span>    numCompare=<span class="number">6123288</span>    ratioSorted=<span class="number">1</span>    sortingTime=<span class="number">3.19</span>    algo=quickSort    inputSize=<span class="number">18</span>    inputType=ordered
 <span class="title">run</span>/<span class="number">2013</span>/<span class="number">0929</span>/<span class="number">11</span>/<span class="number">2047.444739000</span>-<span class="number">1818</span>    inputTime=<span class="number">0.01</span>    numAccess=<span class="number">12120436</span>    numCompare=<span class="number">5913122</span>    ratioSorted=<span class="number">1</span>    sortingTime=<span class="number">3.14</span>    algo=quickSort    inputSize=<span class="number">18</span>    inputType=reversed</code></pre>
-<!--
-* * *
+<hr>
+<h2 id='example-2-simulating-network-formations'>Example 2: Simulating Network Formations</h2 id='example-2-simulating-network-formations'>
+<p>Having a nice way to play with a few scalar values produced by your experiment
+may sound good enough.  However, you are very likely to encounter a situation
+where higher-dimensional output data, such as a time series result or a custom
+visualization must be handled as well.  In this example, we will see how 3X
+supports these requirements.</p>
+<p>Suppose we have an experiment that studies the rise of a giant connected
+component by gradually increasing the probability for creating edges between
+vertices while generating random graphs.
+We will borrow <a href="http://networkx.github.io/documentation/latest/examples/drawing/giant_component.html">code from an example displayed on the gallery
+page</a> of <em><a href="http://networkx.github.io/">NetworkX</a></em>, which is a popular Python
+Library for handling Graph Data.</p>
+<h3 id='example-2-simulating-network-formations/1-write-the-program'>1. Write the Program</h3 id='example-2-simulating-network-formations/1-write-the-program'>
+<p>To be used most effectively with 3X, we make several changes to the code
+borrowed from NetworkX:</p>
+<ol>
+<li>Save the result as an image file, named <code>giant_component.png</code>, instead of showing it interactively in the GUI.</li>
+<li>Obtain the originally hard-coded <code>p</code> and <code>n</code> values from corresponding environment variables instead.</li>
+<li>Put a single generated graph in each result for a given <code>p</code> and <code>n</code> instead of iterating over several <code>p</code> values.</li>
+<li>Keep a full record of the generated random graph.</li>
+</ol>
+<p>Here is our code for this experiment: <a href="../examples/giant_components/program/giant_component.py"><code>giant_component.py</code></a>.</p>
+<p>When this Python script is run with <code>n</code> and <code>p</code> defined, it produces an image
+file <code>giant_component.png</code> that will look like:</p>
+<p><img src="giant_components/giant_component.png" alt=""></p>
+<p>and a <code>graph.pickle</code> file in addition to standard output lines:</p>
+<pre><code>Generated binomial graph (n=<span class="number">200</span>, p=<span class="number">0.0100</span>):
+ <span class="number">0</span>    [<span class="number">17</span>, <span class="number">60</span>]
+ <span class="number">1</span>    [<span class="number">130</span>]
+ <span class="number">2</span>    [<span class="number">129</span>, <span class="number">123</span>, <span class="number">116</span>, <span class="number">111</span>]
+ <span class="number">3</span>    [<span class="number">122</span>, <span class="number">60</span>, <span class="number">125</span>]
+[<span class="keyword">...</span>]
+ <span class="number">198</span>    [<span class="number">128</span>, <span class="number">49</span>, <span class="number">155</span>, <span class="number">52</span>]
+ <span class="number">199</span>    [<span class="number">149</span>, <span class="number">62</span>]
 
-## Example 2: Simulating Network Formations
-...
+Created graph.pickle
+Created giant_component.png</code></pre>
+<h3 id='example-2-simulating-network-formations/2-setup-an-experiment-repository'>2. Setup an Experiment Repository</h3 id='example-2-simulating-network-formations/2-setup-an-experiment-repository'>
+<p>We will use the following quick setup command to create a repository for this
+experiment.  On the last line for <code>--outputs</code>, <code>--file</code> tells 3X that the
+output variable <code>graph</code> is a file named <code>giant_component.png</code> with a MIME type
+<code>image/png</code>.  3X GUI can treat output image files specially based on this
+MIME-type user provides.</p>
+<pre><code><span class="comment">3x</span> <span class="comment">setup</span> <span class="comment">giant_components</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">program</span> <span class="comment">'python</span> <span class="string">.</span><span class="comment">/giant_component</span>.<span class="comment">py'</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">inputs</span>  <span class="comment">n=100</span>,<span class="comment">200</span>,<span class="comment">300</span> <span class="comment">\</span>
+              <span class="comment">p=0</span>.<span class="comment">0{01</span>.<span class="string">.</span><span class="comment">10}</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">outputs</span> <span class="literal">-</span><span class="literal">-</span><span class="comment">file</span> <span class="comment">graph:image/png=giant_component</span>.<span class="comment">png</span> <span class="comment">\</span>
+<span class="comment">#</code></pre>
+<p>Let&#39;s make sure to put the Python code at the correct place.</p>
+<pre><code><span class="title">cd</span> giant_components/program/
+<span class="title">curl</span> -<span class="type">LO</span> https://netj.github.io/<span class="number">3</span>x/docs/examples/giant_components/program/giant_component.py
+<span class="title">cd</span> -</code></pre>
+<h3 id='example-2-simulating-network-formations/3-run-experiments-many-times'>3. Run Experiments Many Times</h3 id='example-2-simulating-network-formations/3-run-experiments-many-times'>
+<p>We can move into the repository and execute full combinations of inputs by
+running following commands:</p>
+<pre><code>cd giant_components/
+3x plan n p
+3x <span class="operator"><span class="keyword">start</span></code></pre>
+<p>Here, <code>3x plan</code> will open your text editor to let you reorder or duplicate some
+of the runs.  You can simply save the presented file to confirm the runs and
+add them to the queue.  Once you do a <code>3x start</code>, 3X will execute all the
+previously planned runs in curent queue and stay executing future ones until
+stopped by <code>3x stop</code>.  Therefore, we can now simply throw more runs into the
+queue to get results from them.</p>
+<p>Since each run of this experiment is non-deterministic, we need to execute each
+input many times.  This can be done by running <code>3x plan</code> multiple times as
+follows:</p>
+<pre><code>3x plan n p
+3x plan n p
+3x plan n p
+[<span class="keyword">...</span>]</code></pre>
+<p>Alternatively, you can duplicate the desired lines as many as you want using
+your text editor without running the <code>3x plan</code> command multiple times.</p>
+<h3 id='example-2-simulating-network-formations/4-explore-results'>4. Explore Results</h3 id='example-2-simulating-network-formations/4-explore-results'>
+<p>3X GUI is essential for browsing the results since our only output variable is
+of image type.</p>
+<pre><code>3x gui</code></pre>
+<h4>Aggregate image with <em>Overlay</em></h4>
+<p>The <code>graph</code> column in the results table displays the PNG image files generated
+by our experiment runs as in the following screenshot:</p>
+<p><img src="giant_components.overlay.png" alt=""></p>
+<p>Notice here that 3X superimposes multiple images that fall into the same row,
+i.e., renders images on top of each other, so that any patterns or variations
+among them are easily discernible.  This feature is provided as a specialized
+aggregate function, we call <em>overlay</em>, for image file type output variables.
+Overlay aggregate function can be very useful when there isn&#39;t a good scalar
+metric that summarizes the result or such metric is yet to be determined, and
+the only way to judge is for humans to look at the images that visualizes the
+higher-dimensional data.</p>
+<h4>Details on-demand</h4>
+<p>Individual images can be browsed one at a time using the same <em>details
+on-demand</em> technique, hovering over the aggregate image or another aggregate
+column while holding the Shift Key ⇧ down.</p>
+<p><img src="giant_components.drilldown.png" alt=""></p>
+<p>When you follow the link, the full record of the run is available as shown in
+the following screenshot:</p>
+<p><img src="giant_components.details.png" alt=""></p>
+<p>The run overview page shows the image for <code>graph</code> in full resolution as well as
+the full standard output that records the exact details of the generated random
+graph.  Any other files used for the run, such as <code>graph.pickle</code>, can be
+accessed through the <i class="icon icon-briefcase"></i> &quot;workdir/&quot; tab at the
+top of the page.</p>
+<h3 id='example-2-simulating-network-formations/5-analyze-results-further'>5. Analyze Results Further</h3 id='example-2-simulating-network-formations/5-analyze-results-further'>
+<p>Suppose you want to compute some statistics from the generated graphs after you
+have seen a number of them.  For example, the number of components and how
+large each of them may seem to be an interesting metric now.  Additionally, you
+may be also interested in how long each run took to generate the graph and
+image.</p>
+<p>3X allows you to define output variables incrementally, i.e., new output
+variables can be added later.  You can either use 3X&#39;s default options to
+extract output values, or write a custom program that computes them.  3X&#39;s
+default options are either extracting the first string that matches a triple of
+regular expressions, or finding a generated file by name.  Here, we show all
+three options.</p>
+<h4>Extract Execution Time from Built-in Records</h4>
+<p>As default, 3X records basic profile information for every run of your
+experiment, such as execution time and maximum memory size using the <em><a href="http://www.gnu.org/s/time/">GNU
+time</a></em> utility in the file <code>rusage</code>.  You simply need to define an output
+variable with correct regular expressions to extract those values from the
+record.  For example, you can extract the elapsed wall clock time of your runs
+as <code>wallTime</code> by running the following command:</p>
+<pre><code>3x define output 'wallTime(s)' extract <span class="command">\
+</span>    'Elapsed <span class="command">\(</span>wall clock<span class="command">\)</span> time <span class="command">\(</span>seconds<span class="command">\)</span>: '  '<span class="special">[</span>0-9.<span class="special">]</span>+'  '' <span class="command">\
+</span>    rusage</code></pre>
+<p>3X will not only extract values for <code>wallTime</code> from future runs but also rescan
+records of past runs.</p>
+<h4>Compute Statistics</h4>
+<p>If a more complex computation is necessary to collect the values of interest,
+then plugging in a custom <em>output extractor</em> code to 3X is your option.  In
+fact, the two built-in options provided by <code>3x define output</code> command, namely
+<code>extract</code> and <code>file</code> are mere shorthands for generating standard output
+extractors.  More details on output extractors are described in the next
+section.</p>
+<p>For this experiment, let&#39;s say we want to see several statistics computed from
+the generated graph, including the number of components that have more than one
+vertex and the size of each component.  Since we dumped the graph to
+<code>graph.pickle</code>, we can load this file and easily compute the necessary values.
+<a href="../examples/giant_components/output/compute-stats.py"><code>compute-stats.py</code></a> is one such script that prints output similar to:</p>
+<pre><code>Number <span class="keyword">of</span> Components (non-singleton):  <span class="number">7</span>
+Number <span class="keyword">of</span> Disconnected Nodes (singleton components):  <span class="number">29</span>
+<span class="keyword">Component</span> Sizes:  <span class="number">153</span>    <span class="number">4</span>    <span class="number">4</span>    <span class="number">3</span>    <span class="number">3</span>    <span class="number">2</span>    <span class="number">2</span>
+<span class="keyword">Component</span> Size Ratios:  <span class="number">0.765000</span>    <span class="number">0.020000</span>    <span class="number">0.020000</span>    <span class="number">0.015000</span>    <span class="number">0.015000</span>    <span class="number">0.010000</span>    <span class="number">0.010000</span></code></pre>
+<p>We put this script directly under <code>output/</code> of the repository so it can be
+assembled into the <code>outputs/</code> directory of each run and easily shared across
+different output variables.</p>
+<pre><code><span class="title">cd</span> output/
+<span class="title">curl</span> -<span class="type">LO</span> https://netj.github.io/<span class="number">3</span>x/docs/examples/giant_components/output/compute-stats.py
+<span class="title">cd</span> -</code></pre>
+<p>Next, we define an output variable, named <code>numCC</code>, by running the following
+command:</p>
+<pre><code>3x define output 'numCC' extract <span class="command">\
+</span>    'Number of Components.*:<span class="command">\s*</span>' '<span class="command">\d</span>+' '' <span class="command">\
+</span>    --running 'python outputs/compute-stats.py' <span class="command">\
+</span>    --caching compute-stats.txt</code></pre>
+<p>The command above does the following:</p>
+<ul>
+<li><p>It tells 3X to extract value for the variable <code>numCC</code></p>
+<ul>
+<li>using the regular expression triple <code>Number of Components.*:\s*</code>, <code>\d+</code>, <code>
+</code>, which are for matching the string before, of, and after the value of
+interest, respectively.</li>
+<li>scanning the output of the <code>compute-stats.py</code> script, which is indicated
+by the command given after the argument <code>--running</code>.</li>
+</ul>
+</li>
+<li><p>The output of the command will be cached at <code>outputs/.shared/compute-stats.txt</code>, so
+that other variables can be extracted without running it again.</p>
+</li>
+</ul>
+<p>We need to tell 3X to adjust other parts of the repository influenced by the
+new output variable by running the following command:</p>
+<pre><code>3x define sync</code></pre>
+<p>In this case, it will rescan records of past runs to extract values for the new
+output variable <code>numCC</code>.  With the new <code>numCC</code> variable, we can easily create
+new visualizations of the experiment results, such as the following chart,
+which shows mean value of <code>numCC</code> by <code>p</code> for different <code>n</code>s.  We can see the
+number of components, i.e., <code>numCC</code> converges down to 1 as we increase the
+value for <code>p</code>.</p>
+<p><img src="giant_components.chart.numCC.png" alt=""></p>
+<p>Similarly, we can define several other variables, namely <code>numDisconnected</code>,
+<code>ratioCC1</code>, <code>ratioCC2</code>, and <code>ratioCC3</code> from the output of the script:</p>
+<pre><code><span class="comment">3x</span> <span class="comment">define</span> <span class="comment">output</span> <span class="comment">'numDisconnected'</span> <span class="comment">extract</span> <span class="comment">\</span>
+    <span class="comment">'Number</span> <span class="comment">of</span> <span class="comment">Disconnected</span> <span class="comment">Nodes</span>.<span class="comment">*:\s*'</span> <span class="comment">'\d</span>+<span class="comment">'</span> <span class="comment">''</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">running</span> <span class="comment">'python</span> <span class="comment">outputs/compute</span>-<span class="comment">stats</span>.<span class="comment">py'</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">caching</span> <span class="comment">compute</span>-<span class="comment">stats</span>.<span class="comment">txt</span>
 
+<span class="comment">3x</span> <span class="comment">define</span> <span class="comment">output</span> <span class="comment">'ratioCC1'</span> <span class="comment">extract</span> <span class="comment">\</span>
+    <span class="comment">'Component</span> <span class="comment">Size</span> <span class="comment">Ratios:\s*'</span> <span class="comment">'</span>[<span class="string">.</span><span class="comment">0</span>-<span class="comment">9</span>]<span class="literal">+</span><span class="comment">'</span> <span class="comment">''</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">running</span> <span class="comment">'python</span> <span class="comment">outputs/compute</span>-<span class="comment">stats</span>.<span class="comment">py'</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">caching</span> <span class="comment">compute</span>-<span class="comment">stats</span>.<span class="comment">txt</span>
 
+<span class="comment">3x</span> <span class="comment">define</span> <span class="comment">output</span> <span class="comment">'ratioCC2'</span> <span class="comment">extract</span> <span class="comment">\</span>
+    <span class="comment">'Component</span> <span class="comment">Size</span> <span class="comment">Ratios:\s*</span>[<span class="string">.</span><span class="comment">0</span>-<span class="comment">9</span>]<span class="literal">+</span><span class="comment">\s</span>+<span class="comment">'</span> <span class="comment">'</span>[<span class="string">.</span><span class="comment">0</span>-<span class="comment">9</span>]<span class="literal">+</span><span class="comment">'</span> <span class="comment">''</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">running</span> <span class="comment">'python</span> <span class="comment">outputs/compute</span>-<span class="comment">stats</span>.<span class="comment">py'</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">caching</span> <span class="comment">compute</span>-<span class="comment">stats</span>.<span class="comment">txt</span>
 
--->
+<span class="comment">3x</span> <span class="comment">define</span> <span class="comment">output</span> <span class="comment">'ratioCC3'</span> <span class="comment">extract</span> <span class="comment">\</span>
+    <span class="comment">'Component</span> <span class="comment">Size</span> <span class="comment">Ratios:\s*(</span>[<span class="string">.</span><span class="comment">0</span>-<span class="comment">9</span>]<span class="literal">+</span><span class="comment">\s</span>+<span class="comment">){2}'</span> <span class="comment">'</span>[<span class="string">.</span><span class="comment">0</span>-<span class="comment">9</span>]<span class="literal">+</span><span class="comment">'</span> <span class="comment">''</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">running</span> <span class="comment">'python</span> <span class="comment">outputs/compute</span>-<span class="comment">stats</span>.<span class="comment">py'</span> <span class="comment">\</span>
+    <span class="literal">-</span><span class="literal">-</span><span class="comment">caching</span> <span class="comment">compute</span>-<span class="comment">stats</span>.<span class="comment">txt</span>
 
+<span class="comment">3x</span> <span class="comment">define</span> <span class="comment">sync</code></pre>
+<p>These new variables allow us to quickly see how the first connected component&#39;s
+size grows compared to the second one, as shown in the next chart:</p>
+<p><img src="giant_components.chart.ratioCC.png" alt=""></p>
+<h4>Notes on Output Extractors</h4>
+<p>In general, output extractor of a 3X output variable is a program that extracts
+the value for that variable.  It takes the form of an executable file whose
+name is <code>extract</code>.  You can use any language to implement it as long as the
+first line contains a <a href="https://en.wikipedia.org/wiki/Shebang_(Unix)">shebang</a> (<code>#!</code>) and its interpreter, or you name the
+compiled executable binary accordingly.  Each output extractor is executed
+after the experiment program (<code>run</code>) finishes, or when 3X rescans records of
+past runs.  Its current working directory is set to the run directory, so all
+files of the record can be easily accessed via relative paths, e.g., <code>stdout</code>
+or <code>workdir/giant_component.py</code>.  It must not modify any files under <code>workdir/</code>
+and should contain data creation and modifications under <code>outputs/</code> only.</p>
 <hr>
 <h2 id='advanced-usage'>Advanced Usage</h2 id='advanced-usage'>
 <p>Here we introduce a few more 3X features that are essential to more effective

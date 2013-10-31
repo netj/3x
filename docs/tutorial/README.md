@@ -603,15 +603,303 @@ Then it outputs only the results that match given criteria:
     run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
 
 
-<!--
 * * *
 
 ## Example 2: Simulating Network Formations
-...
+
+Having a nice way to play with a few scalar values produced by your experiment
+may sound good enough.  However, you are very likely to encounter a situation
+where higher-dimensional output data, such as a time series result or a custom
+visualization must be handled as well.  In this example, we will see how 3X
+supports these requirements.
+
+Suppose we have an experiment that studies the rise of a giant connected
+component by gradually increasing the probability for creating edges between
+vertices while generating random graphs.
+We will borrow [code from an example displayed on the gallery
+page][giant_component gallery] of *[NetworkX][]*, which is a popular Python
+Library for handling Graph Data.
+
+[NetworkX]: http://networkx.github.io/
+[giant_component gallery]: http://networkx.github.io/documentation/latest/examples/drawing/giant_component.html
+
+### 1. Write the Program
+
+To be used most effectively with 3X, we make several changes to the code
+borrowed from NetworkX:
+
+1. Save the result as an image file, named `giant_component.png`, instead of showing it interactively in the GUI.
+2. Obtain the originally hard-coded `p` and `n` values from corresponding environment variables instead.
+3. Put a single generated graph in each result for a given `p` and `n` instead of iterating over several `p` values.
+4. Keep a full record of the generated random graph.
+
+Here is our code for this experiment: [`giant_component.py`][].
+
+When this Python script is run with `n` and `p` defined, it produces an image
+file `giant_component.png` that will look like:
+
+![](giant_components/giant_component.png)
+
+and a `graph.pickle` file in addition to standard output lines:
+
+    Generated binomial graph (n=200, p=0.0100):
+     0	[17, 60]
+     1	[130]
+     2	[129, 123, 116, 111]
+     3	[122, 60, 125]
+    [...]
+     198	[128, 49, 155, 52]
+     199	[149, 62]
+    
+    Created graph.pickle
+    Created giant_component.png
 
 
+[`giant_component.py`]: ../examples/giant_components/program/giant_component.py
 
--->
+
+### 2. Setup an Experiment Repository
+
+We will use the following quick setup command to create a repository for this
+experiment.  On the last line for `--outputs`, `--file` tells 3X that the
+output variable `graph` is a file named `giant_component.png` with a MIME type
+`image/png`.  3X GUI can treat output image files specially based on this
+MIME-type user provides.
+
+    3x setup giant_components \
+        --program 'python ./giant_component.py' \
+        --inputs  n=100,200,300 \
+                  p=0.0{01..10} \
+        --outputs --file graph:image/png=giant_component.png \
+    #
+
+Let's make sure to put the Python code at the correct place.
+
+    cd giant_components/program/
+    curl -LO https://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
+    cd -
+
+
+### 3. Run Experiments Many Times
+
+We can move into the repository and execute full combinations of inputs by
+running following commands:
+
+    cd giant_components/
+    3x plan n p
+    3x start
+
+Here, `3x plan` will open your text editor to let you reorder or duplicate some
+of the runs.  You can simply save the presented file to confirm the runs and
+add them to the queue.  Once you do a `3x start`, 3X will execute all the
+previously planned runs in curent queue and stay executing future ones until
+stopped by `3x stop`.  Therefore, we can now simply throw more runs into the
+queue to get results from them.
+
+Since each run of this experiment is non-deterministic, we need to execute each
+input many times.  This can be done by running `3x plan` multiple times as
+follows:
+
+    3x plan n p
+    3x plan n p
+    3x plan n p
+    [...]
+
+Alternatively, you can duplicate the desired lines as many as you want using
+your text editor without running the `3x plan` command multiple times.
+
+
+### 4. Explore Results
+
+3X GUI is essential for browsing the results since our only output variable is
+of image type.
+
+    3x gui
+
+#### Aggregate image with *Overlay*
+
+The `graph` column in the results table displays the PNG image files generated
+by our experiment runs as in the following screenshot:
+
+![](giant_components.overlay.png)
+
+Notice here that 3X superimposes multiple images that fall into the same row,
+i.e., renders images on top of each other, so that any patterns or variations
+among them are easily discernible.  This feature is provided as a specialized
+aggregate function, we call *overlay*, for image file type output variables.
+Overlay aggregate function can be very useful when there isn't a good scalar
+metric that summarizes the result or such metric is yet to be determined, and
+the only way to judge is for humans to look at the images that visualizes the
+higher-dimensional data.
+
+#### Details on-demand
+
+Individual images can be browsed one at a time using the same *details
+on-demand* technique, hovering over the aggregate image or another aggregate
+column while holding the Shift Key ⇧ down.
+
+![](giant_components.drilldown.png)
+
+When you follow the link, the full record of the run is available as shown in
+the following screenshot:
+
+![](giant_components.details.png)
+
+The run overview page shows the image for `graph` in full resolution as well as
+the full standard output that records the exact details of the generated random
+graph.  Any other files used for the run, such as `graph.pickle`, can be
+accessed through the <i class="icon icon-briefcase"></i> "workdir/" tab at the
+top of the page.
+
+
+### 5. Analyze Results Further
+
+Suppose you want to compute some statistics from the generated graphs after you
+have seen a number of them.  For example, the number of components and how
+large each of them may seem to be an interesting metric now.  Additionally, you
+may be also interested in how long each run took to generate the graph and
+image.
+
+3X allows you to define output variables incrementally, i.e., new output
+variables can be added later.  You can either use 3X's default options to
+extract output values, or write a custom program that computes them.  3X's
+default options are either extracting the first string that matches a triple of
+regular expressions, or finding a generated file by name.  Here, we show all
+three options.
+
+
+#### Extract Execution Time from Built-in Records
+
+As default, 3X records basic profile information for every run of your
+experiment, such as execution time and maximum memory size using the *[GNU
+time][]* utility in the file `rusage`.  You simply need to define an output
+variable with correct regular expressions to extract those values from the
+record.  For example, you can extract the elapsed wall clock time of your runs
+as `wallTime` by running the following command:
+
+    3x define output 'wallTime(s)' extract \
+        'Elapsed \(wall clock\) time \(seconds\): '  '[0-9.]+'  '' \
+        rusage
+
+3X will not only extract values for `wallTime` from future runs but also rescan
+records of past runs.
+
+[GNU time]: http://www.gnu.org/s/time/
+
+
+#### Compute Statistics
+
+If a more complex computation is necessary to collect the values of interest,
+then plugging in a custom *output extractor* code to 3X is your option.  In
+fact, the two built-in options provided by `3x define output` command, namely
+`extract` and `file` are mere shorthands for generating standard output
+extractors.  More details on output extractors are described in the next
+section.
+
+For this experiment, let's say we want to see several statistics computed from
+the generated graph, including the number of components that have more than one
+vertex and the size of each component.  Since we dumped the graph to
+`graph.pickle`, we can load this file and easily compute the necessary values.
+[`compute-stats.py`][] is one such script that prints output similar to:
+
+    Number of Components (non-singleton):  7
+    Number of Disconnected Nodes (singleton components):  29
+    Component Sizes:  153	4	4	3	3	2	2
+    Component Size Ratios:  0.765000	0.020000	0.020000	0.015000	0.015000	0.010000	0.010000
+
+We put this script directly under `output/` of the repository so it can be
+assembled into the `outputs/` directory of each run and easily shared across
+different output variables.
+
+    cd output/
+    curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+    cd -
+
+[`compute-stats.py`]: ../examples/giant_components/output/compute-stats.py
+
+
+Next, we define an output variable, named `numCC`, by running the following
+command:
+
+    3x define output 'numCC' extract \
+        'Number of Components.*:\s*' '\d+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+
+The command above does the following:
+
+* It tells 3X to extract value for the variable `numCC`
+    - using the regular expression triple `Number of Components.*:\s*`, `\d+`, `
+      `, which are for matching the string before, of, and after the value of
+      interest, respectively.
+    - scanning the output of the `compute-stats.py` script, which is indicated
+      by the command given after the argument `--running`.
+
+* The output of the command will be cached at `outputs/.shared/compute-stats.txt`, so
+  that other variables can be extracted without running it again.
+
+
+We need to tell 3X to adjust other parts of the repository influenced by the
+new output variable by running the following command:
+
+    3x define sync
+
+In this case, it will rescan records of past runs to extract values for the new
+output variable `numCC`.  With the new `numCC` variable, we can easily create
+new visualizations of the experiment results, such as the following chart,
+which shows mean value of `numCC` by `p` for different `n`s.  We can see the
+number of components, i.e., `numCC` converges down to 1 as we increase the
+value for `p`.
+
+![](giant_components.chart.numCC.png)
+
+
+Similarly, we can define several other variables, namely `numDisconnected`,
+`ratioCC1`, `ratioCC2`, and `ratioCC3` from the output of the script:
+
+    3x define output 'numDisconnected' extract \
+        'Number of Disconnected Nodes.*:\s*' '\d+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+    
+    3x define output 'ratioCC1' extract \
+        'Component Size Ratios:\s*' '[.0-9]+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+    
+    3x define output 'ratioCC2' extract \
+        'Component Size Ratios:\s*[.0-9]+\s+' '[.0-9]+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+    
+    3x define output 'ratioCC3' extract \
+        'Component Size Ratios:\s*([.0-9]+\s+){2}' '[.0-9]+' '' \
+        --running 'python outputs/compute-stats.py' \
+        --caching compute-stats.txt
+
+    3x define sync
+
+These new variables allow us to quickly see how the first connected component's
+size grows compared to the second one, as shown in the next chart:
+
+![](giant_components.chart.ratioCC.png)
+
+#### Notes on Output Extractors
+
+In general, output extractor of a 3X output variable is a program that extracts
+the value for that variable.  It takes the form of an executable file whose
+name is `extract`.  You can use any language to implement it as long as the
+first line contains a [shebang][] (`#!`) and its interpreter, or you name the
+compiled executable binary accordingly.  Each output extractor is executed
+after the experiment program (`run`) finishes, or when 3X rescans records of
+past runs.  Its current working directory is set to the run directory, so all
+files of the record can be easily accessed via relative paths, e.g., `stdout`
+or `workdir/giant_component.py`.  It must not modify any files under `workdir/`
+and should contain data creation and modifications under `outputs/` only.
+
+[shebang]: https://en.wikipedia.org/wiki/Shebang_(Unix)
+
+
 
 * * *
 
