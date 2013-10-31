@@ -1083,23 +1083,24 @@ control and manage them.
 
 
 
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
-<style>
-figcaption {
-    font-size: 80%;
-    text-align: center;
-}
-</style>
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" />
+
+<!-- fancyBox for enlarging images -->
 <script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
+<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.css" media="screen" />
+<script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+<!-- wrap img's with figure and use figcaption instead of alt text -->
+<style> figcaption { font-size: 90%; text-align: center; } </style>
 <script>
-// show alt text of images as figcaption
 $(function() {
     $("img").each(function(idx,img) {
         var $img = $(img);
         if ($img.closest("figure").length == 0) {
             $img.wrap($("<figure>"));
             $("<figcaption>").text($img.attr("alt")).insertAfter($img);
+            $img.wrap($("<a>").attr("href", img.src));
         }
     });
+    $("figure a").fancybox();
 });
 </script>
