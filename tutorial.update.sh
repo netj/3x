@@ -16,7 +16,7 @@ curl -X POST \
     # polish DocumentUp's style
     {
         echo '/<\/head/i'
-        echo '<link rel="stylesheet" href="../../nav-fix.css">'
+        echo '<link rel="stylesheet" href="../../3x.css">'
         echo '.'
         echo 'wq'
     } | ed index.html

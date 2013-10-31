@@ -4,11 +4,18 @@
     <script src="DocumentUp/documentup.min.js"></script>
     <script>
         DocumentUp.document({
+            afterRender: function(){
+                    var link = document.createElement("link");
+                    link.rel = "stylesheet";
+                    link.href = "3x.css";
+                    document.head.appendChild(link);
+                },
             google_analytics: "UA-29293848-3",
             name: "3X",
             repo: "netj/3x"
         });
     </script>
+    <link rel="stylesheet" href="3x.css">
   </head>
   <body></body>
 </html>

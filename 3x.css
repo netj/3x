@@ -1,0 +1,38 @@
+/*
+ * 3X home page style
+ * Author: Jaeho Shin <netj@cs.stanford.edu>
+ * Created: 2013-10-31
+ */
+
+/* Use Stanford Identity font with a nice monospace font
+ * See: http://identity.stanford.edu/web-toolkit/guidelines/webfonts */
+@import url(http://fonts.googleapis.com/css?family=Crimson+Text:400,600,700|Source+Sans+Pro:300,400,600,700|Oxygen+Mono);
+body {
+    font: 16px/20px 'Crimson Text', Georgia, serif;
+}
+#nav, h1,h2,h3,h4,h5,h6 {
+    font: 18px/20px 'Source Sans Pro', Lucida Grande, Tahoma, sans-serif;
+}
+code {
+    font: 12px/18px 'Oxygen Mono', monospace !important;
+}
+
+/* Fixed nav bar for documents compiled by DocumentUp */
+#nav {
+    position: fixed;
+    width: 230px;
+    top: 0; bottom: 0;
+    overflow-y: auto;
+}
+#content {
+    margin-left: 250px;
+    text-align: justify;
+}
+
+/* figure and figcaption */
+#content p figure img {
+    float: none;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
