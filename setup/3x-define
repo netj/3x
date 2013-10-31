@@ -125,15 +125,18 @@ case $What in
                     echo "set -eu"
                     if [ -n "$o_running" ]; then
                         if [ -n "$o_caching" ]; then
-                            f=$(escape-args-for-shell outputs/"$o_caching")
+                            f=$(escape-args-for-shell outputs/.shared/"$o_caching")
+                            t=$(escape-args-for-shell outputs/.shared/."$o_caching".\$\$)
                             echo "if [ -s $f ]"
                             echo "then cat $f"
-                            echo "else touch $f"
+                            echo "else"
+                            echo "    mkdir -p outputs/.shared"
+                            echo "    touch $f"
                             echo "    set -o pipefail"
                             echo "    {"
                             echo "$o_running"
-                            echo "    } | tee $f.\$\$"
-                            echo "    mv -f $f.\$\$ $f"
+                            echo "    } | tee $t"
+                            echo "    mv -f $t $f"
                             echo "fi |"
                         else
                             echo "$o_running |"

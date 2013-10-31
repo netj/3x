@@ -791,9 +791,9 @@ records of past runs.
 
 If a more complex computation is necessary to collect the values of interest,
 then plugging in a custom *output extractor* code to 3X is your option.  In
-fact, the other two options provided by `3x define output`, namely `extract`
-and `file` are mere shorthands for generating output extractors from template
-codes built into 3X.  Output extractors are described in depth in the next
+fact, the two built-in options provided by `3x define output` command, namely
+`extract` and `file` are mere shorthands for generating standard output
+extractors.  More details on output extractors are described in the next
 section.
 
 For this experiment, let's say we want to see several statistics computed from
@@ -835,7 +835,7 @@ The command above does the following:
     - scanning the output of the `compute-stats.py` script, which is indicated
       by the command given after the argument `--running`.
 
-* The output of the command will be cached at `outputs/compute-stats.txt`, so
+* The output of the command will be cached at `outputs/.shared/compute-stats.txt`, so
   that other variables can be extracted without running it again.
 
 Similarly, we can define several other variables, namely `numDisconnected`,
