@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
-# 3x-define -- Define element of the experiment
+# 3x-define -- Incrementally define the experiment schema
 # 
 # > 3x define [-f] WHAT NAME HOW...
+# 
+# To register the command for the program, use the following command:
 # > 3x define program  COMMAND...
+# 
+# To add or modify input variables, use the following command:
 # > 3x define input    NAME[(UNIT)][:TYPE] VALUE1 [VALUE2]...
+# 
+# To add or modify output variables, use one of the following commands:
 # > 3x define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER  [FROM_FILENAME]...
 # > 3x define output   NAME[(UNIT)][:TYPE] extract  REGEXP_BEFORE  REGEXP  REGEXP_AFTER  --running COMMAND --caching FILENAME
 # > 3x define output   NAME:MIMETYPE       file     FILENAME
+# 
+# Finally, to reflect the schema changes to other parts of 3X, e.g., migrating
+# the results index, queues and extracting values from past records, use:
+# > 3x define sync
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-24
@@ -39,10 +49,6 @@ case $What in
         ;;
 esac
 
-# skip maintenance of index and queues if we're in the middle of a setup
-maintainIndexes=true
-! ${_3X_SETUP_IN_PROGRESS:-false} || maintainIndexes=false
-
 . sanity-checks.sh
 
 # TODO expand glob pattern in any arguments?
@@ -63,6 +69,8 @@ case $What in
             done
         } >"$runner"
         chmod +x "$runner"
+        # record schema definition changes
+        touch .3x/define.changed-program
         ;;
 
     input)
@@ -83,6 +91,8 @@ case $What in
         [ -z "$Unit" ] || echo "$Unit" >"$dir"/unit
         echo "$Type" >"$dir"/datatype
         # TODO decide what to do with the other ones not mentioned
+        # record schema definition changes
+        echo "$Name=$1" >>.3x/define.changed-input
         ;;
 
     output)
@@ -171,29 +181,34 @@ case $What in
             rm -f "$dir"/unit
         fi
         echo "$Type" >"$dir"/datatype
+        # record schema definition changes
+        echo "$Name" >>.3x/define.changed-output
         ;;
 
-    commit)
-        maintainIndexes=true
-        ;;
-esac
 
-if $maintainIndexes; then
-    # re-initialize index
-    3x-index migrate &
-    case $What in
-        input)
+    sync) # maintain indexes, queues, extract data
+        if [[ -e .3x/define.changed-input || -e .3x/define.changed-output ]]; then
+            # reflect new input/output to results index's schema and migrate data
+            3x-index migrate
+        fi
+
+        if [[ -e .3x/define.changed-input ]]; then
             # migrate existing queues
-            SHLVL=$(( $SHLVL - 1 )) \
-            queue migrate # TODO for every queue
-            ;;
+            for _3X_QUEUE in run/queue/*/; do
+                # TODO pass assumed values for newly introduced input variables for past runs
+                queue migrate
+            done
+        fi
 
-        output)
+        if [[ -e .3x/define.changed-output ]]; then
             # extract output from existing runs
-            SHLVL=$(( $SHLVL - 1 )) \
-            _3X_RESCAN_ONLY=$Name \
+            outputsPatt=$(tr '\n' '|' <.3x/define.changed-output)
+            outputsPatt="@(${outputsPatt%|})"
+            _3X_RESCAN_ONLY=$outputsPatt \
             3x-rescan -f
-            ;;
-    esac
-    wait
-fi
+        fi
+
+        rm -f .3x/define.changed-*
+        ;;
+
+esac

@@ -861,6 +861,8 @@ Similarly, we can define several other variables, namely `numDisconnected`,
         --running 'python outputs/compute-stats.py' \
         --caching compute-stats.txt
 
+    3x define sync
+
 
 #### Notes on Output Extractors
 

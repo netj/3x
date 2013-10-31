@@ -185,7 +185,7 @@ trap "rm -rf $tmp" EXIT
         done
         generate-definition
     done
-    echo "3x-define commit"
+    echo "3x-define sync"
 } >"$tmp"/setup-script
 
 msg +2 "Setting up new experiment"
