@@ -871,14 +871,26 @@ or switch to the queue:</p>
 <p>The concept of current queue only applies to the commands of command-line
 interface: 3X GUI will provide separate buttons and listings for each queue to
 control and manage them.</p>
-<style>@import url(<a href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css</a>);</style>
-<style>
+<p><link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css"></p>
+<p><style>
 figcaption {
     font-size: 80%;
     text-align: center;
 }
-</style>
-
+</style></p>
+<script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
+<script>
+// show alt text of images as figcaption
+$(function() {
+    $("img").each(function(idx,img) {
+        var $img = $(img);
+        if ($img.closest("figure").length == 0) {
+            $img.wrap($("<figure>"));
+            $("<figcaption>").text($img.attr("alt")).insertAfter($img);
+        }
+    });
+});
+</script>
 
   </div>
 </div>
