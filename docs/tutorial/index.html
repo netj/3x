@@ -113,8 +113,9 @@
     
     <h1><i class="icon-beaker"></i> 3X Tutorial with Examples</h1>
 <p>In this document, we explain how you can setup and conduct computational
-experiments using a few examples.  This step-by-step guide will introduce
-important features of 3X with detailed instructions.</p>
+experiments with 3X using two examples.  This step-by-step guide will introduce
+important features of 3X and teach you how to use them with detailed
+instructions.</p>
 <h2 id='example-1-studying-sorting-algorithms'>Example 1: Studying Sorting Algorithms</h2 id='example-1-studying-sorting-algorithms'>
 <p><img src="sorting-algos.png" alt="" title="A chart showing how much time each sorting algorithm took to sort different sizes of inputs"></p>
 <p>Anyone who received computer science education or studied basic algorithms
@@ -354,18 +355,18 @@ GUI system, 3X will launch the browser for you.</p>
 <p>As shown in the above screenshot, the GUI has four tabs: Results, Charts, Plan,
 and Runs.  The first two tabs are for exploring the results of execution
 collected so far, while the last two are for controlling the execution.</p>
-<h4>3.2. Queue Runs</h4>
+<h4>3.2. Plan Runs</h4>
 <p>From the results table, we can click on a row which needs to be filled or more
-execution should be done, and queue up new runs for execution.  You can repeat
+execution should be done, and plan new runs for execution.  You can repeat
 this process from the results table to add necessary runs to fill the output
 columns colored red.  Note that the button on each input column header can be
 used to expand and collapse the rows, so that you can add only part of the runs
 or a larger group of runs at a time.</p>
 <p><img src="gui-plan-from-results.png" alt="New runs can be queued from the results table."></p>
-<h5>Queue Runs from Command Line</h5>
+<h5>Plan Runs from Command Line</h5>
 <p>From the command line, within the experiment repository, the following command will achieve the same result as we did in the GUI:</p>
 <pre><code>3x plan algo=quickSort</code></pre>
-<p>Different sets of runs can be easily queued with commands similar to the following:</p>
+<p>Different sets of runs can be easily planned with commands similar to the following:</p>
 <pre><code>3x plan algo=bubbleSort,insertionSort inputSize=10,11,12</code></pre>
 <h4>3.3. Start Runs</h4>
 <p>The Runs tab shows a list of queues defined in the repository and the target
@@ -445,13 +446,16 @@ values for the input variables individually.  The default when no value is
 chosen for a input variable is to show all results of runs regardless of which
 value was used for execution.
 
-<img src="gui-results-filter-input.png" alt="">
+<img src="gui-results-filter-input.png" alt="Individual values for each input variable can be selected to filter the
+displayed results.">
 
 You can also specify what aggregate values of the output variables you want to
 see as well as simple conditions on values of them, such as equality (<code>=1</code>) or
 inequality (<code>&lt;=12.345</code>) to a literal value.
 
-<img src="gui-results-filter-output.png" alt="">
+<img src="gui-results-filter-output.png" alt="Output values can be filtered with simple conditions, then aggregated in
+several different ways depending on which type of variable they belong
+to.">
 
 <!-- Projection -->
 Note that it&#39;s possible to hide an unwanted variable from appearing in the
@@ -467,7 +471,8 @@ class="icon icon-folder-open-alt"></i>), individual values of that variable
 will each have its own row in the results table.  All runs that were executed
 using the particular value for a row will be grouped and the aggregate values
 of their outputs will be shown in other columns.</p>
-<p><img src="gui-results-aggregate.png" alt=""></p>
+<p><img src="gui-results-aggregate.png" alt="Level of aggregation of the results data can be controlled using buttons on
+the table headers."></p>
 <h5>Sort results by columns and reorder columns</h5>
 <p>Clicking on one of the column name in the table header will sort the results
 table by that column in ascending order.  Clicking again will reverse the order
@@ -481,7 +486,8 @@ the columns to shape the table for easier examination.</p>
 <h4>4.2. Chart Results</h4>
 <p>The Chart tab in 3X&#39;s GUI visualizes as a chart the data shown as a table in
 the Results tab.</p>
-<p><img src="sorting-algos.plain.png" alt=""></p>
+<p><img src="sorting-algos.plain.png" alt="This log-scale chart shows how sorting time increases differently as we grow
+the size of input for each sorting algorithms."></p>
 <p>You can use the controls with pull down menus on the top-left corner of the
 Chart tab to associate each column to either X- or Y-axis, or let the column
 divide the data into different series.  The first variable selected is used as
@@ -500,13 +506,15 @@ the X-axis value and other variables&#39; values for the series.  If you click o
 the number of runs (shown in the last row labeled <code>run#.count</code>), then you can
 browse the individual values before aggregation, and follow the link on each
 value to inspect the full record of the run that generated it.</p>
-<p><img src="gui-results-drilldown-chart.png" alt=""></p>
+<p><img src="gui-results-drilldown-chart.png" alt="Each visual element in the chart allows you to interactively drill down to
+the individual data that contributes to it."></p>
 <p>It&#39;s also possible to inspect individual values from the table.
 By holding Shift Key ⇧ down while hovering over a cell that contains an
 aggregated value, you can inspect each value that contributed to the aggregate
 and access the full record of the run that generated the individual value as
 well.</p>
-<p><img src="gui-results-drilldown-table.png" alt=""></p>
+<p><img src="gui-results-drilldown-table.png" alt="Aggregated cells in the results table can be brushed to reveal individual
+run records as well."></p>
 <h4>4.4. Tabulate from command-line</h4>
 <p>Now, let&#39;s briefly take a look at the ways using the command-line interface to
 obtain raw results data.  In fact, some of the commands shown here are exactly
@@ -617,7 +625,8 @@ of image type.</p>
 <h4>Aggregate image with <em>Overlay</em></h4>
 <p>The <code>graph</code> column in the results table displays the PNG image files generated
 by our experiment runs as in the following screenshot:</p>
-<p><img src="giant_components.overlay.png" alt=""></p>
+<p><img src="giant_components.overlay.png" alt="Individual images are overlaid on top of each other to compose an aggregate
+image for recognizing patterns and outliers."></p>
 <p>Notice here that 3X superimposes multiple images that fall into the same row,
 i.e., renders images on top of each other, so that any patterns or variations
 among them are easily discernible.  This feature is provided as a specialized
@@ -630,10 +639,12 @@ higher-dimensional data.</p>
 <p>Individual images can be browsed one at a time using the same <em>details
 on-demand</em> technique, hovering over the aggregate image or another aggregate
 column while holding the Shift Key ⇧ down.</p>
-<p><img src="giant_components.drilldown.png" alt=""></p>
+<p><img src="giant_components.drilldown.png" alt="Each image can be seen individually by brushing an aggregated cell on the
+same row as with scalar type data."></p>
 <p>When you follow the link, the full record of the run is available as shown in
 the following screenshot:</p>
-<p><img src="giant_components.details.png" alt=""></p>
+<p><img src="giant_components.details.png" alt="Individual output image can be seen fully from overview page of each
+run."></p>
 <p>The run overview page shows the image for <code>graph</code> in full resolution as well as
 the full standard output that records the exact details of the generated random
 graph.  Any other files used for the run, such as <code>graph.pickle</code>, can be
@@ -715,7 +726,8 @@ new visualizations of the experiment results, such as the following chart,
 which shows mean value of <code>numCC</code> by <code>p</code> for different <code>n</code>s.  We can see the
 number of components, i.e., <code>numCC</code> converges down to 1 as we increase the
 value for <code>p</code>.</p>
-<p><img src="giant_components.chart.numCC.png" alt=""></p>
+<p><img src="giant_components.chart.numCC.png" alt="This chart shows a single connected component emerging as we increase the
+probability of edge creation."></p>
 <p>Similarly, we can define several other variables, namely <code>numDisconnected</code>,
 <code>ratioCC1</code>, <code>ratioCC2</code>, and <code>ratioCC3</code> from the output of the script:</p>
 <pre><code><span class="comment">3x</span> <span class="comment">define</span> <span class="comment">output</span> <span class="comment">'numDisconnected'</span> <span class="comment">extract</span> <span class="comment">\</span>
@@ -741,13 +753,14 @@ value for <code>p</code>.</p>
 <span class="comment">3x</span> <span class="comment">define</span> <span class="comment">sync</code></pre>
 <p>These new variables allow us to quickly see how the first connected component&#39;s
 size grows compared to the second one, as shown in the next chart:</p>
-<p><img src="giant_components.chart.ratioCC.png" alt=""></p>
+<p><img src="giant_components.chart.ratioCC.png" alt="This chart shows dramatic growth of the size of the giant component while the
+second one remains relatively small."></p>
 <h4>Notes on Output Extractors</h4>
 <p>In general, output extractor of a 3X output variable is a program that extracts
 the value for that variable.  It takes the form of an executable file whose
 name is <code>extract</code>.  You can use any language to implement it as long as the
-first line contains a <a href="https://en.wikipedia.org/wiki/Shebang_(Unix)">shebang</a> (<code>#!</code>) and its interpreter, or you name the
-compiled executable binary accordingly.  Each output extractor is executed
+first line starts with a <a href="https://en.wikipedia.org/wiki/Shebang_(Unix)">shebang</a> (<code>#!</code>) and its interpreter, or you name
+the compiled executable binary accordingly.  Each output extractor is executed
 after the experiment program (<code>run</code>) finishes, or when 3X rescans records of
 past runs.  Its current working directory is set to the run directory, so all
 files of the record can be easily accessed via relative paths, e.g., <code>stdout</code>
