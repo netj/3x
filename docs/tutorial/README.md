@@ -1083,11 +1083,23 @@ control and manage them.
 
 
 
-<style>@import url(http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css);</style>
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
 <style>
 figcaption {
     font-size: 80%;
     text-align: center;
 }
 </style>
-
+<script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
+<script>
+// show alt text of images as figcaption
+$(function() {
+    $("img").each(function(idx,img) {
+        var $img = $(img);
+        if ($img.closest("figure").length == 0) {
+            $img.wrap($("<figure>"));
+            $("<figcaption>").text($img.attr("alt")).insertAfter($img);
+        }
+    });
+});
+</script>
