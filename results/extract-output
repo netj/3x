@@ -34,10 +34,11 @@ for ox in outputs/*/$_3X_API_EXTRACTOR; do
         v=$(
             # running extractor under the same env
             # TODO start from a clean env?
-            export $(cat ./env) \
+            export \
                 _3X_RUN=$(pwd -P) \
                 _3X_OUTPUT=${ox%/$_3X_API_EXTRACTOR} \
                 #
+            while read -r decl; do export "$decl"; done <env
             PATH="$PATH:$TOOLSDIR"
             if "$ox" 2>"$oerr"; then
                 # only keep non-empty stderr logs

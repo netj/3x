@@ -16,7 +16,7 @@ shopt -s extglob
 parseRemote "$(cat "$(findOneInTargetOrRunners remote)")"
 
 # figure out the environment to use for assembly from remote
-envVars=($(
+eval envVars=($(
     envSpec=(
         $(useTargetOrRunnerConfig environ "assembling with environment spec:" "$@")
     )
