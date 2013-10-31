@@ -1,8 +1,9 @@
 # <i class="icon-beaker"></i> 3X Tutorial with Examples
 
 In this document, we explain how you can setup and conduct computational
-experiments using a few examples.  This step-by-step guide will introduce
-important features of 3X with detailed instructions.
+experiments with 3X using two examples.  This step-by-step guide will introduce
+important features of 3X and teach you how to use them with detailed
+instructions.
 
 
 ## Example 1: Studying Sorting Algorithms
@@ -482,13 +483,16 @@ values for the input variables individually.  The default when no value is
 chosen for a input variable is to show all results of runs regardless of which
 value was used for execution.
 
-![](gui-results-filter-input.png)
+![Individual values for each input variable can be selected to filter the
+displayed results.](gui-results-filter-input.png)
 
 You can also specify what aggregate values of the output variables you want to
 see as well as simple conditions on values of them, such as equality (`=1`) or
 inequality (`<=12.345`) to a literal value.
 
-![](gui-results-filter-output.png)
+![Output values can be filtered with simple conditions, then aggregated in
+several different ways depending on which type of variable they belong
+to.](gui-results-filter-output.png)
 
 <!-- Projection -->
 Note that it's possible to hide an unwanted variable from appearing in the
@@ -506,7 +510,8 @@ will each have its own row in the results table.  All runs that were executed
 using the particular value for a row will be grouped and the aggregate values
 of their outputs will be shown in other columns.
 
-![](gui-results-aggregate.png)
+![Level of aggregation of the results data can be controlled using buttons on
+the table headers.](gui-results-aggregate.png)
 
 ##### Sort results by columns and reorder columns
 
@@ -526,7 +531,8 @@ the columns to shape the table for easier examination.
 The Chart tab in 3X's GUI visualizes as a chart the data shown as a table in
 the Results tab.
 
-![](sorting-algos.plain.png)
+![This log-scale chart shows how sorting time increases differently as we grow
+the size of input for each sorting algorithms.](sorting-algos.plain.png)
 
 You can use the controls with pull down menus on the top-left corner of the
 Chart tab to associate each column to either X- or Y-axis, or let the column
@@ -551,7 +557,8 @@ the number of runs (shown in the last row labeled `run#.count`), then you can
 browse the individual values before aggregation, and follow the link on each
 value to inspect the full record of the run that generated it.
 
-![](gui-results-drilldown-chart.png)
+![Each visual element in the chart allows you to interactively drill down to
+the individual data that contributes to it.](gui-results-drilldown-chart.png)
 
 It's also possible to inspect individual values from the table.
 By holding Shift Key ⇧ down while hovering over a cell that contains an
@@ -559,7 +566,8 @@ aggregated value, you can inspect each value that contributed to the aggregate
 and access the full record of the run that generated the individual value as
 well.
 
-![](gui-results-drilldown-table.png)
+![Aggregated cells in the results table can be brushed to reveal individual
+run records as well.](gui-results-drilldown-table.png)
 
 
 
@@ -721,7 +729,8 @@ of image type.
 The `graph` column in the results table displays the PNG image files generated
 by our experiment runs as in the following screenshot:
 
-![](giant_components.overlay.png)
+![Individual images are overlaid on top of each other to compose an aggregate
+image for recognizing patterns and outliers.](giant_components.overlay.png)
 
 Notice here that 3X superimposes multiple images that fall into the same row,
 i.e., renders images on top of each other, so that any patterns or variations
@@ -738,12 +747,14 @@ Individual images can be browsed one at a time using the same *details
 on-demand* technique, hovering over the aggregate image or another aggregate
 column while holding the Shift Key ⇧ down.
 
-![](giant_components.drilldown.png)
+![Each image can be seen individually by brushing an aggregated cell on the
+same row as with scalar type data.](giant_components.drilldown.png)
 
 When you follow the link, the full record of the run is available as shown in
 the following screenshot:
 
-![](giant_components.details.png)
+![Individual output image can be seen fully from overview page of each
+run.](giant_components.details.png)
 
 The run overview page shows the image for `graph` in full resolution as well as
 the full standard output that records the exact details of the generated random
@@ -851,7 +862,8 @@ which shows mean value of `numCC` by `p` for different `n`s.  We can see the
 number of components, i.e., `numCC` converges down to 1 as we increase the
 value for `p`.
 
-![](giant_components.chart.numCC.png)
+![This chart shows a single connected component emerging as we increase the
+probability of edge creation.](giant_components.chart.numCC.png)
 
 
 Similarly, we can define several other variables, namely `numDisconnected`,
@@ -882,15 +894,16 @@ Similarly, we can define several other variables, namely `numDisconnected`,
 These new variables allow us to quickly see how the first connected component's
 size grows compared to the second one, as shown in the next chart:
 
-![](giant_components.chart.ratioCC.png)
+![This chart shows dramatic growth of the size of the giant component while the
+second one remains relatively small.](giant_components.chart.ratioCC.png)
 
 #### Notes on Output Extractors
 
 In general, output extractor of a 3X output variable is a program that extracts
 the value for that variable.  It takes the form of an executable file whose
 name is `extract`.  You can use any language to implement it as long as the
-first line contains a [shebang][] (`#!`) and its interpreter, or you name the
-compiled executable binary accordingly.  Each output extractor is executed
+first line starts with a [shebang][] (`#!`) and its interpreter, or you name
+the compiled executable binary accordingly.  Each output extractor is executed
 after the experiment program (`run`) finishes, or when 3X rescans records of
 past runs.  Its current working directory is set to the run directory, so all
 files of the record can be easily accessed via relative paths, e.g., `stdout`
