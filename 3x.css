@@ -17,7 +17,8 @@ code {
     font: 12px/18px 'Oxygen Mono', monospace !important;
 }
 
-/* Fixed nav bar for documents compiled by DocumentUp */
+/* Fixed nav bar for documents compiled by DocumentUp on desktops */
+@media screen and (min-width: 1024px) {
 #nav {
     position: fixed;
     width: 230px;
@@ -25,8 +26,9 @@ code {
     overflow-y: auto;
 }
 #content {
-    margin-left: 250px;
+    margin-left: 260px;
     text-align: justify;
+}
 }
 
 /* figure and figcaption */
