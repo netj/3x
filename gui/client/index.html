@@ -73,7 +73,7 @@
           <h2><i class="icon-table icon"></i>Results</h2>
 
           <form class="form-inline">
-            <a href="#" class="btn btn-primary" id="results-refresh">
+            <a href="#" class="btn btn-small btn-primary" id="results-refresh">
               <i class="icon icon-refresh"></i>
               Refresh
             </a>
@@ -87,10 +87,16 @@
               <i class="icon icon-eye-open"></i>
               Show hidden Inputs
             </label>
-            <a href="#" class="btn btn-small disabled pull-right" id="results-reset-column-order">
-              <i class="icon icon-exchange"></i>
-              Reset column order
-            </a>
+            <div class="pull-right">
+              <a href="#" class="btn btn-small disabled" id="results-reset-column-order">
+                <i class="icon icon-exchange"></i>
+                Reset column order
+              </a>
+              <a href="#" class="btn btn-small" id="results-export">
+                <i class="icon icon-share"></i>
+                Export Data
+              </a>
+            </div>
           </form>
 
           <div id="results-table-progress" class="alert alert-block alert-info">

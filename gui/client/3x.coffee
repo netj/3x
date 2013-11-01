@@ -744,6 +744,10 @@ class ResultsTable extends CompositeElement
             .click (e) =>
                do e.preventDefault
                do @load
+        @optionElements.buttonExport
+           ?.click (e) =>
+               do e.preventDefault
+               do @exportData
         if @optionElements.containerForStateDisplay?
             @on "renderBegan processingBegan", => @optionElements.containerForStateDisplay?.addClass("displaying")
             @on "renderEnded", => @optionElements.containerForStateDisplay?.removeClass("displaying")
@@ -1284,6 +1288,19 @@ class ResultsTable extends CompositeElement
                 endBrushingTimeout = setTimeout endBrushing, 100
             )
 
+    exportData: =>
+        # generate tab separated text from the rendered result data
+        textRow = (cells) -> cells.join "\t"
+        textEsc = (value) ->
+            s = ""+value
+            if ///^\S+$///.test s then s
+            else "\"#{s.replace /"/g, "\"\""}\""
+        data = (textRow (textEsc c.name for c in @columnsRendered)) + "\n"
+        for row in @resultsForRendering
+            data += (textRow (textEsc c.value for c in row)) + "\n"
+        # open it using the data URI scheme to make it appear as plain text
+        dataURI = "data:text/plain;charset=UTF-8,#{encodeURIComponent data}"
+        popup = open dataURI, "data-export", "menubar=no"
 
 
 class ResultsChart extends CompositeElement
@@ -2646,6 +2663,7 @@ $ ->
                 buttonResetColumnOrder      : $("#results-reset-column-order")
                 containerForStateDisplay    : $("#results")
                 buttonRefresh               : $("#results-refresh")
+                buttonExport                : $("#results-export")
             _3X_.results.load()
                 .success(-> # XXX always load chart after results table, since timing issues may happen otherwise
             # chart
