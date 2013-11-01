@@ -2095,8 +2095,10 @@ class TargetsUI extends CompositeElement
                     <span class="target-summary"></span>
                     <div class="actions">
                         <div class="pull-left">
+                        <!-- TODO
                             <button class="action-edit btn btn-small"
                                 title="Edit current target configuration"><i class="icon icon-edit"></i></button>
+                        -->
                         </div>
                         <button class="action-use btn btn-small btn-primary"
                             title="Use this target for executing runs in current queue"><i class="icon icon-ok"></i></button>
