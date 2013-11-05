@@ -12,8 +12,5 @@ ln -sfn "$DEPENDS_PREFIX"/lib/node_modules .
 date >README.md
 npm install
 
-mkdir -p "$DEPENDS_PREFIX"/bin
 cd "$DEPENDS_PREFIX"
-for x in lib/node_modules/.bin/*; do
-    relsymlink "$x" bin/
-done
+place-depends-symlinks bin/ lib/node_modules/.bin/*

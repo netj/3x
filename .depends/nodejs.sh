@@ -4,17 +4,7 @@ set -eu
 
 version=v0.10.16
 
-self=$0
-name=`basename "$0" .sh`
-
 prefix="$(pwd -P)"/prefix
-
-download() {
-    local url=$1; shift
-    local file=$1; shift
-    [ -s "$file" ] || curl -C- -RLO "$url"
-    # TODO sha1sum/md5sum/md5/shasum based on url
-}
 
 # determine os and arch for downloading
 os=$(uname -s)
@@ -45,10 +35,11 @@ if [ -n "$os" -a -n "$arch" ]; then
     # download binary distribution
     tarball="node-${version}-${os}-${arch}.tar.gz"
     name=${tarball%.tar*}
-    download "http://nodejs.org/dist/${version}/$tarball" "$tarball"
+    fetch-verify "http://nodejs.org/dist/${version}/$tarball" "$tarball"
     mkdir -p "$prefix"
     tar xf "$tarball" -C "$prefix" --exclude=$name/share
     cd "$prefix/$name"
+    place-depends-symlinks bin bin/*
 else
     # download source and build
     # first, look for the latest version of python
@@ -60,22 +51,13 @@ else
         echo "Python >= 2.6 is required to build nodejs" >&2
         exit 2
     fi
-    # download the source
-    tarball="node-${version}.tar.gz"
-    download "http://nodejs.org/dist/${version}/$tarball" "$tarball"
-    tar xf "$tarball"
-    cd "./${tarball%.tar.gz}"
-    # configure and build
-    $python ./configure --prefix="$prefix"
-    nproc=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu || echo 1)
-    make -j $nproc install PORTABLE=1
-    cd "$prefix"
+    # download the source, configure and build
+    ext=.tar.gz
+    tarball="node-${version}$ext"
+    fetch-configure-build-install ${tarball%$ext} <<-END
+	url=http://nodejs.org/dist/${version}/$tarball
+	custom-configure() { $python ./configure "\$@"; }
+	custom-build() { :; }
+	custom-install() { default-install PORTABLE=1; }
+	END
 fi
-
-
-# place symlinks for commands to $DEPENDS_PREFIX/bin/
-mkdir -p "$DEPENDS_PREFIX"/bin
-for x in bin/*; do
-    [ -x "$x" ] || continue
-    relsymlink "$x" "$DEPENDS_PREFIX"/bin/
-done
