@@ -21,9 +21,9 @@ if [ -z "$os" ]; then
 else
     arch=$(uname -m)
     case $arch in
-        x86_64|amd64|i686)
+        x86_64|amd64)
             arch=x64 ;;
-        i386|i86pc)
+        i386|i686|i86pc)
             arch=x86 ;;
         *)
             echo >&2 "$arch: Unsupported architecture"
