@@ -1,3 +1,6 @@
 lib/node_modules/coffee-script
 lib/node_modules/less
 lib/node_modules/requirejs
+lib/node_modules/grunt
+lib/node_modules/grunt-cli
+lib/node_modules/closure-compiler

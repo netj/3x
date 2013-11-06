@@ -37,3 +37,6 @@
 [submodule "gui/Numeral-js"]
 	path = gui/Numeral-js
 	url = https://github.com/adamwdraper/Numeral-js.git
+[submodule "gui/knockout"]
+	path = gui/knockout
+	url = https://github.com/knockout/knockout.git

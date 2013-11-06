@@ -40,12 +40,12 @@
     margin-top: -@navbarHeight;
     & > :first-child, & > [id] { padding-top: @navbarHeight; }
   }
-  #setup {
+  .side-pane {
     padding-top: 2*@mainTopSpacing !important;
   }
 }
 @media screen and (max-width: 979px) {
-  #setup {
+  .side-pane {
     &.affix {
       position: absolute;
     }
@@ -59,13 +59,13 @@
       margin-bottom: 0px;
     }
   }
-  #setup {
+  .side-pane {
     &.affix {
-      width: 2*@fluidGridColumnWidth + @fluidGridGutterWidth;
+      //width: 2*@fluidGridColumnWidth + @fluidGridGutterWidth;
       padding: 1px;
       &.overflow {
         // TODO with more stuffs on the side bar, the overflow problem will become important
-        width: 2*(@fluidGridColumnWidth + @fluidGridGutterWidth);
+        //width: 100%; 2*(@fluidGridColumnWidth + @fluidGridGutterWidth);
         padding-left: @fluidGridGutterWidth;
         top: 40px;
         left: 0px;
@@ -84,7 +84,7 @@
       }
     }
   }
-  #setup {
+  .side-pane {
     padding-bottom: 5 * @navbarHeight;
     &.affix {
       position: initial;
@@ -118,11 +118,13 @@ body > .navbar .brand .icon {
   z-index: @jQueryUISelectableHelperZIndex;
 }
 
-#setup {
+.side-pane {
   h4 {
     margin-bottom: 4px;
   }
+}
 
+.menu-dropdown {
   .dropdown-toggle {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -158,24 +160,24 @@ body > .navbar .brand .icon {
     word-wrap: break-word;
     display: inline-block;
   }
+}
 
-  #measurements {
-    & > li > a {
-      color: @errorText;
-      .caret {
-        border-top-color: @errorText;
-        border-bottom-color: @errorText;
-      }
+#measurements {
+  & > li > a {
+    color: @errorText;
+    .caret {
+      border-top-color: @errorText;
+      border-bottom-color: @errorText;
     }
-    & > li.active > a {
-      &, &:hover {
-        color: @white;
-        background-color: @errorText;
-      }
-      .caret {
-        border-top-color: @white;
-        border-bottom-color: @white;
-      }
+  }
+  & > li.active > a {
+    &, &:hover {
+      color: @white;
+      background-color: @errorText;
+    }
+    .caret {
+      border-top-color: @white;
+      border-bottom-color: @white;
     }
   }
 }
@@ -463,6 +465,16 @@ div.dataTables_scrollBody table.dataTable {
   line-height: 12px;
   vertical-align: top;
   margin-top: -2px;
+}
+
+.planner-examples-spacer {
+  text-align: center;
+  vertical-align: middle;
+  h4 { line-height: 100px; }
+}
+.planner-examples {
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 

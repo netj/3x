@@ -76,6 +76,15 @@ cd "$clientDst"
     rm -rf $clientSrc/../bootstrap/bootstrap
 }
 
+# build knockoutjs
+[ -s knockout.js ] || {
+    (
+    cd $clientSrc/../knockout
+    npm install
+    )
+    cp -f $clientSrc/../knockout/build/output/knockout-latest.debug.js  knockout.js
+}
+
 # prepare for stylesheet compilations
 [ -d bootstrap/less ] || {
     rm -rf bootstrap

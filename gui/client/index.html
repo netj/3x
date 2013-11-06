@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="resource/3x.css">
     <script type="text/javascript" src="resource/jquery.js"></script>
     <script type="text/javascript" src="resource/bootstrap.js"></script>
+    <script type="text/javascript" src="resource/knockout.js"></script>
     <script type="text/javascript" src="resource/jquery.appear.js"></script>
     <script type="text/javascript" src="resource/jsrender.js"></script>
     <script type="text/javascript" src="resource/jquery.dataTables.js"></script>
@@ -57,7 +58,7 @@
 
       <div id="results" class="tab-pane active row-fluid loading">
         <div class="span2">
-          <div id="setup" class="span2" data-spy="affix" data-offset-top="0">
+          <div id="setup" class="span2 side-pane" data-spy="affix" data-offset-top="0">
 
             <h4><i class="icon-wrench icon"></i>Inputs</h4>
             <ul id="conditions" class="nav nav-pills nav-stacked">
@@ -167,27 +168,99 @@
       </div>
 
       <div id="plan" class="tab-pane row-fluid">
-        <h2><i class="icon-time icon"></i>Plan</h2>
+        <div class="span3">
+          <div class="span3 side-pane" data-spy="affix" data-offset-top="0">
 
-        <form class="form-inline">
-          <a id="plan-submit" class="btn btn-primary disabled"><i class="icon icon-magic"></i>
-            Create a new <i class="icon icon-cog"></i> Batch
-          </a>
-          <label class="checkbox inline">
-            <input type="checkbox" id="plan-start-after-create">
-            <i class="icon icon-bolt"></i>
-            Start after creating it
-          </label>
-          <a id="plan-clear"  class="btn btn-danger disabled pull-right"><i class="icon icon-trash"></i>
-            Clear
-          </a>
-        </form>
+            <h4><i class="icon-wrench icon"></i>Inputs Selected</h4>
+            <ul id="planner-inputs" class="nav nav-pills nav-stacked">
+            </ul>
 
-        <table id="plan-table" class="table table-hover table-bordered"
-          cellpadding="0" cellspacing="0" border="0">
-          <thead></thead>
-          <tbody></tbody>
-        </table>
+            <button id="planner-inputs-reset"
+              class="btn btn-small btn-danger" disabled
+              data-bind="click: resetSelection, enable: hasSelection"
+              ><i class="icon icon-trash"></i>
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="span9">
+          <h2><i class="icon-time icon"></i>Plan</h2>
+          <div class="accordion" id="planner">
+
+            <div class="accordion-group"><!-- full-combo -->
+              <div class="accordion-heading">
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#planner" href="#planner-full-combo">
+                  <h3><i class="icon icon-repeat"></i>Full Combination of Runs</h3>
+                </a>
+              </div>
+              <div id="planner-full-combo" class="accordion-body collapse in">
+                <div class="accordion-inner">
+
+                  <script type="text/html" id="planner-examples-template">
+                    <div class="row-fluid" data-bind="foreach: $data">
+                      <!-- ko if: $index -->
+                        <div class="span1 planner-examples-spacer">
+                          <h4><i class="icon icon-remove"></i></h4>
+                        </div>
+                      <!-- /ko -->
+                      <div class="span2 well">
+                        <h4 data-bind="text: name"></h4>
+                        <p class="text-right">
+                          (<b data-bind="text: selection.length"></b> values)
+                        </p>
+                        <div class="planner-examples">
+                          <table class="table table-striped">
+                            <tbody data-bind="foreach: selection">
+                              <tr><td data-bind="text: $data"></td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </script>
+
+                  <div data-bind="template: { name: 'planner-examples-template', data: inputsSelected }"></div>
+
+                  <div class="form-actions">
+                    <h4 class="pull-left">Total <span data-bind="text: fullCombo.totalCount"></span> Runs</h4>
+                    <button class="btn btn-primary planner-add pull-right"
+                      data-bind="click: fullCombo.addToQueue,
+                                enable: fullCombo.totalCount"><i class="icon icon-plus"></i>
+                      Add to Queue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-group"><!-- random-sample -->
+              <div class="accordion-heading">
+                <a class="accordion-toggle" data-toggle="collapse" data-parent="#planner" href="#planner-random-sample">
+                  <h3><i class="icon icon-random"></i>Random Sample of Runs</h3>
+                </a>
+              </div>
+              <div id="planner-random-sample" class="accordion-body collapse">
+                <div class="accordion-inner">
+                  <div data-bind="template: { name: 'planner-examples-template', data: inputsSelected }"></div>
+
+                  <div class="form-actions">
+                    <h4 class="pull-left">Total <span data-bind="text: randomSampling.totalCount"></span> Runs</h4>
+                    <input type="range" value="10" min="1" max="99" step="1" data-bind="value: randomSamplingPercentage">
+                    <button class="btn btn-primary planner-add pull-right"
+                      data-bind="click: randomSampling.addToQueue,
+                                enable: randomSampling.totalCount"><i class="icon icon-plus"></i>
+                      Add to Queue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+
       </div>
 
       <div id="runs" class="tab-pane row-fluid">

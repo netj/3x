@@ -440,6 +440,8 @@ class MenuDropdown extends CompositeElement
     constructor: (@baseElement, @menuName) ->
         super @baseElement
 
+        @baseElement.addClass("menu-dropdown")
+
         @menuLabelItemsPrefix    = "="
         @menuLabelItemsDelimiter = ","
         @menuLabelItemsPostfix   = ""
@@ -470,6 +472,15 @@ class MenuDropdown extends CompositeElement
     persist: =>
         localStorage["menuDropdownSelectedItems_#{@menuName}"] = JSON.stringify @menuItemsSelected
         localStorage["menuDropdownInactiveMenus_#{@menuName}"] = JSON.stringify @menusInactive
+
+    clearSelection: =>
+        @baseElement.find(".dropdown").each (i, dropdown) =>
+            @updateDisplay $(dropdown)
+                .addClass("active")
+                .find(".menu-dropdown-item").removeClass("ui-selected").end()
+        do @persist
+        do @triggerIfChanged
+
 
     clearMenu: =>
         @baseElement.find("*").remove()
@@ -594,7 +605,7 @@ class MenuDropdown extends CompositeElement
 
 class ConditionsUI extends MenuDropdown
     constructor: (@baseElement) ->
-        super @baseElement, "condition"
+        super @baseElement, "condition-#{@baseElement.attr("id")}"
         @conditions = {}
     load: =>
         $.getJSON("#{_3X_ServiceBaseURL}/api/inputs")
@@ -609,7 +620,7 @@ class ConditionsUI extends MenuDropdown
 
 class MeasurementsUI extends MenuDropdown
     constructor: (@baseElement) ->
-        super @baseElement, "measurement"
+        super @baseElement, "measurement-#{@baseElement.attr("id")}"
         @menuLabelItemsPrefix  = " ["
         @menuLabelItemsPostfix = "]"
         @measurements = {}
@@ -1804,6 +1815,52 @@ class ResultsChart extends CompositeElement
             .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
 
 
+class PlannerUI extends CompositeElement
+    constructor: (@baseElement, @inputs, @optionElements = {}) ->
+        @inputs.baseElement.find(".menu-checkbox").remove() # TODO add option to remove these checkboxes in MenuDropdown
+
+        @inputsSelected = ko.observable null
+        @hasSelection = ko.observable null
+        updateViewModel = (e) =>
+            @inputsSelected (
+                for name,input of @inputs.conditions
+                    {
+                        name
+                        selection: @inputs.menuItemsSelected[name] ? input.values
+                    }
+            )
+            @hasSelection (_.values @inputs.menuItemsSelected).some (s) -> s?
+        @inputs.on "activeMenuItemsChanged", updateViewModel
+        do updateViewModel
+
+        # full combination
+        @fullCombo =
+            totalCount: ko.computed =>
+                count = 1
+                for {name,selection} in @inputsSelected()
+                    count *= selection.length
+                count
+            addToQueue: =>
+                alert "not implemented" # TODO
+
+        @randomSamplingPercentage = ko.observable (
+            (try JSON.parse localStorage.plannerRandomSamplingPercentage) ? 10)
+        @randomSamplingPercentage.subscribe (val) =>
+            localStorage.plannerRandomSamplingPercentage = JSON.stringify val
+
+        @randomSampling =
+            totalCount: ko.computed =>
+                Math.round (@fullCombo.totalCount() * @randomSamplingPercentage()/100)
+            addToQueue: =>
+                alert "not implemented" # TODO
+
+        ko.applyBindings @, @baseElement[0]
+
+    resetSelection: (e) =>
+        do @inputs.clearSelection
+
+
+
 class QueuesUI extends CompositeElement
     constructor: (@baseElement, @status, @target, @optionElements) ->
         super @baseElement
@@ -2472,6 +2529,7 @@ class StatusTable extends CompositeElement
             @dataTableScroller.fnMeasure()
 
 
+    # TODO move the rest (plan popover) to PlannerUI
     attachToResultsTable: =>
         # add a popover to the attached results table
         if (rt = @optionElements.resultsTable)?
@@ -2693,6 +2751,10 @@ $ ->
                 toggleAbsoluteProgress: $("#queue-toggle-absolute-progress")
                 activeCountDisplay: $("#active-count.label")
                 remainingCountDisplay: $("#remaining-count.label")
+    plannerInputs = new ConditionsUI $("#planner-inputs")
+    plannerInputs.load().success ->
+        _3X_.planner = new PlannerUI $("#plan"), plannerInputs,
+            buttonAddToQueue: $("#planner-add")
     do initTitle
     do initBaseURLControl
     do initTabs

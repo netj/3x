@@ -1,7 +1,7 @@
 {
-  "name": "3X",
+  "name": "3X-node_tools",
   "author": "Jaeho Shin <netj@cs.stanford.edu>",
-  "description": "eXecutable eXploratory eXperiments",
+  "description": "eXecutable eXploratory eXperiments node.js Build Dependencies",
   "repository": {
     "type": "git",
     "url": "git://github.com/netj/3x.git"
@@ -11,6 +11,9 @@
     "node": "v0.8.x"
   },
   "dependencies": {
+    "closure-compiler": "0.2.3",
+    "grunt-cli": "0.1.10",
+    "grunt": "0.4.1",
     "underscore": "1.3.3",
     "requirejs": "1.0.8",
     "less": "1.4.0",

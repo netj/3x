@@ -22,6 +22,8 @@ jquery.appear/jquery.appear.js                          $GUIDIR/client/resource/
 
 jsrender/jsrender.js                                    $GUIDIR/client/resource/
 
+.build/client/resource/knockout.js                      $GUIDIR/client/resource/
+
 DataTables/media/js/jquery.dataTables.js                                                $GUIDIR/client/resource/jquery.dataTables.js
 DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js                        $GUIDIR/client/resource/jquery.dataTables.bootstrap.js
 DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css                       $GUIDIR/client/resource/DataTables/
