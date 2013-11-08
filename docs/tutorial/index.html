@@ -162,12 +162,12 @@ experimenting with sorting algorithms as following two files:</p>
 as:</p>
 <pre><code><span class="title">python</span> measure.py quickSort <span class="number">10</span> random</code></pre>
 <p>which outputs, for instance:</p>
-<pre><code><span class="title">ratio</span> sorted: <span class="number">1.0</span>
-<span class="title">sorting</span> time (s): <span class="number">0.009179</span>
-<span class="title">verification</span> time (s): <span class="number">0.000225</span>
-<span class="title">input</span> generation time (s): <span class="number">0.000580</span>
-<span class="title">number</span> <span class="keyword">of</span> compares: <span class="number">11440</span>
-<span class="title">number</span> <span class="keyword">of</span> accesses: <span class="number">30735</span></code></pre>
+<pre><code class="lang-plain">    ratio sorted: <span class="number">1.0</span>
+    sorting <span class="property">time</span> (s): <span class="number">0.009179</span>
+    verification <span class="property">time</span> (s): <span class="number">0.000225</span>
+    input generation <span class="property">time</span> (s): <span class="number">0.000580</span>
+    <span class="type">number</span> <span class="keyword">of</span> compares: <span class="number">11440</span>
+    <span class="type">number</span> <span class="keyword">of</span> accesses: <span class="number">30735</span></code></pre>
 <h3 id='example-1-studying-sorting-algorithms/2-create-and-setup-an-experiment-repository'>2. Create and Setup an Experiment Repository</h3 id='example-1-studying-sorting-algorithms/2-create-and-setup-an-experiment-repository'>
 <p>In order to keep everything related to our experiment well organized, we need
 to tell 3X to create a new <em>experiment repository</em> for us.  Every detail from
@@ -188,22 +188,22 @@ called <code>sorting-algos</code>.  </p>
 experiment on sorting algorithms.  It is simply an abbreviation for the
 multiple steps necessary to initialize the experiment repository and define its
 input and output.</p>
-<pre><code><span class="comment">#</span> <span class="comment">create</span> <span class="comment">and</span> <span class="comment">setup</span> <span class="comment">a</span> <span class="comment">new</span> <span class="comment">experiment</span> <span class="comment">repository</span>
-<span class="comment">3x</span> <span class="comment">setup</span> <span class="comment">sorting</span>-<span class="comment">algos</span> <span class="comment">\</span>
-    <span class="literal">-</span><span class="literal">-</span><span class="comment">program</span> <span class="comment">\</span>
-        <span class="comment">'python</span> <span class="comment">measure</span>.<span class="comment">py</span> <span class="comment">$algo</span> <span class="comment">$inputSize</span> <span class="comment">$inputType'</span> <span class="comment">\</span>
-    <span class="literal">-</span><span class="literal">-</span><span class="comment">inputs</span> <span class="comment">\</span>
-        <span class="comment">inputSize=10</span>,<span class="comment">11</span>,<span class="comment">12</span>,<span class="comment">13</span>,<span class="comment">14</span>,<span class="comment">15</span>,<span class="comment">16</span>,<span class="comment">17</span>,<span class="comment">18</span> <span class="comment">\</span>
-        <span class="comment">inputType=random</span>,<span class="comment">ordered</span>,<span class="comment">reversed</span> <span class="comment">\</span>
-        <span class="comment">algo=bubbleSort</span>,<span class="comment">selectionSort</span>,<span class="comment">insertionSort</span>,<span class="comment">quickSort</span>,<span class="comment">mergeSort</span> <span class="comment">\</span>
-    <span class="literal">-</span><span class="literal">-</span><span class="comment">outputs</span> <span class="comment">\</span>
-        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'sorting</span> <span class="comment">time</span> <span class="comment">\(s\):</span> <span class="comment">{{sortingTime(s)</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
-        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'number</span> <span class="comment">of</span> <span class="comment">compares:</span> <span class="comment">{{numCompare</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
-        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'number</span> <span class="comment">of</span> <span class="comment">accesses:</span> <span class="comment">{{numAccess</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
-        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'ratio</span> <span class="comment">sorted:</span> <span class="comment">{{ratioSorted</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
-        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'input</span> <span class="comment">generation</span> <span class="comment">time</span> <span class="comment">\(s\):</span> <span class="comment">{{inputTime(s)</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
-        <span class="literal">-</span><span class="literal">-</span><span class="comment">extract</span> <span class="comment">'verification</span> <span class="comment">time</span> <span class="comment">\(s\):</span> <span class="comment">{{verificationTime(s)</span> <span class="comment">=~</span> <span class="string">.</span><span class="literal">+</span><span class="comment">}}'</span> <span class="comment">\</span>
-    <span class="comment">#</code></pre>
+<pre><code class="lang-bash">    <span class="comment"># create and setup a new experiment repository</span>
+    3x setup sorting-algos \
+        --program \
+            <span class="string">'python measure.py $algo $inputSize $inputType'</span> \
+        --inputs \
+            inputSize=10,11,12,13,14,15,16,17,18 \
+            inputType=random,ordered,reversed \
+            algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
+        --outputs \
+            --extract <span class="string">'sorting time \(s\): {{sortingTime(s) =~ .+}}'</span> \
+            --extract <span class="string">'number of compares: {{numCompare =~ .+}}'</span> \
+            --extract <span class="string">'number of accesses: {{numAccess =~ .+}}'</span> \
+            --extract <span class="string">'ratio sorted: {{ratioSorted =~ .+}}'</span> \
+            --extract <span class="string">'input generation time \(s\): {{inputTime(s) =~ .+}}'</span> \
+            --extract <span class="string">'verification time \(s\): {{verificationTime(s) =~ .+}}'</span> \
+        <span class="comment">#</span></code></pre>
 <p>Note that since this quick setup command creates only the skeleton part of our
 experiment repository, we still need to place additional files at the right
 place, namely, the <code>.py</code> files of our program.  Refer to the <a href="#plugintheprogram">instructions for
@@ -213,7 +213,7 @@ already taken care by the <code>3x setup</code> command above.  We&#39;ll all se
 running our experiment.</p>
 <h4>2.1. Create an Experiment Repository</h4>
 <p>The following command creates an empty repository:</p>
-<pre><code>3x init sorting-algos</code></pre>
+<pre><code class="lang-bash">3x init sorting-algos</code></pre>
 <p>We can now move into the repository to further define our experiment.</p>
 <pre><code><span class="title">cd</span> sorting-algos</code></pre>
 <h4>2.2. Define Inputs &amp; Outputs</h4>
@@ -273,7 +273,7 @@ the values of interest in the case of this experiment with sorting algorithms.</
 mostly interested in this experiment.  We measure this time in our program
 in seconds and print that out in a line that begins with <code>sorting time (s):</code>.  Therefore 3X can easily extract the value that follows if we define the
 output variable as shown in the following command:</p>
-<pre><code><span class="number">3</span>x define output  <span class="attribute">'inputTime</span>(s)'  extract  <span class="attribute">'sorting</span> <span class="typename">time</span> \(s\): '  '.+'  ''</code></pre>
+<pre><code class="lang-sh"><span class="number">3</span>x define output  <span class="attribute">'inputTime</span>(s)'  extract  <span class="attribute">'sorting</span> <span class="typename">time</span> \(s\): '  '.+'  ''</code></pre>
 <p>Here, there are four arguments to the <code>3x define output</code> command:</p>
 <ol>
 <li>name of the output variable: <code>inputTime(s)</code></li>
@@ -687,22 +687,22 @@ the generated graph, including the number of components that have more than one
 vertex and the size of each component.  Since we dumped the graph to
 <code>graph.pickle</code>, we can load this file and easily compute the necessary values.
 <a href="../examples/giant_components/output/compute-stats.py"><code>compute-stats.py</code></a> is one such script that prints output similar to:</p>
-<pre><code>Number <span class="keyword">of</span> Components (non-singleton):  <span class="number">7</span>
+<pre><code class="lang-plain">Number <span class="keyword">of</span> Components (non-singleton):  <span class="number">7</span>
 Number <span class="keyword">of</span> Disconnected Nodes (singleton components):  <span class="number">29</span>
 <span class="keyword">Component</span> Sizes:  <span class="number">153</span>    <span class="number">4</span>    <span class="number">4</span>    <span class="number">3</span>    <span class="number">3</span>    <span class="number">2</span>    <span class="number">2</span>
 <span class="keyword">Component</span> Size Ratios:  <span class="number">0.765000</span>    <span class="number">0.020000</span>    <span class="number">0.020000</span>    <span class="number">0.015000</span>    <span class="number">0.015000</span>    <span class="number">0.010000</span>    <span class="number">0.010000</span></code></pre>
 <p>We put this script directly under <code>output/</code> of the repository so it can be
 assembled into the <code>outputs/</code> directory of each run and easily shared across
 different output variables.</p>
-<pre><code><span class="title">cd</span> output/
-<span class="title">curl</span> -<span class="type">LO</span> https://netj.github.io/<span class="number">3</span>x/docs/examples/giant_components/output/compute-stats.py
-<span class="title">cd</span> -</code></pre>
+<pre><code class="lang-bash">cd output/
+curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+cd -</code></pre>
 <p>Next, we define an output variable, named <code>numCC</code>, by running the following
 command:</p>
-<pre><code>3x define output 'numCC' extract <span class="command">\
-</span>    'Number of Components.*:<span class="command">\s*</span>' '<span class="command">\d</span>+' '' <span class="command">\
-</span>    --running 'python outputs/compute-stats.py' <span class="command">\
-</span>    --caching compute-stats.txt</code></pre>
+<pre><code class="lang-bash">3x define output <span class="string">'numCC'</span> extract \
+    <span class="string">'Number of Components.*:\s*'</span> <span class="string">'\d+'</span> <span class="string">''</span> \
+    --running <span class="string">'python outputs/compute-stats.py'</span> \
+    --caching compute-stats.txt</code></pre>
 <p>The command above does the following:</p>
 <ul>
 <li><p>It tells 3X to extract value for the variable <code>numCC</code></p>

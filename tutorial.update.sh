@@ -3,12 +3,14 @@ set -eu
 cd "$(dirname "$0")"
 
 git fetch origin
+if [[ $(git status --porcelain docs/tutorial/README.md | wc -l) -eq 0 ]]; then
 git rm -rf -- docs/tutorial || true
 git read-tree --prefix=docs/tutorial remotes/origin/master:docs/tutorial
+fi
 mkdir -p docs/tutorial
 (
 cd docs/tutorial
-git checkout README.md
+[[ -s README.md ]] || git checkout README.md
 curl -X POST \
     --data name="3X Tutorial" \
     --data-urlencode content@README.md \
