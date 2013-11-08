@@ -58,16 +58,20 @@ experimenting with sorting algorithms as following two files:
 To obtain a single measurement with this program, we would a run command such
 as:
 
-    python measure.py quickSort 10 random
+```bash
+python measure.py quickSort 10 random
+```
 
 which outputs, for instance:
 
-    ratio sorted: 1.0
-    sorting time (s): 0.009179
-    verification time (s): 0.000225
-    input generation time (s): 0.000580
-    number of compares: 11440
-    number of accesses: 30735
+```text
+ratio sorted: 1.0
+sorting time (s): 0.009179
+verification time (s): 0.000225
+input generation time (s): 0.000580
+number of compares: 11440
+number of accesses: 30735
+```
 
 
 ### 2. Create and Setup an Experiment Repository
@@ -95,22 +99,24 @@ experiment on sorting algorithms.  It is simply an abbreviation for the
 multiple steps necessary to initialize the experiment repository and define its
 input and output.
 
-    # create and setup a new experiment repository
-    3x setup sorting-algos \
-        --program \
-            'python measure.py $algo $inputSize $inputType' \
-        --inputs \
-            inputSize=10,11,12,13,14,15,16,17,18 \
-            inputType=random,ordered,reversed \
-            algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
-        --outputs \
-            --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
-            --extract 'number of compares: {{numCompare =~ .+}}' \
-            --extract 'number of accesses: {{numAccess =~ .+}}' \
-            --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
-            --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
-            --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
-        #
+```bash
+# create and setup a new experiment repository
+3x setup sorting-algos \
+    --program \
+        'python measure.py $algo $inputSize $inputType' \
+    --inputs \
+        inputSize=10,11,12,13,14,15,16,17,18 \
+        inputType=random,ordered,reversed \
+        algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
+    --outputs \
+        --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
+        --extract 'number of compares: {{numCompare =~ .+}}' \
+        --extract 'number of accesses: {{numAccess =~ .+}}' \
+        --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
+        --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
+        --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
+    #
+```
 
 Note that since this quick setup command creates only the skeleton part of our
 experiment repository, we still need to place additional files at the right
@@ -125,11 +131,15 @@ running our experiment.
 
 The following command creates an empty repository:
 
-    3x init sorting-algos
+```bash
+3x init sorting-algos
+```
 
 We can now move into the repository to further define our experiment.
 
-    cd sorting-algos
+```bash
+cd sorting-algos
+```
 
 
 #### 2.2. Define Inputs & Outputs
@@ -154,7 +164,9 @@ of the algorithms as the value for this input parameter.
 
 The following command tells 3X to add this parameter to the experiment definition:
 
-    3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort 
+```bash
+3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort 
+```
 
 
 ##### Input 2. `inputSize` for choosing the size of the array to sort
@@ -172,7 +184,9 @@ two as the value for this input parameter:
 
 We should run the following command to add this parameter:
 
-    3x define input  inputSize  10 11 12 13 14 15 16 17 18
+```bash
+3x define input  inputSize  10 11 12 13 14 15 16 17 18
+```
 
 
 ##### Input 3. `inputType` for choosing the type of the arrays to sort
@@ -188,7 +202,9 @@ input we want to use:
 
 The following command will add this last parameter:
 
-    3x define input  inputType  ordered reversed random
+```bash
+3x define input  inputType  ordered reversed random
+```
 
 
 Next, suppose we want to measure the wall clock time as well as the number of
@@ -207,7 +223,9 @@ in seconds and print that out in a line that begins with `sorting time (s):
 `.  Therefore 3X can easily extract the value that follows if we define the
 output variable as shown in the following command:
 
-    3x define output  'inputTime(s)'  extract  'sorting time \(s\): '  '.+'  ''
+```bash
+3x define output  'inputTime(s)'  extract  'sorting time \(s\): '  '.+'  ''
+```
 
 Here, there are four arguments to the `3x define output` command:
 
@@ -225,14 +243,18 @@ text for the unit as long as it's surrounded by parentheses.
 Similarly, we can teach 3X to extract the number of compares for the value
 of an output variable using the following command:
 
-    3x define output  'numCompare'  extract  'number of compares: '  '.+'  ''
+```bash
+3x define output  'numCompare'  extract  'number of compares: '  '.+'  ''
+```
 
 
 ##### Output 3. `numAccess`
 
 As well as the number of accesses to the input array of numbers with:
 
-    3x define output  'numAccess'  extract  'number of accesses: '  '.+'  ''
+```bash
+3x define output  'numAccess'  extract  'number of accesses: '  '.+'  ''
+```
 
 
 ##### Output 4. `ratioSorted`
@@ -244,7 +266,9 @@ sorting algorithm was implemented correctly.  When this value comes out
 less than 1.0, it means the the algorithm is incorrect.  The following
 command adds this output variable to the experiment definition.
 
-    3x define output  'ratioSorted'  extract  'ratio sorted: '  '.+'  ''
+```bash
+3x define output  'ratioSorted'  extract  'ratio sorted: '  '.+'  ''
+```
 
 
 ##### Output 5. `inputTime`
@@ -252,7 +276,9 @@ command adds this output variable to the experiment definition.
 We also record the wall clock time that took for generating the input array
 to sort.
 
-    3x define output  'inputTime(s)'  extract  'input generation time \(s\): '  '.+'  ''
+```bash
+3x define output  'inputTime(s)'  extract  'input generation time \(s\): '  '.+'  ''
+```
 
 
 ##### Output 6. `verificationTime`
@@ -260,7 +286,9 @@ to sort.
 And the wall clock time that took for checking whether the output array is
 correctly sorted.
 
-    3x define output  'verificationTime(s)'  extract  'verification time \(s\): '  '.+'  ''
+```bash
+3x define output  'verificationTime(s)'  extract  'verification time \(s\): '  '.+'  ''
+```
 
 
 
@@ -280,7 +308,9 @@ the current working directory while execution.
 
 First, let's move into the `program/` directory of our repository:
 
-    cd program
+```bash
+cd program
+```
 
 
 As we have two Python files necessary for implementing and measuring the
@@ -288,10 +318,12 @@ sorting algorithms, we will put both of these files under `program/`.  If you
 don't have these files readily available, let's download them directly from
 GitHub with the following commands:
 
-    # copy our example Python program into the repository
-    exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos"
-    curl -LO $exampleURL/program/measure.py
-    curl -LO $exampleURL/program/sort.py
+```bash
+# copy our example Python program into the repository
+exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos"
+curl -LO $exampleURL/program/measure.py
+curl -LO $exampleURL/program/sort.py
+```
 
 (You can probably use `wget` instead of `curl -LO` if your system doesn't have
 `curl` installed.)
@@ -299,11 +331,13 @@ GitHub with the following commands:
 Next, we need to create a `run` script that starts our Python program as
 follows:
 
-    cat >run  <<EOF
-    #!/bin/sh
-    python measure.py $algo $inputSize $inputType
-    EOF
-    chmod +x run
+```bash
+cat >run  <<EOF
+#!/bin/sh
+python measure.py $algo $inputSize $inputType
+EOF
+chmod +x run
+```
 
 Now, we're all set to start running our experiment.
 
@@ -327,7 +361,9 @@ will be reflected to the other.
 
 To start the GUI, run the following command within the experiment repository:
 
-    3x gui
+```bash
+3x gui
+```
 
 When successfully started, it will output a URL you can open in your web
 browser to access the GUI.  On a Mac, or a GNU/Linux system running a proper
@@ -355,11 +391,15 @@ or a larger group of runs at a time.
 
 From the command line, within the experiment repository, the following command will achieve the same result as we did in the GUI:
 
-    3x plan algo=quickSort
+```bash
+3x plan algo=quickSort
+```
 
 Different sets of runs can be easily planned with commands similar to the following:
 
-    3x plan algo=bubbleSort,insertionSort inputSize=10,11,12
+```bash
+3x plan algo=bubbleSort,insertionSort inputSize=10,11,12
+```
 
 
 #### 3.3. Start Runs
@@ -382,22 +422,28 @@ class="icon-play"></i> button on the main queue starts the execution.
 From the command line, you can run the following command to view what runs are
 in the current queue:
 
-    3x status
+```bash
+3x status
+```
 
 It will output the table of runs in the current queue that resembles the GUI as
 follows:
 
-    PLANNED  algo=quickSort  inputSize=10  inputType=ordered   #1
-    PLANNED  algo=quickSort  inputSize=10  inputType=random    #2
-    PLANNED  algo=quickSort  inputSize=10  inputType=reversed  #3
-    PLANNED  algo=quickSort  inputSize=11  inputType=ordered   #4
-    [...]
-    PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
-    PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+```text
+PLANNED  algo=quickSort  inputSize=10  inputType=ordered   #1
+PLANNED  algo=quickSort  inputSize=10  inputType=random    #2
+PLANNED  algo=quickSort  inputSize=10  inputType=reversed  #3
+PLANNED  algo=quickSort  inputSize=11  inputType=ordered   #4
+[...]
+PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
+PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+```
 
 To start execution, run:
 
-    3x start
+```bash
+3x start
+```
 
 
 #### 3.4. Stop Runs
@@ -411,7 +457,9 @@ class="icon-stop"></i> button on the main queue.
 To stop execution from the command line, either interrupt the `3x start`
 process with Ctrl-C, or run the following command:
 
-    3x stop
+```bash
+3x stop
+```
 
 
 
@@ -427,18 +475,22 @@ As execution progresses, the state of runs will change from `PLANNED` to
 From the command line, you can use the same command to view the state of runs
 in the current queue:
 
-    3x status
+```bash
+3x status
+```
 
 It will output the table of runs with updated states:
 
-    DONE     algo=quickSort  inputSize=10  inputType=ordered   #1   local  run/2013/1001/01/1836.424138000-1
-    DONE     algo=quickSort  inputSize=10  inputType=random    #2   local  run/2013/1001/01/1839.494897000-2
-    DONE     algo=quickSort  inputSize=10  inputType=reversed  #3   local  run/2013/1001/01/1841.888092000-3
-    DONE     algo=quickSort  inputSize=11  inputType=ordered   #4   local  run/2013/1001/01/1844.200499000-4
-    DONE     algo=quickSort  inputSize=11  inputType=random    #5   local  run/2013/1001/01/1846.514245000-5
-    [...]
-    PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
-    PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+```text
+DONE     algo=quickSort  inputSize=10  inputType=ordered   #1   local  run/2013/1001/01/1836.424138000-1
+DONE     algo=quickSort  inputSize=10  inputType=random    #2   local  run/2013/1001/01/1839.494897000-2
+DONE     algo=quickSort  inputSize=10  inputType=reversed  #3   local  run/2013/1001/01/1841.888092000-3
+DONE     algo=quickSort  inputSize=11  inputType=ordered   #4   local  run/2013/1001/01/1844.200499000-4
+DONE     algo=quickSort  inputSize=11  inputType=random    #5   local  run/2013/1001/01/1846.514245000-5
+[...]
+PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
+PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+```
 
 
 #### 3.6. Trace Failures
@@ -581,34 +633,42 @@ The following command will print full results of all executions containing the
 value for each input and output variable prefixed with its name in a
 tab-separated format and its run identifier on the first column.
 
-    3x results run/
+```bash
+3x results run/
+```
 
 Part of whose output can look like:
 
-    [...]
-    run/2013/0924/18/1752.165321000-13    inputTime=0         numAccess=3069         numCompare=1023         ratioSorted=1  sortingTime=0        algo=insertionSort  inputSize=10  inputType=ordered
-    run/2013/0924/18/1752.165321000-12    inputTime=0         numAccess=134201344    numCompare=33550336     ratioSorted=1  sortingTime=22.31    algo=bubbleSort     inputSize=13  inputType=reversed
-    run/2013/0924/18/1752.165321000-15    inputTime=0         numAccess=1049598      numCompare=523776       ratioSorted=1  sortingTime=0.18     algo=insertionSort  inputSize=10  inputType=reversed
-    run/2013/0924/18/1752.165321000-14    inputTime=0         numAccess=538588       numCompare=268780       ratioSorted=1  sortingTime=0.08     algo=insertionSort  inputSize=10  inputType=random
-    run/2013/0924/18/1752.165321000-11    inputTime=0         numAccess=100600444    numCompare=33545965     ratioSorted=1  sortingTime=14.01    algo=bubbleSort     inputSize=13  inputType=random
-    [...]
-    run/2013/0930/23/5102.639230000-2064  inputTime=0         numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=7047.79  algo=selectionSort  inputSize=18  inputType=reversed
-    run/2013/0930/23/5102.639230000-2059  inputTime=0.01      numAccess=34359869439  numCompare=34359607296  ratioSorted=1  sortingTime=7168.51  algo=selectionSort  inputSize=18  inputType=ordered
-    run/2013/0930/23/5102.639230000-2060  inputTime=0.18      numAccess=34360655832  numCompare=34359607296  ratioSorted=1  sortingTime=8329.18  algo=selectionSort  inputSize=18  inputType=random
-    run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=8850.64  algo=selectionSort  inputSize=18  inputType=reversed
+```text
+[...]
+run/2013/0924/18/1752.165321000-13    inputTime=0         numAccess=3069         numCompare=1023         ratioSorted=1  sortingTime=0        algo=insertionSort  inputSize=10  inputType=ordered
+run/2013/0924/18/1752.165321000-12    inputTime=0         numAccess=134201344    numCompare=33550336     ratioSorted=1  sortingTime=22.31    algo=bubbleSort     inputSize=13  inputType=reversed
+run/2013/0924/18/1752.165321000-15    inputTime=0         numAccess=1049598      numCompare=523776       ratioSorted=1  sortingTime=0.18     algo=insertionSort  inputSize=10  inputType=reversed
+run/2013/0924/18/1752.165321000-14    inputTime=0         numAccess=538588       numCompare=268780       ratioSorted=1  sortingTime=0.08     algo=insertionSort  inputSize=10  inputType=random
+run/2013/0924/18/1752.165321000-11    inputTime=0         numAccess=100600444    numCompare=33545965     ratioSorted=1  sortingTime=14.01    algo=bubbleSort     inputSize=13  inputType=random
+[...]
+run/2013/0930/23/5102.639230000-2064  inputTime=0         numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=7047.79  algo=selectionSort  inputSize=18  inputType=reversed
+run/2013/0930/23/5102.639230000-2059  inputTime=0.01      numAccess=34359869439  numCompare=34359607296  ratioSorted=1  sortingTime=7168.51  algo=selectionSort  inputSize=18  inputType=ordered
+run/2013/0930/23/5102.639230000-2060  inputTime=0.18      numAccess=34360655832  numCompare=34359607296  ratioSorted=1  sortingTime=8329.18  algo=selectionSort  inputSize=18  inputType=random
+run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=8850.64  algo=selectionSort  inputSize=18  inputType=reversed
+```
 
 
 You can narrow down the output if you specify filters on some variables, e.g.:
 
-    3x results algo=quickSort,mergeSort inputType'!='random numCompare'>'5900000
+```bash
+3x results algo=quickSort,mergeSort inputType'!='random numCompare'>'5900000
+```
 
 Then it outputs only the results that match given criteria:
 
-    run/2013/0926/06/1826.875115000-888 	inputTime=0.01	numAccess=7134799	numCompare=5911655	ratioSorted=1	sortingTime=2.87	algo=quickSort	inputSize=18	inputType=ordered
-    run/2013/0926/06/2351.112734000-1070	inputTime=0.01	numAccess=12805001	numCompare=5928316	ratioSorted=1	sortingTime=3.29	algo=quickSort	inputSize=18	inputType=reversed
-    run/2013/0928/10/3748.111174000-1356	inputTime=0.01	numAccess=7168519	numCompare=5944051	ratioSorted=1	sortingTime=2.97	algo=quickSort	inputSize=18	inputType=ordered
-    run/2013/0929/11/1246.771209000-1756	inputTime=0.02	numAccess=7345424	numCompare=6123288	ratioSorted=1	sortingTime=3.19	algo=quickSort	inputSize=18	inputType=ordered
-    run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
+```text
+run/2013/0926/06/1826.875115000-888 	inputTime=0.01	numAccess=7134799	numCompare=5911655	ratioSorted=1	sortingTime=2.87	algo=quickSort	inputSize=18	inputType=ordered
+run/2013/0926/06/2351.112734000-1070	inputTime=0.01	numAccess=12805001	numCompare=5928316	ratioSorted=1	sortingTime=3.29	algo=quickSort	inputSize=18	inputType=reversed
+run/2013/0928/10/3748.111174000-1356	inputTime=0.01	numAccess=7168519	numCompare=5944051	ratioSorted=1	sortingTime=2.97	algo=quickSort	inputSize=18	inputType=ordered
+run/2013/0929/11/1246.771209000-1756	inputTime=0.02	numAccess=7345424	numCompare=6123288	ratioSorted=1	sortingTime=3.19	algo=quickSort	inputSize=18	inputType=ordered
+run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
+```
 
 
 * * *
@@ -650,17 +710,19 @@ file `giant_component.png` that will look like:
 
 and a `graph.pickle` file in addition to standard output lines:
 
-    Generated binomial graph (n=200, p=0.0100):
-     0	[17, 60]
-     1	[130]
-     2	[129, 123, 116, 111]
-     3	[122, 60, 125]
-    [...]
-     198	[128, 49, 155, 52]
-     199	[149, 62]
-    
-    Created graph.pickle
-    Created giant_component.png
+```text
+Generated binomial graph (n=200, p=0.0100):
+ 0	[17, 60]
+ 1	[130]
+ 2	[129, 123, 116, 111]
+ 3	[122, 60, 125]
+[...]
+ 198	[128, 49, 155, 52]
+ 199	[149, 62]
+
+Created graph.pickle
+Created giant_component.png
+```
 
 
 [`giant_component.py`]: ../examples/giant_components/program/giant_component.py
@@ -674,18 +736,22 @@ output variable `graph` is a file named `giant_component.png` with a MIME type
 `image/png`.  3X GUI can treat output image files specially based on this
 MIME-type user provides.
 
-    3x setup giant_components \
-        --program 'python ./giant_component.py' \
-        --inputs  n=100,200,300 \
-                  p=0.0{01..10} \
-        --outputs --file graph:image/png=giant_component.png \
-    #
+```bash
+3x setup giant_components \
+    --program 'python ./giant_component.py' \
+    --inputs  n=100,200,300 \
+              p=0.0{01..10} \
+    --outputs --file graph:image/png=giant_component.png \
+#
+```
 
 Let's make sure to put the Python code at the correct place.
 
-    cd giant_components/program/
-    curl -LO https://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
-    cd -
+```bash
+cd giant_components/program/
+curl -LO https://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
+cd -
+```
 
 
 ### 3. Run Experiments Many Times
@@ -693,9 +759,11 @@ Let's make sure to put the Python code at the correct place.
 We can move into the repository and execute full combinations of inputs by
 running following commands:
 
-    cd giant_components/
-    3x plan n p
-    3x start
+```bash
+cd giant_components/
+3x plan n p
+3x start
+```
 
 Here, `3x plan` will open your text editor to let you reorder or duplicate some
 of the runs.  You can simply save the presented file to confirm the runs and
@@ -708,10 +776,12 @@ Since each run of this experiment is non-deterministic, we need to execute each
 input many times.  This can be done by running `3x plan` multiple times as
 follows:
 
-    3x plan n p
-    3x plan n p
-    3x plan n p
-    [...]
+```bash
+3x plan n p
+3x plan n p
+3x plan n p
+[...]
+```
 
 Alternatively, you can duplicate the desired lines as many as you want using
 your text editor without running the `3x plan` command multiple times.
@@ -722,7 +792,9 @@ your text editor without running the `3x plan` command multiple times.
 3X GUI is essential for browsing the results since our only output variable is
 of image type.
 
-    3x gui
+```bash
+3x gui
+```
 
 #### Aggregate image with *Overlay*
 
@@ -788,9 +860,11 @@ variable with correct regular expressions to extract those values from the
 record.  For example, you can extract the elapsed wall clock time of your runs
 as `wallTime` by running the following command:
 
-    3x define output 'wallTime(s)' extract \
-        'Elapsed \(wall clock\) time \(seconds\): '  '[0-9.]+'  '' \
-        rusage
+```bash
+3x define output 'wallTime(s)' extract \
+    'Elapsed \(wall clock\) time \(seconds\): '  '[0-9.]+'  '' \
+    rusage
+    ```
 
 3X will not only extract values for `wallTime` from future runs but also rescan
 records of past runs.
@@ -813,18 +887,22 @@ vertex and the size of each component.  Since we dumped the graph to
 `graph.pickle`, we can load this file and easily compute the necessary values.
 [`compute-stats.py`][] is one such script that prints output similar to:
 
-    Number of Components (non-singleton):  7
-    Number of Disconnected Nodes (singleton components):  29
-    Component Sizes:  153	4	4	3	3	2	2
-    Component Size Ratios:  0.765000	0.020000	0.020000	0.015000	0.015000	0.010000	0.010000
+```text
+Number of Components (non-singleton):  7
+Number of Disconnected Nodes (singleton components):  29
+Component Sizes:  153	4	4	3	3	2	2
+Component Size Ratios:  0.765000	0.020000	0.020000	0.015000	0.015000	0.010000	0.010000
+```
 
 We put this script directly under `output/` of the repository so it can be
 assembled into the `outputs/` directory of each run and easily shared across
 different output variables.
 
-    cd output/
-    curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
-    cd -
+```bash
+cd output/
+curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+cd -
+```
 
 [`compute-stats.py`]: ../examples/giant_components/output/compute-stats.py
 
@@ -832,10 +910,12 @@ different output variables.
 Next, we define an output variable, named `numCC`, by running the following
 command:
 
-    3x define output 'numCC' extract \
-        'Number of Components.*:\s*' '\d+' '' \
-        --running 'python outputs/compute-stats.py' \
-        --caching compute-stats.txt
+```bash
+3x define output 'numCC' extract \
+    'Number of Components.*:\s*' '\d+' '' \
+    --running 'python outputs/compute-stats.py' \
+    --caching compute-stats.txt
+    ```
 
 The command above does the following:
 
@@ -853,7 +933,9 @@ The command above does the following:
 We need to tell 3X to adjust other parts of the repository influenced by the
 new output variable by running the following command:
 
-    3x define sync
+```bash
+3x define sync
+```
 
 In this case, it will rescan records of past runs to extract values for the new
 output variable `numCC`.  With the new `numCC` variable, we can easily create
@@ -869,27 +951,29 @@ probability of edge creation.](giant_components.chart.numCC.png)
 Similarly, we can define several other variables, namely `numDisconnected`,
 `ratioCC1`, `ratioCC2`, and `ratioCC3` from the output of the script:
 
-    3x define output 'numDisconnected' extract \
-        'Number of Disconnected Nodes.*:\s*' '\d+' '' \
-        --running 'python outputs/compute-stats.py' \
-        --caching compute-stats.txt
-    
-    3x define output 'ratioCC1' extract \
-        'Component Size Ratios:\s*' '[.0-9]+' '' \
-        --running 'python outputs/compute-stats.py' \
-        --caching compute-stats.txt
-    
-    3x define output 'ratioCC2' extract \
-        'Component Size Ratios:\s*[.0-9]+\s+' '[.0-9]+' '' \
-        --running 'python outputs/compute-stats.py' \
-        --caching compute-stats.txt
-    
-    3x define output 'ratioCC3' extract \
-        'Component Size Ratios:\s*([.0-9]+\s+){2}' '[.0-9]+' '' \
-        --running 'python outputs/compute-stats.py' \
-        --caching compute-stats.txt
+```bash
+3x define output 'numDisconnected' extract \
+    'Number of Disconnected Nodes.*:\s*' '\d+' '' \
+    --running 'python outputs/compute-stats.py' \
+    --caching compute-stats.txt
 
-    3x define sync
+3x define output 'ratioCC1' extract \
+    'Component Size Ratios:\s*' '[.0-9]+' '' \
+    --running 'python outputs/compute-stats.py' \
+    --caching compute-stats.txt
+
+3x define output 'ratioCC2' extract \
+    'Component Size Ratios:\s*[.0-9]+\s+' '[.0-9]+' '' \
+    --running 'python outputs/compute-stats.py' \
+    --caching compute-stats.txt
+
+3x define output 'ratioCC3' extract \
+    'Component Size Ratios:\s*([.0-9]+\s+){2}' '[.0-9]+' '' \
+    --running 'python outputs/compute-stats.py' \
+    --caching compute-stats.txt
+
+3x define sync
+```
 
 These new variables allow us to quickly see how the first connected component's
 size grows compared to the second one, as shown in the next chart:
@@ -936,7 +1020,9 @@ special values to some environment variables, namely `PATH` and `PYTHON3PATH`.
 The following command defines a target named `local2` that customizes the
 environment in the way we want.
 
-    3x target local2  define local  PATH=/opt/python3/bin:"$PATH"  PYTHON3PATH=~/python3-packages
+```bash
+3x target local2  define local  PATH=/opt/python3/bin:"$PATH"  PYTHON3PATH=~/python3-packages
+```
 
 #### Add a Remote SSH Host Target
 
@@ -948,7 +1034,9 @@ remotely and take care of the relevant data transfer forth and back.
 The following command defines a target named `rocky` that executes runs on host
 `rocky.Stanford.EDU` using the directory `~/3x-tmp/` for temporary storage.
 
-    3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/
+```bash
+3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/
+```
 
 To specify a username in addition to the hostname, prepend the username
 followed by a `@`, e.g., `netj@rocky.Stanford.EDU`.  If your remote host uses a
@@ -958,8 +1046,10 @@ specify its port as well, e.g., `ssh://netj@rocky.Stanford.EDU:22/3x-tmp/`.
 As with local targets, you can specify customizations to the environment
 variables after the URL for the remote, e.g. to tweak the `PATH` variable:
 
-    3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
-        PATH='/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'
+```bash
+3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
+    PATH='/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'
+```
 
 #### Add a GNU Parallel Cluster Target
 
@@ -977,7 +1067,9 @@ complex operation instructions for the tool.
 
 Following command defines a target named `corn`:
 
-    3x target corn  define gnuparallel  /tmp/3x-tmp-netj/  .3x-remote  corn{01..30}.stanford.edu
+```bash
+3x target corn  define gnuparallel  /tmp/3x-tmp-netj/  .3x-remote  corn{01..30}.stanford.edu
+```
 
 that
 
@@ -998,20 +1090,28 @@ Now, assuming you have several targets defined in your repository, you can
 switch target for current queue by specifying only the name of the target, as
 shown in the following command for `rocky`:
 
-    3x target rocky
+```bash
+3x target rocky
+```
 
 After switching, you can start executing on the new target by running:
 
-    3x start
+```bash
+3x start
+```
 
 To switch back to the `local` target, run:
 
-    3x target local
+```bash
+3x target local
+```
 
 
 More usage related to 3X targets can be accessed via the following command:
 
-    3x target -h
+```bash
+3x target -h
+```
 
 
 
@@ -1026,12 +1126,16 @@ separate queues for each target.
 To check the status of every queue as well as which is the current queue, use
 the command without any argument:
 
-    3x queue
+```bash
+3x queue
+```
 
 It will output something similar to:
 
-    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
-    *  main        INACTIVE  22        0         0         28       2137   local
+```text
+#  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+*  main        INACTIVE  22        0         0         28       2137   local
+```
 
 The asterisk character `*` in front of the queue name indicates it is the
 current queue.
@@ -1041,14 +1145,18 @@ current queue.
 To add a new queue, simply specify the name of the queue to the `3x queue`
 command, say `test-queue`:
 
-    3x queue test-queue
+```bash
+3x queue test-queue
+```
 
 It will output lines similar to the following, indicating a new empty queue is
 created:
 
-    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
-    *  test-queue  INACTIVE  0         0         0         0        0      ?
-       main        INACTIVE  22        0         0         28       2137   local
+```text
+#  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+*  test-queue  INACTIVE  0         0         0         0        0      ?
+   main        INACTIVE  22        0         0         28       2137   local
+```
 
 If you specify name of an existing queue, 3X will simply change the current
 queue to that one.
@@ -1058,24 +1166,32 @@ queue to that one.
 
 To specify which target to use for the current queue, use the following command:
 
-    3x target corn
+```bash
+3x target corn
+```
 
 
 You can also specify the target to be used for the queue at the time you create
 or switch to the queue:
 
-    3x queue test-queue corn
+```bash
+3x queue test-queue corn
+```
 
 It will also set the target for the queue:
 
-    #  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
-    *  test-queue  INACTIVE  0         0         0         0        0      corn
-       main        INACTIVE  22        0         0         28       2137   local
+```text
+#  QUEUE       STATE     #PLANNED  #RUNNING  #ABORTED  #FAILED  #DONE  TARGET
+*  test-queue  INACTIVE  0         0         0         0        0      corn
+   main        INACTIVE  22        0         0         28       2137   local
+```
 
 
 More usage related to 3X queues can be viewed via the following command:
 
-    3x queue -h
+```bash
+3x queue -h
+```
 
 The concept of current queue only applies to the commands of command-line
 interface: 3X GUI will provide separate buttons and listings for each queue to
