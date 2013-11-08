@@ -18,13 +18,18 @@ curl -X POST \
     --data-urlencode content@README.md \
     http://documentup.com/compiled \
     >index.html
-    # polish DocumentUp's style
     {
+        # polish DocumentUp's style
         echo '/<\/head/i'
         echo '<link rel="stylesheet" href="../../3x.css">'
         echo '.'
+        # and insert an extra link back to home
+        echo '/<div id="content">/'
+        echo '?</div>?i'
+        echo '<div class="extra"><a href="http://netj.github.io/3x"><i class="icon-beaker"></i> 3X Home</a></div>'
+        echo '.'
         echo 'wq'
-    } | ed index.html
+    } | ed index.html || true
 git add index.html
 )
 
