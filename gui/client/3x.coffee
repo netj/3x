@@ -1842,7 +1842,7 @@ class PlannerUI extends CompositeElement
                     count *= selection.length
                 count
             addToQueue: =>
-                alert "not implemented" # TODO
+                @addRunsToQueue StatusTable.PLAN_ADDITION_STRATEGY.all()
 
         @randomSamplingPercentage = ko.observable (
             (try JSON.parse localStorage.plannerRandomSamplingPercentage) ? 10)
@@ -1853,7 +1853,9 @@ class PlannerUI extends CompositeElement
             totalCount: ko.computed =>
                 Math.round (@fullCombo.totalCount() * @randomSamplingPercentage()/100)
             addToQueue: =>
-                alert "not implemented" # TODO
+                @addRunsToQueue StatusTable.PLAN_ADDITION_STRATEGY.random {
+                    randomPercent: +@randomSamplingPercentage()
+                }
 
         ko.applyBindings @, @baseElement[0]
 
@@ -1870,6 +1872,11 @@ class PlannerUI extends CompositeElement
     resetSelection: (e) =>
         do @inputs.clearSelection
 
+    addRunsToQueue: (runGenerator) =>
+        valuesArray = (selection for {selection} in @inputsSelected())
+        moreRuns = []
+        runGenerator valuesArray, (run) -> moreRuns.push run
+        _3X_.status.addPlan moreRuns # FIXME remove direct dependency, global variable
 
 
 class QueuesUI extends CompositeElement
@@ -2683,9 +2690,11 @@ class StatusTable extends CompositeElement
                 return
             # add generated combinations to the current plan
             #log "adding #{strategy} plans for", valuesArray
+            options =
+                randomPercent: +popover.find(".random-percent").val()
             moreRuns = []
             # add to plans using the given strategy
-            StatusTable.PLAN_ADDITION_STRATEGY[strategy](popover) valuesArray, (comb) =>
+            StatusTable.PLAN_ADDITION_STRATEGY[strategy](options) valuesArray, (comb) =>
                 moreRuns.push comb
             @addPlan moreRuns
         (e) ->
@@ -2704,13 +2713,21 @@ class StatusTable extends CompositeElement
 
     @PLAN_ADDITION_STRATEGY:
 
-        all: (popover) -> forEachCombination
+        all: (options) -> forEachCombination
 
-        random: (popover) -> (valuesArray, addCombination) ->
-            allCombos = []
-            forEachCombination valuesArray, (comb) -> allCombos.push comb
-            numRandom = +popover.find(".num-random").text()
-            choose(numRandom, allCombos).forEach addCombination
+        random: ({randomPercent}) -> (valuesArray, addCombination) ->
+            totalCount = 1; totalCount *= values.length for values in valuesArray
+            numToChoose = Math.round (randomPercent/100 * totalCount)
+            numRemaining = totalCount
+            log numRemaining, numToChoose, addCombination
+            forEachCombination valuesArray, (comb) ->
+                numRemaining--
+                if numToChoose <= 0
+                    false
+                else if numRemaining < numToChoose or _.random(99) < randomPercent
+                    # toss a coin if there are more remaining than needed
+                    addCombination comb
+                    numToChoose--
 
 
 
