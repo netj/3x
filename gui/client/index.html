@@ -176,7 +176,7 @@
             </ul>
 
             <button id="planner-inputs-reset"
-              class="btn btn-small btn-danger" disabled
+              class="btn btn-danger" disabled
               data-bind="click: resetSelection, enable: hasSelection"
               ><i class="icon icon-trash"></i>
               Reset
@@ -188,48 +188,53 @@
           <h2><i class="icon-time icon"></i>Plan</h2>
           <div class="accordion" id="planner">
 
+            <script type="text/html" id="planner-examples-template">
+              <div class="row-fluid" data-bind="foreach: $data">
+                <!-- ko if: $index -->
+                  <div class="span1 planner-examples-spacer">
+                    <h4><i class="icon icon-remove"></i></h4>
+                  </div>
+                <!-- /ko -->
+                <div class="span2 well">
+                  <h4 data-bind="text: name"></h4>
+                  <p class="text-right">
+                    (<b data-bind="text: selection.length"></b> values)
+                  </p>
+                  <div class="planner-examples">
+                    <table class="table table-striped">
+                      <tbody data-bind="foreach: selection">
+                        <tr><td data-bind="text: $data"></td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </script>
+
+
             <div class="accordion-group"><!-- full-combo -->
               <div class="accordion-heading">
                 <a class="accordion-toggle" data-toggle="collapse" data-parent="#planner" href="#planner-full-combo">
-                  <h3><i class="icon icon-repeat"></i>Full Combination of Runs</h3>
+                  <h3><i class="icon icon-repeat"></i>Full Combination of Selected Inputs</h3>
                 </a>
               </div>
-              <div id="planner-full-combo" class="accordion-body collapse in">
+              <div id="planner-full-combo" class="accordion-body collapse">
                 <div class="accordion-inner">
-
-                  <script type="text/html" id="planner-examples-template">
-                    <div class="row-fluid" data-bind="foreach: $data">
-                      <!-- ko if: $index -->
-                        <div class="span1 planner-examples-spacer">
-                          <h4><i class="icon icon-remove"></i></h4>
-                        </div>
-                      <!-- /ko -->
-                      <div class="span2 well">
-                        <h4 data-bind="text: name"></h4>
-                        <p class="text-right">
-                          (<b data-bind="text: selection.length"></b> values)
-                        </p>
-                        <div class="planner-examples">
-                          <table class="table table-striped">
-                            <tbody data-bind="foreach: selection">
-                              <tr><td data-bind="text: $data"></td></tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </script>
 
                   <div data-bind="template: { name: 'planner-examples-template', data: inputsSelected }"></div>
 
-                  <div class="form-actions">
-                    <h4 class="pull-left">Total <span data-bind="text: fullCombo.totalCount"></span> Runs</h4>
-                    <button class="btn btn-primary planner-add pull-right"
-                      data-bind="click: fullCombo.addToQueue,
-                                enable: fullCombo.totalCount"><i class="icon icon-plus"></i>
-                      Add to Queue
-                    </button>
-                  </div>
+                  <form class="form-horizontal form-actions">
+                    <div class="control-group">
+                      <div class="controls">
+                        <h4>Total <span data-bind="text: fullCombo.totalCount"></span> Runs</h4>
+                        <button class="btn btn-primary planner-add"
+                          data-bind="click: fullCombo.addToQueue,
+                          "><i class="icon icon-plus"></i>
+                          Add to Queue
+                        </button>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
@@ -237,22 +242,33 @@
             <div class="accordion-group"><!-- random-sample -->
               <div class="accordion-heading">
                 <a class="accordion-toggle" data-toggle="collapse" data-parent="#planner" href="#planner-random-sample">
-                  <h3><i class="icon icon-random"></i>Random Sample of Runs</h3>
+                  <h3><i class="icon icon-random"></i>Random Sample of Selected Inputs</h3>
                 </a>
               </div>
               <div id="planner-random-sample" class="accordion-body collapse">
                 <div class="accordion-inner">
                   <div data-bind="template: { name: 'planner-examples-template', data: inputsSelected }"></div>
 
-                  <div class="form-actions">
-                    <h4 class="pull-left">Total <span data-bind="text: randomSampling.totalCount"></span> Runs</h4>
-                    <input type="range" value="10" min="1" max="99" step="1" data-bind="value: randomSamplingPercentage">
-                    <button class="btn btn-primary planner-add pull-right"
-                      data-bind="click: randomSampling.addToQueue,
-                                enable: randomSampling.totalCount"><i class="icon icon-plus"></i>
-                      Add to Queue
-                    </button>
-                  </div>
+                  <form class="form-horizontal form-actions">
+                    <div class="control-group">
+                      <label class="control-label" for="planner-random-smaple-ratio">Sampling Ratio</label>
+                      <div class="controls">
+                        <input id="planner-random-smaple-ratio" type="range" value="10" min="1" max="99" step="1" data-bind="value: randomSamplingPercentage">
+                        <span class="help-inline" data-bind="text: randomSamplingPercentage"></span>%
+                      </div>
+                    </div>
+                    <div class="control-group">
+                      <div class="controls">
+                        <h4><span data-bind="text: randomSampling.totalCount"></span> Runs
+                          Sampled from <span data-bind="text: fullCombo.totalCount"></span> Possibilities</h4>
+                        <button class="btn btn-primary planner-add"
+                          data-bind="click: randomSampling.addToQueue,
+                          enable: randomSampling.totalCount"><i class="icon icon-plus"></i>
+                          Add to Queue
+                        </button>
+                      </div>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

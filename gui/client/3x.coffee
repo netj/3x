@@ -1819,6 +1819,7 @@ class PlannerUI extends CompositeElement
     constructor: (@baseElement, @inputs, @optionElements = {}) ->
         @inputs.baseElement.find(".menu-checkbox").remove() # TODO add option to remove these checkboxes in MenuDropdown
 
+        # setup data binding for planners
         @inputsSelected = ko.observable null
         @hasSelection = ko.observable null
         updateViewModel = (e) =>
@@ -1830,8 +1831,8 @@ class PlannerUI extends CompositeElement
                     }
             )
             @hasSelection (_.values @inputs.menuItemsSelected).some (s) -> s?
-        @inputs.on "activeMenuItemsChanged", updateViewModel
         do updateViewModel
+        @inputs.on "activeMenuItemsChanged", updateViewModel
 
         # full combination
         @fullCombo =
@@ -1855,6 +1856,16 @@ class PlannerUI extends CompositeElement
                 alert "not implemented" # TODO
 
         ko.applyBindings @, @baseElement[0]
+
+        # remember last visible strategy and restore it
+        if localStorage.plannerLastActiveStrategy
+            @baseElement.find(".accordion-toggle[href='##{
+                localStorage.plannerLastActiveStrategy}']").click()
+        else
+            @baseElement.find(".accordion-toggle").first().click()
+        @baseElement.find(".accordion-body")
+            .on "show", ->
+                localStorage.plannerLastActiveStrategy = @id
 
     resetSelection: (e) =>
         do @inputs.clearSelection
