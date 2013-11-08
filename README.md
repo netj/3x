@@ -1,6 +1,5 @@
 # <i class="icon-beaker"></i> 3X
 ## A tool for eXecutable eXploratory eXperiments
-<link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
 
 Computational experiments are everywhere these days.  As data and information
 abound at every corner of human activity, computational methods are becoming
@@ -122,9 +121,11 @@ these three different categories.
 
 ## Further Reading
 
+* [Installation instruction](docs/install/)
 * [Tutorial with step-through examples](docs/tutorial/)
 
 <!--
 * [Reference Manual](docs/manual/#readme)
 -->
 
+<link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
