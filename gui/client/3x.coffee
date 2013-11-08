@@ -1860,14 +1860,12 @@ class PlannerUI extends CompositeElement
         ko.applyBindings @, @baseElement[0]
 
         # remember last visible strategy and restore it
-        if localStorage.plannerLastActiveStrategy
-            @baseElement.find(".accordion-toggle[href='##{
-                localStorage.plannerLastActiveStrategy}']").click()
-        else
-            @baseElement.find(".accordion-toggle").first().click()
-        @baseElement.find(".accordion-body")
-            .on "show", ->
-                localStorage.plannerLastActiveStrategy = @id
+        @baseElement.find(".accordion-body#{
+                lastActive = localStorage.plannerLastActiveStrategy
+                if lastActive then "##{lastActive}" else ":first"
+            }").addClass("in")
+        @baseElement.find(".accordion-body").on "show", ->
+            localStorage.plannerLastActiveStrategy = @id
 
     resetSelection: (e) =>
         do @inputs.clearSelection
