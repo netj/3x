@@ -37,7 +37,7 @@ compile-README() {
         echo '<div class="extra"><a href="http://netj.github.io/3x"><i class="icon-beaker"></i> 3X Home</a></div>'
         echo '.'
         echo 'wq'
-    } | ed index.html || true
+    } | ed index.html >/dev/null || true
     git add index.html
     )
 }
@@ -50,6 +50,10 @@ mirror-master docs/tutorial
 compile-README docs/tutorial name="3X Tutorial"
 # and examples
 mirror-master docs/examples
+
+# Installation
+mirror-master docs/install
+compile-README docs/install name="3X Installation"
 
 
 ###############################################################################
