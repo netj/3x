@@ -4,13 +4,15 @@ cd "$(dirname "$0")"
 
 git fetch origin
 if [[ $(git status --porcelain docs/tutorial/README.md | wc -l) -eq 0 ]]; then
-git rm -rf -- docs/tutorial || true
+git rm -rf --cached -- docs/tutorial || true
 git read-tree --prefix=docs/tutorial remotes/origin/master:docs/tutorial
 fi
 mkdir -p docs/tutorial
 (
 cd docs/tutorial
-[[ -s README.md ]] || git checkout README.md
+mv -f README.md README.md~
+git checkout -f .
+mv -f README.md~ README.md
 curl -X POST \
     --data name="3X Tutorial" \
     --data-urlencode content@README.md \
@@ -26,8 +28,9 @@ curl -X POST \
 git add index.html
 )
 
-git rm -rf -- docs/examples || true
+git rm -rf --cached -- docs/examples || true
 git read-tree --prefix=docs/examples remotes/origin/master:docs/examples
+git checkout -f docs/examples
 
 # confirm publishing
 read -p "commit and push? "
