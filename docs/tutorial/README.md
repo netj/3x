@@ -864,7 +864,7 @@ as `wallTime` by running the following command:
 3x define output 'wallTime(s)' extract \
     'Elapsed \(wall clock\) time \(seconds\): '  '[0-9.]+'  '' \
     rusage
-    ```
+```
 
 3X will not only extract values for `wallTime` from future runs but also rescan
 records of past runs.
@@ -915,7 +915,7 @@ command:
     'Number of Components.*:\s*' '\d+' '' \
     --running 'python outputs/compute-stats.py' \
     --caching compute-stats.txt
-    ```
+```
 
 The command above does the following:
 
@@ -1014,7 +1014,7 @@ new *target execution environments*, or *target* as a shorthand.
 
 #### Add Another Local Target
 
-Suppose we want to run our experiments with python3, which requires us to add
+Suppose we want to run our experiments with Python 3, which requires us to add
 special values to some environment variables, namely `PATH` and `PYTHON3PATH`.
 
 The following command defines a target named `local2` that customizes the
