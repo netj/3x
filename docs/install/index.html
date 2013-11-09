@@ -84,11 +84,9 @@
     <h1><i class="icon-beaker"></i> 3X Installation</h1>
 <h2 id='os-x-mac-and-gnu-linux'>OS X (Mac) and GNU/Linux</h2 id='os-x-mac-and-gnu-linux'>
 <h3 id='os-x-mac-and-gnu-linux/download'>Download</h3 id='os-x-mac-and-gnu-linux/download'>
-<p>Prebuilt binary packages for several common environment are available on the
-<a href="https://github.com/netj/3x/releases">3X Releases</a> page.  You must download the correct file for your operating
-system and processor architecture: <code>Darwin</code> is for OS X and <code>Linux</code> is for
-Linux.  After you download the appropriate package, mark it as executable as
-shown in the following generic list of commands:</p>
+<p>Prebuilt binary packages for several common environment are available on the <a href="https://github.com/netj/3x/releases">3X Releases</a> page.
+You must download the correct file for your operating system and processor architecture: <code>Darwin</code> is for OS X and <code>Linux</code> is for Linux.
+After you download the appropriate package, mark it as executable as shown in the following generic list of commands:</p>
 <pre><code class="lang-bash">release=v1.0
 system=`uname -s`-`uname -m`
 package=3x-<span class="variable">$release</span>-<span class="variable">$target</span>.sh
@@ -97,43 +95,31 @@ curl -RLO https://github.com/netj/3x/releases/download/<span class="variable">$r
 <span class="comment"># make it an executable</span>
 chmod +x <span class="variable">$package</span></code></pre>
 <h3 id='os-x-mac-and-gnu-linux/install'>Install</h3 id='os-x-mac-and-gnu-linux/install'>
-<p>You should move the executable package to a directory that is on your <code>$PATH</code>,
-and rename it to <code>3x</code> to use 3X without typing the long path name every time.
-For example, if you already have <code>~/bin/</code> on your <code>$PATH</code>, simply place the
-package under it by running commands similar to the following:</p>
+<p>You should move the executable package to a directory that is on your <code>$PATH</code>, and rename it to <code>3x</code> to use 3X without typing the long path name every time.
+For example, if you already have <code>~/bin/</code> on your <code>$PATH</code>, simply place the package under it by running commands similar to the following:</p>
 <pre><code class="lang-bash">mkdir -p ~/bin
 mv 3x-<span class="variable">$release</span>-<span class="variable">$target</span>.sh ~/bin/3x</code></pre>
 <p>If you don&#39;t have <code>~/bin</code> on your <code>$PATH</code> yet, add the following line to your
 <code>.bash_profile</code> or <code>.bashrc</code>.</p>
 <pre><code class="lang-bash">PATH=~/bin:<span class="string">"<span class="variable">$PATH</span>"</span></code></pre>
-<p>3X documents and instructions contain example commands that may not work
-correctly on other shells than <a href="https://en.wikipedia.org/wiki/Bash_(Unix_shell)">bash</a>.  Unless you are familiar enough with your
-own shell, please begin a new bash session by running <code>bash</code>.</p>
+<p>3X documents and instructions contain example commands that may not work correctly on other shells than <a href="https://en.wikipedia.org/wiki/Bash_(Unix_shell)">bash</a>.
+Unless you are familiar enough with your own shell, please begin a new bash session by running <code>bash</code>.</p>
 <h2 id='building-from-source'>Building from Source</h2 id='building-from-source'>
-<p>You can build 3X from source code on other Unix operating systems, or when you
-are having trouble running the prebuilt packages on your system.</p>
+<p>You can build 3X from source code on other Unix operating systems, or when you are having trouble running the prebuilt packages on your system.</p>
 <h3 id='building-from-source/get-source-and-build'>Get Source and Build</h3 id='building-from-source/get-source-and-build'>
-<p>As long as you have a not-too-old version of <a href="http://git-scm.com">git</a> and other <a href="http://superuser.com/a/352002/45702">essential
-compiler and build tools</a> installed on your system, the
-following three commands will produce an executable file, named
-<code>3x-VERSION-OS-MACHINE.sh</code>.  Here, <code>VERSION</code> is the version of 3X you are
-building, and <code>OS</code> and <code>MACHINE</code> are your operating system and processor
-architecture that the produced 3X executable can run on.</p>
+<p>As long as you have a not-too-old version of <a href="http://git-scm.com">git</a> and other <a href="http://superuser.com/a/352002/45702">essential compiler and build tools</a> installed on your system, the following three commands will produce an executable file, named <code>3x-VERSION-OS-MACHINE.sh</code>.
+Here, <code>VERSION</code> is the version of 3X you are building, and <code>OS</code> and <code>MACHINE</code> are your operating system and processor architecture that the produced 3X executable can run on.</p>
 <pre><code class="lang-bash">git clone https://github.com/netj/3x --branch v1.0
 cd 3x
 make</code></pre>
 <h3 id='building-from-source/install-from-source'>Install from Source</h3 id='building-from-source/install-from-source'>
-<p>If you want to install the package from the source tree to <code>~/bin/</code>, simply run
-this command:</p>
+<p>If you want to install the package from the source tree to <code>~/bin/</code>, simply run this command:</p>
 <pre><code class="lang-bash">make install PREFIX=~</code></pre>
-<p><code>PREFIX</code> can be changed to other locations such as <code>/usr/local</code> to install 3X
-to <code>/usr/local/bin/</code>, which may require administrative permissions.</p>
+<p><code>PREFIX</code> can be changed to other locations such as <code>/usr/local</code> to install 3X to <code>/usr/local/bin/</code>, which may require administrative permissions.</p>
 <h2 id='windows'>Windows</h2 id='windows'>
-<p>Unfortunately, 3X can only run on operating systems that support <a href="https://en.wikipedia.org/wiki/POSIX">POSIX</a>, and
-therefore is not available for Windows operating system.  There is no plan to
-support Windows in the near-term future.  Although not recommended, you might
-be able to run it under <a href="http://cygwin.com">Cygwin</a> or other POSIX emulation layers if you don&#39;t
-have access to a proper POSIX machine.</p>
+<p>Unfortunately, 3X can only run on operating systems that support <a href="https://en.wikipedia.org/wiki/POSIX">POSIX</a>, and therefore is not available for Windows operating system.
+There is no plan to support Windows in the near-term future.
+Although not recommended, you might be able to run it under <a href="http://cygwin.com">Cygwin</a> or other POSIX emulation layers if you don&#39;t have access to a proper POSIX machine.</p>
 <link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
 
   </div>
