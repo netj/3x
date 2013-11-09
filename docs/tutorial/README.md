@@ -1,8 +1,8 @@
 # <i class="icon-beaker"></i> 3X Tutorial with Examples
 
-In this document, we explain how you can setup and conduct computational
+In this document, we explain how you can set up and conduct computational
 experiments with 3X using two examples.  This step-by-step guide will introduce
-important features of 3X and teach you how to use them with detailed
+important features of 3X and will teach you how to use them through detailed
 instructions.
 
 
@@ -10,7 +10,7 @@ instructions.
 
 ![](sorting-algos.png "A chart showing how much time each sorting algorithm took to sort different sizes of inputs")
 
-Anyone who received computer science education or studied basic algorithms
+Anyone who has received computer science education or studied basic algorithms
 would be familiar with different algorithms for sorting an array of data
 values.  In the algorithms textbook, we learn how to analyze time and space
 complexities of such algorithms in terms of their asymptotic behavior.
@@ -23,19 +23,19 @@ sorting algorithms, namely, *bubble sort*, *selection sort*, *insertion sort*,
 *quick sort*, and *merge sort* behave on several sizes and types of inputs,
 e.g., when the input is already ordered, reversed, or randomly shuffled.
 Implementing these algorithms correctly is obviously important, but what's
-equally important to obtain a credible result is running different combinations
+equally important to obtaining a credible result is running different combinations
 of inputs and recording every detail in a systematic manner.  Using 3X, we can
 easily obtain robust, repeatable experimental results with minimal effort.
-Therefore more of our time and energy can be devoted to exploring the parameter
+Therefore, more of our time and energy can be devoted to exploring the parameter
 space as well as writing the program correctly, which leads our experiments to
-yield more interesting results and less errors.
+yield more interesting results and fewer errors.
 
 
 ### 1. Write the Program
 First of all, we need to write a program that implements the sorting algorithms
 we want to test.  Some people may prefer using a serious programming language,
 such as C, C++, or Java to write an efficient implementation.  Others may use
-simpler scripting languages, such as Python, Ruby or Perl for a quick
+simpler scripting languages, such as Python, Ruby, or Perl for a quick
 evaluation.  But in the end, there will always be an executable file, or a
 command and a list of arguments to start our program regardless of the
 programming language of choice.  This is the only thing 3X needs to know about
@@ -43,7 +43,7 @@ the program for our experiment, and we will see where this information should
 be placed after we create an *experiment repository* in the following step.
 
 To keep this tutorial simple, let's assume we already wrote Python code for
-experimenting with sorting algorithms as following two files:
+experimenting with sorting algorithms as in the following two files:
 
 * [`sort.py`][]
     containing each sorting algorithm as a separate Python function.
@@ -74,29 +74,29 @@ number of accesses: 30735
 ```
 
 
-### 2. Create and Setup an Experiment Repository
+### 2. Create and Set Up an Experiment Repository
 
-In order to keep everything related to our experiment well organized, we need
+To keep everything related to our experiment well organized, we need
 to tell 3X to create a new *experiment repository* for us.  Every detail from
 the definition of input/output and program to the individual records of past
 executions and plans for future runs will be stored and managed inside this
 repository.  It is a typical directory (or folder) on the filesystem with a
 special internal structure.
 
-3X provides two different ways to setup a new experiment repository: a quick
+3X provides two different ways to set up a new experiment repository: a quick
 one-liner setup, or a slightly more lengthy step-by-step way.  The quick setup
 will be useful for creating entirely new experiments from scratch, while the
 step-by-step setup can be useful for adjusting your existing experiment
 definitions.  You can either follow the first "Quick Setup" section and skip
 the rest, or follow the individual steps introduced in the sections that
-follows "Quick Setup".  In either ways, let's say we want our repository to be
+follows "Quick Setup."  In either ways, let's say we want our repository to be
 called `sorting-algos`.  
 
 #### Quick Setup
 
-The single command shown below will create and setup a new repository for our
+The single command shown below will create and set up a new repository for our
 experiment on sorting algorithms.  It is simply an abbreviation for the
-multiple steps necessary to initialize the experiment repository and define its
+multiple steps necessary to initialize the experiment repository and to define its
 input and output.
 
 ```bash
@@ -122,8 +122,8 @@ Note that since this quick setup command creates only the skeleton part of our
 experiment repository, we still need to place additional files at the right
 place, namely, the `.py` files of our program.  Refer to the [instructions for
 plugging the program in to 3X (§2.3)](#plugintheprogram) to prepare the `program/`
-directory.  You can safely ignore the rest of the steps, since they were
-already taken care by the `3x setup` command above.  We'll all set to start
+directory.  You can safely ignore the rest of the steps because they were
+already taken care by the `3x setup` command above.  We're all set to start
 running our experiment.
 
 
@@ -143,8 +143,8 @@ cd sorting-algos
 
 
 #### 2.2. Define Inputs & Outputs
-Next, we shall tell 3X what are the input parameters to our experimental
-program, and the output values of interest.
+Next, we shall tell 3X what the input parameters to our experimental
+program are and the output values of interest.
 
 Suppose we want to vary the input size, the initial order of input for
 different sorting algorithms.  We can tell 3X that we have three input
@@ -218,9 +218,9 @@ the values of interest in the case of this experiment with sorting algorithms.
 ##### Output 1. `sortingTime`
 
 The wall clock time it takes for sorting the input array is what we are
-mostly interested in this experiment.  We measure this time in our program
+mostly interested in in this experiment.  We measure this time in our program
 in seconds and print that out in a line that begins with `sorting time (s):
-`.  Therefore 3X can easily extract the value that follows if we define the
+`.  Therefore, 3X can easily extract the value that follows if we define the
 output variable as shown in the following command:
 
 ```bash
@@ -263,7 +263,7 @@ To ensure correctness, note that we compute the ratio of the numbers in the
 array that are correctly ordered to the array size, after finishing the
 sorting algorithm.  This is a simple measure to easily check whether the
 sorting algorithm was implemented correctly.  When this value comes out
-less than 1.0, it means the the algorithm is incorrect.  The following
+less than 1.0, it means the algorithm is incorrect.  The following
 command adds this output variable to the experiment definition.
 
 ```bash
@@ -273,7 +273,7 @@ command adds this output variable to the experiment definition.
 
 ##### Output 5. `inputTime`
 
-We also record the wall clock time that took for generating the input array
+We also record the wall clock time that it took for generating the input array
 to sort.
 
 ```bash
@@ -283,7 +283,7 @@ to sort.
 
 ##### Output 6. `verificationTime`
 
-And the wall clock time that took for checking whether the output array is
+And the wall clock time that it took for checking whether the output array is
 correctly sorted.
 
 ```bash
@@ -296,14 +296,14 @@ correctly sorted.
 #### 2.3. Plug in the Program
 
 The only thing 3X needs to know about our program in order to run experiments
-on behalf of us is the exact command we type into our terminal to start them
+on our behalf is the exact command we type into our terminal to start them
 ourselves.  3X assumes this information is kept as an executable file named
 **`run`** under the `program/` directory of the experiment repository.  For
 each execution of `run`, 3X sets up the environment correctly, so that the
 value chosen for each input variable we defined earlier can be accessed via the
 environment variable with the same name.  3X will also make sure any additional
 files that are placed next to the `run` executable will also be available in
-the current working directory while execution.
+the current working directory while being executed.
 
 
 First, let's move into the `program/` directory of our repository:
@@ -352,9 +352,9 @@ Now, we're all set to start running our experiment.
 3X provides two ways to execute your experiments: You can use its *graphical
 user interface (GUI)*, or the *command-line interface (CLI)*.  The GUI is easy
 and intuitive to use, but you might want to have more sophisticated control
-over your execution, or control 3X from other systems and further automate
+over your execution, or to control 3X from other systems and further automate
 parts of your experiment using the CLI.  However, it is perfectly fine for you
-to use both GUI and CLI at the same time, and any changes you make on one-side
+to use both GUI and CLI at the same time, and any changes you make on one side
 will be reflected to the other.
 
 #### 3.1. Start GUI
@@ -377,10 +377,10 @@ collected so far, while the last two are for controlling the execution.
 
 #### 3.2. Plan Runs
 
-From the results table, we can click on a row which needs to be filled or more
-execution should be done, and plan new runs for execution.  You can repeat
+From the results table, we can click on a row that needs to be filled or
+supported by more data to plan new runs for execution.  You can repeat
 this process from the results table to add necessary runs to fill the output
-columns colored red.  Note that the button on each input column header can be
+columns colored red of the specific rows you select.  Note that the button on each input column header can be
 used to expand and collapse the rows, so that you can add only part of the runs
 or a larger group of runs at a time.
 
@@ -405,14 +405,14 @@ Different sets of runs can be easily planned with commands similar to the follow
 #### 3.3. Start Runs
 
 The Runs tab shows a list of queues defined in the repository and the target
-execution environment associated to them on the left-hand side.  On the
+execution environment associated with them on the left-hand side.  On the
 right-hand side table, all the runs added to the currently selected queue are
-shown with their states and value bindings for input variables in the order
+shown with their states and value bindings for input variables in the order in which
 they will be executed.
 
 ![Queues, targets, and queued runs are shown in the Runs tab.](gui-runs.png)
 
-The buttons on the queue from the left-hand side list will let you to start and
+The buttons on the queue from the left-hand side list will let you start and
 stop the execution of the runs in it.  Pressing the play <i
 class="icon-play"></i> button on the main queue starts the execution.
 
@@ -495,8 +495,8 @@ PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
 
 #### 3.6. Trace Failures
 
-If your program does not finish with clean (zero) exit status, or any error
-occurs, their states become `FAILED`.  For example, if you forget to plug the
+If your program does not finish with clean (zero) exit status for a run, or any error
+occurs, its state becomes `FAILED`.  For example, if you forget to plug the
 `.py` files into the `program/` directory, all runs fail as shown in the
 following screenshot.  Additionally, if you stop the execution, runs can be
 marked as `ABORTED`.
@@ -532,7 +532,7 @@ output variables to the table.
 <!-- Selection -->
 You can select which part of the results you want to view by choosing the
 values for the input variables individually.  The default when no value is
-chosen for a input variable is to show all results of runs regardless of which
+chosen for an input variable is to show all results of runs regardless of which
 value was used for execution.
 
 ![Individual values for each input variable can be selected to filter the
@@ -556,10 +556,10 @@ to <i class="icon icon-check-empty"></i> -->
 You can easily control by which input variables the results are grouped using
 the buttons with folder icon labels <i class="icon icon-folder-open-alt"></i> <i
 class="icon icon-folder-close-alt"></i> on the table header.
-When you make a column expanded (indicated by the open folder icon <i
-class="icon icon-folder-open-alt"></i>), individual values of that variable
-will each have its own row in the results table.  All runs that were executed
-using the particular value for a row will be grouped and the aggregate values
+When you expand a column (indicated by the open folder icon <i
+class="icon icon-folder-open-alt"></i>), each value of that variable
+will have its own row in the results table.  All runs that were executed
+using the particular value for a row will be grouped, and the aggregate values
 of their outputs will be shown in other columns.
 
 ![Level of aggregation of the results data can be controlled using buttons on
@@ -567,39 +567,39 @@ the table headers.](gui-results-aggregate.png)
 
 ##### Sort results by columns and reorder columns
 
-Clicking on one of the column name in the table header will sort the results
+Clicking on one of the column names in the table header will sort the results
 table by that column in ascending order.  Clicking again will reverse the order
 to descending, and clicking once again will deactivate sorting for the
 column.
 By holding the Shift Key ⇧ down while clicking on another column header, you
 can specify additional columns for sorting and give order to the results that
 were ranked equally with previously chosen columns.
-Dragging a column header to left or right direction will allow you to reorder
+Dragging a column header to the left or right will allow you to reorder
 the columns to shape the table for easier examination.
 
 
 #### 4.2. Chart Results
 
-The Chart tab in 3X's GUI visualizes as a chart the data shown as a table in
+The Chart tab in 3X's GUI visualizes in chart form the data shown as a table in
 the Results tab.
 
 ![This log-scale chart shows how sorting time increases differently as we grow
 the size of input for each sorting algorithms.](sorting-algos.plain.png)
 
-You can use the controls with pull down menus on the top-left corner of the
+You can use the controls with pull-down menus on the top-left corner of the
 Chart tab to associate each column to either X- or Y-axis, or let the column
 divide the data into different series.  The first variable selected is used as
 the Y-axis, and the second one as the X-axis.  When more nominal variables are
-selected, data that share common values of them will be drawn in the same
+selected, data that share common values of those variables will be drawn in the same
 series in the chart.  When another numerical variable is further selected, it
 may create a second Y-axis or share the first one depending on whether the
 selected variables can share the *unit* for the Y-axes.
 
 
-#### 4.3. Detail On-demand
+#### 4.3. Detail on Demand
 
-Both chart and table shown in 3X's GUI are interactive: you can drill down to
-details on-demand.
+Both the chart and table shown in 3X's GUI are interactive: you can drill down to
+details on demand.
 
 Clicking on any of the data points plotted in the chart shows a popover menu
 displaying details of the subset of data that contributed to that point.  The
@@ -613,7 +613,7 @@ value to inspect the full record of the run that generated it.
 the individual data that contributes to it.](gui-results-drilldown-chart.png)
 
 It's also possible to inspect individual values from the table.
-By holding Shift Key ⇧ down while hovering over a cell that contains an
+By holding the Shift Key ⇧ down while hovering over a cell that contains an
 aggregated value, you can inspect each value that contributed to the aggregate
 and access the full record of the run that generated the individual value as
 well.
@@ -637,7 +637,7 @@ tab-separated format and its run identifier on the first column.
 3x results run/
 ```
 
-Part of whose output can look like:
+Part of the output will look like:
 
 ```text
 [...]
@@ -654,7 +654,7 @@ run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655 
 ```
 
 
-You can narrow down the output if you specify filters on some variables, e.g.:
+You can narrow down the output if you specify filters on some variables, e.g.,:
 
 ```bash
 3x results algo=quickSort,mergeSort inputType'!='random numCompare'>'5900000
@@ -678,7 +678,7 @@ run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompar
 Having a nice way to play with a few scalar values produced by your experiment
 may sound good enough.  However, you are very likely to encounter a situation
 where higher-dimensional output data, such as a time series result or a custom
-visualization must be handled as well.  In this example, we will see how 3X
+visualization, must be handled as well.  In this example, we will see how 3X
 supports these requirements.
 
 Suppose we have an experiment that studies the rise of a giant connected
@@ -693,8 +693,8 @@ Library for handling Graph Data.
 
 ### 1. Write the Program
 
-To be used most effectively with 3X, we make several changes to the code
-borrowed from NetworkX:
+We make several changes to the code borrowed from NetworkX, so it can be used
+effectively with 3X:
 
 1. Save the result as an image file, named `giant_component.png`, instead of showing it interactively in the GUI.
 2. Obtain the originally hard-coded `p` and `n` values from corresponding environment variables instead.
@@ -728,7 +728,7 @@ Created giant_component.png
 [`giant_component.py`]: ../examples/giant_components/program/giant_component.py
 
 
-### 2. Setup an Experiment Repository
+### 2. Set Up an Experiment Repository
 
 We will use the following quick setup command to create a repository for this
 experiment.  On the last line for `--outputs`, `--file` tells 3X that the
@@ -768,7 +768,7 @@ cd giant_components/
 Here, `3x plan` will open your text editor to let you reorder or duplicate some
 of the runs.  You can simply save the presented file to confirm the runs and
 add them to the queue.  Once you do a `3x start`, 3X will execute all the
-previously planned runs in curent queue and stay executing future ones until
+previously planned runs in the current queue and stay executing future ones until
 stopped by `3x stop`.  Therefore, we can now simply throw more runs into the
 queue to get results from them.
 
@@ -783,7 +783,7 @@ follows:
 [...]
 ```
 
-Alternatively, you can duplicate the desired lines as many as you want using
+Alternatively, you can duplicate the desired lines as many times as you want using
 your text editor without running the `3x plan` command multiple times.
 
 
@@ -810,13 +810,13 @@ among them are easily discernible.  This feature is provided as a specialized
 aggregate function, we call *overlay*, for image file type output variables.
 Overlay aggregate function can be very useful when there isn't a good scalar
 metric that summarizes the result or such metric is yet to be determined, and
-the only way to judge is for humans to look at the images that visualizes the
+the only way to judge is for humans to look at the images that visualize the
 higher-dimensional data.
 
-#### Details on-demand
+#### Details on Demand
 
 Individual images can be browsed one at a time using the same *details
-on-demand* technique, hovering over the aggregate image or another aggregate
+on demand* technique, hovering over the aggregate image or another aggregate
 column while holding the Shift Key ⇧ down.
 
 ![Each image can be seen individually by brushing an aggregated cell on the
@@ -840,7 +840,7 @@ top of the page.
 Suppose you want to compute some statistics from the generated graphs after you
 have seen a number of them.  For example, the number of components and how
 large each of them may seem to be an interesting metric now.  Additionally, you
-may be also interested in how long each run took to generate the graph and
+may also be interested in how long each run took to generate the graph and
 image.
 
 3X allows you to define output variables incrementally, i.e., new output
@@ -877,7 +877,7 @@ records of past runs.
 If a more complex computation is necessary to collect the values of interest,
 then plugging in a custom *output extractor* code to 3X is your option.  In
 fact, the two built-in options provided by `3x define output` command, namely
-`extract` and `file` are mere shorthands for generating standard output
+`extract` and `file`, are mere shorthands for generating standard output
 extractors.  More details on output extractors are described in the next
 section.
 
@@ -949,7 +949,7 @@ probability of edge creation.](giant_components.chart.numCC.png)
 
 
 Similarly, we can define several other variables, namely `numDisconnected`,
-`ratioCC1`, `ratioCC2`, and `ratioCC3` from the output of the script:
+`ratioCC1`, `ratioCC2`, and `ratioCC3`, from the output of the script:
 
 ```bash
 3x define output 'numDisconnected' extract \
@@ -976,7 +976,7 @@ Similarly, we can define several other variables, namely `numDisconnected`,
 ```
 
 These new variables allow us to quickly see how the first connected component's
-size grows compared to the second one, as shown in the next chart:
+size grows compared with the second one, as shown in the next chart:
 
 ![This chart shows dramatic growth of the size of the giant component while the
 second one remains relatively small.](giant_components.chart.ratioCC.png)
@@ -1012,7 +1012,7 @@ To customize the environment in which planned runs are executed, or to execute
 runs on a remote host or a cluster of hosts accessible via ssh, you can define
 new *target execution environments*, or *target* as a shorthand.
 
-#### Add another Local Target
+#### Add Another Local Target
 
 Suppose we want to run our experiments with python3, which requires us to add
 special values to some environment variables, namely `PATH` and `PYTHON3PATH`.
@@ -1031,7 +1031,7 @@ a shared remote machine instead of our local machine.  As long as the remote
 machine is accessible via *ssh* (*Secure SHell*), 3X can execute runs on them
 remotely and take care of the relevant data transfer forth and back.
 
-The following command defines a target named `rocky` that executes runs on host
+The following command defines a target named `rocky` that executes runs on the host
 `rocky.Stanford.EDU` using the directory `~/3x-tmp/` for temporary storage.
 
 ```bash
@@ -1044,7 +1044,7 @@ non-standard SSH port (i.e., other than 22), then you can use the URL form to
 specify its port as well, e.g., `ssh://netj@rocky.Stanford.EDU:22/3x-tmp/`.
 
 As with local targets, you can specify customizations to the environment
-variables after the URL for the remote, e.g. to tweak the `PATH` variable:
+variables after the URL for the remote, e.g., to tweak the `PATH` variable:
 
 ```bash
 3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
@@ -1054,7 +1054,7 @@ variables after the URL for the remote, e.g. to tweak the `PATH` variable:
 #### Add a GNU Parallel Cluster Target
 
 *[GNU Parallel][]* is a handy tool for launching multiple processes of a
-program, remotely as well as locally, in parallel to handle large amount of
+program, remotely as well as locally, in parallel to handle large numbers of
 inputs.  It is especially useful when we have SSH access to a cluster of remote
 machines that does not have a dedicated job scheduler.  3X supports GNU
 Parallel as a type of execution target, so you can get results of multiple runs
@@ -1065,7 +1065,7 @@ complex operation instructions for the tool.
 
 [GNU Parallel]: https://www.gnu.org/software/parallel/
 
-Following command defines a target named `corn`:
+The following command defines a target named `corn`:
 
 ```bash
 3x target corn  define gnuparallel  /tmp/3x-tmp-netj/  .3x-remote  corn{01..30}.stanford.edu
@@ -1087,7 +1087,7 @@ that
 #### Switch between Targets
 
 Now, assuming you have several targets defined in your repository, you can
-switch target for current queue by specifying only the name of the target, as
+switch the target for the current queue by specifying only the name of the target, as
 shown in the following command for `rocky`:
 
 ```bash
