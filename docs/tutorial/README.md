@@ -654,7 +654,7 @@ run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655 
 ```
 
 
-You can narrow down the output if you specify filters on some variables, e.g.,:
+You can narrow down the output if you specify filters on some variables, e.g.,
 
 ```bash
 3x results algo=quickSort,mergeSort inputType'!='random numCompare'>'5900000
@@ -733,8 +733,8 @@ Created giant_component.png
 We will use the following quick setup command to create a repository for this
 experiment.  On the last line for `--outputs`, `--file` tells 3X that the
 output variable `graph` is a file named `giant_component.png` with a MIME type
-`image/png`.  3X GUI can treat output image files specially based on this
-MIME-type user provides.
+`image/png`.  The 3X GUI can treat output image files specially based on this
+user provided MIME-type.
 
 ```bash
 3x setup giant_components \
@@ -1029,7 +1029,7 @@ environment in the way we want.
 Suppose for a fair measurement of `sortingTime`, we want to execute the runs on
 a shared remote machine instead of our local machine.  As long as the remote
 machine is accessible via *ssh* (*Secure SHell*), 3X can execute runs on them
-remotely and take care of the relevant data transfer forth and back.
+remotely and take care of the relevant data transfer there and back.
 
 The following command defines a target named `rocky` that executes runs on the host
 `rocky.Stanford.EDU` using the directory `~/3x-tmp/` for temporary storage.
