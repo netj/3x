@@ -1603,6 +1603,9 @@ class ResultsChart extends CompositeElement
         pickScale = (axis) =>
             dom = d3.extent(axis.domain)
             dom = d3.extent(dom.concat([0])) if @chartOptions["origin#{axis.name}"]
+            if dom[0] == dom[1] or Math.abs (dom[0] - dom[1]) == Number.MIN_VALUE
+                dom[0] -= 1
+                dom[1] += 1
             axis.isLogScalePossible = not intervalContains dom, 0
             axis.isLogScaleEnabled = @chartOptions["logScale#{axis.name}"]
             if axis.isLogScaleEnabled and not axis.isLogScalePossible
