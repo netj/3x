@@ -457,12 +457,16 @@ app.get "/api/run/target/:name", (req, res) ->
 parseStatusOutput = (columnOrder) ->
     normalizeNamedColumnLines (line) ->
                     [state, columns...] = line.split /\s+/
+                    for column,i in columns when column.indexOf("=") == -1 and column[0] is '#'
+                        # found #serial, the beginning of meta-columns
+                        rest = columns.splice(i)
+                        break
                     switch state
                         when "PLANNED"
-                            [columns..., serial] = columns
+                            [serial] = rest
                             target = runId = null
                         else
-                            [columns..., serial, target, runId] = columns
+                            [serial, target, runId] = rest
                     serial = (serial?.replace /^#/, "")
                     runId = "" if runId is "?"
                     if state
