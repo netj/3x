@@ -244,6 +244,9 @@ normalizeNamedColumnLines = (
             row
         )
         .join((rows) ->
+            # pad undefined columns
+            for row in rows
+                row[columnNames.length - 1] ?= null
             next {
                 names: columnNames
                 rows: rows
