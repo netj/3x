@@ -361,39 +361,6 @@ initTabs = ->
 
 
 
-initBaseURLControl = ->
-    urlModalToggler = $("#title")
-    urlModal = $("#url-switch")
-    inputHost = urlModal.find(".url-input-host")
-    inputPort = urlModal.find(".url-input-port")
-    btnPrimary = urlModal.find(".btn-primary")
-
-    urlModalToggler
-        .text(simplifyURL _3X_ServiceBaseURL)
-    urlModal.find("input").keyup (e) ->
-        switch e.keyCode
-            when 14, 13 # enter or return
-                btnPrimary.click()
-    urlModal.on "show", ->
-        m = _3X_ServiceBaseURL.match ///
-            ^http://
-            ([^/]+)
-            :
-            (\d+)
-            ///i
-        inputHost.val(m?[1] ? _3X_Descriptor.hostname)
-        inputPort.val(m?[2] ? _3X_Descriptor.port)
-    urlModal.on "shown", -> inputPort.focus()
-    urlModal.on "hidden", -> urlModalToggler.blur()
-    btnPrimary.click (e) ->
-        url = "http://#{inputHost.val()}:#{inputPort.val()}"
-        if url isnt _3X_ServiceBaseURL
-            $("#title").text(simplifyURL url)
-            _3X_ServiceBaseURL = localStorage._3X_ServiceBaseURL = url
-            do location.reload # TODO find a nice way to avoid reload?
-        urlModal.modal "hide"
-
-
 # TODO find a cleaner way to do this, i.e., leveraging jQuery
 class CompositeElement
     @INSTANCES: []
@@ -2796,7 +2763,6 @@ $ ->
         _3X_.planner = new PlannerUI $("#plan"), plannerInputs,
             buttonAddToQueue: $("#planner-add")
     do initTitle
-    do initBaseURLControl
     do initTabs
 
 
