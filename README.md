@@ -1,6 +1,15 @@
 # <i class="icon-beaker"></i> 3X
 ## A tool for eXecutable eXploratory eXperiments
 
+3X is a platform for conducting computational experiments in a systematic way.
+Organizing the data that goes into and comes out of experiments, as well as maintaining the infrastructure for running them, is generally regarded as a tedious and mundane task.
+Often times we end up in a suboptimal environment improvised and hard-coded for each experiment.
+The problem is exacerbated when the experiments must be performed iteratively for exploring a large parameter space.
+It is our belief that easing this burden will enable humans to more quickly make interesting discoveries from their data.
+Our new tool is timely: so-called “data scientists” are emerging everywhere to ask questions in the form of computational experiments, and to discover new facts from the “big data” their institutions have accumulated.
+3X provides a standard yet configurable structure for users to execute a wide variety of experiments.
+It organizes the experiment, records results, and lets users visualize the data and drive execution interactively.
+
 Computational experiments are everywhere these days.
 As data and information abound at every corner of human activity, computational methods are becoming an integral part of our intellectual endeavor.
 It became crucial nowadays not just for computer scientists or researchers who deal with computers, but also for all kinds of engineers, physical and life scientists, and even for social scientists to deal with series of experiments that crunch data to discover new knowledge.
@@ -25,7 +34,6 @@ Although it provides important scaffoldings on which you can construct reliable 
 Our hope in building 3X with standard structure and common vocabulary is to make establishing a principle become much easier, and practicing it be less burdensome.
 
 
-<!--
 ## Overview of 3X Concepts and Functionality
 
 To give you a clear picture of what 3X provides, let's go through several
@@ -87,11 +95,6 @@ these three different categories.
 
 1. 
 
-
-## FAQ
-
-...
--->
 
 
 ## Further Reading
