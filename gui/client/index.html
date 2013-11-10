@@ -120,7 +120,7 @@
       <div id="chart" class="tab-pane row-fluid">
         <h2><i class="icon-bar-chart icon"></i>Chart</h2>
 
-        <form class="form-inline clear-fix">
+        <form id="chart-options" class="form-inline clear-fix hide">
           <div id="chart-type" class="btn-group" style="display:none;">
             <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">Chart Type <span class="caret"></span></a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
@@ -163,6 +163,12 @@
 
           <div id="chart-axis-controls" class="btn-group"></div>
         </form>
+
+        <div id="chart-impossible" class="alert alert-block alert-error hide">
+          At least one of the input variable columns in the Results table must
+          be expanded to view a two-dimensional chart here.  Also, at least one
+          of them should be of numeric type.
+        </div>
 
         <div id="chart-body" style="height: 500px;"></div>
       </div>

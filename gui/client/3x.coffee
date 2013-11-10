@@ -1449,10 +1449,19 @@ class ResultsChart extends CompositeElement
             (axisCand for axisCand in axisCandidates when isNominal axisCand.type)
         ratioVariables =
             (axisCand for axisCand in axisCandidates when isRatio axisCand.type)
+        # check if there are enough variables to construct a two-dimensional chart
+        canDrawChart = (possible) =>
+            @baseElement.add(@optionElements.chartOptions).toggleClass("hide", not possible)
+            @optionElements.alertChartImpossible?.toggleClass("hide", possible)
+        if ratioVariables.length >= 1 and nominalVariables.length + ratioVariables.length >= 2
+            canDrawChart yes
+        else
+            canDrawChart no
+            return
         # validate the variables chosen for axes
         defaultAxes = []
-        defaultAxes[ResultsChart.X_AXIS_ORDINAL] = nominalVariables[0].name
-        defaultAxes[ResultsChart.Y_AXIS_ORDINAL] = ratioVariables[0].name
+        defaultAxes[ResultsChart.X_AXIS_ORDINAL] = nominalVariables[0]?.name ? ratioVariables[1]?.name
+        defaultAxes[ResultsChart.Y_AXIS_ORDINAL] = ratioVariables[0]?.name
         if @axisNames?
             # find if all axisNames are valid, don't appear more than once, or make them default
             for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or
@@ -2764,6 +2773,8 @@ $ ->
                 toggleOriginX           : $("#chart-toggle-origin-x")
                 toggleOriginY1          : $("#chart-toggle-origin-y1")
                 toggleOriginY2          : $("#chart-toggle-origin-y2")
+                alertChartImpossible    : $("#chart-impossible")
+                chartOptions            : $("#chart-options")
             )
             # queue status
             _3X_.status = new StatusTable $("#status-table"), _3X_.conditions,
