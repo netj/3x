@@ -1,14 +1,19 @@
 # <i class="icon-beaker"></i> 3X
 ## A tool for eXecutable eXploratory eXperiments
 
-3X is a platform for conducting computational experiments in a systematic way.
+3X is a tool for conducting computational experiments in a systematic way.
 Organizing the data that goes into and comes out of experiments, as well as maintaining the infrastructure for running them, is generally regarded as a tedious and mundane task.
 Often times we end up in a suboptimal environment improvised and hard-coded for each experiment.
 The problem is exacerbated when the experiments must be performed iteratively for exploring a large parameter space.
-It is our belief that easing this burden will enable humans to more quickly make interesting discoveries from their data.
-Our new tool is timely: so-called “data scientists” are emerging everywhere to ask questions in the form of computational experiments, and to discover new facts from the “big data” their institutions have accumulated.
-3X provides a standard yet configurable structure for users to execute a wide variety of experiments.
-It organizes the experiment, records results, and lets users visualize the data and drive execution interactively.
+It is obvious that easing this burden will enable us to more quickly make interesting discoveries from the data our experiments produce.
+So-called "data scientists" are emerging everywhere these days to ask questions in the form of computational experiments, and to discover new facts from the "big data" their institutions have accumulated.
+In fact, these computational and data-driven approaches have long been a standard method for doing science in many domains, and we see ever growing number of fields depending on computational experiments.
+3X provides a standard yet configurable structure for us to execute a wide variety of experiments.
+It organizes code/inputs/outputs for the experiment, records results, and lets us visualize the data and drive execution interactively.
+Using 3X we can understand what's being explored much better with significantly less effort and greater confidence.
+
+
+<!--
 
 Computational experiments are everywhere these days.
 As data and information abound at every corner of human activity, computational methods are becoming an integral part of our intellectual endeavor.
@@ -33,44 +38,29 @@ Still, it is very important to understand that conducting a reliable computation
 Although it provides important scaffoldings on which you can construct reliable experiments more easily, the credibility of the experiment is ultimately up to how much rigor the experimenter puts into it.
 Our hope in building 3X with standard structure and common vocabulary is to make establishing a principle become much easier, and practicing it be less burdensome.
 
+-->
 
-## Overview of 3X Concepts and Functionality
+### How does 3X define a computational experiment?
 
-To give you a clear picture of what 3X provides, let's go through several
-questions using a concrete example of "comparing performance of different
-sorting algorithms."
+Any computational experiment can be logically decomposed into three different parts.
+As an example, let's consider an "empirical study of sorting algorithms' performance."
 
-### What is a computational experiment?
+#### Program
+*Program* is what you want to run for your experiment.
+In our example, implementations of the different sorting algorithms, such as bubble sort, quick sort, merge sort, etc., as well as the code for measuring execution time and number of comparisons constitute the experiment program.
 
-Any computational experiment can be logically decomposed into three different
-parts:
-
-<dl>
-
-<dt>Program</dt>
-<dd>
-This is what you want to run for your experiment.  In our example,
-implementations of the different sorting algorithms will belong here, such as
-bubble sort, quick sort, ...
-</dd>
-
-<dt>Input Variables</dt>
-<dd>
-These are the parameters of your program that you want to vary between runs.
-</dd>
-
-<dt>Output Variables</dt>
-<dd>
-These are what you want to collect back from each run of your program.
-</dd>
-
-</dl>
-
-3X provides a well-defined structure for you to factor your experiment into
-these three different categories.
+#### Inputs
+*Inputs* are the parameters of your program that you want to vary between runs.
+In our example, the size and characteristics of the input to the sorting algorithm, as well as which sorting algorithm to use are the experiment inputs.
 
 
-### How would you want to run them?
+#### Outputs
+*Outputs* are the data you want to collect from each of your runs.
+In our example, the time and numbers measured are the experiment outputs.
+
+
+
+### How can you run experiments with 3X?
 
 <dl>
 
