@@ -106,8 +106,10 @@ rescan1() {
         # skip backup if identical
         if ! [ -e "$f" ] || [ x"$(git hash-object "$newF")" != x"$(git hash-object "$f")" ]; then
             msg -1 "$runId: updating $f"
-            mkdir -p outputs/.backup
-            mv -f --backup=numbered "$f" outputs/.backup/
+            if [ -e "$f" ]; then
+                mkdir -p outputs/.backup
+                mv -f --backup=numbered "$f" outputs/.backup/
+            fi
             mv -f --backup=none "$newF" outputs/
         fi
     done
