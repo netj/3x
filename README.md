@@ -42,7 +42,8 @@ Our hope in building 3X with standard structure and common vocabulary is to make
 
 In the following sections, we define terms and concepts used by 3X, and describe what the workflow will be like to use 3X to run, explore, and analyze your own experiments.
 
-### How do I start organizing a computational experiment with 3X?
+
+### How do I organize experiments with 3X?
 
 Any computational experiment can be logically decomposed into three different parts: program, inputs, and outputs.
 Each of these parts can be organized clearly in a dedicated space managed by 3X.
@@ -77,9 +78,10 @@ In fact, this phase of extracting data for experiment outputs is entirely extens
 You can use another set of your own programs, called *extractors*, to perform various computations that can be much more complex than simply searching for pieces of text or files, on the data produced by your original experiment program.
 
 
-### How do I execute experiments with 3X?
 
-Once you have a well-defined computational experiment, 3X provides powerful tools to plan, control, and manage its execution.
+### How do I run experiments with 3X?
+
+Once you have a computational experiment set up with 3X, it provides powerful tools to plan, control, and manage its execution.
 You can easily generate a combination of value bindings for the inputs from a selected set of values, and order them in a way you want to execute.
 3X can execute your program on your local machine or a remote host via SSH one at a time, or on a cluster of machines in parallel.
 
@@ -87,10 +89,11 @@ You can easily generate a combination of value bindings for the inputs from a se
 A *run* is a unit of single execution of your experiment program given the bindings of a value for each of your inputs.
 State of each run is one among `PLANNED`, `RUNNING`, `ABORTED`, `FAILED`, or `DONE`, depending on whether it is to be executed, is executing, or was executed.
 Every run gets a unique *run identifier* (`run#`) assigned once it starts execution, i.e., all runs except the `PLANNED` ones have unique run identifiers.
-The *run directory*, whose path relative to the repository root is the run identifier, records all data that goes into and comes out of the single execution of that run.
+The *run directory*, whose path relative to the repository root is the run identifier, records all data that goes into and comes out of that run.
+As identical copies of files are highly likely to exist across runs, 3X automatically detects them and de-duplicates into a single copy to use storage space efficiently.
 
 #### Queue
-*Queue* is a list of runs where 3X keeps track of its execution order of the remaining `PLANNED` runs and the history of finished runs.
+*Queue* is a list of runs where 3X keeps track of its execution order of the `PLANNED` runs, the status of executing runs, and the history of finished runs.
 It is the point of control of execution, and multiple queues can be used to organize runs into smaller groups.
 You can *start a queue* to execute runs that have been or will be added to the queue, and *stop the queue* to abort any executing runs in it.
 
@@ -101,6 +104,18 @@ For example, you can tie one queue to a target for your local machine and anothe
 
 
 
+### How do I explore and analyze results with 3X?
+
+As soon as your runs finish execution, their outputs can be instantly visualized using the 3X GUI (graphical user interface).
+Visualizations provided by 3X are profoundly more powerful than static pictures of your results data, because they allow interactions for tracing provenance of any visible data point and drilling down to another form of visualization.
+
+#### Table
+3X table displays the input values and output data of your runs as rows and columns.
+You have complete control of which columns are visible in the table, how they are ordered, by which inputs the rows in the table are grouped, what aggregate statistic of grouped rows are shown for each column, and what conditions each visible row should satisfy.
+Several aggregate statistics for an output can be shown at the same time, e.g., mean, standard deviation, median, min, max, mode, and count depending on its data type.
+Any aggregate cell in the table can be inspected to trace records of individual runs that contribute to it.
+
+#### Chart
 
 
 
