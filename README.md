@@ -42,11 +42,11 @@ Our hope in building 3X with standard structure and common vocabulary is to make
 
 In the following sections, we define terms and concepts used by 3X, and describe what the workflow will be like to use 3X to run, explore, and analyze your own experiments.
 
-### How does 3X define a computational experiment?
+### How do I start organizing a computational experiment with 3X?
 
 Any computational experiment can be logically decomposed into three different parts: program, inputs, and outputs.
-Each of these parts can be organized clearly in an *experiment repository* created by 3X.
-As an example, let's consider an "empirical study of sorting algorithms' time complexity" in the following paragraphs.
+Each of these parts can be organized clearly in a dedicated space managed by 3X.
+As an example, let's consider an "empirical study of sorting algorithms' time complexity" in the rest of this section.
 
 #### Experiment Repository
 An *experiment repository* is where 3X keeps all data related to an experiment.
@@ -54,27 +54,33 @@ It is an ordinary filesystem directory dedicated to your experiment, where you c
 New experiment repositories can be easily created with a single command (`3x setup`).
 
 #### Program
-*Program* is what you want to run for your experiment.
+*Program* is what you want to run (or execute) to do the computation for your experiment.
 In our example, implementations of the different sorting algorithms, such as bubble sort, quick sort, merge sort, etc., as well as the code for measuring execution time and number of comparisons constitute the experiment program.
+Most program will output computed data as files or standard output/error based on the input you give, and can be thought as a function.
+But 3X works fine with programs that have randomness in them producing different results on every runs even with the same input, or programs that mutate state of external systems, e.g., databases.
 As long as there is a way to invoke your program from the command-line, 3X is agnostic to what programming language or programming system you used.
+For example, you can use 3X to play with small Python scripts on your laptop, to run MATLAB/Octave code on your compute cluster, or to launch complex jobs on your Hadoop cluster.
 
 #### Inputs
-*Inputs* are the parameters of your program that you want to vary.
+*Inputs* are what you want to vary between executions of your program.
 In our example, the size and characteristics of the input to the sorting algorithm, as well as which sorting algorithm to use are the experiment inputs.
 You can specify a finite set of discrete, symbolic values for each experiment input, e.g., `insertionSort`, `quickSort`, and `mergeSort`, etc. for input `algo` that decides which sorting algorithm to use.
-3X supplies values for the inputs to your experiment program in the form of *environment variables*.
+3X supplies values for the inputs to your experiment program in the form of environment variables.
+A filesystem directory is provided for each experiment input and each value of it to let you organize relevant input files in a manifest way.
 
 #### Outputs
-*Outputs* are the outcome you want to extract from your program's execution result.
+*Outputs* are what you want to extract from the result of each execution of your program.
 In our example, the time and numbers measured are the experiment outputs.
 3X lets you specify a set of regular expressions to extract pieces of text from the standard output and error of your experiment program.
 If an output of your experiment is an image file, you can specify the filename as well.
+In fact, this phase of extracting data for experiment outputs is entirely extensible, not limiting you to these built-in options.
+You can use another set of your own programs, called *extractors*, to perform various computations that can be much more complex than simply searching for pieces of text or files, on the data produced by your original experiment program.
 
 
-### How do you execute experiments with 3X?
+### How do I execute experiments with 3X?
 
 Once you have a well-defined computational experiment, 3X provides powerful tools to plan, control, and manage its execution.
-You can easily generate a combination of value bindings for the inputs from a carefully selected set of values, and order them in a way you want to execute.
+You can easily generate a combination of value bindings for the inputs from a selected set of values, and order them in a way you want to execute.
 3X can execute your program on your local machine or a remote host via SSH one at a time, or on a cluster of machines in parallel.
 
 #### Run
@@ -84,8 +90,8 @@ Every run gets a unique *run identifier* (`run#`) assigned once it starts execut
 The *run directory*, whose path relative to the repository root is the run identifier, records all data that goes into and comes out of the single execution of that run.
 
 #### Queue
-*Queue* is a list of runs where 3X keeps track of its execution order of remaining `PLANNED` runs and the history of finished runs.
-It is the point of control of execution, and can be used to organize runs into smaller groups.
+*Queue* is a list of runs where 3X keeps track of its execution order of the remaining `PLANNED` runs and the history of finished runs.
+It is the point of control of execution, and multiple queues can be used to organize runs into smaller groups.
 You can *start a queue* to execute runs that have been or will be added to the queue, and *stop the queue* to abort any executing runs in it.
 
 #### Target
@@ -95,9 +101,6 @@ For example, you can tie one queue to a target for your local machine and anothe
 
 
 
-<!--
-### How do you explore your results with 3X?
--->
 
 
 
