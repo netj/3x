@@ -1,7 +1,7 @@
 # <i class="icon-beaker"></i> 3X
 ## A tool for eXecutable eXploratory eXperiments
 
-3X is a tool for conducting computational experiments in a systematic way.
+3X is a software tool for conducting computational experiments in a systematic way.
 Organizing the data that goes into and comes out of experiments, as well as maintaining the infrastructure for running them, is generally regarded as a tedious and mundane task.
 Often times we end up in a suboptimal environment improvised and hard-coded for each experiment.
 The problem is exacerbated when the experiments must be performed iteratively for exploring a large parameter space.
@@ -40,50 +40,64 @@ Our hope in building 3X with standard structure and common vocabulary is to make
 
 -->
 
+In the following sections, we define terms and concepts used by 3X, and describe what the workflow will be like to use 3X to run, explore, and analyze your own experiments.
+
 ### How does 3X define a computational experiment?
 
-Any computational experiment can be logically decomposed into three different parts.
-As an example, let's consider an "empirical study of sorting algorithms' performance."
+Any computational experiment can be logically decomposed into three different parts: program, inputs, and outputs.
+Each of these parts can be organized clearly in an *experiment repository* created by 3X.
+As an example, let's consider an "empirical study of sorting algorithms' time complexity" in the following paragraphs.
+
+#### Experiment Repository
+An *experiment repository* is where 3X keeps all data related to an experiment.
+It is an ordinary filesystem directory dedicated to your experiment, where you can organize your own files for the experiment under 3X's standard structure.
+New experiment repositories can be easily created with a single command (`3x setup`).
 
 #### Program
 *Program* is what you want to run for your experiment.
 In our example, implementations of the different sorting algorithms, such as bubble sort, quick sort, merge sort, etc., as well as the code for measuring execution time and number of comparisons constitute the experiment program.
+As long as there is a way to invoke your program from the command-line, 3X is agnostic to what programming language or programming system you used.
 
 #### Inputs
-*Inputs* are the parameters of your program that you want to vary between runs.
+*Inputs* are the parameters of your program that you want to vary.
 In our example, the size and characteristics of the input to the sorting algorithm, as well as which sorting algorithm to use are the experiment inputs.
-
+You can specify a finite set of discrete, symbolic values for each experiment input, e.g., `insertionSort`, `quickSort`, and `mergeSort`, etc. for input `algo` that decides which sorting algorithm to use.
+3X supplies values for the inputs to your experiment program in the form of *environment variables*.
 
 #### Outputs
-*Outputs* are the data you want to collect from each of your runs.
+*Outputs* are the outcome you want to extract from your program's execution result.
 In our example, the time and numbers measured are the experiment outputs.
+3X lets you specify a set of regular expressions to extract pieces of text from the standard output and error of your experiment program.
+If an output of your experiment is an image file, you can specify the filename as well.
+
+
+### How do you execute experiments with 3X?
+
+Once you have a well-defined computational experiment, 3X provides powerful tools to plan, control, and manage its execution.
+You can easily generate a combination of value bindings for the inputs from a carefully selected set of values, and order them in a way you want to execute.
+3X can execute your program on your local machine or a remote host via SSH one at a time, or on a cluster of machines in parallel.
+
+#### Run
+A *run* is a unit of single execution of your experiment program given the bindings of a value for each of your inputs.
+State of each run is one among `PLANNED`, `RUNNING`, `ABORTED`, `FAILED`, or `DONE`, depending on whether it is to be executed, is executing, or was executed.
+Every run gets a unique *run identifier* (`run#`) assigned once it starts execution, i.e., all runs except the `PLANNED` ones have unique run identifiers.
+The *run directory*, whose path relative to the repository root is the run identifier, records all data that goes into and comes out of the single execution of that run.
+
+#### Queue
+*Queue* is a list of runs where 3X keeps track of its execution order of remaining `PLANNED` runs and the history of finished runs.
+It is the point of control of execution, and can be used to organize runs into smaller groups.
+You can *start a queue* to execute runs that have been or will be added to the queue, and *stop the queue* to abort any executing runs in it.
+
+#### Target
+*Target* defines where and under what environment your runs will execute.
+Each queue has an associated target where its `PLANNED` runs will be sent for execution.
+For example, you can tie one queue to a target for your local machine and another queue to a target for a remote machine, then execute different groups of runs on these two targets.
 
 
 
-### How can you run experiments with 3X?
-
-<dl>
-
-<dt>Queue</dt>
-<dd>
-...
-</dd>
-
-<dt>Target</dt>
-<dd>
-... 
-</dd>
-
-<dt>Run</dt>
-<dd>
-... 
-</dd>
-
-</dl>
-
-### Workflow
-
-1. 
+<!--
+### How do you explore your results with 3X?
+-->
 
 
 
