@@ -38,7 +38,7 @@ exit-after-marking-as-aborted() {
                 ln -fn "$errorRecord" $runDir/run/target.aborted
             fi
             # TODO archive $runDir/run/target.aborted again?
-            chmod -w $runDir/run/
+            #XXX chmod -w $runDir/run/
         fi
     fi
     exit $c

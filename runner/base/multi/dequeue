@@ -47,9 +47,9 @@ exit-after-marking-as-aborted() {
     cd "$_3X_ROOT"
     for-picked-runs list-only runId >"$_3X_WORKER_DIR"/runIds
     xargs <"$_3X_WORKER_DIR"/runIds         mkdir -p
-    xargs <"$_3X_WORKER_DIR"/runIds         chmod +w
+    #XXX xargs <"$_3X_WORKER_DIR"/runIds         chmod +w
     xargs <"$_3X_WORKER_DIR"/runIds -L1     ln -f "$_3X_WORKER_DIR"/target.aborted
-    xargs <"$_3X_WORKER_DIR"/runIds         chmod -w
+    #XXX xargs <"$_3X_WORKER_DIR"/runIds         chmod -w
     exit $c
 }
 for sig in INT QUIT TERM; do

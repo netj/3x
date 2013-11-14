@@ -72,7 +72,7 @@ while (my $filename = <>) {
 	        mkdir -p "\$archivedDir"
 	        ln -fn "\$file" "\$archived"
 	    fi
-	    chmod a-w "\$archived"
+	    #XXX chmod a-w "\$archived"
 	}
 	PROLOGUE
     # use git hash-object to compute SHA1 sum of each file
@@ -91,7 +91,7 @@ while (my $filename = <>) {
     '
     # finally, make all involved directories read-only
     echo
-    echo 'find "$@" -type d -exec chmod a-w {} +'
+    #XXX echo 'find "$@" -type d -exec chmod a-w {} +'
 } >"$tmp"/dedup.sh
 
 be-quiet +4 || {

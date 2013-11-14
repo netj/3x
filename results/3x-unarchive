@@ -28,7 +28,7 @@ while read archived; do
     mkdir -p "${runId%/*}"
     mv -f "$archived" "$runId"
     rmdir -p "${archived%/*}" 2>/dev/null || true
-    chmod -w -- "$runId"
+    #XXX chmod -w -- "$runId"
     msg "$runId: unarchived"
     echo "$runId"
 done

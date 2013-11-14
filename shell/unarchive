@@ -84,7 +84,7 @@ while (my $filename = <>) {
     }
     '
     # finally, make all involved read-only directories to read-writable
-    echo 'find "$@" -type d ! -perm +a=w -exec chmod +w {} +'
+    #XXX echo 'find "$@" -type d ! -perm +a=w -exec chmod +w {} +'
 } >"$tmp"/clean.sh
 
 be-quiet +4 || {

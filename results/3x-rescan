@@ -128,7 +128,7 @@ rescan1() {
         _3X_EXTRACT_ONLY=$extractOnlyPatt \
         extract-output "$runId" || true
         archive "$_3X_ARCHIVE" output outputs
-        chmod -w .
+        #XXX chmod -w .
     )
     # done
     echo "$runId"
