@@ -14,7 +14,7 @@ PATH="$PWD/node_modules/.bin:$PATH"
 
 # server
 cd server
-ln -sf ../../server/package.json
+cp -f ../../server/package.json .
 echo >README.md
 npm install
 
@@ -44,6 +44,14 @@ npm install
     $easy_install --install-dir "$dir_pypkgs" --always-copy \
         watchdog \
         #
+    # fix hard-coded Python interpreter
+    {
+        echo '/^#!/d'
+        echo 'i'
+        echo '#!/usr/bin/env python'
+        echo '.'
+        echo 'wq'
+    } | ed "$dir_pypkgs"/watchmedo >/dev/null
 }
 
 cd ../..
