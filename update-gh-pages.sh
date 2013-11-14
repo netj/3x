@@ -18,6 +18,7 @@ mirror-master() {
     case $tree in
         .)
             git checkout remotes/origin/master -- README.md
+            git rm --cached README.md
             ;;
         *)
             git rm -rf --cached -- "$tree" || true
@@ -66,13 +67,13 @@ compile-README() {
         esac
         echo 'wq'
     } | ed "$output" >/dev/null || true
-    )
     case $tree in
         .)
             ;;
         *)
-            git add "$tree"/"$output"
+            git add README.md "$output"
     esac
+    )
 }
 
 ###############################################################################
