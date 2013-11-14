@@ -41,6 +41,7 @@ Our hope in building 3X with standard structure and common vocabulary is to make
 -->
 
 In the following sections, we define terms and concepts used by 3X, and describe what the workflow will be like to use 3X to run, explore, and analyze your own experiments.
+Refer to [other documents](#further-reading) for instructions to obtain the software, or more details on individual features of 3X.
 
 
 ### How do I organize experiments with 3X?
@@ -114,18 +115,27 @@ Visualizations provided by 3X are profoundly more powerful than static pictures 
 You have complete control of which columns are visible in the table, how they are ordered, by which inputs the rows in the table are grouped, what aggregate statistic of grouped rows are shown for each column, and what conditions each visible row should satisfy.
 Several aggregate statistics for an output can be shown at the same time, e.g., mean, standard deviation, median, min, max, mode, and count depending on its data type.
 Any aggregate cell in the table can be inspected to trace records of individual runs that contribute to it.
+When you find some rows need to be supported by more concrete data, new runs relevant to the particular rows can be planned directly from the table.
 
 #### Chart
+3X chart displays the data shown in the table as a two-dimensional figure.
+Multiple inputs and outputs of interest can be chosen to automatically create a chart depending on the type and range of the data.
+When you specify more than two variables (for X and Y axes), 3X figures out which of the chosen inputs and outputs map to a second Y axis or distinguish the series in the chart.
+Currently, only line charts and scatter plots with simple options can be drawn.
+Any visual element in these automatically generated charts are interactive, inviting you inspect what runs have made up the data point and drill down to a more specific visualization.
 
 
 
+<a id="further-reading"></a>
 ## Further Reading
 
-* [Installation instruction](docs/install/)
-* [Tutorial with step-through examples](docs/tutorial/)
+See [3X Installation Instruction](docs/install/#readme) for quick instructions to download/build and install 3X on your systems.
+
+See [3X Tutorial with Step-through Examples](docs/tutorial/#readme) for a step-by-step instructions using real examples.
+By following the tutorial you can experience how powerful 3X is, and prepare yourself to organize your own computational experiments using 3X.
 
 <!--
-* [Reference Manual](docs/manual/#readme)
+* [3X Reference Manual](docs/manual/#readme)
 -->
 
 <link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
