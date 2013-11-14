@@ -40,6 +40,7 @@ case ${1:-} in
 	  3X Git commit: $version_commit
 	  
 	  Build Date: $build_timestamp
+	  Build Host: $build_hostname
 	  Build Operating System: $build_os
 	  Build Machine: $build_machine
 	  

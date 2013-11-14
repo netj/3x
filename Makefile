@@ -36,6 +36,7 @@ $(STAGEDIR)/.build-info.sh:
 	    echo 'build_os_release=$(shell uname -r)'; \
 	    echo 'build_os_version='"'$(shell uname -v)'"; \
 	    echo 'build_machine=$(shell uname -m)'; \
+	    echo 'build_hostname=$(shell hostname -f)'; \
 	} >$@
 polish: $(STAGEDIR)/.build-info.sh
 
