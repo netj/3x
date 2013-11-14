@@ -40,7 +40,7 @@ $(STAGEDIR)/.build-info.sh:
 polish: $(STAGEDIR)/.build-info.sh
 
 # bundled dependencies
-build: depends/bundle.conf
+$(BUILDDIR)/timestamp/depends.built: depends/bundle.conf
 depends/bundle.conf:
 	ln -sfn bundle.conf.all      $@
 bundle-all:
