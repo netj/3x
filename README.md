@@ -44,7 +44,7 @@ In the following sections, we define terms and concepts used by 3X, and describe
 Refer to [other documents](#further-reading) for instructions to obtain the software, or more details on individual features of 3X.
 
 
-### How do I organize experiments with 3X?
+### Organizing Experiments with 3X
 
 Any computational experiment can be logically decomposed into three different parts: program, inputs, and outputs.
 Each of these parts can be organized clearly in a dedicated space managed by 3X.
@@ -80,7 +80,7 @@ You can use another set of your own programs, called *extractors*, to perform va
 
 
 
-### How do I run experiments with 3X?
+### Running Experiments with 3X
 
 Once you have a computational experiment set up with 3X, it provides powerful tools to plan, control, and manage its execution.
 You can easily generate a combination of value bindings for the inputs from a selected set of values, and order them in a way you want to execute.
@@ -105,7 +105,7 @@ For example, you can tie one queue to a target for your local machine and anothe
 
 
 
-### How do I explore and analyze results with 3X?
+### Visualizing Results with 3X
 
 As soon as your runs finish execution, their outputs can be instantly visualized using the 3X GUI (graphical user interface).
 Visualizations provided by 3X are profoundly more powerful than static pictures of your results data, because they allow interactions for tracing provenance of any visible data point and drilling down to another form of visualization.
