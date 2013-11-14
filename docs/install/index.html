@@ -89,7 +89,7 @@ You must download the correct file for your operating system and processor archi
 After you download the appropriate package, mark it as executable as shown in the following generic list of commands:</p>
 <pre><code class="lang-bash">release=v1.0
 system=`uname -s`-`uname -m`
-package=3x-<span class="variable">$release</span>-<span class="variable">$target</span>.sh
+package=3x-<span class="variable">$release</span>-<span class="variable">$system</span>.sh
 <span class="comment"># download</span>
 curl -RLO https://github.com/netj/3x/releases/download/<span class="variable">$release</span>/<span class="variable">$package</span>
 <span class="comment"># make it an executable</span>
