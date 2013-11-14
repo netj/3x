@@ -129,8 +129,10 @@ Any visual element in these automatically generated charts are interactive, invi
 <a id="further-reading"></a>
 ## Further Reading
 
+### Installation
 See [3X Installation Instruction](docs/install/) for quick instructions to download/build and install 3X on your systems.
 
+### Tutorial
 See [3X Tutorial with Step-through Examples](docs/tutorial/) for a step-by-step instructions using real examples.
 By following the tutorial you can experience how powerful 3X is, and prepare yourself to organize your own computational experiments using 3X.
 
