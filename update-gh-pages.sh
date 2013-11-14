@@ -12,9 +12,8 @@ git checkout gh-pages
 
 mirror-master() {
     local tree=$1
-    (   cd "$tree"
-        [ ! -e README.md  ] || mv -f README.md README.md~
-    )
+    [[ $(git diff "$tree"/README.md | wc -l) -eq 0 ]] ||
+        mv -f "$tree"/README.md "$tree"/README.md~
     case $tree in
         .)
             git checkout remotes/origin/master -- README.md
@@ -26,9 +25,8 @@ mirror-master() {
             mkdir -p "$tree"
             git checkout -f -- "$tree"
     esac
-    (   cd "$tree"
-        [ ! -e README.md~ ] || mv -f README.md~ README.md
-    )
+    ! [[ -e "$tree"/README.md~ ]] ||
+        mv -f "$tree"/README.md~ "$tree"/README.md
 }
 
 compile-README() {
