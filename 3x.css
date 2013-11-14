@@ -28,6 +28,7 @@ code {
 #content {
     margin-left: 260px;
     text-align: justify;
+    padding-bottom: 61.8%;
 }
 #content > h2               { margin-top: 2.5em; }
 #content > h2:first-of-type { margin-top: 1.0em; }
