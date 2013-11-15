@@ -94,7 +94,7 @@ The following commands will prepare the `program/` directory, which is explained
 
     # download our example Python program into the right place
     cd sorting-algos/program
-    exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
+    exampleURL="http://netj.github.io/3x/docs/examples/sorting-algos/program"
     curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
     cd -
 
@@ -270,7 +270,7 @@ If you don't have these files readily available, let's download them directly fr
 
 ```bash
 # copy our example Python program into the repository
-exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
+exampleURL="http://netj.github.io/3x/docs/examples/sorting-algos/program"
 curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
 ```
 
@@ -619,7 +619,7 @@ Let's make sure to put the Python code at the correct place.
 
 ```bash
 cd giant_components/program/
-curl -LO https://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
+curl -LO http://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
 cd -
 ```
 
@@ -734,7 +734,7 @@ We put this script directly under `output/` of the repository so it can be assem
 
 ```bash
 cd output/
-curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+curl -LO http://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
 cd -
 ```
 
