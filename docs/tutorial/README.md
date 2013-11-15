@@ -54,7 +54,7 @@ number of accesses: 30735
 ```
 
 
-### 2. Create and Set Up an Experiment Repository
+### 2. Set Up an Experiment Repository
 
 To keep everything related to our experiment well organized, we need to tell 3X to create a new *experiment repository* for us.
 Every detail from the definition of input/output and program to the individual records of past executions and plans for future runs will be stored and managed inside this repository.
@@ -90,7 +90,14 @@ It is simply an abbreviation for the multiple steps necessary to initialize the 
 ```
 
 Note that since this quick setup command creates only the skeleton part of our experiment repository, we still need to place additional files at the right place, namely, the `.py` files of our program.
-Refer to the [instructions for plugging the program in to 3X (§2.3)](#plugintheprogram) to prepare the `program/` directory.
+The following commands will prepare the `program/` directory, which is explained in more details in [§2.3 (Plug in the Program)](#plugintheprogram).
+
+    # download our example Python program into the right place
+    cd sorting-algos/program
+    exampleURL="http://netj.github.io/3x/docs/examples/sorting-algos/program"
+    curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
+    cd -
+
 You can safely ignore the rest of the steps because they were already taken care by the `3x setup` command above.
 We're all set to start running our experiment.
 
@@ -263,12 +270,11 @@ If you don't have these files readily available, let's download them directly fr
 
 ```bash
 # copy our example Python program into the repository
-exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos"
-curl -LO $exampleURL/program/measure.py
-curl -LO $exampleURL/program/sort.py
+exampleURL="http://netj.github.io/3x/docs/examples/sorting-algos/program"
+curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
 ```
 
-(You can probably use `wget` instead of `curl -LO` if your system doesn't have `curl` installed.)
+(You can probably pass the URLs to `wget` instead if your system doesn't have `curl` installed.)
 
 Next, we need to create a `run` script that starts our Python program as follows:
 
@@ -604,7 +610,7 @@ The 3X GUI can treat output image files specially based on this user provided MI
 3x setup giant_components \
     --program 'python ./giant_component.py' \
     --inputs  n=100,200,300 \
-              p=0.0{01..10} \
+              p=0.0{01..20} \
     --outputs --file graph:image/png=giant_component.png \
 #
 ```
@@ -613,7 +619,7 @@ Let's make sure to put the Python code at the correct place.
 
 ```bash
 cd giant_components/program/
-curl -LO https://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
+curl -LO http://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
 cd -
 ```
 
@@ -728,7 +734,7 @@ We put this script directly under `output/` of the repository so it can be assem
 
 ```bash
 cd output/
-curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+curl -LO http://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
 cd -
 ```
 

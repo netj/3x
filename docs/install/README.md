@@ -11,7 +11,7 @@ You must download the correct file for your operating system and processor archi
 After you download the appropriate file, mark it as executable as shown in the following list of commands:
 
 ```bash
-release=v1.0
+release=v0.9
 system=`uname -s`-`uname -m`
 package=3x-$release-$system.sh
 # download
@@ -50,10 +50,10 @@ You can build 3X from its source code on other Unix operating systems, or when y
 
 As long as you have a not-too-old version of [Git][] and other [essential compiler and build tools][build-essential] installed on your system, commands similar to the following three lines will produce an executable file, named `3x-VERSION-OS-MACHINE.sh`.
 Here, `VERSION` is the version of 3X you are building, and `OS` and `MACHINE` are your operating system and processor architecture that the produced 3X executable can run on.
-For example, to download the source code for version `v1.0` and build a 3X executable package, run:
+For example, to download the source code for version `v0.9` and build a 3X executable package, run:
 
 ```bash
-git clone https://github.com/netj/3x.git --branch v1.0
+git clone https://github.com/netj/3x.git --branch v0.9
 cd 3x
 make
 ```

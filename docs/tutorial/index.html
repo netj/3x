@@ -60,7 +60,7 @@
                 </li>
               
                 <li>
-                  <a href="#example-1-studying-sorting-algorithms/2-create-and-set-up-an-experiment-repository">2. Create and Set Up an Experiment Repository</a>
+                  <a href="#example-1-studying-sorting-algorithms/2-set-up-an-experiment-repository">2. Set Up an Experiment Repository</a>
                 </li>
               
                 <li>
@@ -164,7 +164,7 @@ This is the only thing 3X needs to know about the program for our experiment, an
 <span class="title">input</span> generation time (s): <span class="number">0.000580</span>
 <span class="title">number</span> <span class="keyword">of</span> compares: <span class="number">11440</span>
 <span class="title">number</span> <span class="keyword">of</span> accesses: <span class="number">30735</span></code></pre>
-<h3 id='example-1-studying-sorting-algorithms/2-create-and-set-up-an-experiment-repository'>2. Create and Set Up an Experiment Repository</h3 id='example-1-studying-sorting-algorithms/2-create-and-set-up-an-experiment-repository'>
+<h3 id='example-1-studying-sorting-algorithms/2-set-up-an-experiment-repository'>2. Set Up an Experiment Repository</h3 id='example-1-studying-sorting-algorithms/2-set-up-an-experiment-repository'>
 <p>To keep everything related to our experiment well organized, we need to tell 3X to create a new <em>experiment repository</em> for us.
 Every detail from the definition of input/output and program to the individual records of past executions and plans for future runs will be stored and managed inside this repository.
 It is a typical directory (or folder) on the filesystem with a special internal structure.</p>
@@ -192,8 +192,13 @@ It is simply an abbreviation for the multiple steps necessary to initialize the 
         --extract <span class="string">'verification time \(s\): {{verificationTime(s) =~ .+}}'</span> \
     <span class="comment">#</span></code></pre>
 <p>Note that since this quick setup command creates only the skeleton part of our experiment repository, we still need to place additional files at the right place, namely, the <code>.py</code> files of our program.
-Refer to the <a href="#plugintheprogram">instructions for plugging the program in to 3X (§2.3)</a> to prepare the <code>program/</code> directory.
-You can safely ignore the rest of the steps because they were already taken care by the <code>3x setup</code> command above.
+The following commands will prepare the <code>program/</code> directory, which is explained in more details in <a href="#plugintheprogram">§2.3 (Plug in the Program)</a>.</p>
+<pre><code><span class="comment"># download our example Python program into the right place</span>
+<span class="title">cd</span> sorting-algos/program
+exampleURL=<span class="string">"http://netj.github.io/3x/docs/examples/sorting-algos/program"</span>
+curl -L -O <span class="variable">$exampleURL</span>/measure.py -O <span class="variable">$exampleURL</span>/sort.py
+cd -</code></pre>
+<p>You can safely ignore the rest of the steps because they were already taken care by the <code>3x setup</code> command above.
 We&#39;re all set to start running our experiment.</p>
 <h4>2.1. Create an Experiment Repository</h4>
 <p>The following command creates an empty repository:</p>
@@ -285,10 +290,9 @@ For each execution of <code>run</code>, 3X sets up the environment correctly, so
 <p>As we have two Python files necessary for implementing and measuring the sorting algorithms, we will put both of these files under <code>program/</code>.
 If you don&#39;t have these files readily available, let&#39;s download them directly from GitHub with the following commands:</p>
 <pre><code class="lang-bash"><span class="comment"># copy our example Python program into the repository</span>
-exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples/sorting-algos"</span>
-curl -LO <span class="variable">$exampleURL</span>/program/measure.py
-curl -LO <span class="variable">$exampleURL</span>/program/sort.py</code></pre>
-<p>(You can probably use <code>wget</code> instead of <code>curl -LO</code> if your system doesn&#39;t have <code>curl</code> installed.)</p>
+exampleURL=<span class="string">"http://netj.github.io/3x/docs/examples/sorting-algos/program"</span>
+curl -L -O <span class="variable">$exampleURL</span>/measure.py -O <span class="variable">$exampleURL</span>/sort.py</code></pre>
+<p>(You can probably pass the URLs to <code>wget</code> instead if your system doesn&#39;t have <code>curl</code> installed.)</p>
 <p>Next, we need to create a <code>run</code> script that starts our Python program as follows:</p>
 <pre><code class="lang-bash">cat &gt;run  &lt;&lt;EOF
 <span class="shebang">#!/bin/sh</span>
@@ -472,12 +476,12 @@ The 3X GUI can treat output image files specially based on this user provided MI
 <pre><code class="lang-bash">3x setup giant_components \
     --program <span class="string">'python ./giant_component.py'</span> \
     --inputs  n=100,200,300 \
-              p=0.0{01..10} \
+              p=0.0{01..20} \
     --outputs --file graph:image/png=giant_component.png \
 <span class="comment">#</span></code></pre>
 <p>Let&#39;s make sure to put the Python code at the correct place.</p>
 <pre><code class="lang-bash">cd giant_components/program/
-curl -LO https://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
+curl -LO http://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
 cd -</code></pre>
 <h3 id='example-2-simulating-network-formations/3-run-experiments-many-times'>3. Run Experiments Many Times</h3 id='example-2-simulating-network-formations/3-run-experiments-many-times'>
 <p>We can move into the repository and execute full combinations of inputs by running following commands:</p>
@@ -540,7 +544,7 @@ Number <span class="keyword">of</span> Disconnected Nodes (singleton components)
 <span class="keyword">Component</span> Size Ratios:  <span class="number">0.765000</span>    <span class="number">0.020000</span>    <span class="number">0.020000</span>    <span class="number">0.015000</span>    <span class="number">0.015000</span>    <span class="number">0.010000</span>    <span class="number">0.010000</span></code></pre>
 <p>We put this script directly under <code>output/</code> of the repository so it can be assembled into the <code>outputs/</code> directory of each run and easily shared across different output variables.</p>
 <pre><code class="lang-bash">cd output/
-curl -LO https://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+curl -LO http://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
 cd -</code></pre>
 <p>Next, we define an output variable, named <code>numCC</code>, by running the following command:</p>
 <pre><code class="lang-bash">3x define output <span class="string">'numCC'</span> extract \
