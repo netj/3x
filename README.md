@@ -95,7 +95,7 @@ When you find some rows shall be supported by more concrete data, new runs relev
 Multiple input and output variables of interest can be chosen to automatically create a chart based on the type and range of the data.
 When you specify more than two variables (for X and Y axes), 3X figures out which of the chosen variables map to a second Y axis or distinguish the series in the chart.
 Currently, only line charts and scatter plots with simple options can be drawn.
-Any visual element in these automatically generated charts are interactive, inviting you inspect what runs have made up the data point and drill down to a more specific visualization.
+Any visual element in these automatically generated charts are interactive, inviting you to inspect what runs have made up the data point and drill down to a more specific visualization.
 
 
 
