@@ -95,5 +95,5 @@ compile-README docs/install name="3X Installation"
 # confirm publishing
 read -p "commit and push? "
 
-git commit -m "Reflected master updates to gh-pages"
+git commit -m "Reflected master updates to gh-pages" || true
 git push
