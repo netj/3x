@@ -10,7 +10,7 @@
 body {
     font: 17px/21px 'Crimson Text', Georgia, serif;
 }
-#nav, h1,h2,h3,h4,h5,h6 {
+#nav, h1,h2,h3,h4,h5,h6, .sans-serif {
     font: 20px/25px 'Source Sans Pro', 'Lucida Grande', Tahoma, sans-serif;
 }
 #content pre, #content code, #content tt {
