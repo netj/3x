@@ -23,6 +23,23 @@ fi
 # initialize the _3X_ROOT
 mkdir -p -- "$_3X_ROOT"
 cd "$_3X_ROOT"
+_3X_ROOT=$(pwd -P)
+trap 'cd "$_3X_ROOT"/.. && rm -rf -- "$_3X_ROOT"' ERR
+
+# make sure the filesystem of $_3X_ROOT allows hardlinks
+(
+trap 'error "$_3X_ROOT: filesystem has no proper hardlink support.
+Specify a different directory on a filesystem supporting hardlink to create a 3X repository."' ERR
+set -eu
+mkdir -p .3x/ln-check
+cd .3x/ln-check
+mkdir subdir
+touch file
+ln -f file subdir/a-duplicate
+echo ${h:=$RANDOM} >file
+[[ $(cat subdir/a-duplicate 2>/dev/null) = $h ]]
+)
+rm -rf .3x/ln-check
 
 # create the skeleton directories
 mkdir -p .3x/{files,gui} input output program run
