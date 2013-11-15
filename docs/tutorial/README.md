@@ -610,7 +610,7 @@ The 3X GUI can treat output image files specially based on this user provided MI
 3x setup giant_components \
     --program 'python ./giant_component.py' \
     --inputs  n=100,200,300 \
-              p=0.0{01..10} \
+              p=0.0{01..20} \
     --outputs --file graph:image/png=giant_component.png \
 #
 ```
