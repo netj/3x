@@ -62,3 +62,9 @@ count-loc:
 	    $$(find * \( -name .build -o -name node_modules \) -prune -false -o -name '.module.*') \
 	    | sort -n
 .PHONY: count-loc
+
+gh-pages-updated:
+	-git branch --track gh-pages remotes/origin/gh-pages
+	[ -e gh-pages/.git ] || git clone . --branch gh-pages gh-pages
+	gh-pages/update-gh-pages.sh
+.PHONY: gh-pages-updated

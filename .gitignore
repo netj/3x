@@ -12,3 +12,4 @@
 !/.depends/*.depends
 
 /test*
+/gh-pages
