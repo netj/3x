@@ -5,7 +5,7 @@
 ### Download
 Binary releases of 3X for common environments can be downloaded from the following page:
 
-* <b><big>[3X Releases][]</big></b>
+* <big class="sans-serif"><b>[3X Releases][]</b></big>
 
 You must download the correct file for your operating system and processor architecture: `Darwin` is for OS X and `Linux` is for Linux.
 After you download the appropriate file, mark it as executable as shown in the following list of commands:
