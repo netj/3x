@@ -13,7 +13,7 @@ It organizes code/inputs/outputs for the experiment, records results, and lets u
 Using 3X we can understand much better of what's being explored by our experiments with significantly less effort and error.
 
 In the following sections, we define terms and concepts used by 3X, and describe what the workflow will be like to use 3X to run, explore, and analyze your own experiments.
-Refer to [other documents](#further-reading) for instructions to obtain the software, or more details on individual features of 3X.
+Refer to [other documents](#documentation) for instructions to obtain the software, or more details on individual features of 3X.
 
 
 ### Organize Experiments with 3X
@@ -99,14 +99,15 @@ Any visual element in these automatically generated charts are interactive, invi
 
 
 
-<a name="further-reading"></a>
-## Further Reading
+<a name="documentation"></a>
+## Documentation
 
-### Installation Instructions
-See [3X Installation Instructions](docs/install/) for quick instructions to download/build and install 3X on your systems.
+### Installing 3X
+<big class="sans-serif"><b>[3X Installation Instructions](docs/install/)</b></big> contains quick instructions to download, build and install 3X on your systems.
+3X is packaged as a single self-contained, executable file, so installation is basically copying one file to a special location on your system.
 
-### Tutorial for Getting Started
-See [3X Tutorial with Step-through Examples](docs/tutorial/) for a step-by-step instructions using real examples.
+### Getting Started with 3X
+<big class="sans-serif"><b>[3X Tutorial with Step-through Examples](docs/tutorial/)</b></big> contains step-by-step instructions using real examples.
 By following the tutorial you can experience how powerful 3X is, and prepare yourself to organize your own computational experiments using 3X.
 
 
