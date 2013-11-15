@@ -75,8 +75,14 @@ pick-next() {
         lockproc $runDir/lock grab
     fi
     runSpec=$(queue list "serial#"=$serial)
+    [ -n "$runSpec" ] || {
+        # clean stale runDirs and try pick-next again
+        rm -rf "$runDir"
+        pick-next "$@"
+        return $?
+    }
     runId=${runSpec##*[[:space:]]}
-    echo $runId >$runDir/runId
+    echo ${runId:=$(new-run-id)} >$runDir/runId
     cmdln="run ${runSpec#*[[:space:]]}"
     cmdln=${cmdln%%#*}
     echo $cmdln >$runDir/cmdln
