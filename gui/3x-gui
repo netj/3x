@@ -105,7 +105,7 @@ case $cmd in
                 open "$url"
                 ;;
             *) # Linux and other systems
-                if [ -n "$DISPLAY" ]; then
+                if xwininfo -root &>/dev/null; then
                     # See: http://stackoverflow.com/questions/5116473/linux-command-to-open-url-in-default-browser
                     if type sensible-browser &>/dev/null; then
                         sensible-browser "$url"
