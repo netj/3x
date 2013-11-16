@@ -1,8 +1,8 @@
 # <i class="icon-beaker"></i> 3X
 
 ## A tool for eXecutable eXploratory eXperiments
-3X is a software tool for conducting computational experiments in a systematic way.
-3X provides a standard yet configurable structure to execute a wide variety of experiments.
+<span class="sans-serif">3X</span> is a software tool for conducting computational experiments in a systematic way.
+<span class="sans-serif">3X</span> provides a standard yet configurable structure to execute a wide variety of experiments.
 It organizes code/inputs/outputs for the experiment, records results, and lets users visualize the data and drive execution interactively.
 
 ### Motivation
@@ -14,7 +14,7 @@ So-called "data scientists" are emerging everywhere these days to ask questions 
 In fact, these computational and data-driven approaches have long been a standard method for doing science in many domains, and we see ever growing number of fields depending on computational experiments.
 
 ### What 3X Provides
-* A standard filesystem layout for an *experiment repository*, where you can organize the code of your experiment program as well as its input data and output definition in a transparent way, and where 3X can keep complete records of the execution results in a systematic and storage-efficient manner.
+* A standard filesystem layout for an *experiment repository*, where you can organize the code of your experiment program as well as its input data and output definition in a transparent way, and where <span class="sans-serif">3X</span> can keep complete records of the execution results in a systematic and storage-efficient manner.
 
 * *Operations on the experiment* to create the repository, to define your experiment, to plan/control/manage executions on various target environments, and to access results data, either through a scriptable command-line interface, or an intuitive graphical user interface.
 
@@ -25,15 +25,15 @@ In fact, these computational and data-driven approaches have long been a standar
 ## Further Information
 
 ### Features of 3X
-<span class="sans-serif">**[3X Features Overview][]**</span> gives a tour of all features 3X provides in the order of a typical workflow, and introduces terms and concepts used by the software.
+<span class="sans-serif">**[3X Features Overview][]**</span> gives a tour of all features <span class="sans-serif">3X</span> provides in the order of a typical workflow, and introduces terms and concepts used by the software.
 
 ### Installing 3X
-<span class="sans-serif">**[3X Installation Instructions][]**</span> contains instructions to download, build and install 3X on your systems.
-3X is packaged as a single self-contained, executable file, so installation is basically copying one file to a special location on your system.
+<span class="sans-serif">**[3X Installation Instructions][]**</span> contains instructions to download, build and install <span class="sans-serif">3X</span> on your systems.
+<span class="sans-serif">3X</span> is packaged as a single self-contained, executable file, so installation is basically copying one file to a special location on your system.
 
 ### Getting Started with 3X
 <span class="sans-serif">**[3X Tutorial with Examples][]**</span> contains detailed step-by-step instructions and screenshots using real examples.
-By following the tutorial, you can get hands-on experience of 3X, and get yourself ready to use it for your own experiments.
+By following the tutorial, you can get hands-on experience of <span class="sans-serif">3X</span>, and get yourself ready to use it for your own experiments.
 Reading the <span class="sans-serif">[3X Features Overview][]</span> first is recommended to make yourself familiar with the terms and concepts.
 
 
