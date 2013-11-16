@@ -82,6 +82,10 @@ compile-README() {
 mirror-master .
 compile-README . name="3X" #"3X for eXecutable eXploratory eXperiments"
 
+# Features
+mirror-master docs/features
+compile-README docs/features name="3X Features"
+
 # Tutorial
 mirror-master docs/tutorial
 compile-README docs/tutorial name="3X Tutorial"
