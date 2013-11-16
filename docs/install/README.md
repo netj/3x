@@ -25,7 +25,7 @@ After you download the appropriate file, mark it as executable as shown in the f
 chmod +x $package
 ```
 
-You should move the executable package to a directory that is on your `$PATH`, and rename it to `3x` to use 3X without typing the long path name every time.
+You should move the executable package to a directory that is on your `$PATH`, and rename it to `3x` to use <span class="sans-serif">3X</span> without typing the long path name every time.
 For example, if you already have `~/bin/` on your `$PATH`, simply place the package under it by running commands similar to the following:
 
 ```bash
@@ -40,20 +40,20 @@ If you don't have `~/bin` on your `$PATH` yet, add the following line to your
 PATH=~/bin:"$PATH"
 ```
 
-3X documents and instructions contain example commands that may not work correctly on other shells than [bash][].
-Unless you are familiar enough with your own shell, please enter a new bash session by typing `bash` before using 3X.
+<span class="sans-serif">3X</span> documents and instructions contain example commands that may not work correctly on other shells than [bash][].
+Unless you are familiar enough with your own shell, please enter a new bash session by typing `bash` before using <span class="sans-serif">3X</span>.
 
 
 
 ## Building from Source
 
-You can build 3X from its source code on other Unix operating systems, or when you are having trouble running the prebuilt packages on your system.
+You can build <span class="sans-serif">3X</span> from its source code on other Unix operating systems, or when you are having trouble running the prebuilt packages on your system.
 
 ### Get Source and Build
 
 As long as you have a not-too-old version of [Git][] and other [essential compiler and build tools][build-essential] installed on your system, commands similar to the following three lines will produce an executable file, named `3x-VERSION-OS-MACHINE.sh`.
-Here, `VERSION` is the version of 3X you are building, and `OS` and `MACHINE` are your operating system and processor architecture that the produced 3X executable can run on.
-For example, to download the source code for version `v0.9` and build a 3X executable package, run:
+Here, `VERSION` is the version of <span class="sans-serif">3X</span> you are building, and `OS` and `MACHINE` are your operating system and processor architecture that the produced <span class="sans-serif">3X</span> executable can run on.
+For example, to download the source code for version `v0.9` and build a <span class="sans-serif">3X</span> executable package, run:
 
 ```bash
 git clone https://github.com/netj/3x.git --branch v0.9
@@ -69,7 +69,7 @@ If you want to install the built package from the source tree to `~/bin/`, run t
 make install PREFIX=~
 ```
 
-`PREFIX` can be changed to other locations such as `/usr/local` to install 3X to `/usr/local/bin/`, which may require administrative permissions.
+`PREFIX` can be changed to other locations such as `/usr/local` to install <span class="sans-serif">3X</span> to `/usr/local/bin/`, which may require administrative permissions.
 In that case, install the built executable using the `sudo` command:
 
 ```bash
@@ -80,9 +80,9 @@ sudo install 3x-LATEST-*.sh /usr/local/bin/3x
 
 ## Windows
 
-Unfortunately, 3X can only run on operating systems that support [POSIX][], and therefore is not available for Windows operating system.
+Unfortunately, <span class="sans-serif">3X</span> can only run on operating systems that support [POSIX][], and therefore is not available for Windows operating system.
 There is no plan to support Windows in the near-term future.
-Although not recommended, you might be able to run 3X with [Cygwin][] or other POSIX emulation layers if you have completely no access to a proper POSIX machine.
+Although not recommended, you might be able to run <span class="sans-serif">3X</span> with [Cygwin][] or other POSIX emulation layers if you have completely no access to a proper POSIX machine.
 
 
 ----
