@@ -986,6 +986,7 @@ More usage related to 3X queues can be viewed via the following command:
 The concept of current queue only applies to the commands of command-line interface: 3X GUI will provide separate buttons and listings for each queue to control and manage them.
 
 
+----
 
 <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" />
 
