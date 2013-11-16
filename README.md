@@ -14,9 +14,13 @@ So-called "data scientists" are emerging everywhere these days to ask questions 
 In fact, these computational and data-driven approaches have long been a standard method for doing science in many domains, and we see ever growing number of fields depending on computational experiments.
 
 ### What 3X Provides
-* a
-* b
-* c
+* A standard filesystem layout for an *experiment repository*, where you can organize the code of your experiment program as well as its input data and output definition in a transparent way, and where 3X can keep complete records of the execution results in a systematic and storage-efficient manner.
+
+* *Operations on the experiment* to create the repository, to define your experiment, to plan/control/manage executions on various target environments, and to access results data, either through a scriptable command-line interface, or an intuitive graphical user interface.
+
+* *Instant, interactive visualizations* of the execution results as tables and charts to let you explore and analyze the data as soon as your computations finish.
+
+
 
 ## Further Information
 
