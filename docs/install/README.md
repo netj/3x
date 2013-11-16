@@ -5,7 +5,7 @@
 ### Download
 Binary releases of 3X for common environments can be downloaded from the following page:
 
-* <big class="sans-serif"><b>[3X Releases][]</b></big>
+* <big class="sans-serif">**[3X Releases][]**</big>
 
 You must download the correct file for your operating system and processor architecture: `Darwin` is for OS X and `Linux` is for Linux.
 After you download the appropriate file, mark it as executable as shown in the following list of commands:
@@ -82,6 +82,7 @@ There is no plan to support Windows in the near-term future.
 Although not recommended, you might be able to run 3X with [Cygwin][] or other POSIX emulation layers if you have completely no access to a proper POSIX machine.
 
 
+----
 
 [3X Releases]: https://github.com/netj/3x/releases
 
