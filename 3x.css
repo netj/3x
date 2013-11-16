@@ -11,7 +11,7 @@ body {
     font: 17px/21px 'Crimson Text', Georgia, serif;
 }
 #nav, h1,h2,h3,h4,h5,h6, .sans-serif {
-    font: 20px/25px 'Source Sans Pro', 'Lucida Grande', Tahoma, sans-serif;
+    font: 17px/21px 'Source Sans Pro', 'Lucida Grande', Tahoma, sans-serif;
 }
 #content pre, #content code, #content tt {
     font-family: 'Oxygen Mono', monospace !important;
@@ -48,10 +48,16 @@ body {
 #content {
     margin-left: 260px;
     text-align: justify;
-    padding-bottom: 61.8%;
+    padding-bottom: 30%;
 }
-#content > h2               { margin-top: 2.5em; }
-#content > h2:first-of-type { margin-top: 1.0em; }
+#content h2 {
+    margin-top: 1em;
+}
+#content hr {
+    width: 75%;
+    margin-top:    7.5em;
+    margin-bottom: 7.5em;
+}
 }
 
 /* figure and figcaption */
