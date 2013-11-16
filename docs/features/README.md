@@ -1,6 +1,6 @@
 # <i class="icon-beaker"></i> 3X Features Overview
 
-In this document, we give a tour of the features of 3X as terms and concepts used by 3X are introduced in the order of a typical workflow.
+In this document, we give a tour of the features of 3X as terms and concepts are introduced in the order of a typical workflow.
 Refer to [other documents](../../#further-information) for instructions on how to install the software and how to use individual features of 3X.
 
 ## Organize Experiments with 3X
