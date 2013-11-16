@@ -99,31 +99,27 @@
     <h1><i class="icon-beaker"></i> 3X Installation Instructions</h1>
 <h2 id='os-x-mac-and-gnu-linux'>OS X (Mac) and GNU/Linux</h2 id='os-x-mac-and-gnu-linux'>
 <h3 id='os-x-mac-and-gnu-linux/download'>Download</h3 id='os-x-mac-and-gnu-linux/download'>
-<p>Binary releases of 3X for common environments can be downloaded from the following page:</p>
-<ul>
-<li><big class="sans-serif"><strong><a href="https://github.com/netj/3x/releases">3X Releases</a></strong></big>
-
-</li>
-</ul>
-<p>You must download the correct file for your operating system and processor architecture: <code>Darwin</code> is for OS X and <code>Linux</code> is for Linux.
-After you download the appropriate file, mark it as executable as shown in the following list of commands:</p>
+<p><span class="sans-serif"><big><strong><a href="https://github.com/netj/3x/releases/latest">Latest release of 3X on GitHub</a></strong></big></span> contains prebuilt binaries for common environments.
+You must download the correct file for your operating system and processor architecture: <code>Darwin</code> is for OS X and <code>Linux</code> is for Linux.
+Downloading the right file for your system could be done automatically using the following series of commands:</p>
 <pre><code class="lang-bash">release=v0.9
 system=`uname -s`-`uname -m`
 package=3x-<span class="variable">$release</span>-<span class="variable">$system</span>.sh
-<span class="comment"># download</span>
-curl -RLO https://github.com/netj/3x/releases/download/<span class="variable">$release</span>/<span class="variable">$package</span>
-<span class="comment"># make it an executable</span>
-chmod +x <span class="variable">$package</span></code></pre>
+<span class="comment"># download the correct binary from GitHub</span>
+curl -RLO https://github.com/netj/3x/releases/download/<span class="variable">$release</span>/<span class="variable">$package</span></code></pre>
 <h3 id='os-x-mac-and-gnu-linux/install'>Install</h3 id='os-x-mac-and-gnu-linux/install'>
+<p>After you download the appropriate file, mark it as executable as shown in the following command, where <code>$package</code> is the path to the file you&#39;ve just downloaded:</p>
+<pre><code class="lang-bash"><span class="comment"># make it an executable</span>
+chmod +x <span class="variable">$package</span></code></pre>
 <p>You should move the executable package to a directory that is on your <code>$PATH</code>, and rename it to <code>3x</code> to use 3X without typing the long path name every time.
 For example, if you already have <code>~/bin/</code> on your <code>$PATH</code>, simply place the package under it by running commands similar to the following:</p>
 <pre><code class="lang-bash">mkdir -p ~/bin
 mv <span class="variable">$package</span> ~/bin/3x</code></pre>
 <p>If you don&#39;t have <code>~/bin</code> on your <code>$PATH</code> yet, add the following line to your
-<code>.bash_profile</code> or <code>.bashrc</code>.</p>
+<code>.bash_profile</code> and/or <code>.bashrc</code>.</p>
 <pre><code class="lang-bash">PATH=~/bin:<span class="string">"<span class="variable">$PATH</span>"</span></code></pre>
 <p>3X documents and instructions contain example commands that may not work correctly on other shells than <a href="https://en.wikipedia.org/wiki/Bash_(Unix_shell)">bash</a>.
-Unless you are familiar enough with your own shell, please enter a new bash session by typing <code>bash</code> first.</p>
+Unless you are familiar enough with your own shell, please enter a new bash session by typing <code>bash</code> before using 3X.</p>
 <h2 id='building-from-source'>Building from Source</h2 id='building-from-source'>
 <p>You can build 3X from its source code on other Unix operating systems, or when you are having trouble running the prebuilt packages on your system.</p>
 <h3 id='building-from-source/get-source-and-build'>Get Source and Build</h3 id='building-from-source/get-source-and-build'>

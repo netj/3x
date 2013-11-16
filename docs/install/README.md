@@ -3,24 +3,27 @@
 ## OS X (Mac) and GNU/Linux
 
 ### Download
-Binary releases of 3X for common environments can be downloaded from the following page:
-
-* <big class="sans-serif">**[3X Releases][]**</big>
-
+<span class="sans-serif"><big>**[Latest release of 3X on GitHub][3X Latest Release]**</big></span> contains prebuilt binaries for common environments.
 You must download the correct file for your operating system and processor architecture: `Darwin` is for OS X and `Linux` is for Linux.
-After you download the appropriate file, mark it as executable as shown in the following list of commands:
+Downloading the right file for your system could be done automatically using the following series of commands:
 
 ```bash
 release=v0.9
 system=`uname -s`-`uname -m`
 package=3x-$release-$system.sh
-# download
+# download the correct binary from GitHub
 curl -RLO https://github.com/netj/3x/releases/download/$release/$package
+```
+
+
+### Install
+
+After you download the appropriate file, mark it as executable as shown in the following command, where `$package` is the path to the file you've just downloaded:
+
+```bash
 # make it an executable
 chmod +x $package
 ```
-
-### Install
 
 You should move the executable package to a directory that is on your `$PATH`, and rename it to `3x` to use 3X without typing the long path name every time.
 For example, if you already have `~/bin/` on your `$PATH`, simply place the package under it by running commands similar to the following:
@@ -31,14 +34,14 @@ mv $package ~/bin/3x
 ```
 
 If you don't have `~/bin` on your `$PATH` yet, add the following line to your
-`.bash_profile` or `.bashrc`.
+`.bash_profile` and/or `.bashrc`.
 
 ```bash
 PATH=~/bin:"$PATH"
 ```
 
 3X documents and instructions contain example commands that may not work correctly on other shells than [bash][].
-Unless you are familiar enough with your own shell, please enter a new bash session by typing `bash` first.
+Unless you are familiar enough with your own shell, please enter a new bash session by typing `bash` before using 3X.
 
 
 
@@ -84,7 +87,7 @@ Although not recommended, you might be able to run 3X with [Cygwin][] or other P
 
 ----
 
-[3X Releases]: https://github.com/netj/3x/releases
+[3X Latest Release]: https://github.com/netj/3x/releases/latest
 
 [Bash]: https://en.wikipedia.org/wiki/Bash_(Unix_shell)
 
