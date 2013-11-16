@@ -48,7 +48,15 @@ body {
 #content {
     margin-left: 260px;
     text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
     padding-bottom: 30%;
+}
+#content pre, #content code, #content tt {
+    hyphens: manual;
+    -webkit-hyphens: manual;
+    -moz-hyphens: manual;
 }
 #content h2 {
     margin-top: 1em;

@@ -53,6 +53,8 @@ compile-README() {
         echo '/<\/head/i'
         echo '<link rel="stylesheet" href="'"$rootRelPath"'/3x.css">'
         echo '.'
+        # English language (for auto-hyphenation, etc.)
+        echo '/<body/s/<body/<body lang="en"/'
         # and insert an extra link back to home
         case $tree in
             .)
