@@ -67,4 +67,5 @@ gh-pages-updated:
 	-git branch --track gh-pages remotes/origin/gh-pages
 	[ -e gh-pages/.git ] || git clone . --branch gh-pages gh-pages
 	gh-pages/update-gh-pages.sh
+	git push origin gh-pages
 .PHONY: gh-pages-updated
