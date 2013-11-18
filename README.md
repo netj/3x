@@ -3,22 +3,22 @@
 ## A tool for eXecutable eXploratory eXperiments
 <span class="sans-serif">3X</span> is a software tool for conducting computational experiments in a systematic way.
 <span class="sans-serif">3X</span> provides a standard yet configurable structure to execute a wide variety of experiments.
-It organizes code/inputs/outputs for the experiment, records results, and lets users visualize the data and drive execution interactively.
+It organizes code, inputs, and outputs for experiments, records results, and lets users visualize data and drive execution interactively.
 
 ### Motivation
 Organizing the data that goes into and comes out of experiments, as well as maintaining the infrastructure for running them, is generally regarded as a tedious and mundane task.
 Often times we end up in a suboptimal environment improvised and hard-coded for each experiment.
 The problem is exacerbated when the experiments must be performed iteratively for exploring a large parameter space.
-It is obvious that easing this burden will enable us to more quickly make interesting discoveries from the data our experiments produce.
-So-called "data scientists" are emerging everywhere these days to ask questions in the form of computational experiments, and to discover new facts from the "big data" their institutions have accumulated.
+Easing this burden will enable us to more quickly make interesting discoveries from the data our experiments produce.
+"Data scientists" are emerging everywhere these days to ask questions in the form of computational experiments, and to discover new facts from the "big data" their institutions have accumulated.
 In fact, these computational and data-driven approaches have long been a standard method for doing science in many domains, and we see ever growing number of fields depending on computational experiments.
 
 ### What 3X Provides
-* A standard filesystem layout for an *experiment repository*, where you can organize the code of your experiment program as well as its input data and output definition in a transparent way, and where <span class="sans-serif">3X</span> can keep complete records of the execution results in a systematic and storage-efficient manner.
+* A standard filesystem layout for an *experiment repository*, where you can organize the code of your experiments along with input data and output definitions in a transparent way, and where <span class="sans-serif">3X</span> can keep complete records of the execution results in a systematic and storage-efficient manner.
 
-* *Operations on the experiment* to create the repository, to define your experiment, to plan/control/manage executions on various target environments, and to access results data, either through a scriptable command-line interface, or an intuitive graphical user interface.
+* *Operations on the experiments* to create the repository, to define your experiments, to plan, control, and manage executions on various target environments, and to access results data, either through a scriptable command-line interface, or an intuitive graphical user interface.
 
-* *Instant, interactive visualizations* of the execution results as tables and charts to let you explore and analyze the data as soon as your computations finish.
+* *Instant, interactive visualizations* of execution results as tables and charts to let you explore and analyze the data as soon as your computations finish.
 
 
 
