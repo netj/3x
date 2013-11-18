@@ -1,7 +1,7 @@
 {
   "name": "3x",
   "author": "Jaeho Shin <netj@cs.stanford.edu>",
-  "description": "eXecutable eXploratory eXperiments",
+  "description": "3X for eXecuting eXploratory eXperiments",
   "repository": {
     "type": "git",
     "url": "git://github.com/netj/3x.git"

@@ -1,6 +1,6 @@
 # <i class="icon-beaker"></i> 3X
 
-## A tool for eXecutable eXploratory eXperiments
+## A tool for eXecuting eXploratory eXperiments
 <span class="sans-serif">3X</span> is a software tool for conducting computational experiments in a systematic way.
 <span class="sans-serif">3X</span> provides a standard yet configurable structure to execute a wide variety of experiments.
 It organizes code, inputs, and outputs for experiments, records results, and lets users visualize data and drive execution interactively.

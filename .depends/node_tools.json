@@ -1,7 +1,7 @@
 {
   "name": "3X-node_tools",
   "author": "Jaeho Shin <netj@cs.stanford.edu>",
-  "description": "eXecutable eXploratory eXperiments node.js Build Dependencies",
+  "description": "3X node.js Build Dependencies",
   "repository": {
     "type": "git",
     "url": "git://github.com/netj/3x.git"

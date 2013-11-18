@@ -11,7 +11,7 @@ set -eu
 
 cat <<-HEADER
 3X $version ($build_os $build_machine)
-  a tool for eXecutable eXploratory eXperiments 
+  a tool for eXecuting eXploratory eXperiments
 
 HEADER
 
