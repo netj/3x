@@ -1,5 +1,10 @@
 # <i class="icon-beaker"></i> 3X Installation Instructions
 
+<span class="sans-serif">3X</span> supports OS X (Mac), Linux, and other standard Unix systems, but does not work on Windows.
+To use the GUI (graphical user interface), you need a modern web browser, such as Safari, Chrome, or Firefox.
+<span class="sans-serif">3X</span> is packaged as a single self-contained, executable file, so installation is basically a matter of downloading and copying one file to a special location on your system.
+
+
 ## OS X (Mac) and GNU/Linux
 
 ### Download

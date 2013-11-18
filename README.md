@@ -16,7 +16,7 @@ In fact, these computational and data-driven approaches have long been a standar
 ### What 3X Provides
 * A standard filesystem layout for an *experiment repository*, where you can organize the code of your experiments along with input data and output definitions in a transparent way, and where <span class="sans-serif">3X</span> can keep complete records of the execution results in a systematic and storage-efficient manner.
 
-* *Operations on the experiments* to create the repository, to define your experiments, to plan, control, and manage executions on various target environments, and to access results data, either through a scriptable command-line interface, or an intuitive graphical user interface.
+* *Operations on the experiments* to create the repository, to define your experiments, to plan, control, and manage executions on various target environments, and to access result data, either through a scriptable command-line interface, or an intuitive graphical user interface.
 
 * *Instant, interactive visualizations* of execution results as tables and charts to let you explore and analyze the data as soon as your computations finish.
 
@@ -29,6 +29,7 @@ In fact, these computational and data-driven approaches have long been a standar
 
 ### Installing 3X
 <span class="sans-serif">**[3X Installation Instructions][]**</span> contains instructions to download, build and install <span class="sans-serif">3X</span> on your systems.
+<span class="sans-serif">3X</span> runs on OS X (Mac), Linux, and other standard Unix systems with a modern web browser, but does not work on Windows.
 <span class="sans-serif">3X</span> is packaged as a single self-contained, executable file, so installation is basically copying one file to a special location on your system.
 
 ### Getting Started with 3X
