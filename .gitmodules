@@ -40,3 +40,6 @@
 [submodule "gui/knockout"]
 	path = gui/knockout
 	url = https://github.com/knockout/knockout.git
+[submodule "docs/markdown-diff"]
+	path = docs/markdown-diff
+	url = https://github.com/netj/markdown-diff.git
