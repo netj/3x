@@ -70,3 +70,14 @@ gh-pages-updated:
 	[ $$(git log origin/master..master README.md | wc -l) -eq 0 ] || git push origin master
 	git push origin gh-pages
 .PHONY: gh-pages-updated
+
+SINCE ?= origin/master
+PAGER ?= less
+GIT_DIFF_OPTS ?=
+diff-docs: $(PACKAGENAME)-docs.diff.md
+$(PACKAGENAME)-docs.diff.md:
+	@PATH=$(realpath docs):$(PATH) GIT_DIFF_OPTS=$(GIT_DIFF_OPTS) \
+	    markdown-git-changes-since.sh $(SINCE) >$@ \
+	    README.md docs/*/*.md
+	$(PAGER) $@
+.PHONY: diff-docs $(PACKAGENAME)-docs.diff.md
