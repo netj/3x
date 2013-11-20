@@ -1,10 +1,28 @@
 #!/usr/bin/env bash
+# update-gh-pages.sh -- a script to automate GitHub Pages updates
+#                       by mirroring trees in master to gh-pages, and
+#                          compiling Markdown documents using DocumentUp.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-11-08
 set -eu
-cd "$(dirname "$0")"
 
+: \
+    ${ghPagesRepoPath:=gh-pages} \
+    ${GitHubRemote:=origin} \
+    ${MasterBranch:=master} \
+    #
+
+localRepo=$PWD
+
+# setup gh-pages branch and clone this to work on gh-pages
+git branch --track gh-pages remotes/"$GitHubRemote"/gh-pages || true
+[ -e "$ghPagesRepoPath"/.git ] || git clone . --branch gh-pages "$ghPagesRepoPath"
+# TODO make sure origin of $ghPagesRepoPath is this repo
+cd "$ghPagesRepoPath"
+
+# default options for DocumentUp
 DocumentUpOptions=(
-    repo="netj/3x"
-    google_analytics="UA-29293848-3"
 )
 
 git fetch origin
@@ -16,12 +34,12 @@ mirror-master() {
         mv -f "$tree"/README.md "$tree"/README.md~
     case $tree in
         .)
-            git checkout remotes/origin/master -- README.md
+            git checkout remotes/origin/"$MasterBranch" -- README.md
             git rm --cached README.md
             ;;
         *)
             git rm -rf --cached -- "$tree" || true
-            git read-tree --prefix="$tree" remotes/origin/master:"$tree"
+            git read-tree --prefix="$tree" remotes/origin/"$MasterBranch":"$tree"
             mkdir -p "$tree"
             git checkout -f -- "$tree"
     esac
@@ -29,7 +47,7 @@ mirror-master() {
         mv -f "$tree"/README.md~ "$tree"/README.md
 }
 
-compile-README() {
+compile-markdown() {
     local tree=$1; shift
     local rootRelPath= output= curlArgs=
     case $tree in
@@ -76,30 +94,29 @@ compile-README() {
     )
 }
 
-###############################################################################
+# make sure we do some stuff after compiling the site
+onexit() {
+    # confirm publishing
+    read -p "commit and publish? "
 
-# README preview
-mirror-master .
-compile-README . name="3X" #"3X for eXecutable eXploratory eXperiments"
+    # first, commit updates to gh-pages repo first and the local repo
+    git commit -m "Reflected $MasterBranch updates to gh-pages" || true
+    git push
 
-# Features
-mirror-master docs/features
-compile-README docs/features name="3X Features"
-
-# Tutorial
-mirror-master docs/tutorial
-compile-README docs/tutorial name="3X Tutorial"
-# and examples
-mirror-master docs/examples
-
-# Installation
-mirror-master docs/install
-compile-README docs/install name="3X Installation"
+    # then, push to GitHub
+    cd "$localRepo"
+    [ $(git log "$GitHubRemote"/"$MasterBranch".."$MasterBranch" \
+        README.md | wc -l) -eq 0 ] || git push "$GitHubRemote" "$MasterBranch"
+    git push "$GitHubRemote" gh-pages
+}
+trap onexit EXIT
 
 
-###############################################################################
-# confirm publishing
-read -p "commit and push? "
-
-git commit -m "Reflected master updates to gh-pages" || true
-git push
+# finally, run the update script for this gh-pages site
+if [ -e update.sh ]; then
+    . update.sh
+else
+    # otherwise, simply create a preview for README
+    mirror-master .
+    compile-markdown .
+fi
