@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
+set -eu
 
-DocumentUpOptions=(
-    repo="netj/3x"
+GHPagesLang=en
+DocumentUpOptions+=(
     google_analytics="UA-29293848-3"
 )
+
+insert-nav-extras() {
+    echo '<div class="extra"><a href="http://netj.github.io/3x"><i class="icon-beaker"></i> 3X Home</a></div>'
+}
 
 # README preview
 mirror-master .
