@@ -1,38 +1,36 @@
 # <i class="icon-beaker"></i> 3X Features Overview
 
 In this document, we give a tour of the features of <span class="sans-serif">3X</span> as terms and concepts are introduced in the order of a typical workflow.
+The primary three modes of 3X, each of which will be described in turn, are for organizing experiments, running them and exploring and analyzing results.
 Refer to [other documents](../../#further-information) for instructions on how to install the software and how to use individual features of <span class="sans-serif">3X</span>.
 
 ## Organize Experiments with 3X
 
-Any computational experiment can be logically decomposed into three parts: program, input and output variables.
-<span class="sans-serif">3X</span> provides a flexible structure for organizing the files of your experiment according to these logical parts.
-As an example, let's consider an "empirical study of sorting algorithms' time complexity" in the rest of this section.
+Definition of any computational experiment can be logically decomposed into three parts: program, input and output variables.
+<span class="sans-serif">3X</span> provides a flexible structure for organizing the files that define your experiment according to these logical parts as well as the files that are produced by executing your experiment.
 
 ### Experiment Repository
 An *experiment repository* is where <span class="sans-serif">3X</span> keeps all data related to an experiment.
 It is an ordinary filesystem directory dedicated to your experiment, where you can organize your own files for the experiment under <span class="sans-serif">3X</span>'s standard structure.
-It keeps record of all data produced by executing your program, and can hold code of your program as well as input data that will be fed to it.
+It keeps records of all data produced by executing your program, and can hold code of your program as well as input data that will be fed to it.
 New experiment repositories can be created easily with a single command (`3x setup`).
 
 ### Program
 *Program* is what you want to run (or execute) to do the computation for your experiment.
-In our example, implementations of the different sorting algorithms, such as bubble sort, quick sort, merge sort, etc., as well as the code for measuring execution time and number of comparisons constitute the experiment program.
 Most programs will output computed data as files or standard output/error based on the input you give, and can be thought as a function.
 But <span class="sans-serif">3X</span> works fine with programs that have randomness in them producing different results on each execution even with the same input, or programs that mutate state of external systems, e.g., databases.
+When your experiment is about comparing different algorithms or implementations for the same set of inputs, although you may have multiple codes to execute, your program to 3X is the code that combines all of them by executing the actual one based on a designated input switch.
 As long as there is a way to invoke your program from the command-line, <span class="sans-serif">3X</span> is agnostic to what programming language or programming system you are using.
 For example, you can use <span class="sans-serif">3X</span> to play with small Python scripts on your laptop, to run MATLAB/Octave code on your compute cluster, or to launch complex jobs on your Hadoop cluster.
 
 ### Input Variables
 *Input variables* are what you want to vary between executions of your program.
-In our example, the size and characteristics of the input to the sorting algorithm, as well as which sorting algorithm to use are the input variables.
 You can specify a finite set of discrete, symbolic values for each input variable, e.g., `insertionSort`, `quickSort`, and `mergeSort`, etc. for input variable `algo` that determines which sorting algorithm is used.
 <span class="sans-serif">3X</span> supplies values for the input variables to your experiment program in the form of environment variables.
 A filesystem directory is provided for each input variable and each value of it to let you organize relevant input files in a manifest way.
 
 ### Output Variables
 *Output variables* are what you want to extract from the result of each execution of your program.
-In our example, the time and numbers measured are the output variables.
 <span class="sans-serif">3X</span> lets you specify a set of regular expressions to extract for an output variable a piece of text from the standard output/error of your experiment program.
 If an output of your experiment is an image file, you can specify its filename instead.
 In fact, this phase of extracting data for output variables is entirely extensible, not limiting you to these built-in options.
@@ -42,7 +40,7 @@ You can use another set of your own programs, called *extractors*, to perform va
 
 ## Run Experiments with 3X
 
-Once you have a computational experiment properly set up with <span class="sans-serif">3X</span>, you can use its powerful tools to plan, control, and manage the execution of your experiment program.
+Once you have a computational experiment properly set up with <span class="sans-serif">3X</span>, you can use its suite of tools to plan, control, and manage the execution of your experiment program.
 You can easily generate a combination of value bindings for your input variables from a manually selected subset of values, and order them in a way you want to execute.
 <span class="sans-serif">3X</span> can execute your program on your local machine or a remote host via SSH one at a time, or on a cluster of machines in parallel.
 
@@ -68,14 +66,14 @@ For example, you can tie one queue to a target for your local machine and anothe
 ## Explore and Analyze Results with 3X
 
 As soon as your runs finish execution, their results can be instantly visualized using the <span class="sans-serif">3X</span> GUI (graphical user interface).
-Visualizations provided by <span class="sans-serif">3X</span> are profoundly more powerful than static pictures of your results data, because they allow interactions for tracing provenance of any visible data point and drilling down to another form of visualization.
+Visualizations provided by <span class="sans-serif">3X</span> are more powerful than static pictures of your results data, because they allow interactions for tracing provenance of any visible data point and drilling down to another form of visualization.
 
 ### Table
 <span class="sans-serif">3X</span> table displays the input values and output data of your runs as rows and columns.
-You have complete control of which columns are visible in the table, how they are ordered, by which input variables the rows in the table are grouped, what aggregate statistic of grouped rows are shown for each column, and what conditions each visible row should satisfy.
+You have control of which columns are visible in the table, how they are ordered, by which input variables the rows in the table are grouped, what aggregate statistic of grouped rows are shown for each column, and what conditions each visible row should satisfy.
 Multiple aggregate statistics for an output variable can be shown at the same time, e.g., mean, standard deviation, median, min, max, mode, and count, where the variable's data type decides which statistics are available.
 Any aggregate cell in the table can be inspected to trace records of individual runs that contribute to it.
-When you find some rows shall be supported by more concrete data, new runs relevant to the particular rows can be planned directly from the table.
+When you want to fill some of the rows with data from new runs relevant to the particular rows, they can be planned directly from the table.
 
 ### Chart
 <span class="sans-serif">3X</span> chart displays the data shown in the table as a two-dimensional figure.

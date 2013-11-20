@@ -2,6 +2,8 @@
 
 In this document, we explain how you can set up and conduct computational experiments with <span class="sans-serif">3X</span> using two examples.
 This step-by-step guide will introduce important features of <span class="sans-serif">3X</span> and will teach you how to use them through detailed instructions.
+We assume you already have <span class="sans-serif">3X</span> installed on your system, and can run it using the `3x` command.
+Otherwise, follow the [installation instructions](../install/) first.
 
 
 ## Example 1: Studying Sorting Algorithms

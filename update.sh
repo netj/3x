@@ -1,4 +1,4 @@
-. mirror-gh-pages.sh
+#!/usr/bin/env bash
 
 DocumentUpOptions=(
     repo="netj/3x"
