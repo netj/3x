@@ -37,6 +37,21 @@ body {
     padding: 2px 10px;
 }
 
+/* Adjust font size for print */
+@media print {
+    body {
+        font-size: 13px;
+        line-height: 16px;
+    }
+    #nav, h1,h2,h3,h4,h5,h6, .sans-serif {
+        font-size: 13px;
+        line-height: 16px;
+    }
+}
+
+
+
+
 /* Nav bar on top for smaller screens and print media */
 @media screen and (max-width : 1023px), print {
     #container {
@@ -91,7 +106,6 @@ body {
     hyphens: auto;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
-    padding-bottom: 30%;
 }
 #content pre,
 #content code,
@@ -111,10 +125,33 @@ body {
 #content h2 {
     margin-top: 1em;
 }
+
+/* White spaces */
 #content hr {
     width: 75%;
     margin-top:    7.5em;
     margin-bottom: 7.5em;
+}
+#content { /* Space at the end of page */
+    padding-bottom: 30%;
+}
+@media print {
+    /* better formatting for print */
+    body {
+        margin: 4em 7em;
+        /* width: 40em; margin-left: auto; margin-right: auto; */
+        background: none;
+    }
+    #content {
+        page-break-before: always;
+        border: none;
+    }
+    /* Reduce wasted space at the end of the last page for print */
+    #content { padding-bottom: 1em; }
+    #content pre:last-of-type + hr,
+    #content  ul:last-of-type + hr,
+    #content  ol:last-of-type + hr,
+    #content   p:last-of-type + hr { display: none; }
 }
 
 /* figure and figcaption */
