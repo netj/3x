@@ -37,26 +37,42 @@ body {
     padding: 2px 10px;
 }
 
+
 /* Fixed nav bar for documents compiled by DocumentUp on desktops */
 @media screen and (min-width: 1024px) {
-#nav {
-    position: fixed;
-    width: 230px;
-    top: 0; bottom: 0;
-    overflow-y: auto;
+    #nav {
+        position: fixed;
+        width: 230px;
+        top: 0; bottom: 0;
+        overflow-y: auto;
+    }
+    #content {
+        margin-left: 260px;
+    }
 }
+
+/* Justified text with hyphenation and wider margins */
 #content {
-    margin-left: 260px;
     text-align: justify;
     hyphens: auto;
     -webkit-hyphens: auto;
     -moz-hyphens: auto;
     padding-bottom: 30%;
 }
-#content pre, #content code, #content tt {
+#content pre,
+#content code,
+#content tt {
     hyphens: manual;
     -webkit-hyphens: manual;
     -moz-hyphens: manual;
+}
+#content h1,
+#content h2,
+#content h3,
+#content h4,
+#content h5,
+#content h6 {
+    text-align: left;
 }
 #content h2 {
     margin-top: 1em;
@@ -65,7 +81,6 @@ body {
     width: 75%;
     margin-top:    7.5em;
     margin-bottom: 7.5em;
-}
 }
 
 /* figure and figcaption */
