@@ -1,12 +1,12 @@
 # <i class="icon-beaker"></i> 3X Features Overview
 
 In this document, we give a tour of the features of <span class="sans-serif">3X</span> as terms and concepts are introduced in the order of a typical workflow.
-The primary three modes of 3X, each of which will be described in turn, are for organizing experiments, running them and exploring and analyzing results.
+The primary three modes of 3X, each of which will be described in turn, are for organizing experiments, running them, and exploring and analyzing their results.
 Refer to [other documents](../../#further-information) for instructions on how to install the software and how to use individual features of <span class="sans-serif">3X</span>.
 
 ## Organize Experiments with 3X
 
-Definition of any computational experiment can be logically decomposed into three parts: program, input and output variables.
+Definition of any computational experiment can be logically decomposed into three parts: program, input variables, and output variables.
 <span class="sans-serif">3X</span> provides a flexible structure for organizing the files that define your experiment according to these logical parts as well as the files that are produced by executing your experiment.
 
 ### Experiment Repository
@@ -73,12 +73,12 @@ Visualizations provided by <span class="sans-serif">3X</span> are more powerful 
 You have control of which columns are visible in the table, how they are ordered, by which input variables the rows in the table are grouped, what aggregate statistic of grouped rows are shown for each column, and what conditions each visible row should satisfy.
 Multiple aggregate statistics for an output variable can be shown at the same time, e.g., mean, standard deviation, median, min, max, mode, and count, where the variable's data type decides which statistics are available.
 Any aggregate cell in the table can be inspected to trace records of individual runs that contribute to it.
-When you want to fill some of the rows with data from new runs relevant to the particular rows, they can be planned directly from the table.
+When you want to augment some of the rows with data from new runs, the additional runs can be planned directly from the table.
 
 ### Chart
 <span class="sans-serif">3X</span> chart displays the data shown in the table as a two-dimensional figure.
 Multiple input and output variables of interest can be chosen to automatically create a chart based on the type and range of the data.
-When you specify more than two variables (for X and Y axes), <span class="sans-serif">3X</span> figures out which of the chosen variables map to a second Y axis or distinguish the series in the chart.
+When you specify more than two variables (for X- and Y-axes), <span class="sans-serif">3X</span> figures out which of the chosen variables map to a second Y-axis or distinguish the series in the chart.
 Currently, only line charts and scatter plots with simple options can be drawn.
 Any visual element in these automatically generated charts are interactive, inviting you to inspect what runs have made up the data point and drill down to a more specific visualization.
 
