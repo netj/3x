@@ -58,7 +58,7 @@ You can build <span class="sans-serif">3X</span> from its source code on other U
 
 As long as you have a not-too-old version of [Git][] and other [essential compiler and build tools][build-essential] installed on your system, commands similar to the following three lines will produce an executable file, named `3x-VERSION-OS-MACHINE.sh`.
 Here, `VERSION` is the version of <span class="sans-serif">3X</span> you are building, and `OS` and `MACHINE` are your operating system and processor architecture that the produced <span class="sans-serif">3X</span> executable can run on.
-For example, to download the source code for version `v0.9` and build a <span class="sans-serif">3X</span> executable package, run:
+For example, to download the source code for version `v0.9`, and to build a <span class="sans-serif">3X</span> executable package, run:
 
 ```bash
 git clone https://github.com/netj/3x.git --branch v0.9

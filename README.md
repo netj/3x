@@ -3,7 +3,7 @@
 ## A tool for eXecuting eXploratory eXperiments
 <span class="sans-serif">3X</span> is a software tool for conducting computational experiments in a systematic way.
 <span class="sans-serif">3X</span> provides a standard yet configurable structure to execute a wide variety of experiments.
-It organizes code, inputs, and outputs for experiments, records results, and lets users visualize data and drive execution interactively.
+It organizes code, inputs, and outputs for experiments, records results, and lets users visualize data so they can drive execution interactively.
 
 ### Motivation
 Organizing the data that goes into and comes out of experiments, as well as maintaining the infrastructure for running them, is generally regarded as a tedious and mundane task.
@@ -28,7 +28,7 @@ In fact, these computational and data-driven approaches have long been a standar
 <span class="sans-serif">**[3X Features Overview][]**</span> gives a tour of all features <span class="sans-serif">3X</span> provides in the order of a typical workflow, and introduces terms and concepts used by the software.
 
 ### Installing 3X
-<span class="sans-serif">**[3X Installation Instructions][]**</span> contains instructions to download, build and install <span class="sans-serif">3X</span> on your systems.
+<span class="sans-serif">**[3X Installation Instructions][]**</span> contains instructions to download, build, and install <span class="sans-serif">3X</span> on your systems.
 <span class="sans-serif">3X</span> runs on OS X (Mac), Linux, and other standard Unix systems with a modern web browser, but does not work on Windows.
 <span class="sans-serif">3X</span> is packaged as a single self-contained, executable file, so installation is basically copying one file to a special location on your system.
 
