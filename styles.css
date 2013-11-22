@@ -4,13 +4,17 @@
  * Created: 2013-10-31
  */
 
+/* Use Font-Awesome icons */
+@import url(https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css);
+
+
 /* Use Stanford Identity font with a nice monospace font
  * See: http://identity.stanford.edu/web-toolkit/guidelines/webfonts */
-@import url(http://fonts.googleapis.com/css?family=Crimson+Text:400,600,700,400italic,600italic,700italic|Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic,700italic|Oxygen+Mono);
+@import url(https://fonts.googleapis.com/css?family=Crimson+Text:400,600,700,400italic,600italic,700italic|Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic,700italic|Oxygen+Mono);
 body {
     font: 17px/21px 'Crimson Text', Georgia, serif;
 }
-#nav, h1,h2,h3,h4,h5,h6, .sans-serif {
+#nav, nav, h1,h2,h3,h4,h5,h6, .sans-serif {
     font: 17px/21px 'Source Sans Pro', 'Lucida Grande', Tahoma, sans-serif;
 }
 #content pre, #content code, #content tt {
@@ -48,8 +52,6 @@ body {
         line-height: 16px;
     }
 }
-
-
 
 
 /* Nav bar on top for smaller screens and print media */
@@ -95,8 +97,44 @@ body {
         top: 0; bottom: 0;
         overflow-y: auto;
     }
-    #content {
+    #content, nav.footer, #footer {
         margin-left: 260px;
+    }
+    nav.footer {
+        height: 0;
+        visibility: hidden;
+    }
+}
+
+/* footer and footer nav */
+#footer,
+nav.footer {
+    clear: both;
+    font-size: 14px;
+    position: relative;
+    top: 15px;
+    border-top: 3px solid rgba(0,0,0,0.10);
+    padding: 10px 30px 20px 30px;
+}
+#footer .extra,
+nav.footer .extra {
+    display: inline-block;
+}
+#footer .extra:not(:first-of-type),
+nav.footer .extra:not(:first-of-type) {
+    margin-left: 2em;
+}
+#footer a,
+nav.footer a {
+    color: #555;
+    text-decoration: none;
+}
+nav.footer a {
+    font-weight: bold;
+}
+@media print {
+    nav.footer {
+        display: none;
     }
 }
 
@@ -132,8 +170,8 @@ body {
     margin-top:    7.5em;
     margin-bottom: 7.5em;
 }
-#content { /* Space at the end of page */
-    padding-bottom: 30%;
+#container { /* Space at the end of page */
+    padding-bottom: 38.2%;
 }
 @media print {
     /* better formatting for print */
