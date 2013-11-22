@@ -116,13 +116,20 @@ nav.footer {
     border-top: 3px solid rgba(0,0,0,0.10);
     padding: 10px 30px 20px 30px;
 }
-#footer .extra,
+nav.footer {
+    padding-left: 0px; padding-right: 0px;
+}
 nav.footer .extra {
     display: inline-block;
+    margin-left: 30px;
+    padding: 5px 0;
 }
-#footer .extra:not(:first-of-type),
-nav.footer .extra:not(:first-of-type) {
-    margin-left: 2em;
+@media screen and (max-width: 1024px) {
+    #nav .extra {
+        display: inline-block;
+        margin-left: 30px;
+        padding-left: 5px 0;
+    }
 }
 #footer a,
 nav.footer a {
