@@ -90,7 +90,7 @@ There is no plan to support Windows in the near-term future.
 Although not recommended, you might be able to run <span class="sans-serif">3X</span> with [Cygwin][] or other POSIX emulation layers if you have completely no access to a proper POSIX machine.
 
 
-----
+
 
 [3X Latest Release]: https://github.com/netj/3x/releases/latest
 
@@ -101,4 +101,4 @@ Although not recommended, you might be able to run <span class="sans-serif">3X</
 [POSIX]: https://en.wikipedia.org/wiki/POSIX
 [cygwin]: http://cygwin.com
 
-<link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
+<link rel="stylesheet" type="text/css" href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css">

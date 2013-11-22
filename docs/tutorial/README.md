@@ -988,14 +988,14 @@ More usage related to <span class="sans-serif">3X</span> queues can be viewed vi
 The concept of current queue only applies to the commands of command-line interface: <span class="sans-serif">3X</span> GUI will provide separate buttons and listings for each queue to control and manage them.
 
 
-----
 
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" />
+
+<link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" />
 
 <!-- fancyBox for enlarging images -->
-<script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
-<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.css" media="screen" />
-<script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+<script src="https://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.css" media="screen" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
 <!-- wrap img's with figure and use figcaption instead of alt text -->
 <style> figcaption { font-size: 90%; text-align: center; } </style>
 <script>

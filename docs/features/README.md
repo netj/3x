@@ -83,6 +83,6 @@ Currently, only line charts and scatter plots with simple options can be drawn.
 Any visual element in these automatically generated charts are interactive, inviting you to inspect what runs have made up the data point and drill down to a more specific visualization.
 
 
-----
 
-<link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
+
+<link rel="stylesheet" type="text/css" href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css">

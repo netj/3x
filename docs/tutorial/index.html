@@ -39,6 +39,7 @@
         })();
       </script>
     
+<script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
 <link rel="stylesheet" href="../../styles.css">
   </head>
   <body lang="en"><div id="container">
@@ -124,7 +125,11 @@
     </ul>
     
     
-<div class="extra"><a href="http://netj.github.io/3x"><i class="icon-beaker"></i> 3X Home</a></div>
+<div class="extra"><a href="http://netj.github.io/3x/."><i class="fa fa-flask"></i> 3X</a></div>
+<div class="extra"><a href="http://netj.github.io/3x/docs/features"><i class="fa fa-flask"></i> Features</a></div>
+<div class="extra"><a href="http://netj.github.io/3x/docs/install"><i class="fa fa-flask"></i> Installation</a></div>
+<div class="extra"><a href="https://github.com/netj/3x"><i class="fa fa-github-alt"></i> Source Code</a></div>
+<div class="extra"><a href="https://github.com/netj/3x/issues"><i class="fa fa-bug"></i> Issues</a></div>
   </div>
   <div id="content">
     
@@ -676,13 +681,12 @@ Once you begin to use multiple targets, it could be convenient to use separate q
 <p>More usage related to <span class="sans-serif">3X</span> queues can be viewed via the following command:</p>
 <pre><code class="lang-bash">3x queue -h</code></pre>
 <p>The concept of current queue only applies to the commands of command-line interface: <span class="sans-serif">3X</span> GUI will provide separate buttons and listings for each queue to control and manage them.</p>
-<hr>
-<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" />
+<link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" />
 
 <p><!-- fancyBox for enlarging images --></p>
-<script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
-<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.css" media="screen" />
-<script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+<script src="https://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.css" media="screen" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
 <!-- wrap img's with figure and use figcaption instead of alt text -->
 <style> figcaption { font-size: 90%; text-align: center; } </style>
 <script>
@@ -700,6 +704,9 @@ $(function() {
 </script>
 
   </div>
+<nav class="footer">
+</nav>
+<script>$("#nav .extra").clone().appendTo("nav.footer");</script>
 </div>
 </body>
 </html>

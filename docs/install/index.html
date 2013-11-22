@@ -39,6 +39,7 @@
         })();
       </script>
     
+<script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
 <link rel="stylesheet" href="../../styles.css">
   </head>
   <body lang="en"><div id="container">
@@ -92,7 +93,11 @@
     </ul>
     
     
-<div class="extra"><a href="http://netj.github.io/3x"><i class="icon-beaker"></i> 3X Home</a></div>
+<div class="extra"><a href="http://netj.github.io/3x/."><i class="fa fa-flask"></i> 3X</a></div>
+<div class="extra"><a href="http://netj.github.io/3x/docs/features"><i class="fa fa-flask"></i> Features</a></div>
+<div class="extra"><a href="http://netj.github.io/3x/docs/tutorial"><i class="fa fa-flask"></i> Tutorial</a></div>
+<div class="extra"><a href="https://github.com/netj/3x"><i class="fa fa-github-alt"></i> Source Code</a></div>
+<div class="extra"><a href="https://github.com/netj/3x/issues"><i class="fa fa-bug"></i> Issues</a></div>
   </div>
   <div id="content">
     
@@ -142,10 +147,12 @@ In that case, install the built executable using the <code>sudo</code> command:<
 <p>Unfortunately, <span class="sans-serif">3X</span> can only run on operating systems that support <a href="https://en.wikipedia.org/wiki/POSIX">POSIX</a>, and therefore is not available for Windows operating system.
 There is no plan to support Windows in the near-term future.
 Although not recommended, you might be able to run <span class="sans-serif">3X</span> with <a href="http://cygwin.com">Cygwin</a> or other POSIX emulation layers if you have completely no access to a proper POSIX machine.</p>
-<hr>
-<link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
+<link rel="stylesheet" type="text/css" href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css">
 
   </div>
+<nav class="footer">
+</nav>
+<script>$("#nav .extra").clone().appendTo("nav.footer");</script>
 </div>
 </body>
 </html>
