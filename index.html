@@ -2,14 +2,33 @@
 <html>
   <head>
     <script src="DocumentUp/documentup.min.js"></script>
+    <script src="http://codeorigin.jquery.com/jquery-1.10.2.min.js"></script>
     <script>
         DocumentUp.document({
             afterRender: function(){
-                    var link = document.createElement("link");
-                    link.rel = "stylesheet";
-                    link.href = "styles.css";
-                    document.head.appendChild(link);
                     document.title = "3X for eXecuting eXploratory eXperiments";
+                    $('<link rel="stylesheet" href="styles.css">').appendTo("head");
+                    // add icons, nav.footer, ...
+                    var t = setInterval(function() {
+                        if (
+                            $("#github a")
+                            .find(".fa").remove().end()
+                            .prepend('<i class="fa fa-github-alt"></i>', document.createTextNode(" "))
+                            .length == 0) return;
+                        if (
+                            $("#github-issues a")
+                            .find(".fa").remove().end()
+                            .prepend('<i class="fa fa-bug"></i> ', document.createTextNode(" "))
+                            .length == 0) return;
+                        if (
+                            $("#container")
+                            .append(
+                                $('<nav class="footer"> </nav>')
+                                .append($("#nav .extra").clone())
+                            )
+                            .length == 0) return;
+                        t = clearInterval(t);
+                    }, 10);
                 },
             google_analytics: "UA-29293848-3",
             name: "3X",
