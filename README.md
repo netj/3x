@@ -49,7 +49,7 @@ Reading the <span class="sans-serif">[3X Features Overview][]</span> first is re
 ## Papers / Talks
 -->
 
-----
+
 
 [3X Features Overview]: docs/features/
 [3X Installation Instructions]: docs/install/
@@ -61,4 +61,4 @@ Reading the <span class="sans-serif">[3X Features Overview][]</span> first is re
 
 
 
-<link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
+<link rel="stylesheet" type="text/css" href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css">
