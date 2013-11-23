@@ -35,8 +35,8 @@ To keep this tutorial simple, let's assume we already wrote Python code for expe
 * [`measure.py`][]
     containing code that measures how long a chosen sorting algorithm takes to finish for a generated input.
 
-[`sort.py`]:    ../examples/sorting-algos/program/sort.py
-[`measure.py`]: ../examples/sorting-algos/program/measure.py
+[`sort.py`]:    https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program/sort.py
+[`measure.py`]: https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program/measure.py
 
 To obtain a single measurement with this program, we would a run command such as:
 
@@ -96,7 +96,7 @@ The following commands will prepare the `program/` directory, which is explained
 
     # download our example Python program into the right place
     cd sorting-algos/program
-    exampleURL="http://netj.github.io/3x/docs/examples/sorting-algos/program"
+    exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
     curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
     cd -
 
@@ -272,7 +272,7 @@ If you don't have these files readily available, let's download them directly fr
 
 ```bash
 # copy our example Python program into the repository
-exampleURL="http://netj.github.io/3x/docs/examples/sorting-algos/program"
+exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
 curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
 ```
 
@@ -599,7 +599,7 @@ Created giant_component.png
 ```
 
 
-[`giant_component.py`]: ../examples/giant_components/program/giant_component.py
+[`giant_component.py`]: https://raw.github.com/netj/3x/master/docs/examples/giant_components/program/giant_component.py
 
 
 ### 2. Set Up an Experiment Repository
@@ -621,7 +621,7 @@ Let's make sure to put the Python code at the correct place.
 
 ```bash
 cd giant_components/program/
-curl -LO http://netj.github.io/3x/docs/examples/giant_components/program/giant_component.py
+curl -LO https://raw.github.com/netj/3x/master/docs/examples/giant_components/program/giant_component.py
 cd -
 ```
 
@@ -736,11 +736,11 @@ We put this script directly under `output/` of the repository so it can be assem
 
 ```bash
 cd output/
-curl -LO http://netj.github.io/3x/docs/examples/giant_components/output/compute-stats.py
+curl -LO https://raw.github.com/netj/3x/master/docs/examples/giant_components/output/compute-stats.py
 cd -
 ```
 
-[`compute-stats.py`]: ../examples/giant_components/output/compute-stats.py
+[`compute-stats.py`]: https://raw.github.com/netj/3x/master/docs/examples/giant_components/output/compute-stats.py
 
 
 Next, we define an output variable, named `numCC`, by running the following command:
