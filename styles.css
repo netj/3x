@@ -54,12 +54,18 @@ body {
 }
 
 /* Adjust code syntax highlighting */
+#content code.lang-text * {
+    color: inherit;
+}
 #content code.lang-bash {
     background-color: #333;
     color: #ddd;
 }
-#content code.lang-text * {
-    color: inherit;
+@media print {
+    #content code.lang-bash {
+        background-color: #ddd;
+        color: inherit;
+    }
 }
 
 
