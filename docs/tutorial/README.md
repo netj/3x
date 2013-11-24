@@ -75,35 +75,41 @@ It is simply an abbreviation for the multiple steps necessary to initialize the 
 ```bash
 # create and setup a new experiment repository
 3x setup sorting-algos \
-    --program \
-        'python measure.py $algo $inputSize $inputType' \
-    --inputs \
-        inputSize=10,11,12,13,14,15,16,17,18 \
-        inputType=random,ordered,reversed \
-        algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
-    --outputs \
-        --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
-        --extract 'number of compares: {{numCompare =~ .+}}' \
-        --extract 'number of accesses: {{numAccess =~ .+}}' \
-        --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
-        --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
-        --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
-    #
+  --program \
+    'python measure.py $algo $inputSize $inputType' \
+  --inputs \
+    'inputSize'='10,11,12,13,14,15,16,17,18' \
+    'inputType'='random,ordered,reversed' \
+    'algo'='bubbleSort,selectionSort,insertionSort,quickSort,mergeSort' \
+  --outputs \
+    --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
+    --extract 'number of compares: {{numCompare =~ .+}}' \
+    --extract 'number of accesses: {{numAccess =~ .+}}' \
+    --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
+    --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
+    --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
+  # end of 3x setup
 ```
+<small>
+(Backslash (`\`) at the end of the line indicates the command continues on the next lines.
+Everything after the hash (`#`) at the last line is to terminate the last backslash and also the command.
+This multi-line style will be used throughout this tutorial to write lengthy shell commands.)
+</small>
 
 Note that since this quick setup command creates only the skeleton part of our experiment repository, we still need to place additional files at the right place, namely, the `.py` files of our program.
-The following commands will prepare the `program/` directory, which is explained in more details in [§2.3 (Plug in the Program)](#plugintheprogram).
+The following commands will prepare the `program/` directory, which is explained in more detail in [§2.3 (Plug in the Program)](#sortingalgos-plugintheprogram).
 
 ```bash
 # download our example Python program into the right place
 cd sorting-algos/program
-exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
-curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
+exampleURL="https://raw.github.com/netj/3x/master/docs/examples"
+curl -L -O $exampleURL/sorting-algos/program/measure.py \
+        -O $exampleURL/sorting-algos/program/sort.py
 cd -
 ```
 
-You can safely ignore the rest of the steps because they were already taken care by the `3x setup` command above.
-We're all set to start running our experiment.
+If you have followed this quick setup, you can safely ignore the rest of the steps for setting up the repository because they were already taken care by the `3x setup` command you have run.
+We're all set to start running our experiment, and let's move on to [§3 (Run Experiments)](#sortingalgos-runexperiments).
 
 
 #### 2.1. Create an Experiment Repository
@@ -141,7 +147,8 @@ We will use the name of the algorithms as the value for this input parameter.
 The following command tells <span class="sans-serif">3X</span> to add this parameter to the experiment definition:
 
 ```bash
-3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort 
+3x define input 'algo' \
+  'bubbleSort' 'selectionSort' 'insertionSort' 'quickSort' 'mergeSort' 
 ```
 
 
@@ -159,7 +166,8 @@ Let's omit the base and use the powers of two as the value for this input parame
 We should run the following command to add this parameter:
 
 ```bash
-3x define input  inputSize  10 11 12 13 14 15 16 17 18
+3x define input 'inputSize' \
+  '10' '11' '12' '13' '14' '15' '16' '17' '18'
 ```
 
 
@@ -175,7 +183,8 @@ We will use the following three values of this input parameter to indicate which
 The following command will add this last parameter:
 
 ```bash
-3x define input  inputType  ordered reversed random
+3x define input 'inputType' \
+  'ordered' 'reversed' 'random'
 ```
 
 
@@ -191,7 +200,8 @@ We measure this time in our program in seconds and print that out in a line that
 Therefore, <span class="sans-serif">3X</span> can easily extract the value that follows if we define the output variable as shown in the following command:
 
 ```bash
-3x define output  'inputTime(s)'  extract  'sorting time \(s\): '  '.+'  ''
+3x define output 'inputTime(s)' \
+  extract 'sorting time \(s\): '  '.+'  ''
 ```
 
 Here, there are four arguments to the `3x define output` command:
@@ -209,7 +219,8 @@ We can use any text for the unit as long as it's surrounded by parentheses.
 Similarly, we can teach <span class="sans-serif">3X</span> to extract the number of compares for the value of an output variable using the following command:
 
 ```bash
-3x define output  'numCompare'  extract  'number of compares: '  '.+'  ''
+3x define output 'numCompare' \
+  extract 'number of compares: '  '.+'  ''
 ```
 
 
@@ -218,7 +229,8 @@ Similarly, we can teach <span class="sans-serif">3X</span> to extract the number
 As well as the number of accesses to the input array of numbers with:
 
 ```bash
-3x define output  'numAccess'  extract  'number of accesses: '  '.+'  ''
+3x define output 'numAccess' \
+  extract 'number of accesses: '  '.+'  ''
 ```
 
 
@@ -230,7 +242,8 @@ When this value comes out less than 1.0, it means the algorithm is incorrect.
 The following command adds this output variable to the experiment definition.
 
 ```bash
-3x define output  'ratioSorted'  extract  'ratio sorted: '  '.+'  ''
+3x define output 'ratioSorted' \
+  extract 'ratio sorted: '  '.+'  ''
 ```
 
 
@@ -239,7 +252,8 @@ The following command adds this output variable to the experiment definition.
 We also record the wall clock time that it took for generating the input array to sort.
 
 ```bash
-3x define output  'inputTime(s)'  extract  'input generation time \(s\): '  '.+'  ''
+3x define output 'inputTime(s)' \
+  extract 'input generation time \(s\): '  '.+'  ''
 ```
 
 
@@ -248,12 +262,13 @@ We also record the wall clock time that it took for generating the input array t
 And the wall clock time that it took for checking whether the output array is correctly sorted.
 
 ```bash
-3x define output  'verificationTime(s)'  extract  'verification time \(s\): '  '.+'  ''
+3x define output 'verificationTime(s)' \
+  extract 'verification time \(s\): '  '.+'  ''
 ```
 
 
 
-<a name="plugintheprogram"></a>
+<a name="sortingalgos-plugintheprogram"></a>
 #### 2.3. Plug in the Program
 
 The only thing <span class="sans-serif">3X</span> needs to know about our program in order to run experiments on our behalf is the exact command we type into our terminal to start them ourselves.
@@ -274,8 +289,9 @@ If you don't have these files readily available, let's download them directly fr
 
 ```bash
 # copy our example Python program into the repository
-exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
-curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
+exampleURL="https://raw.github.com/netj/3x/master/docs/examples"
+curl -L -O $exampleURL/sorting-algos/program/measure.py \
+        -O $exampleURL/sorting-algos/program/sort.py
 ```
 
 (You can probably pass the URLs to `wget` instead if your system doesn't have `curl` installed.)
@@ -285,7 +301,7 @@ Next, we need to create a `run` script that starts our Python program as follows
 ```bash
 cat >run  <<EOF
 #!/bin/sh
-python measure.py $algo $inputSize $inputType
+python measure.py \$algo \$inputSize \$inputType
 EOF
 chmod +x run
 ```
@@ -298,10 +314,11 @@ Now, we're all set to start running our experiment.
 
 
 
+<a name="sortingalgos-runexperiments"></a>
 ### 3. Run Experiments
 
 <span class="sans-serif">3X</span> provides two ways to execute your experiments:
-You can use its *graphical user interface (GUI)*, or the *command-line interface (CLI)*.
+You can use its *graphical user interface* (GUI), or the *command-line interface* (CLI).
 The GUI is easy and intuitive to use, but you might want to have more sophisticated control over your execution, or to control <span class="sans-serif">3X</span> from other systems and further automate parts of your experiment using the CLI.
 However, it is perfectly fine for you to use both GUI and CLI at the same time, and any changes you make on one side will be reflected to the other.
 
@@ -477,7 +494,7 @@ All runs that were executed using the particular value for a row will be grouped
 
 Clicking on one of the column names in the table header will sort the results table by that column in ascending order.
 Clicking again will reverse the order to descending, and clicking once again will deactivate sorting for the column.
-By holding the Shift Key ⇧ down while clicking on another column header, you can specify additional columns for sorting and give order to the results that were ranked equally with previously chosen columns.
+By holding the Shift Key &#8679; down while clicking on another column header, you can specify additional columns for sorting and give order to the results that were ranked equally with previously chosen columns.
 Dragging a column header to the left or right will allow you to reorder the columns to shape the table for easier examination.
 
 
@@ -504,7 +521,7 @@ If you click on the number of runs (shown in the last row labeled `run#.count`),
 ![Each visual element in the chart allows you to interactively drill down to the individual data that contributes to it.](gui-results-drilldown-chart.png)
 
 It's also possible to inspect individual values from the table.
-By holding the Shift Key ⇧ down while hovering over a cell that contains an aggregated value, you can inspect each value that contributed to the aggregate and access the full record of the run that generated the individual value as well.
+By holding the Shift Key &#8679; down while hovering over a cell that contains an aggregated value, you can inspect each value that contributed to the aggregate and access the full record of the run that generated the individual value as well.
 
 ![Aggregated cells in the results table can be brushed to reveal individual run records as well.](gui-results-drilldown-table.png)
 
@@ -541,7 +558,9 @@ run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655 
 You can narrow down the output if you specify filters on some variables, e.g.,
 
 ```bash
-3x results algo=quickSort,mergeSort inputType'!='random numCompare'>'5900000
+3x results algo=quickSort,mergeSort \
+           inputType'!='random \
+           numCompare'>'5900000
 ```
 
 Then it outputs only the results that match given criteria:
@@ -612,10 +631,10 @@ The <span class="sans-serif">3X</span> GUI can treat output image files speciall
 
 ```bash
 3x setup giant_components \
-    --program 'python ./giant_component.py' \
-    --inputs  n=100,200,300 \
-              p=0.0{01..20} \
-    --outputs --file graph:image/png=giant_component.png \
+  --program 'python ./giant_component.py' \
+  --inputs  n=100,200,300 \
+            p=0.0{01..20} \
+  --outputs --file graph:image/png=giant_component.png \
 #
 ```
 
@@ -623,7 +642,8 @@ Let's make sure to put the Python code at the correct place.
 
 ```bash
 cd giant_components/program/
-curl -LO https://raw.github.com/netj/3x/master/docs/examples/giant_components/program/giant_component.py
+exampleURL="https://raw.github.com/netj/3x/master/docs/examples"
+curl -LO $exampleURL/giant_components/program/giant_component.py
 cd -
 ```
 
@@ -676,7 +696,7 @@ Overlay aggregate function can be very useful when there isn't a good scalar met
 
 #### Details on Demand
 
-Individual images can be browsed one at a time using the same *details on demand* technique, hovering over the aggregate image or another aggregate column while holding the Shift Key ⇧ down.
+Individual images can be browsed one at a time using the same *details on demand* technique, hovering over the aggregate image or another aggregate column while holding the Shift Key &#8679; down.
 
 ![Each image can be seen individually by brushing an aggregated cell on the same row as with scalar type data.](giant_components.drilldown.png)
 
@@ -707,9 +727,9 @@ You simply need to define an output variable with correct regular expressions to
 For example, you can extract the elapsed wall clock time of your runs as `wallTime` by running the following command:
 
 ```bash
-3x define output 'wallTime(s)' extract \
-    'Elapsed \(wall clock\) time \(seconds\): '  '[0-9.]+'  '' \
-    rusage
+3x define output 'wallTime(s)' \
+  extract 'Elapsed \(wall clock\) time \(seconds\): '  '[0-9.]+'  '' \
+  rusage
 ```
 
 <span class="sans-serif">3X</span> will not only extract values for `wallTime` from future runs but also rescan records of past runs.
@@ -738,7 +758,8 @@ We put this script directly under `output/` of the repository so it can be assem
 
 ```bash
 cd output/
-curl -LO https://raw.github.com/netj/3x/master/docs/examples/giant_components/output/compute-stats.py
+exampleURL="https://raw.github.com/netj/3x/master/docs/examples"
+curl -LO $exampleURL/giant_components/output/compute-stats.py
 cd -
 ```
 
@@ -748,8 +769,8 @@ cd -
 Next, we define an output variable, named `numCC`, by running the following command:
 
 ```bash
-3x define output 'numCC' extract \
-    'Number of Components.*:\s*' '\d+' '' \
+3x define output 'numCC' \
+  extract 'Number of Components.*:\s*'  '\d+'  '' \
     --running 'python outputs/compute-stats.py' \
     --caching compute-stats.txt
 ```
@@ -779,23 +800,23 @@ We can see the number of components, i.e., `numCC` converges down to 1 as we inc
 Similarly, we can define several other variables, namely `numDisconnected`, `ratioCC1`, `ratioCC2`, and `ratioCC3`, from the output of the script:
 
 ```bash
-3x define output 'numDisconnected' extract \
-    'Number of Disconnected Nodes.*:\s*' '\d+' '' \
+3x define output 'numDisconnected' \
+  extract 'Number of Disconnected Nodes.*:\s*'  '\d+'  '' \
     --running 'python outputs/compute-stats.py' \
     --caching compute-stats.txt
 
-3x define output 'ratioCC1' extract \
-    'Component Size Ratios:\s*' '[.0-9]+' '' \
+3x define output  'ratioCC1' \
+  extract 'Component Size Ratios:\s*'  '[.0-9]+'  '' \
     --running 'python outputs/compute-stats.py' \
     --caching compute-stats.txt
 
-3x define output 'ratioCC2' extract \
-    'Component Size Ratios:\s*[.0-9]+\s+' '[.0-9]+' '' \
+3x define output  'ratioCC2' \
+  extract 'Component Size Ratios:\s*[.0-9]+\s+'  '[.0-9]+'  '' \
     --running 'python outputs/compute-stats.py' \
     --caching compute-stats.txt
 
-3x define output 'ratioCC3' extract \
-    'Component Size Ratios:\s*([.0-9]+\s+){2}' '[.0-9]+' '' \
+3x define output  'ratioCC3' \
+  extract 'Component Size Ratios:\s*([.0-9]+\s+){2}'  '[.0-9]+'  '' \
     --running 'python outputs/compute-stats.py' \
     --caching compute-stats.txt
 
@@ -837,7 +858,11 @@ Suppose we want to run our experiments with Python 3, which requires us to add s
 The following command defines a target named `local2` that customizes the environment in the way we want.
 
 ```bash
-3x target local2  define local  PATH=/opt/python3/bin:"$PATH"  PYTHON3PATH=~/python3-packages
+3x target 'local2' \
+  define local \
+    PATH=/opt/python3/bin:"$PATH" \
+    PYTHON3PATH=~/python3-packages \
+    #
 ```
 
 #### Add a Remote SSH Host Target
@@ -848,7 +873,8 @@ As long as the remote machine is accessible via *ssh* (*Secure SHell*), <span cl
 The following command defines a target named `rocky` that executes runs on the host `rocky.Stanford.EDU` using the directory `~/3x-tmp/` for temporary storage.
 
 ```bash
-3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/
+3x target 'rocky' \
+  define ssh 'rocky.Stanford.EDU:3x-tmp/'
 ```
 
 To specify a username in addition to the hostname, prepend the username followed by a `@`, e.g., `netj@rocky.Stanford.EDU`.
@@ -857,8 +883,10 @@ If your remote host uses a non-standard SSH port (i.e., other than 22), then you
 As with local targets, you can specify customizations to the environment variables after the URL for the remote, e.g., to tweak the `PATH` variable:
 
 ```bash
-3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
-    PATH='/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'
+3x target 'rocky' \
+  define ssh 'rocky.Stanford.EDU:3x-tmp/' \
+    PATH='/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin' \
+    #
 ```
 
 #### Add a GNU Parallel Cluster Target
@@ -873,18 +901,23 @@ You can simply specify a list of remote hosts and use it as another target witho
 The following command defines a target named `corn`:
 
 ```bash
-3x target corn  define gnuparallel  /tmp/3x-tmp-netj/  .3x-remote  corn{01..30}.stanford.edu
+3x target 'corn' \
+  define gnuparallel \
+    '.3x-remote' \
+    '/tmp/3x-tmp-netj/' \
+    'corn'{01..30}'.stanford.edu' \
+    #
 ```
 
 that
 
-* uses `/tmp/3x-tmp-netj/` as working directory on each machine, and 
-* puts shared data under directory `~/.3x-remote/` assuming it is accessible across all machines
-* with 30 machines: `corn01.stanford.edu`, ..., `corn30.stanford.edu`.
+* executes runs with 30 machines: `corn01.stanford.edu`, ..., `corn30.stanford.edu`.
     <br><small>
     (Note that `{01..30}` is a special syntax for your shell to expand to 30 words, which might not be supported by older versions.
-In that case, enumerate all the names as arguments instead.)
+    In that case, enumerate all the names as arguments instead.)
     </small>
+* uses `/tmp/3x-tmp-netj/` as working directory on each machine, and 
+* puts shared data under directory `~/.3x-remote/` assuming it is accessible across all machines.
 
 
 #### Switch between Targets
@@ -892,7 +925,7 @@ In that case, enumerate all the names as arguments instead.)
 Now, assuming you have several targets defined in your repository, you can switch the target for the current queue by specifying only the name of the target, as shown in the following command for `rocky`:
 
 ```bash
-3x target rocky
+3x target 'rocky'
 ```
 
 After switching, you can start executing on the new target by running:
@@ -904,7 +937,7 @@ After switching, you can start executing on the new target by running:
 To switch back to the `local` target, run:
 
 ```bash
-3x target local
+3x target 'local'
 ```
 
 
@@ -943,7 +976,7 @@ The asterisk character `*` in front of the queue name indicates it is the curren
 To add a new queue, simply specify the name of the queue to the `3x queue` command, say `test-queue`:
 
 ```bash
-3x queue test-queue
+3x queue 'test-queue'
 ```
 
 It will output lines similar to the following, indicating a new empty queue is created:
@@ -962,14 +995,14 @@ If you specify name of an existing queue, <span class="sans-serif">3X</span> wil
 To specify which target to use for the current queue, use the following command:
 
 ```bash
-3x target corn
+3x target 'corn'
 ```
 
 
 You can also specify the target to be used for the queue at the time you create or switch to the queue:
 
 ```bash
-3x queue test-queue corn
+3x queue 'test-queue' 'corn'
 ```
 
 It will also set the target for the queue:

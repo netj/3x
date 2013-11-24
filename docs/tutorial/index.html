@@ -184,29 +184,35 @@ In either ways, let&#39;s say we want our repository to be called <code>sorting-
 It is simply an abbreviation for the multiple steps necessary to initialize the experiment repository and to define its input and output.</p>
 <pre><code class="lang-bash"><span class="comment"># create and setup a new experiment repository</span>
 3x setup sorting-algos \
-    --program \
-        <span class="string">'python measure.py $algo $inputSize $inputType'</span> \
-    --inputs \
-        inputSize=10,11,12,13,14,15,16,17,18 \
-        inputType=random,ordered,reversed \
-        algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
-    --outputs \
-        --extract <span class="string">'sorting time \(s\): {{sortingTime(s) =~ .+}}'</span> \
-        --extract <span class="string">'number of compares: {{numCompare =~ .+}}'</span> \
-        --extract <span class="string">'number of accesses: {{numAccess =~ .+}}'</span> \
-        --extract <span class="string">'ratio sorted: {{ratioSorted =~ .+}}'</span> \
-        --extract <span class="string">'input generation time \(s\): {{inputTime(s) =~ .+}}'</span> \
-        --extract <span class="string">'verification time \(s\): {{verificationTime(s) =~ .+}}'</span> \
-    <span class="comment">#</span></code></pre>
+  --program \
+    <span class="string">'python measure.py $algo $inputSize $inputType'</span> \
+  --inputs \
+    <span class="string">'inputSize'</span>=<span class="string">'10,11,12,13,14,15,16,17,18'</span> \
+    <span class="string">'inputType'</span>=<span class="string">'random,ordered,reversed'</span> \
+    <span class="string">'algo'</span>=<span class="string">'bubbleSort,selectionSort,insertionSort,quickSort,mergeSort'</span> \
+  --outputs \
+    --extract <span class="string">'sorting time \(s\): {{sortingTime(s) =~ .+}}'</span> \
+    --extract <span class="string">'number of compares: {{numCompare =~ .+}}'</span> \
+    --extract <span class="string">'number of accesses: {{numAccess =~ .+}}'</span> \
+    --extract <span class="string">'ratio sorted: {{ratioSorted =~ .+}}'</span> \
+    --extract <span class="string">'input generation time \(s\): {{inputTime(s) =~ .+}}'</span> \
+    --extract <span class="string">'verification time \(s\): {{verificationTime(s) =~ .+}}'</span> \
+  <span class="comment"># end of 3x setup</span></code></pre>
+<p><small>
+(Backslash (<code>\</code>) at the end of the line indicates the command continues on the next lines.
+Everything after the hash (<code>#</code>) at the last line is to terminate the last backslash and also the command.
+This multi-line style will be used throughout this tutorial to write lengthy shell commands.)
+</small></p>
 <p>Note that since this quick setup command creates only the skeleton part of our experiment repository, we still need to place additional files at the right place, namely, the <code>.py</code> files of our program.
-The following commands will prepare the <code>program/</code> directory, which is explained in more details in <a href="#plugintheprogram">§2.3 (Plug in the Program)</a>.</p>
+The following commands will prepare the <code>program/</code> directory, which is explained in more detail in <a href="#sortingalgos-plugintheprogram">§2.3 (Plug in the Program)</a>.</p>
 <pre><code class="lang-bash"><span class="comment"># download our example Python program into the right place</span>
 cd sorting-algos/program
-exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"</span>
-curl -L -O <span class="variable">$exampleURL</span>/measure.py -O <span class="variable">$exampleURL</span>/sort.py
+exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples"</span>
+curl -L -O <span class="variable">$exampleURL</span>/sorting-algos/program/measure.py \
+        -O <span class="variable">$exampleURL</span>/sorting-algos/program/sort.py
 cd -</code></pre>
-<p>You can safely ignore the rest of the steps because they were already taken care by the <code>3x setup</code> command above.
-We&#39;re all set to start running our experiment.</p>
+<p>If you have followed this quick setup, you can safely ignore the rest of the steps for setting up the repository because they were already taken care by the <code>3x setup</code> command you have run.
+We&#39;re all set to start running our experiment, and let&#39;s move on to <a href="#sortingalgos-runexperiments">§3 (Run Experiments)</a>.</p>
 <h4>2.1. Create an Experiment Repository</h4>
 <p>The following command creates an empty repository:</p>
 <pre><code class="lang-bash">3x init sorting-algos</code></pre>
@@ -227,7 +233,8 @@ We will use the name of the algorithms as the value for this input parameter.</p
 <li><code>mergeSort</code>       for <a href="https://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation">Merge Sort (bottom-up implementation)</a></li>
 </ul>
 <p>The following command tells <span class="sans-serif">3X</span> to add this parameter to the experiment definition:</p>
-<pre><code class="lang-bash">3x define input  algo  bubbleSort selectionSort insertionSort quickSort mergeSort</code></pre>
+<pre><code class="lang-bash">3x define input <span class="string">'algo'</span> \
+  <span class="string">'bubbleSort'</span> <span class="string">'selectionSort'</span> <span class="string">'insertionSort'</span> <span class="string">'quickSort'</span> <span class="string">'mergeSort'</span></code></pre>
 <h5>Input 2. <code>inputSize</code> for choosing the size of the array to sort</h5>
 <p>We want to test sorting algorithms on arrays of numbers with different sizes.
 We will start with arrays of 1,024 (2<sup><small>10</small></sup>) unique numbers, and double the size of the arrays up to size 262,144 (2<sup><small>18</small></sup>).
@@ -239,7 +246,8 @@ Let&#39;s omit the base and use the powers of two as the value for this input pa
 <li><code>18</code> for 2<sup><small>18</small></sup>.</li>
 </ul>
 <p>We should run the following command to add this parameter:</p>
-<pre><code class="lang-bash">3x define input  inputSize  10 11 12 13 14 15 16 17 18</code></pre>
+<pre><code class="lang-bash">3x define input <span class="string">'inputSize'</span> \
+  <span class="string">'10'</span> <span class="string">'11'</span> <span class="string">'12'</span> <span class="string">'13'</span> <span class="string">'14'</span> <span class="string">'15'</span> <span class="string">'16'</span> <span class="string">'17'</span> <span class="string">'18'</span></code></pre>
 <h5>Input 3. <code>inputType</code> for choosing the type of the arrays to sort</h5>
 <p>We also want to see how each sorting algorithm behaves differently for different types of arrays as well as their sizes.
 We will use the following three values of this input parameter to indicate which type of input we want to use:</p>
@@ -249,7 +257,8 @@ We will use the following three values of this input parameter to indicate which
 <li><code>random</code> that is shuffled randomly.</li>
 </ul>
 <p>The following command will add this last parameter:</p>
-<pre><code class="lang-bash">3x define input  inputType  ordered reversed random</code></pre>
+<pre><code class="lang-bash">3x define input <span class="string">'inputType'</span> \
+  <span class="string">'ordered'</span> <span class="string">'reversed'</span> <span class="string">'random'</span></code></pre>
 <p>Next, suppose we want to measure the wall clock time as well as the number of compares and array accesses to finish each sorting algorithm.
 We can tell <span class="sans-serif">3X</span> to look for lines that match specific patterns in the output of our program to extract the values of interest.
 These patterns can be specified in <a href="http://perldoc.perl.org/perlre.html#Regular-Expressions">Perl regular expressions</a> syntax.
@@ -258,7 +267,8 @@ The following steps will show how exactly we can tell <span class="sans-serif">3
 <p>The wall clock time it takes for sorting the input array is what we are mostly interested in in this experiment.
 We measure this time in our program in seconds and print that out in a line that begins with <code>sorting time (s):</code>.
 Therefore, <span class="sans-serif">3X</span> can easily extract the value that follows if we define the output variable as shown in the following command:</p>
-<pre><code class="lang-bash">3x define output  <span class="string">'inputTime(s)'</span>  extract  <span class="string">'sorting time \(s\): '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
+<pre><code class="lang-bash">3x define output <span class="string">'inputTime(s)'</span> \
+  extract <span class="string">'sorting time \(s\): '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
 <p>Here, there are four arguments to the <code>3x define output</code> command:</p>
 <ol>
 <li>name of the output variable: <code>inputTime(s)</code></li>
@@ -270,23 +280,28 @@ Therefore, <span class="sans-serif">3X</span> can easily extract the value that 
 We can use any text for the unit as long as it&#39;s surrounded by parentheses.</p>
 <h5>Output 2. <code>numCompare</code></h5>
 <p>Similarly, we can teach <span class="sans-serif">3X</span> to extract the number of compares for the value of an output variable using the following command:</p>
-<pre><code class="lang-bash">3x define output  <span class="string">'numCompare'</span>  extract  <span class="string">'number of compares: '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
+<pre><code class="lang-bash">3x define output <span class="string">'numCompare'</span> \
+  extract <span class="string">'number of compares: '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
 <h5>Output 3. <code>numAccess</code></h5>
 <p>As well as the number of accesses to the input array of numbers with:</p>
-<pre><code class="lang-bash">3x define output  <span class="string">'numAccess'</span>  extract  <span class="string">'number of accesses: '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
+<pre><code class="lang-bash">3x define output <span class="string">'numAccess'</span> \
+  extract <span class="string">'number of accesses: '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
 <h5>Output 4. <code>ratioSorted</code></h5>
 <p>To ensure correctness, note that we compute the ratio of the numbers in the array that are correctly ordered to the array size, after finishing the sorting algorithm.
 This is a simple measure to easily check whether the sorting algorithm was implemented correctly.
 When this value comes out less than 1.0, it means the algorithm is incorrect.
 The following command adds this output variable to the experiment definition.</p>
-<pre><code class="lang-bash">3x define output  <span class="string">'ratioSorted'</span>  extract  <span class="string">'ratio sorted: '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
+<pre><code class="lang-bash">3x define output <span class="string">'ratioSorted'</span> \
+  extract <span class="string">'ratio sorted: '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
 <h5>Output 5. <code>inputTime</code></h5>
 <p>We also record the wall clock time that it took for generating the input array to sort.</p>
-<pre><code class="lang-bash">3x define output  <span class="string">'inputTime(s)'</span>  extract  <span class="string">'input generation time \(s\): '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
+<pre><code class="lang-bash">3x define output <span class="string">'inputTime(s)'</span> \
+  extract <span class="string">'input generation time \(s\): '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
 <h5>Output 6. <code>verificationTime</code></h5>
 <p>And the wall clock time that it took for checking whether the output array is correctly sorted.</p>
-<pre><code class="lang-bash">3x define output  <span class="string">'verificationTime(s)'</span>  extract  <span class="string">'verification time \(s\): '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
-<p><a name="plugintheprogram"></a></p>
+<pre><code class="lang-bash">3x define output <span class="string">'verificationTime(s)'</span> \
+  extract <span class="string">'verification time \(s\): '</span>  <span class="string">'.+'</span>  <span class="string">''</span></code></pre>
+<p><a name="sortingalgos-plugintheprogram"></a></p>
 <h4>2.3. Plug in the Program</h4>
 <p>The only thing <span class="sans-serif">3X</span> needs to know about our program in order to run experiments on our behalf is the exact command we type into our terminal to start them ourselves.
 <span class="sans-serif">3X</span> assumes this information is kept as an executable file named <strong><code>run</code></strong> under the <code>program/</code> directory of the experiment repository.
@@ -297,19 +312,21 @@ For each execution of <code>run</code>, <span class="sans-serif">3X</span> sets 
 <p>As we have two Python files necessary for implementing and measuring the sorting algorithms, we will put both of these files under <code>program/</code>.
 If you don&#39;t have these files readily available, let&#39;s download them directly from GitHub with the following commands:</p>
 <pre><code class="lang-bash"><span class="comment"># copy our example Python program into the repository</span>
-exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"</span>
-curl -L -O <span class="variable">$exampleURL</span>/measure.py -O <span class="variable">$exampleURL</span>/sort.py</code></pre>
+exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples"</span>
+curl -L -O <span class="variable">$exampleURL</span>/sorting-algos/program/measure.py \
+        -O <span class="variable">$exampleURL</span>/sorting-algos/program/sort.py</code></pre>
 <p>(You can probably pass the URLs to <code>wget</code> instead if your system doesn&#39;t have <code>curl</code> installed.)</p>
 <p>Next, we need to create a <code>run</code> script that starts our Python program as follows:</p>
 <pre><code class="lang-bash">cat &gt;run  &lt;&lt;EOF
 <span class="shebang">#!/bin/sh</span>
-python measure.py <span class="variable">$algo</span> <span class="variable">$inputSize</span> <span class="variable">$inputType</span>
+python measure.py \<span class="variable">$algo</span> \<span class="variable">$inputSize</span> \<span class="variable">$inputType</span>
 EOF
 chmod +x run</code></pre>
 <p>Now, we&#39;re all set to start running our experiment.</p>
+<p><a name="sortingalgos-runexperiments"></a></p>
 <h3 id='example-1-studying-sorting-algorithms/3-run-experiments'>3. Run Experiments</h3 id='example-1-studying-sorting-algorithms/3-run-experiments'>
 <p><span class="sans-serif">3X</span> provides two ways to execute your experiments:
-You can use its <em>graphical user interface (GUI)</em>, or the <em>command-line interface (CLI)</em>.
+You can use its <em>graphical user interface</em> (GUI), or the <em>command-line interface</em> (CLI).
 The GUI is easy and intuitive to use, but you might want to have more sophisticated control over your execution, or to control <span class="sans-serif">3X</span> from other systems and further automate parts of your experiment using the CLI.
 However, it is perfectly fine for you to use both GUI and CLI at the same time, and any changes you make on one side will be reflected to the other.</p>
 <h4>3.1. Start GUI</h4>
@@ -403,7 +420,7 @@ All runs that were executed using the particular value for a row will be grouped
 <h5>Sort results by columns and reorder columns</h5>
 <p>Clicking on one of the column names in the table header will sort the results table by that column in ascending order.
 Clicking again will reverse the order to descending, and clicking once again will deactivate sorting for the column.
-By holding the Shift Key ⇧ down while clicking on another column header, you can specify additional columns for sorting and give order to the results that were ranked equally with previously chosen columns.
+By holding the Shift Key &#8679; down while clicking on another column header, you can specify additional columns for sorting and give order to the results that were ranked equally with previously chosen columns.
 Dragging a column header to the left or right will allow you to reorder the columns to shape the table for easier examination.</p>
 <h4>4.2. Chart Results</h4>
 <p>The Chart tab in <span class="sans-serif">3X</span>&#39;s GUI visualizes in chart form the data shown as a table in the Results tab.</p>
@@ -419,7 +436,7 @@ The first row in the popover shows the Y-axis value, and the rest of the rows sh
 If you click on the number of runs (shown in the last row labeled <code>run#.count</code>), then you can browse the individual values before aggregation, and follow the link on each value to inspect the full record of the run that generated it.</p>
 <p><img src="gui-results-drilldown-chart.png" alt="Each visual element in the chart allows you to interactively drill down to the individual data that contributes to it."></p>
 <p>It&#39;s also possible to inspect individual values from the table.
-By holding the Shift Key ⇧ down while hovering over a cell that contains an aggregated value, you can inspect each value that contributed to the aggregate and access the full record of the run that generated the individual value as well.</p>
+By holding the Shift Key &#8679; down while hovering over a cell that contains an aggregated value, you can inspect each value that contributed to the aggregate and access the full record of the run that generated the individual value as well.</p>
 <p><img src="gui-results-drilldown-table.png" alt="Aggregated cells in the results table can be brushed to reveal individual run records as well."></p>
 <h4>4.4. Tabulate from command-line</h4>
 <p>Now, let&#39;s briefly take a look at the ways using the command-line interface to obtain raw results data.
@@ -439,7 +456,9 @@ run/<span class="number">2013</span>/<span class="number">0930</span>/<span clas
 run/<span class="number">2013</span>/<span class="number">0930</span>/<span class="number">23</span>/<span class="number">5102.639230000</span>-<span class="number">2060</span>  inputTime=<span class="number">0.18</span>      numAccess=<span class="number">34360655832</span>  numCompare=<span class="number">34359607296</span>  ratioSorted=<span class="number">1</span>  sortingTime=<span class="number">8329.18</span>  algo=selectionSort  inputSize=<span class="number">18</span>  inputType=random
 run/<span class="number">2013</span>/<span class="number">0930</span>/<span class="number">23</span>/<span class="number">5102.639230000</span>-<span class="number">2058</span>  inputTime=<span class="number">0.01</span>      numAccess=<span class="number">34360262655</span>  numCompare=<span class="number">34359607296</span>  ratioSorted=<span class="number">1</span>  sortingTime=<span class="number">8850.64</span>  algo=selectionSort  inputSize=<span class="number">18</span>  inputType=reversed</code></pre>
 <p>You can narrow down the output if you specify filters on some variables, e.g.,</p>
-<pre><code class="lang-bash">3x results algo=quickSort,mergeSort inputType<span class="string">'!='</span>random numCompare<span class="string">'&gt;'</span>5900000</code></pre>
+<pre><code class="lang-bash">3x results algo=quickSort,mergeSort \
+           inputType<span class="string">'!='</span>random \
+           numCompare<span class="string">'&gt;'</span>5900000</code></pre>
 <p>Then it outputs only the results that match given criteria:</p>
 <pre><code class="lang-text"><span class="title">run</span>/<span class="number">2013</span>/<span class="number">0926</span>/<span class="number">06</span>/<span class="number">1826.875115000</span>-<span class="number">888</span>     inputTime=<span class="number">0.01</span>    numAccess=<span class="number">7134799</span>    numCompare=<span class="number">5911655</span>    ratioSorted=<span class="number">1</span>    sortingTime=<span class="number">2.87</span>    algo=quickSort    inputSize=<span class="number">18</span>    inputType=ordered
 <span class="title">run</span>/<span class="number">2013</span>/<span class="number">0926</span>/<span class="number">06</span>/<span class="number">2351.112734000</span>-<span class="number">1070</span>    inputTime=<span class="number">0.01</span>    numAccess=<span class="number">12805001</span>    numCompare=<span class="number">5928316</span>    ratioSorted=<span class="number">1</span>    sortingTime=<span class="number">3.29</span>    algo=quickSort    inputSize=<span class="number">18</span>    inputType=reversed
@@ -481,14 +500,15 @@ Created giant_component.png</code></pre>
 On the last line for <code>--outputs</code>, <code>--file</code> tells <span class="sans-serif">3X</span> that the output variable <code>graph</code> is a file named <code>giant_component.png</code> with a MIME type <code>image/png</code>.
 The <span class="sans-serif">3X</span> GUI can treat output image files specially based on this user provided MIME-type.</p>
 <pre><code class="lang-bash">3x setup giant_components \
-    --program <span class="string">'python ./giant_component.py'</span> \
-    --inputs  n=100,200,300 \
-              p=0.0{01..20} \
-    --outputs --file graph:image/png=giant_component.png \
+  --program <span class="string">'python ./giant_component.py'</span> \
+  --inputs  n=100,200,300 \
+            p=0.0{01..20} \
+  --outputs --file graph:image/png=giant_component.png \
 <span class="comment">#</span></code></pre>
 <p>Let&#39;s make sure to put the Python code at the correct place.</p>
 <pre><code class="lang-bash">cd giant_components/program/
-curl -LO https://raw.github.com/netj/3x/master/docs/examples/giant_components/program/giant_component.py
+exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples"</span>
+curl -LO <span class="variable">$exampleURL</span>/giant_components/program/giant_component.py
 cd -</code></pre>
 <h3 id='example-2-simulating-network-formations/3-run-experiments-many-times'>3. Run Experiments Many Times</h3 id='example-2-simulating-network-formations/3-run-experiments-many-times'>
 <p>We can move into the repository and execute full combinations of inputs by running following commands:</p>
@@ -516,7 +536,7 @@ This can be done by running <code>3x plan</code> multiple times as follows:</p>
 This feature is provided as a specialized aggregate function, we call <em>overlay</em>, for image file type output variables.
 Overlay aggregate function can be very useful when there isn&#39;t a good scalar metric that summarizes the result or such metric is yet to be determined, and the only way to judge is for humans to look at the images that visualize the higher-dimensional data.</p>
 <h4>Details on Demand</h4>
-<p>Individual images can be browsed one at a time using the same <em>details on demand</em> technique, hovering over the aggregate image or another aggregate column while holding the Shift Key ⇧ down.</p>
+<p>Individual images can be browsed one at a time using the same <em>details on demand</em> technique, hovering over the aggregate image or another aggregate column while holding the Shift Key &#8679; down.</p>
 <p><img src="giant_components.drilldown.png" alt="Each image can be seen individually by brushing an aggregated cell on the same row as with scalar type data."></p>
 <p>When you follow the link, the full record of the run is available as shown in the following screenshot:</p>
 <p><img src="giant_components.details.png" alt="Individual output image can be seen fully from overview page of each run."></p>
@@ -534,9 +554,9 @@ Here, we show all three options.</p>
 <p>As default, <span class="sans-serif">3X</span> records basic profile information for every run of your experiment, such as execution time and maximum memory size using the <em><a href="http://www.gnu.org/s/time/">GNU time</a></em> utility in the file <code>rusage</code>.
 You simply need to define an output variable with correct regular expressions to extract those values from the record.
 For example, you can extract the elapsed wall clock time of your runs as <code>wallTime</code> by running the following command:</p>
-<pre><code class="lang-bash">3x define output <span class="string">'wallTime(s)'</span> extract \
-    <span class="string">'Elapsed \(wall clock\) time \(seconds\): '</span>  <span class="string">'[0-9.]+'</span>  <span class="string">''</span> \
-    rusage</code></pre>
+<pre><code class="lang-bash">3x define output <span class="string">'wallTime(s)'</span> \
+  extract <span class="string">'Elapsed \(wall clock\) time \(seconds\): '</span>  <span class="string">'[0-9.]+'</span>  <span class="string">''</span> \
+  rusage</code></pre>
 <p><span class="sans-serif">3X</span> will not only extract values for <code>wallTime</code> from future runs but also rescan records of past runs.</p>
 <h4>Compute Statistics</h4>
 <p>If a more complex computation is necessary to collect the values of interest, then plugging in a custom <em>output extractor</em> code to <span class="sans-serif">3X</span> is your option.
@@ -551,11 +571,12 @@ Number <span class="keyword">of</span> Disconnected Nodes (singleton components)
 <span class="keyword">Component</span> Size Ratios:  <span class="number">0.765000</span>    <span class="number">0.020000</span>    <span class="number">0.020000</span>    <span class="number">0.015000</span>    <span class="number">0.015000</span>    <span class="number">0.010000</span>    <span class="number">0.010000</span></code></pre>
 <p>We put this script directly under <code>output/</code> of the repository so it can be assembled into the <code>outputs/</code> directory of each run and easily shared across different output variables.</p>
 <pre><code class="lang-bash">cd output/
-curl -LO https://raw.github.com/netj/3x/master/docs/examples/giant_components/output/compute-stats.py
+exampleURL=<span class="string">"https://raw.github.com/netj/3x/master/docs/examples"</span>
+curl -LO <span class="variable">$exampleURL</span>/giant_components/output/compute-stats.py
 cd -</code></pre>
 <p>Next, we define an output variable, named <code>numCC</code>, by running the following command:</p>
-<pre><code class="lang-bash">3x define output <span class="string">'numCC'</span> extract \
-    <span class="string">'Number of Components.*:\s*'</span> <span class="string">'\d+'</span> <span class="string">''</span> \
+<pre><code class="lang-bash">3x define output <span class="string">'numCC'</span> \
+  extract <span class="string">'Number of Components.*:\s*'</span>  <span class="string">'\d+'</span>  <span class="string">''</span> \
     --running <span class="string">'python outputs/compute-stats.py'</span> \
     --caching compute-stats.txt</code></pre>
 <p>The command above does the following:</p>
@@ -576,23 +597,23 @@ With the new <code>numCC</code> variable, we can easily create new visualization
 We can see the number of components, i.e., <code>numCC</code> converges down to 1 as we increase the value for <code>p</code>.</p>
 <p><img src="giant_components.chart.numCC.png" alt="This chart shows a single connected component emerging as we increase the probability of edge creation."></p>
 <p>Similarly, we can define several other variables, namely <code>numDisconnected</code>, <code>ratioCC1</code>, <code>ratioCC2</code>, and <code>ratioCC3</code>, from the output of the script:</p>
-<pre><code class="lang-bash">3x define output <span class="string">'numDisconnected'</span> extract \
-    <span class="string">'Number of Disconnected Nodes.*:\s*'</span> <span class="string">'\d+'</span> <span class="string">''</span> \
+<pre><code class="lang-bash">3x define output <span class="string">'numDisconnected'</span> \
+  extract <span class="string">'Number of Disconnected Nodes.*:\s*'</span>  <span class="string">'\d+'</span>  <span class="string">''</span> \
     --running <span class="string">'python outputs/compute-stats.py'</span> \
     --caching compute-stats.txt
 
-3x define output <span class="string">'ratioCC1'</span> extract \
-    <span class="string">'Component Size Ratios:\s*'</span> <span class="string">'[.0-9]+'</span> <span class="string">''</span> \
+3x define output  <span class="string">'ratioCC1'</span> \
+  extract <span class="string">'Component Size Ratios:\s*'</span>  <span class="string">'[.0-9]+'</span>  <span class="string">''</span> \
     --running <span class="string">'python outputs/compute-stats.py'</span> \
     --caching compute-stats.txt
 
-3x define output <span class="string">'ratioCC2'</span> extract \
-    <span class="string">'Component Size Ratios:\s*[.0-9]+\s+'</span> <span class="string">'[.0-9]+'</span> <span class="string">''</span> \
+3x define output  <span class="string">'ratioCC2'</span> \
+  extract <span class="string">'Component Size Ratios:\s*[.0-9]+\s+'</span>  <span class="string">'[.0-9]+'</span>  <span class="string">''</span> \
     --running <span class="string">'python outputs/compute-stats.py'</span> \
     --caching compute-stats.txt
 
-3x define output <span class="string">'ratioCC3'</span> extract \
-    <span class="string">'Component Size Ratios:\s*([.0-9]+\s+){2}'</span> <span class="string">'[.0-9]+'</span> <span class="string">''</span> \
+3x define output  <span class="string">'ratioCC3'</span> \
+  extract <span class="string">'Component Size Ratios:\s*([.0-9]+\s+){2}'</span>  <span class="string">'[.0-9]+'</span>  <span class="string">''</span> \
     --running <span class="string">'python outputs/compute-stats.py'</span> \
     --caching compute-stats.txt
 
@@ -614,41 +635,53 @@ It must not modify any files under <code>workdir/</code> and should contain data
 <h4>Add Another Local Target</h4>
 <p>Suppose we want to run our experiments with Python 3, which requires us to add special values to some environment variables, namely <code>PATH</code> and <code>PYTHON3PATH</code>.</p>
 <p>The following command defines a target named <code>local2</code> that customizes the environment in the way we want.</p>
-<pre><code class="lang-bash">3x target local2  define local  PATH=/opt/python3/bin:<span class="string">"<span class="variable">$PATH</span>"</span>  PYTHON3PATH=~/python3-packages</code></pre>
+<pre><code class="lang-bash">3x target <span class="string">'local2'</span> \
+  define local \
+    PATH=/opt/python3/bin:<span class="string">"<span class="variable">$PATH</span>"</span> \
+    PYTHON3PATH=~/python3-packages \
+    <span class="comment">#</span></code></pre>
 <h4>Add a Remote SSH Host Target</h4>
 <p>Suppose for a fair measurement of <code>sortingTime</code>, we want to execute the runs on a shared remote machine instead of our local machine.
 As long as the remote machine is accessible via <em>ssh</em> (<em>Secure SHell</em>), <span class="sans-serif">3X</span> can execute runs on them remotely and take care of the relevant data transfer there and back.</p>
 <p>The following command defines a target named <code>rocky</code> that executes runs on the host <code>rocky.Stanford.EDU</code> using the directory <code>~/3x-tmp/</code> for temporary storage.</p>
-<pre><code class="lang-bash">3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/</code></pre>
+<pre><code class="lang-bash">3x target <span class="string">'rocky'</span> \
+  define ssh <span class="string">'rocky.Stanford.EDU:3x-tmp/'</span></code></pre>
 <p>To specify a username in addition to the hostname, prepend the username followed by a <code>@</code>, e.g., <code>netj@rocky.Stanford.EDU</code>.
 If your remote host uses a non-standard SSH port (i.e., other than 22), then you can use the URL form to specify its port as well, e.g., <code>ssh://netj@rocky.Stanford.EDU:22/3x-tmp/</code>.</p>
 <p>As with local targets, you can specify customizations to the environment variables after the URL for the remote, e.g., to tweak the <code>PATH</code> variable:</p>
-<pre><code class="lang-bash">3x target rocky  define ssh  rocky.Stanford.EDU:3x-tmp/  \
-    PATH=<span class="string">'/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'</span></code></pre>
+<pre><code class="lang-bash">3x target <span class="string">'rocky'</span> \
+  define ssh <span class="string">'rocky.Stanford.EDU:3x-tmp/'</span> \
+    PATH=<span class="string">'/usr/local/python3/bin:/usr/local/bin:/usr/bin:/bin'</span> \
+    <span class="comment">#</span></code></pre>
 <h4>Add a GNU Parallel Cluster Target</h4>
 <p><em><a href="https://www.gnu.org/software/parallel/">GNU Parallel</a></em> is a handy tool for launching multiple processes of a program, remotely as well as locally, in parallel to handle large numbers of inputs.
 It is especially useful when we have SSH access to a cluster of remote machines that does not have a dedicated job scheduler.
 <span class="sans-serif">3X</span> supports GNU Parallel as a type of execution target, so you can get results of multiple runs much earlier by leveraging the compute power of those ordinary machines.
 You can simply specify a list of remote hosts and use it as another target without knowing anything about GNU Parallel, since <span class="sans-serif">3X</span> abstracts away the complex operation instructions for the tool.</p>
 <p>The following command defines a target named <code>corn</code>:</p>
-<pre><code class="lang-bash">3x target corn  define gnuparallel  /tmp/3x-tmp-netj/  .3x-remote  corn{01..30}.stanford.edu</code></pre>
+<pre><code class="lang-bash">3x target <span class="string">'corn'</span> \
+  define gnuparallel \
+    <span class="string">'.3x-remote'</span> \
+    <span class="string">'/tmp/3x-tmp-netj/'</span> \
+    <span class="string">'corn'</span>{01..30}<span class="string">'.stanford.edu'</span> \
+    <span class="comment">#</span></code></pre>
 <p>that</p>
 <ul>
-<li>uses <code>/tmp/3x-tmp-netj/</code> as working directory on each machine, and </li>
-<li>puts shared data under directory <code>~/.3x-remote/</code> assuming it is accessible across all machines</li>
-<li>with 30 machines: <code>corn01.stanford.edu</code>, ..., <code>corn30.stanford.edu</code>.
+<li>executes runs with 30 machines: <code>corn01.stanford.edu</code>, ..., <code>corn30.stanford.edu</code>.
   <br><small>
   (Note that <code>{01..30}</code> is a special syntax for your shell to expand to 30 words, which might not be supported by older versions.
-In that case, enumerate all the names as arguments instead.)
+  In that case, enumerate all the names as arguments instead.)
   </small></li>
+<li>uses <code>/tmp/3x-tmp-netj/</code> as working directory on each machine, and </li>
+<li>puts shared data under directory <code>~/.3x-remote/</code> assuming it is accessible across all machines.</li>
 </ul>
 <h4>Switch between Targets</h4>
 <p>Now, assuming you have several targets defined in your repository, you can switch the target for the current queue by specifying only the name of the target, as shown in the following command for <code>rocky</code>:</p>
-<pre><code class="lang-bash">3x target rocky</code></pre>
+<pre><code class="lang-bash">3x target <span class="string">'rocky'</span></code></pre>
 <p>After switching, you can start executing on the new target by running:</p>
 <pre><code class="lang-bash">3x start</code></pre>
 <p>To switch back to the <code>local</code> target, run:</p>
-<pre><code class="lang-bash">3x target local</code></pre>
+<pre><code class="lang-bash">3x target <span class="string">'local'</span></code></pre>
 <p>More usage related to <span class="sans-serif">3X</span> targets can be accessed via the following command:</p>
 <pre><code class="lang-bash">3x target -h</code></pre>
 <h3 id='advanced-usage/2-use-multiple-queues'>2. Use Multiple Queues</h3 id='advanced-usage/2-use-multiple-queues'>
@@ -663,7 +696,7 @@ Once you begin to use multiple targets, it could be convenient to use separate q
 <p>The asterisk character <code>*</code> in front of the queue name indicates it is the current queue.</p>
 <h4>Add and/or Switch to a Different Queue</h4>
 <p>To add a new queue, simply specify the name of the queue to the <code>3x queue</code> command, say <code>test-queue</code>:</p>
-<pre><code class="lang-bash">3x queue test-queue</code></pre>
+<pre><code class="lang-bash">3x queue <span class="string">'test-queue'</span></code></pre>
 <p>It will output lines similar to the following, indicating a new empty queue is created:</p>
 <pre><code class="lang-text">#  <span class="tag">QUEUE</span>       <span class="tag">STATE</span>     <span class="id">#PLANNED</span>  <span class="id">#RUNNING</span>  <span class="id">#ABORTED</span>  <span class="id">#FAILED</span>  <span class="id">#DONE</span>  <span class="tag">TARGET</span>
 *  <span class="tag">test</span>-<span class="tag">queue</span>  <span class="tag">INACTIVE</span>  0         0         0         0        0      ?
@@ -671,9 +704,9 @@ Once you begin to use multiple targets, it could be convenient to use separate q
 <p>If you specify name of an existing queue, <span class="sans-serif">3X</span> will simply change the current queue to that one.</p>
 <h4>Set the Target for a Queue</h4>
 <p>To specify which target to use for the current queue, use the following command:</p>
-<pre><code class="lang-bash">3x target corn</code></pre>
+<pre><code class="lang-bash">3x target <span class="string">'corn'</span></code></pre>
 <p>You can also specify the target to be used for the queue at the time you create or switch to the queue:</p>
-<pre><code class="lang-bash">3x queue test-queue corn</code></pre>
+<pre><code class="lang-bash">3x queue <span class="string">'test-queue'</span> <span class="string">'corn'</span></code></pre>
 <p>It will also set the target for the queue:</p>
 <pre><code class="lang-text">#  <span class="tag">QUEUE</span>       <span class="tag">STATE</span>     <span class="id">#PLANNED</span>  <span class="id">#RUNNING</span>  <span class="id">#ABORTED</span>  <span class="id">#FAILED</span>  <span class="id">#DONE</span>  <span class="tag">TARGET</span>
 *  <span class="tag">test</span>-<span class="tag">queue</span>  <span class="tag">INACTIVE</span>  0         0         0         0        0      <span class="tag">corn</span>
