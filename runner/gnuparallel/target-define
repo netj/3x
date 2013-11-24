@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# > 3x target TARGET define gnuparallel  WORKDIR  SHARED_DIR  SSH_LOGIN...  [NAME[=VALUE]]...
+# > 3x target TARGET define gnuparallel  SHARED_DIR  WORKDIR  SSH_LOGIN...  [NAME[=VALUE]]...
 # Defines a new target that is accessible via GNU parallel, named TARGET.
 #  
 # SSH_LOGIN is of the form, that is accepted by GNU parallel:
@@ -14,7 +14,7 @@
 # gnuparallel/target-define -- define a GNU Parallel target
 # > _3X_ROOT=... \
 # > _3X_RUNNER=... \
-# > target-define TARGET WORKDIR SHARED_DIR SSH_LOGIN... [NAME[=VALUE]]...
+# > target-define TARGET SHARED_DIR WORKDIR SSH_LOGIN... [NAME[=VALUE]]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-09-23
@@ -31,13 +31,13 @@ export _3X_TARGET_DIR="$_3X_ROOT"/run/target/"$Target"
 
 cd "$_3X_TARGET_DIR"
 
-[ $# -gt 0 ] || usage "$0" "Missing WORKDIR"
-[ $# -gt 1 ] || usage "$0" "Missing SHARED_DIR, use '' (empty) if there isn't one"
+[ $# -gt 0 ] || usage "$0" "Missing SHARED_DIR, use '' (empty) if there isn't one"
+[ $# -gt 1 ] || usage "$0" "Missing WORKDIR"
 [ $# -gt 2 ] || usage "$0" "Missing SSH_LOGIN"
 
 # replace path configs
-define-with-backup workdir "$1"; shift
 define-with-backup shareddir "$1"; shift
+define-with-backup workdir "$1"; shift
 
 
 # replace remotes

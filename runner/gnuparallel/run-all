@@ -112,22 +112,24 @@ mkdir -p "$mobileRepo"/.3x/$sessionId
 mv -f "$mobileRepo"/.3x/assemble.sh "$mobileRepo"/.3x/$sessionId/
 ln -f "$FileRunIds"                 "$mobileRepo"/.3x/$sessionId/runIds
 if [ -n "$shareddir" ]; then
-    updateResponsiveRemotes &
+    updateResponsiveRemotes
+    shareddirQualified="$(head -n 1 <target/remotes.responsive):$shareddir"
     # we can rsync $mobileRepo to the $shareddir only once
     remoteMobileRepo=$(
-        parseRemote $shareddir &>/dev/null
-        echo "$remoteRoot/$mobileRepo"
+        parseRemote "$shareddirQualified" &>/dev/null
+        echo "$remoteRoot/${mobileRepo##*/}"
         {
             let SHLVL+=2
-            cd "$_3X_WORKER_DIR"
-            rsyncToRemote "$remoteRoot"/ --archive --hard-links --relative \
-                "$mobileRepo"/{.3x,input,program,output}/
+            cd "$_3X_WORKER_DIR/$mobileRepo"
+            sshRemote mkdir -p "$remoteRoot"/
+            rsyncToRemote "${mobileRepo##*/}"/ --archive --hard-links --relative \
+                {.3x,input,program,output}/
         } >&2
     )
     cleanupRemoteRoot() {
         (
         let SHLVL+=2
-        parseRemote $shareddir
+        parseRemote "$shareddirQualified" &>/dev/null
         sshRemote rm -rf "$remoteMobileRepo"/.3x/$sessionId
         )
     }
