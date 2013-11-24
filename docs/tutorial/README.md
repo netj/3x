@@ -132,11 +132,11 @@ We can tell <span class="sans-serif">3X</span> that we have three input paramete
 The particular sorting algorithms we are interested in are the following five, which are already implemented in [`sort.py`][].
 We will use the name of the algorithms as the value for this input parameter.
 
-* `bubbleSort`      for [Bubble Sort](http://en.wikipedia.org/wiki/Bubble_sort#Pseudocode_implementation)
-* `selectionSort`   for [Selection Sort](http://en.wikipedia.org/wiki/Selection_sort)
-* `insertionSort`   for [Insertion Sort](http://en.wikipedia.org/wiki/Insertion_sort#Algorithm)
-* `quickSort`       for [Quick Sort (in-place version)](http://en.wikipedia.org/wiki/Quicksort#In-place_version)
-* `mergeSort`       for [Merge Sort (bottom-up implementation)](http://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation)
+* `bubbleSort`      for [Bubble Sort](https://en.wikipedia.org/wiki/Bubble_sort#Pseudocode_implementation)
+* `selectionSort`   for [Selection Sort](https://en.wikipedia.org/wiki/Selection_sort)
+* `insertionSort`   for [Insertion Sort](https://en.wikipedia.org/wiki/Insertion_sort#Algorithm)
+* `quickSort`       for [Quick Sort (in-place version)](https://en.wikipedia.org/wiki/Quicksort#In-place_version)
+* `mergeSort`       for [Merge Sort (bottom-up implementation)](https://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation)
 
 The following command tells <span class="sans-serif">3X</span> to add this parameter to the experiment definition:
 
