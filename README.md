@@ -8,7 +8,7 @@ It organizes code, inputs, and outputs for experiments, records results, and let
 ### Motivation
 Organizing the data that goes into and comes out of experiments, as well as maintaining the infrastructure for running them, is generally regarded as a tedious and mundane task.
 Often times we end up in a suboptimal environment improvised and hard-coded for each experiment.
-The problem is exacerbated when the experiments must be performed iteratively for exploring a large parameter space.
+The problem is exacerbated when the experiment runs must be performed iteratively for exploring a large parameter space.
 Easing this burden will enable us to more quickly make interesting discoveries from the data our experiments produce.
 "Data scientists" are emerging everywhere these days to ask questions in the form of computational experiments, and to discover new facts from the "big data" their institutions have accumulated.
 In fact, these computational and data-driven approaches have long been a standard method for doing science in many domains, and we see ever growing number of fields depending on computational experiments.
