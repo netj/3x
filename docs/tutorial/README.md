@@ -94,11 +94,13 @@ It is simply an abbreviation for the multiple steps necessary to initialize the 
 Note that since this quick setup command creates only the skeleton part of our experiment repository, we still need to place additional files at the right place, namely, the `.py` files of our program.
 The following commands will prepare the `program/` directory, which is explained in more details in [§2.3 (Plug in the Program)](#plugintheprogram).
 
-    # download our example Python program into the right place
-    cd sorting-algos/program
-    exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
-    curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
-    cd -
+```bash
+# download our example Python program into the right place
+cd sorting-algos/program
+exampleURL="https://raw.github.com/netj/3x/master/docs/examples/sorting-algos/program"
+curl -L -O $exampleURL/measure.py -O $exampleURL/sort.py
+cd -
+```
 
 You can safely ignore the rest of the steps because they were already taken care by the `3x setup` command above.
 We're all set to start running our experiment.
