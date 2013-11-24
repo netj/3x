@@ -25,7 +25,7 @@ For example, you can use <span class="sans-serif">3X</span> to play with small P
 
 ### Input Variables
 *Input variables* are what you want to vary between executions of your program.
-You can specify a finite set of discrete, symbolic values for each input variable, e.g., `insertionSort`, `quickSort`, and `mergeSort`, etc. for input variable `algo` that determines which sorting algorithm is used.
+You can specify a finite set of discrete, symbolic values for each input variable.
 <span class="sans-serif">3X</span> supplies values for the input variables to your experiment program in the form of environment variables.
 A filesystem directory is provided for each input variable and each value of it to let you organize relevant input files in a manifest way.
 
