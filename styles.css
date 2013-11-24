@@ -53,6 +53,15 @@ body {
     }
 }
 
+/* Adjust code syntax highlighting */
+#content code.lang-bash {
+    background-color: #333;
+    color: #ddd;
+}
+#content code.lang-text * {
+    color: inherit;
+}
+
 
 /* footer and footer nav */
 #footer,
