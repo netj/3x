@@ -3,7 +3,9 @@
 
 .build
 /@prefix@
+/3X.app
 /3x-*.sh
+/3x-*.dmg
 /.depends/*
 !/.depends/*.commands
 !/.depends/*.paths
