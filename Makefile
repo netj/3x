@@ -20,7 +20,7 @@ PACKAGEEXECUTES := bin/3x
 PACKAGEVERSIONSUFFIX := -$(shell uname)-$(shell uname -m)
 
 APPNAME := 3X
-APPEXECUTES := for d; do (cd "$$d"; exec 3x gui start \&) </dev/null >/dev/null 2>\&1; done
+APPEXECUTES := for d; do (cd "$$d"; exec 3x gui start &) </dev/null >/dev/null 2>&1; done
 APPPATHDIR := bin
 
 include buildkit/modules.mk
