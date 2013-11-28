@@ -22,6 +22,7 @@ PACKAGEVERSIONSUFFIX := -$(shell uname)-$(shell uname -m)
 APPNAME := 3X
 APPIDENT := edu.stanford.infolab.3x
 APPCOPYRIGHT := © 2013 InfoLab, Stanford University.
+APPICON := gui/app-icon.icns
 APPEXECUTES := for d; do (cd "$$d"; exec 3x gui start &) </dev/null >/dev/null 2>&1; done
 APPPATHDIR := bin
 
