@@ -20,6 +20,8 @@ PACKAGEEXECUTES := bin/3x
 PACKAGEVERSIONSUFFIX := -$(shell uname)-$(shell uname -m)
 
 APPNAME := 3X
+APPIDENT := edu.stanford.infolab.3x
+APPCOPYRIGHT := © 2013 InfoLab, Stanford University.
 APPEXECUTES := for d; do (cd "$$d"; exec 3x gui start &) </dev/null >/dev/null 2>&1; done
 APPPATHDIR := bin
 
@@ -29,7 +31,7 @@ buildkit/modules.mk:
 	git submodule update --init
 
 # version and build information
-$(STAGEDIR)/.build-info.sh:
+$(STAGEDIR)/.build-info.sh: stage
 	# Generating $@
 	@{ \
 	    echo 'version=$(shell git describe --tags)'; \
