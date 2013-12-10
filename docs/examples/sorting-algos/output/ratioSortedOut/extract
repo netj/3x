@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -eu
 cat rusage stdout stderr |
-extract-regexp 'number of accesses: ' .+ ''
+extract-regexp 'output sorted ratio: ' .+ ''

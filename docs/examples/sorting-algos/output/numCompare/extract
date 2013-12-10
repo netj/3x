@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-cat stdout stderr |
+set -eu
+cat rusage stdout stderr |
 extract-regexp 'number of compares: ' .+ ''

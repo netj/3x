@@ -75,19 +75,18 @@ It is simply an abbreviation for the multiple steps necessary to initialize the 
 ```bash
 # create and setup a new experiment repository
 3x setup sorting-algos \
-  --program \
-    'python measure.py $algo $inputSize $inputType' \
-  --inputs \
-    'inputSize'='10,11,12,13,14,15,16,17,18' \
-    'inputType'='random,ordered,reversed' \
-    'algo'='bubbleSort,selectionSort,insertionSort,quickSort,mergeSort' \
-  --outputs \
-    --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
-    --extract 'number of compares: {{numCompare =~ .+}}' \
-    --extract 'number of accesses: {{numAccess =~ .+}}' \
-    --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
-    --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
-    --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
+ --program \
+   'python measure.py $algo $dataSize $dataOrder' \
+ --inputs \
+   algo=bubbleSort,selectionSort,insertionSort,quickSort,mergeSort \
+   dataSize=2000,4000,8000 \
+   dataOrder=random,ordered,reversed \
+ --outputs \
+   --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
+   --extract 'number of compares: {{numCompare =~ .+}}' \
+   --extract 'number of accesses: {{numAccess =~ .+}}' \
+   --extract 'input sorted ratio: {{ratioSortedIn =~ .+}}' \
+   --extract 'output sorted ratio: {{ratioSortedOut =~ .+}}' \
   # end of 3x setup
 ```
 <small>
@@ -152,26 +151,20 @@ The following command tells <span class="sans-serif">3X</span> to add this param
 ```
 
 
-##### Input 2. `inputSize` for choosing the size of the array to sort
+##### Input 2. `dataSize` for controlling the size of the array to sort
 
 We want to test sorting algorithms on arrays of numbers with different sizes.
-We will start with arrays of 1,024 (2<sup><small>10</small></sup>) unique numbers, and double the size of the arrays up to size 262,144 (2<sup><small>18</small></sup>).
-Let's omit the base and use the powers of two as the value for this input parameter:
-
-* `10` for 2<sup><small>10</small></sup>,
-* `11` for 2<sup><small>11</small></sup>,
-* ...,
-* `18` for 2<sup><small>18</small></sup>.
+We will use arrays of 2,000 unique numbers, and double the size of the arrays up to size 8,000.
 
 We should run the following command to add this parameter:
 
 ```bash
-3x define input 'inputSize' \
-  '10' '11' '12' '13' '14' '15' '16' '17' '18'
+3x define input 'dataSize' \
+  '2000' '4000' '8000'
 ```
 
 
-##### Input 3. `inputType` for choosing the type of the arrays to sort
+##### Input 3. `dataOrder` for controlling how much the arrays to sort are already sorted
 
 We also want to see how each sorting algorithm behaves differently for different types of arrays as well as their sizes.
 We will use the following three values of this input parameter to indicate which type of input we want to use:
@@ -183,7 +176,7 @@ We will use the following three values of this input parameter to indicate which
 The following command will add this last parameter:
 
 ```bash
-3x define input 'inputType' \
+3x define input 'dataOrder' \
   'ordered' 'reversed' 'random'
 ```
 
@@ -301,7 +294,7 @@ Next, we need to create a `run` script that starts our Python program as follows
 ```bash
 cat >run  <<EOF
 #!/bin/sh
-python measure.py \$algo \$inputSize \$inputType
+python measure.py \$algo \$dataSize \$dataType
 EOF
 chmod +x run
 ```
@@ -358,7 +351,7 @@ From the command line, within the experiment repository, the following command w
 Different sets of runs can be easily planned with commands similar to the following:
 
 ```bash
-3x plan algo=bubbleSort,insertionSort inputSize=10,11,12
+3x plan algo=bubbleSort,insertionSort dataSize=2000,4000
 ```
 
 
@@ -559,7 +552,7 @@ You can narrow down the output if you specify filters on some variables, e.g.,
 
 ```bash
 3x results algo=quickSort,mergeSort \
-           inputType'!='random \
+           dataOrder'!='random \
            numCompare'>'5900000
 ```
 

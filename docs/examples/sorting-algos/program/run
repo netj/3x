@@ -1,1 +1,2 @@
-python measure.py $algo $inputSize $inputType
+#!/usr/bin/env bash
+python measure.py $algo $dataSize $dataOrder

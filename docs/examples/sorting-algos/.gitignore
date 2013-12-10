@@ -5,5 +5,3 @@
 /.3x/gui
 /run/*
 !/run/target
-
-*.pyc
