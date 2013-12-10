@@ -50,6 +50,10 @@
       position: absolute;
     }
   }
+  // XXX fix Bootstrap artifacts
+  .navbar-fixed-top .navbar-inner {
+    padding: 0;
+  }
 }
 @media screen and (min-width: 768px) {
   #main > .row-fluid {
@@ -263,6 +267,9 @@ body > .navbar .brand .icon {
 #chart {
   overflow: hidden;
 
+  .popover {
+    opacity: 0.75;
+  }
   .popover-content {
     table tr:first-child {
       td, th { border-top-style: none; }
