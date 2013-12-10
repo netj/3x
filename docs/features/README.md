@@ -19,7 +19,7 @@ New experiment repositories can be created easily with a single command (`3x set
 *Program* is what you want to run (or execute) to do the computation for your experiment.
 Most programs will output computed data as files or standard output/error based on the input you give, and can be thought as a function.
 But <span class="sans-serif">3X</span> works fine with programs that have randomness in them producing different results on each execution even with the same input, or programs that mutate state of external systems, e.g., databases.
-When your experiment is about comparing different algorithms or implementations for the same set of inputs, although you may have multiple codes to execute, your program to 3X is the code that combines all of them by executing the actual one based on a designated input switch.
+When your experiment is about comparing different algorithms or implementations for the same set of inputs, although you may have multiple codes to execute, your program to <span class="sans-serif">3X</span> is the code that combines all of them by executing the actual one based on a designated input switch.
 As long as there is a way to invoke your program from the command-line, <span class="sans-serif">3X</span> is agnostic to what programming language or programming system you are using.
 For example, you can use <span class="sans-serif">3X</span> to play with small Python scripts on your laptop, to run MATLAB/Octave code on your compute cluster, or to launch complex jobs on your Hadoop cluster.
 
