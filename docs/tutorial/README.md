@@ -377,13 +377,18 @@ From the command line, you can run the following command to view what runs are i
 It will output the table of runs in the current queue that resembles the GUI as follows:
 
 ```text
-PLANNED  algo=quickSort  inputSize=10  inputType=ordered   #1
-PLANNED  algo=quickSort  inputSize=10  inputType=random    #2
-PLANNED  algo=quickSort  inputSize=10  inputType=reversed  #3
-PLANNED  algo=quickSort  inputSize=11  inputType=ordered   #4
-[...]
-PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
-PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+PLANNED  algo=bubbleSort     dataOrder=ordered   dataSize=2000  #1
+PLANNED  algo=bubbleSort     dataOrder=ordered   dataSize=4000  #2
+PLANNED  algo=bubbleSort     dataOrder=random    dataSize=2000  #3
+PLANNED  algo=bubbleSort     dataOrder=random    dataSize=4000  #4
+PLANNED  algo=bubbleSort     dataOrder=reversed  dataSize=2000  #5
+PLANNED  algo=bubbleSort     dataOrder=reversed  dataSize=4000  #6
+PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=2000  #7
+PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=4000  #8
+PLANNED  algo=insertionSort  dataOrder=random    dataSize=2000  #9
+PLANNED  algo=insertionSort  dataOrder=random    dataSize=4000  #10
+PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=2000  #11
+PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=4000  #12
 ```
 
 To start execution, run:
@@ -425,14 +430,18 @@ From the command line, you can use the same command to view the state of runs in
 It will output the table of runs with updated states:
 
 ```text
-DONE     algo=quickSort  inputSize=10  inputType=ordered   #1   local  run/2013/1001/01/1836.424138000-1
-DONE     algo=quickSort  inputSize=10  inputType=random    #2   local  run/2013/1001/01/1839.494897000-2
-DONE     algo=quickSort  inputSize=10  inputType=reversed  #3   local  run/2013/1001/01/1841.888092000-3
-DONE     algo=quickSort  inputSize=11  inputType=ordered   #4   local  run/2013/1001/01/1844.200499000-4
-DONE     algo=quickSort  inputSize=11  inputType=random    #5   local  run/2013/1001/01/1846.514245000-5
-[...]
-PLANNED  algo=quickSort  inputSize=18  inputType=random    #26
-PLANNED  algo=quickSort  inputSize=18  inputType=reversed  #27
+DONE     algo=bubbleSort     dataOrder=ordered   dataSize=2000  #1   local  run/2013/1210/16/0239.950859000-1
+DONE     algo=bubbleSort     dataOrder=ordered   dataSize=4000  #2   local  run/2013/1210/16/0242.332462000-2
+DONE     algo=bubbleSort     dataOrder=random    dataSize=2000  #3   local  run/2013/1210/16/0244.662679000-3
+DONE     algo=bubbleSort     dataOrder=random    dataSize=4000  #4   local  run/2013/1210/16/0247.985977000-4
+DONE     algo=bubbleSort     dataOrder=reversed  dataSize=2000  #5   local  run/2013/1210/16/0254.226996000-5
+RUNNING  algo=bubbleSort     dataOrder=reversed  dataSize=4000  #6   local  run/2013/1210/16/0258.051612000-6
+PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=2000  #7
+PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=4000  #8
+PLANNED  algo=insertionSort  dataOrder=random    dataSize=2000  #9
+PLANNED  algo=insertionSort  dataOrder=random    dataSize=4000  #10
+PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=2000  #11
+PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=4000  #12
 ```
 
 
@@ -534,17 +543,15 @@ The following command will print full results of all executions containing the v
 Part of the output will look like:
 
 ```text
-[...]
-run/2013/0924/18/1752.165321000-13    inputTime=0         numAccess=3069         numCompare=1023         ratioSorted=1  sortingTime=0        algo=insertionSort  inputSize=10  inputType=ordered
-run/2013/0924/18/1752.165321000-12    inputTime=0         numAccess=134201344    numCompare=33550336     ratioSorted=1  sortingTime=22.31    algo=bubbleSort     inputSize=13  inputType=reversed
-run/2013/0924/18/1752.165321000-15    inputTime=0         numAccess=1049598      numCompare=523776       ratioSorted=1  sortingTime=0.18     algo=insertionSort  inputSize=10  inputType=reversed
-run/2013/0924/18/1752.165321000-14    inputTime=0         numAccess=538588       numCompare=268780       ratioSorted=1  sortingTime=0.08     algo=insertionSort  inputSize=10  inputType=random
-run/2013/0924/18/1752.165321000-11    inputTime=0         numAccess=100600444    numCompare=33545965     ratioSorted=1  sortingTime=14.01    algo=bubbleSort     inputSize=13  inputType=random
-[...]
-run/2013/0930/23/5102.639230000-2064  inputTime=0         numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=7047.79  algo=selectionSort  inputSize=18  inputType=reversed
-run/2013/0930/23/5102.639230000-2059  inputTime=0.01      numAccess=34359869439  numCompare=34359607296  ratioSorted=1  sortingTime=7168.51  algo=selectionSort  inputSize=18  inputType=ordered
-run/2013/0930/23/5102.639230000-2060  inputTime=0.18      numAccess=34360655832  numCompare=34359607296  ratioSorted=1  sortingTime=8329.18  algo=selectionSort  inputSize=18  inputType=random
-run/2013/0930/23/5102.639230000-2058  inputTime=0.01      numAccess=34360262655  numCompare=34359607296  ratioSorted=1  sortingTime=8850.64  algo=selectionSort  inputSize=18  inputType=reversed
+run/2013/1210/15/4445.781335000-34  numAccess=60663      numCompare=26322     ratioSortedIn=0.0005    ratioSortedOut=1  sortingTime=0.017645   algo=quickSort      dataOrder=reversed  dataSize=2000
+run/2013/1210/15/4447.957292000-35  numAccess=129707     numCompare=52439     ratioSortedIn=0.00025   ratioSortedOut=1  sortingTime=0.040239   algo=quickSort      dataOrder=reversed  dataSize=4000
+run/2013/1210/15/4450.166679000-36  numAccess=278503     numCompare=113782    ratioSortedIn=0.000125  ratioSortedOut=1  sortingTime=0.079223   algo=quickSort      dataOrder=reversed  dataSize=8000
+run/2013/1210/15/4452.381681000-37  numAccess=2000999    numCompare=1999000   ratioSortedIn=1         ratioSortedOut=1  sortingTime=0.341218   algo=selectionSort  dataOrder=ordered   dataSize=2000
+run/2013/1210/15/4454.869426000-38  numAccess=8001999    numCompare=7998000   ratioSortedIn=1         ratioSortedOut=1  sortingTime=1.351666   algo=selectionSort  dataOrder=ordered   dataSize=4000
+run/2013/1210/15/4458.361686000-39  numAccess=32003999   numCompare=31996000  ratioSortedIn=1         ratioSortedOut=1  sortingTime=5.437687   algo=selectionSort  dataOrder=ordered   dataSize=8000
+run/2013/1210/15/4505.969481000-40  numAccess=2006963    numCompare=1999000   ratioSortedIn=0.504     ratioSortedOut=1  sortingTime=0.349765   algo=selectionSort  dataOrder=random    dataSize=2000
+run/2013/1210/15/4508.498079000-41  numAccess=8013981    numCompare=7998000   ratioSortedIn=0.503     ratioSortedOut=1  sortingTime=1.37432    algo=selectionSort  dataOrder=random    dataSize=4000
+run/2013/1210/15/4512.009795000-42  numAccess=32027972   numCompare=31996000  ratioSortedIn=0.50475   ratioSortedOut=1  sortingTime=5.476741   algo=selectionSort  dataOrder=random    dataSize=8000
 ```
 
 
@@ -559,11 +566,10 @@ You can narrow down the output if you specify filters on some variables, e.g.,
 Then it outputs only the results that match given criteria:
 
 ```text
-run/2013/0926/06/1826.875115000-888 	inputTime=0.01	numAccess=7134799	numCompare=5911655	ratioSorted=1	sortingTime=2.87	algo=quickSort	inputSize=18	inputType=ordered
-run/2013/0926/06/2351.112734000-1070	inputTime=0.01	numAccess=12805001	numCompare=5928316	ratioSorted=1	sortingTime=3.29	algo=quickSort	inputSize=18	inputType=reversed
-run/2013/0928/10/3748.111174000-1356	inputTime=0.01	numAccess=7168519	numCompare=5944051	ratioSorted=1	sortingTime=2.97	algo=quickSort	inputSize=18	inputType=ordered
-run/2013/0929/11/1246.771209000-1756	inputTime=0.02	numAccess=7345424	numCompare=6123288	ratioSorted=1	sortingTime=3.19	algo=quickSort	inputSize=18	inputType=ordered
-run/2013/0929/11/2047.444739000-1818	inputTime=0.01	numAccess=12120436	numCompare=5913122	ratioSorted=1	sortingTime=3.14	algo=quickSort	inputSize=18	inputType=reversed
+run/2013/1210/15/4416.803759000-21  numAccess=260416  numCompare=52416   ratioSortedIn=1         ratioSortedOut=1  sortingTime=0.064872  algo=mergeSort  dataOrder=ordered   dataSize=8000
+run/2013/1210/15/4436.821044000-30  numAccess=159695  numCompare=122147  ratioSortedIn=1         ratioSortedOut=1  sortingTime=0.074     algo=quickSort  dataOrder=ordered   dataSize=8000
+run/2013/1210/15/4447.957292000-35  numAccess=129707  numCompare=52439   ratioSortedIn=0.00025   ratioSortedOut=1  sortingTime=0.040239  algo=quickSort  dataOrder=reversed  dataSize=4000
+run/2013/1210/15/4450.166679000-36  numAccess=278503  numCompare=113782  ratioSortedIn=0.000125  ratioSortedOut=1  sortingTime=0.079223  algo=quickSort  dataOrder=reversed  dataSize=8000
 ```
 
 
