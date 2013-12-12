@@ -104,7 +104,7 @@ cd sorting-algos/program
 exampleURL="https://raw.github.com/netj/3x/master/docs/examples"
 curl -L -O $exampleURL/sorting-algos/program/measure.py \
         -O $exampleURL/sorting-algos/program/sort.py
-cd -
+cd ..
 ```
 
 If you have followed this quick setup, you can safely ignore the rest of the steps for setting up the repository because they were already taken care by the `3x setup` command you have run.
@@ -186,7 +186,7 @@ We can tell <span class="sans-serif">3X</span> to look for lines that match spec
 These patterns can be specified in [Perl regular expressions](http://perldoc.perl.org/perlre.html#Regular-Expressions) syntax.
 The following steps will show how exactly we can tell <span class="sans-serif">3X</span> to extract the values of interest in the case of this experiment with sorting algorithms.
 
-##### Output 1. `sortingTime`
+##### Output 1. `sortingTime` for the time taken to sort
 
 The wall clock time it takes for sorting the input array is what we are mostly interested in in this experiment.
 We measure this time in our program in seconds and print that out in a line that begins with `sorting time (s): `.
@@ -207,7 +207,7 @@ Here, there are four arguments to the `3x define output` command:
 Note that we can append the *unit* of the output variable to its name (first argument), which is `(s)` or seconds in this case.
 We can use any text for the unit as long as it's surrounded by parentheses.
 
-##### Output 2. `numCompare`
+##### Output 2. `numCompare` for the number of compares taken to sort
 
 Similarly, we can teach <span class="sans-serif">3X</span> to extract the number of compares for the value of an output variable using the following command:
 
@@ -217,7 +217,7 @@ Similarly, we can teach <span class="sans-serif">3X</span> to extract the number
 ```
 
 
-##### Output 3. `numAccess`
+##### Output 3. `numAccess` for the number of array access to sort
 
 As well as the number of accesses to the input array of numbers with:
 
@@ -227,36 +227,19 @@ As well as the number of accesses to the input array of numbers with:
 ```
 
 
-##### Output 4. `ratioSorted`
+##### Output 4. `ratioSortedOut` and `ratioSortedIn`
 
-To ensure correctness, note that we compute the ratio of the numbers in the array that are correctly ordered to the array size, after finishing the sorting algorithm.
+To ensure correctness, note that we compute the ratio of the numbers in the array that are correctly ordered to the array size, after finishing the sorting algorithm, as `ratioSortedOut`.
 This is a simple measure to easily check whether the sorting algorithm was implemented correctly.
 When this value comes out less than 1.0, it means the algorithm is incorrect.
-The following command adds this output variable to the experiment definition.
+We also compute this ratio for the array before sorting, as `ratioSortedIn`, to capture the characteristic of the input for the particular run.
+The following command adds these two output variables to the experiment definition.
 
 ```bash
-3x define output 'ratioSorted' \
-  extract 'ratio sorted: '  '.+'  ''
-```
-
-
-##### Output 5. `inputTime`
-
-We also record the wall clock time that it took for generating the input array to sort.
-
-```bash
-3x define output 'inputTime(s)' \
-  extract 'input generation time \(s\): '  '.+'  ''
-```
-
-
-##### Output 6. `verificationTime`
-
-And the wall clock time that it took for checking whether the output array is correctly sorted.
-
-```bash
-3x define output 'verificationTime(s)' \
-  extract 'verification time \(s\): '  '.+'  ''
+3x define output 'ratioSortedIn' \
+  extract 'input sorted ratio: '  '.+'  ''
+3x define output 'ratioSortedOut' \
+  extract 'output sorted ratio: '  '.+'  ''
 ```
 
 
