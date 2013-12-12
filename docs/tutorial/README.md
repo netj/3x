@@ -193,16 +193,17 @@ We measure this time in our program in seconds and print that out in a line that
 Therefore, <span class="sans-serif">3X</span> can easily extract the value that follows if we define the output variable as shown in the following command:
 
 ```bash
-3x define output 'inputTime(s)' \
+3x define output 'sortingTime(s)' \
   extract 'sorting time \(s\): '  '.+'  ''
 ```
 
 Here, there are four arguments to the `3x define output` command:
 
-1. name of the output variable: `inputTime(s)`
-2. regular expression for the text that comes before the value: `sorting time \(s\): `
-3. regular expression the value matches: `.+` (any non-empty string)
-4. regular expression for the text that comes after the value: (empty string)
+1. name of the output variable: `sortingTime`
+2. unit of the output variable: `(s)`
+3. regular expression for the text that comes before the value: `sorting time \(s\): `
+4. regular expression the value matches: `.+` (any non-empty string)
+5. regular expression for the text that comes after the value: (empty string)
 
 Note that we can append the *unit* of the output variable to its name (first argument), which is `(s)` or seconds in this case.
 We can use any text for the unit as long as it's surrounded by parentheses.
@@ -277,7 +278,7 @@ Next, we need to create a `run` script that starts our Python program as follows
 ```bash
 cat >run  <<EOF
 #!/bin/sh
-python measure.py \$algo \$dataSize \$dataType
+python measure.py \$algo \$dataSize \$dataOrder
 EOF
 chmod +x run
 ```
@@ -309,29 +310,27 @@ To start the GUI, run the following command within the experiment repository:
 When successfully started, it will output a URL you can open in your web browser to access the GUI.
 On a Mac, or a GNU/Linux system running a proper GUI system, <span class="sans-serif">3X</span> will launch the browser for you.
 
-![Initial screen of 3X GUI on an empty experiment repository for studying sorting algorithms.](gui-started.png)
+![Initial screen of 3X GUI on an empty experiment repository for studying sorting algorithms.](gui-planning.png)
 
-As shown in the above screenshot, the GUI has four tabs: Results, Charts, Plan, and Runs.
-The first two tabs are for exploring the results of execution collected so far, while the last two are for controlling the execution.
+As shown in the above screenshot, the GUI has four tabs: Plan, Runs, Results, and Charts.
+The first two tabs are for planning and controlling the execution, while the last two are for exploring the results of execution collected so far.
 
 #### 3.2. Plan Runs
 
-From the results table, we can click on a row that needs to be filled or supported by more data to plan new runs for execution.
-You can repeat this process from the results table to add necessary runs to fill the output columns colored red of the specific rows you select.
-Note that the button on each input column header can be used to expand and collapse the rows, so that you can add only part of the runs or a larger group of runs at a time.
-
-![New runs can be queued from the results table.](gui-plan-from-results.png)
+From the Plan tab, we can choose a set of values for each input variable to generate a cross product of them to plan new runs for execution.
+It is also possible to pick a random sample from such full combination of values, where you have the option of varying the sampling ratio.
+In either ways, by clicking on the "Add to Queue" button at the bottom multiple times, you can add new runs to the current queue as many times as you want.
 
 
 ##### Plan Runs from Command Line
 
-From the command line, within the experiment repository, the following command will achieve the same result as we did in the GUI:
+From the command line, under the experiment repository, the following command will achieve the same result as we did in the GUI:
 
 ```bash
-3x plan algo=quickSort
+3x plan algo
 ```
 
-Different sets of runs can be easily planned with commands similar to the following:
+Specific sets of values for planning the runs can be easily specified with commands similar to the following one:
 
 ```bash
 3x plan algo=bubbleSort,insertionSort dataSize=2000,4000
@@ -372,6 +371,7 @@ PLANNED  algo=insertionSort  dataOrder=random    dataSize=2000  #9
 PLANNED  algo=insertionSort  dataOrder=random    dataSize=4000  #10
 PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=2000  #11
 PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=4000  #12
+[...]
 ```
 
 To start execution, run:
@@ -413,18 +413,19 @@ From the command line, you can use the same command to view the state of runs in
 It will output the table of runs with updated states:
 
 ```text
-DONE     algo=bubbleSort     dataOrder=ordered   dataSize=2000  #1   local  run/2013/1210/16/0239.950859000-1
-DONE     algo=bubbleSort     dataOrder=ordered   dataSize=4000  #2   local  run/2013/1210/16/0242.332462000-2
-DONE     algo=bubbleSort     dataOrder=random    dataSize=2000  #3   local  run/2013/1210/16/0244.662679000-3
-DONE     algo=bubbleSort     dataOrder=random    dataSize=4000  #4   local  run/2013/1210/16/0247.985977000-4
-DONE     algo=bubbleSort     dataOrder=reversed  dataSize=2000  #5   local  run/2013/1210/16/0254.226996000-5
-RUNNING  algo=bubbleSort     dataOrder=reversed  dataSize=4000  #6   local  run/2013/1210/16/0258.051612000-6
-PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=2000  #7
-PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=4000  #8
-PLANNED  algo=insertionSort  dataOrder=random    dataSize=2000  #9
-PLANNED  algo=insertionSort  dataOrder=random    dataSize=4000  #10
-PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=2000  #11
-PLANNED  algo=insertionSort  dataOrder=reversed  dataSize=4000  #12
+DONE     algo=bubbleSort     dataOrder=ordered   dataSize=2000  #1   local  run/2013/1212/13/2336.748025000-1
+DONE     algo=bubbleSort     dataOrder=ordered   dataSize=4000  #2   local  run/2013/1212/13/2339.638627000-2
+DONE     algo=bubbleSort     dataOrder=ordered   dataSize=8000  #3   local  run/2013/1212/13/2341.819154000-3
+DONE     algo=bubbleSort     dataOrder=random    dataSize=2000  #4   local  run/2013/1212/13/2344.039357000-4
+DONE     algo=bubbleSort     dataOrder=random    dataSize=4000  #5   local  run/2013/1212/13/2347.218813000-5
+DONE     algo=bubbleSort     dataOrder=random    dataSize=8000  #6   local  run/2013/1212/13/2353.233994000-6
+DONE     algo=bubbleSort     dataOrder=reversed  dataSize=2000  #7   local  run/2013/1212/13/2411.194134000-7
+DONE     algo=bubbleSort     dataOrder=reversed  dataSize=4000  #8   local  run/2013/1212/13/2414.869794000-8
+RUNNING  algo=bubbleSort     dataOrder=reversed  dataSize=8000  #9
+PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=2000  #10
+PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=4000  #11
+PLANNED  algo=insertionSort  dataOrder=ordered   dataSize=8000  #12
+[...]
 ```
 
 
@@ -495,7 +496,17 @@ When more nominal variables are selected, data that share common values of those
 When another numerical variable is further selected, it may create a second Y-axis or share the first one depending on whether the selected variables can share the *unit* for the Y-axes.
 
 
-#### 4.3. Detail on Demand
+#### 4.3. Plan from Results
+
+From the results table, we can click on a row that needs to be filled or supported by more data to plan new runs for execution.
+You can repeat this process from the results table to add necessary runs to fill the output columns colored red of the specific rows you select.
+Note that the button on each input column header can be used to expand and collapse the rows, so that you can add only part of the runs or a larger group of runs at a time.
+
+![New runs can be queued from the results table.](gui-plan-from-results.png)
+
+
+
+#### 4.4. Detail on Demand
 
 Both the chart and table shown in <span class="sans-serif">3X</span>'s GUI are interactive: you can drill down to details on demand.
 
