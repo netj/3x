@@ -1,49 +1,49 @@
-3x-gui                                                  $TOOLSDIR/
+3x-gui                                                                                              $TOOLSDIR/
 
-.build/server                                           $GUIDIR/server
-server/views                                            $GUIDIR/server/
+.build/server                                                                                       $GUIDIR/server
+server/views                                                                                        $GUIDIR/server/
 
-client/index.html                                       $GUIDIR/client/
-.build/client/resource/3x.js                            $GUIDIR/client/resource/
-.build/client/resource/3x.css                           $GUIDIR/client/resource/
+client/index.html                                                                                   $GUIDIR/client/
+.build/client/resource/3x.js                                                                        $GUIDIR/client/resource/
+.build/client/resource/3x.css                                                                       $GUIDIR/client/resource/
 
-.build/client/resource/jquery.js                        $GUIDIR/client/resource/
+.build/client/resource/jquery.js                                                                    $GUIDIR/client/resource/
 
-.build/client/resource/bootstrap.js                     $GUIDIR/client/resource/
-Font-Awesome/font/fontawesome-webfont.{eot,ttf,woff}    $GUIDIR/client/resource/font/
+.build/client/resource/bootstrap.js                                                                 $GUIDIR/client/resource/
+extern/Font-Awesome/font/fontawesome-webfont.{eot,ttf,woff}                                         $GUIDIR/client/resource/font/
 
-underscore/underscore.js                                $GUIDIR/client/resource/
+extern/underscore/underscore.js                                                                     $GUIDIR/client/resource/
 
-client/socket.io-client/dist/socket.io.js               $GUIDIR/client/resource/
-client/socket.io-client/dist/WebSocketMain.swf          $GUIDIR/client/resource/
-client/socket.io-client/dist/WebSocketMainInsecure.swf  $GUIDIR/client/resource/
+.build/server/node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js                $GUIDIR/client/resource/
+.build/server/node_modules/socket.io/node_modules/socket.io-client/dist/WebSocketMain.swf           $GUIDIR/client/resource/
+.build/server/node_modules/socket.io/node_modules/socket.io-client/dist/WebSocketMainInsecure.swf   $GUIDIR/client/resource/
 
-jquery.appear/jquery.appear.js                          $GUIDIR/client/resource/
+extern/jquery.appear/jquery.appear.js                                                               $GUIDIR/client/resource/
 
-jsrender/jsrender.js                                    $GUIDIR/client/resource/
+extern/jsrender/jsrender.js                                                                         $GUIDIR/client/resource/
 
-.build/client/resource/knockout.js                      $GUIDIR/client/resource/
+.build/client/resource/knockout.js                                                                  $GUIDIR/client/resource/
 
-DataTables/media/js/jquery.dataTables.js                                                $GUIDIR/client/resource/jquery.dataTables.js
-DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js                        $GUIDIR/client/resource/jquery.dataTables.bootstrap.js
-DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css                       $GUIDIR/client/resource/DataTables/
-DataTables.Plugins/integration/bootstrap/images/sort_{{asc,desc}{,_disabled},both}.png  $GUIDIR/client/resource/DataTables/images/
-DataTables.Plugins/type-detection/num-html.js                                           $GUIDIR/client/resource/jquery.dataTables.type-detection.num-html.js
-DataTables.Plugins/sorting/num-html.js                                                  $GUIDIR/client/resource/jquery.dataTables.sorting.num-html.js
-DataTables.ColReorder/media/js/ColReorder.js                                            $GUIDIR/client/resource/jquery.dataTables.ColReorder.js
-DataTables.ColReorder/media/css/ColReorder.css                                          $GUIDIR/client/resource/DataTables/css/
-DataTables.ColReorder/media/images/insert.png                                           $GUIDIR/client/resource/DataTables/images/
-DataTables.Scroller/media/js/dataTables.scroller.js                                     $GUIDIR/client/resource/jquery.dataTables.Scroller.js
-DataTables.Scroller/media/css/dataTables.scroller.css                                   $GUIDIR/client/resource/DataTables/css/
-DataTables.Scroller/media/images/loading-background.png                                 $GUIDIR/client/resource/DataTables/images/
+extern/DataTables/media/js/jquery.dataTables.js                                                     $GUIDIR/client/resource/jquery.dataTables.js
+extern/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js                             $GUIDIR/client/resource/jquery.dataTables.bootstrap.js
+extern/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css                            $GUIDIR/client/resource/DataTables/
+extern/DataTables.Plugins/integration/bootstrap/images/sort_{{asc,desc}{,_disabled},both}.png       $GUIDIR/client/resource/DataTables/images/
+extern/DataTables.Plugins/type-detection/num-html.js                                                $GUIDIR/client/resource/jquery.dataTables.type-detection.num-html.js
+extern/DataTables.Plugins/sorting/num-html.js                                                       $GUIDIR/client/resource/jquery.dataTables.sorting.num-html.js
+extern/DataTables.ColReorder/media/js/ColReorder.js                                                 $GUIDIR/client/resource/jquery.dataTables.ColReorder.js
+extern/DataTables.ColReorder/media/css/ColReorder.css                                               $GUIDIR/client/resource/DataTables/css/
+extern/DataTables.ColReorder/media/images/insert.png                                                $GUIDIR/client/resource/DataTables/images/
+extern/DataTables.Scroller/media/js/dataTables.scroller.js                                          $GUIDIR/client/resource/jquery.dataTables.Scroller.js
+extern/DataTables.Scroller/media/css/dataTables.scroller.css                                        $GUIDIR/client/resource/DataTables/css/
+extern/DataTables.Scroller/media/images/loading-background.png                                      $GUIDIR/client/resource/DataTables/images/
 
-jquery-ui/themes/base                                                                   $GUIDIR/client/resource/jquery-ui
-jquery-ui/ui/jquery.ui.core.js                                                          $GUIDIR/client/resource/
-jquery-ui/ui/jquery.ui.widget.js                                                        $GUIDIR/client/resource/
-jquery-ui/ui/jquery.ui.mouse.js                                                         $GUIDIR/client/resource/
-jquery-ui/ui/jquery.ui.selectable.js                                                    $GUIDIR/client/resource/
-jquery-ui/ui/jquery.ui.sortable.js                                                      $GUIDIR/client/resource/
+extern/jquery-ui/themes/base                                                                        $GUIDIR/client/resource/jquery-ui
+extern/jquery-ui/ui/jquery.ui.core.js                                                               $GUIDIR/client/resource/
+extern/jquery-ui/ui/jquery.ui.widget.js                                                             $GUIDIR/client/resource/
+extern/jquery-ui/ui/jquery.ui.mouse.js                                                              $GUIDIR/client/resource/
+extern/jquery-ui/ui/jquery.ui.selectable.js                                                         $GUIDIR/client/resource/
+extern/jquery-ui/ui/jquery.ui.sortable.js                                                           $GUIDIR/client/resource/
 
-d3/d3.js                                                $GUIDIR/client/resource/
+extern/d3/d3.js                                                                                     $GUIDIR/client/resource/
 
-Numeral-js/numeral.js                                   $GUIDIR/client/resource/
+extern/Numeral-js/numeral.js                                                                        $GUIDIR/client/resource/

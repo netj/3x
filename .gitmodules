@@ -2,43 +2,43 @@
 	path = buildkit
 	url = https://github.com/netj/buildkit.git
 [submodule "gui/bootstrap"]
-	path = gui/bootstrap
+	path = gui/extern/bootstrap
 	url = https://github.com/twbs/bootstrap.git
 [submodule "gui/Font-Awesome"]
-	path = gui/Font-Awesome
+	path = gui/extern/Font-Awesome
 	url = https://github.com/FortAwesome/Font-Awesome.git
 [submodule "gui/underscore"]
-	path = gui/underscore
+	path = gui/extern/underscore
 	url = https://github.com/documentcloud/underscore.git
 [submodule "gui/jsrender"]
-	path = gui/jsrender
+	path = gui/extern/jsrender
 	url = https://github.com/BorisMoore/jsrender.git
 [submodule "gui/jquery-ui"]
-	path = gui/jquery-ui
+	path = gui/extern/jquery-ui
 	url = https://github.com/jquery/jquery-ui.git
 [submodule "gui/jquery.appear"]
-	path = gui/jquery.appear
+	path = gui/extern/jquery.appear
 	url = https://github.com/morr/jquery.appear.git
 [submodule "gui/DataTables"]
-	path = gui/DataTables
+	path = gui/extern/DataTables
 	url = https://github.com/DataTables/DataTables.git
 [submodule "gui/DataTables.Plugins"]
-	path = gui/DataTables.Plugins
+	path = gui/extern/DataTables.Plugins
 	url = https://github.com/netj/DataTables.Plugins.git
 [submodule "gui/DataTables.ColReorder"]
-	path = gui/DataTables.ColReorder
+	path = gui/extern/DataTables.ColReorder
 	url = https://github.com/netj/DataTables.ColReorder.git
 [submodule "gui/DataTables.Scroller"]
-	path = gui/DataTables.Scroller
+	path = gui/extern/DataTables.Scroller
 	url = https://github.com/netj/DataTables.Scroller.git
 [submodule "gui/d3"]
-	path = gui/d3
+	path = gui/extern/d3
 	url = https://github.com/mbostock/d3.git
 [submodule "gui/Numeral-js"]
-	path = gui/Numeral-js
+	path = gui/extern/Numeral-js
 	url = https://github.com/adamwdraper/Numeral-js.git
 [submodule "gui/knockout"]
-	path = gui/knockout
+	path = gui/extern/knockout
 	url = https://github.com/knockout/knockout.git
 [submodule "docs/markdown-diff"]
 	path = docs/markdown-diff

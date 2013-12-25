@@ -61,6 +61,7 @@ coffee -c -o .build/server server/*.coffee
 # client
 clientDst=.build/client/resource
 clientSrc=../../../client
+externSrc=$clientSrc/../extern
 
 # compile client coffee scripts
 mkdir -p "$clientDst"
@@ -75,34 +76,34 @@ cd "$clientDst"
 # build bootstrap
 [ -s bootstrap.js ] || {
     (
-    cd $clientSrc/../bootstrap
+    cd $externSrc/bootstrap
     npm install
     make bootstrap
     )
     mkdir -p bootstrap/js
-    mv -f $clientSrc/../bootstrap/bootstrap/js/bootstrap.js .
-    rm -rf $clientSrc/../bootstrap/bootstrap
+    mv -f $externSrc/bootstrap/bootstrap/js/bootstrap.js .
+    rm -rf $externSrc/bootstrap/bootstrap
 }
 
 # build knockoutjs
 [ -s knockout.js ] || {
     (
-    cd $clientSrc/../knockout
+    cd $externSrc/knockout
     npm install
     )
-    cp -f $clientSrc/../knockout/build/output/knockout-latest.debug.js  knockout.js
+    cp -f $externSrc/knockout/build/output/knockout-latest.debug.js  knockout.js
 }
 
 # prepare for stylesheet compilations
 [ -d bootstrap/less ] || {
     rm -rf bootstrap
     mkdir -p bootstrap/
-    cp -af $clientSrc/../bootstrap/less bootstrap/
+    cp -af $externSrc/bootstrap/less bootstrap/
     # remove sprites.less in favor of Font-Awesome
     rm -f bootstrap/less/sprites.less
     echo "//" >bootstrap/less/sprites.less
 }
-ln -sfn $clientSrc/../Font-Awesome
+ln -sfn $externSrc/Font-Awesome
 
 # compile LESS with bootstrap, DataTables
 for less in $clientSrc/*.less; do
