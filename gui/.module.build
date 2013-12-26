@@ -3,18 +3,10 @@ set -eu
 
 Self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 
-# bootstrap .build
-mkdir -p .build/{server,client}
+mkdir -p .build/files
 cd .build
-ln -sf ../package.json
-echo >README.md
-npm install
-PATH="$PWD/node_modules/.bin:$PATH"
-#ln -sfn /usr/bin/true node_modules/.bin/jshint
 
-# server
-cd server
-cp -f ../../server/package.json .
+cp -f ../package.json .
 echo >README.md
 npm install
 
@@ -54,12 +46,12 @@ npm install
     } | ed "$dir_pypkgs"/watchmedo >/dev/null
 }
 
-cd ../..
-coffee -c -o .build/server server/*.coffee
+cd ..
+coffee -c -o .build *.coffee
 
 
 # client
-clientDst=.build/client/resource
+clientDst=.build/files/resource
 clientSrc=../../../client
 externSrc=$clientSrc/../extern
 

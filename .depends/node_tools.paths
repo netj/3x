@@ -1,5 +1,9 @@
 lib/node_modules/coffee-script
+lib/node_modules/eco
 lib/node_modules/less
+lib/node_modules/uglify-js
+lib/node_modules/jshint
+lib/node_modules/recess
 lib/node_modules/requirejs
 lib/node_modules/grunt
 lib/node_modules/grunt-cli

@@ -70,10 +70,10 @@ case $cmd in
             fi
             url="http://$host:$port/"
             # launch server
-            python_site_dir="$GUIDIR"/server/python-packages
+            python_site_dir="$GUIDIR"/python-packages
             PATH="$python_site_dir:$PATH" \
             PYTHONPATH="$python_site_dir${PYTHONPATH:+:$PYTHONPATH}" \
-            setsid node "$GUIDIR"/server/3x-gui.js $port \
+            setsid node "$GUIDIR"/server.js $port \
                 </dev/null >$logfile 2>&1 &
             pid=$!
             # record pid, port

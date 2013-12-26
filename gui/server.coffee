@@ -92,7 +92,7 @@ app.configure ->
     # search for /archive/ as well for archived runs
     app.use "/run/",    express.static    "#{_3X_ROOT}/archive/"
     app.use "/run/",    express.directory "#{_3X_ROOT}/archive/"
-    app.use             express.static    "#{__dirname}/../client"
+    app.use             express.static    "#{__dirname}/files"
     app.use "/docs/",   express.static    "#{process.env.DOCSDIR}/"
 
 app.configure "development", ->
@@ -336,8 +336,9 @@ app.get "/api/inputs", (req, res) ->
 getInputs = (res, opts = "-utv") -> (next) ->
     cli(res, "3x-inputs", [opts]
         , (lazyLines, next) -> lazyLines
-                .filter((line) -> line.length > 0)
-                .map((line) ->
+                .filter (line) ->
+                    line.length > 0
+                .map (line) ->
                         if m = /^([^=:(]+)(\(([^)]+)\))?(:([^=]+))?(=(.*))?$/.exec line
                             [__, name, __, unit, __, type, __, values] = m
                             [name,
@@ -345,8 +346,8 @@ getInputs = (res, opts = "-utv") -> (next) ->
                                 type: type
                                 unit: unit
                             ]
-                    )
-                .join (pairs) -> next (_.object pairs)
+                .join (pairs) ->
+                    next (_.object pairs)
     ) next
 
 app.get "/api/outputs", (req, res) ->
@@ -354,16 +355,17 @@ app.get "/api/outputs", (req, res) ->
 getOutputs = (res, opts = "-ut") -> (next) ->
     cli(res, "3x-outputs", [opts]
         , (lazyLines, next) -> lazyLines
-                .filter((line) -> line.length > 0)
-                .map((line) ->
+                .filter (line) ->
+                    line.length > 0
+                .map (line) ->
                     if m = /^([^:(]+)(\(([^)]+)\))?(:(.*))?$/.exec line
                         [__, name, __, unit, __, type] = m
                         [name,
                             type: type
                             unit: unit
                         ]
-                )
-                .join (pairs) -> next (_.object pairs)
+                .join (pairs) ->
+                    next (_.object pairs)
     ) (err, outputs) ->
         unless err
             outputs[RUN_COLUMN_NAME] =

@@ -2,3 +2,6 @@ coffee
 lessc
 r.js
 grunt
+jshint
+uglifyjs
+eco
