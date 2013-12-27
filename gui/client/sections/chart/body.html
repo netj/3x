@@ -1,0 +1,55 @@
+<h2><i class="icon-bar-chart icon"></i>Chart</h2>
+
+<form id="chart-options" class="form-inline clear-fix hide">
+  <div id="chart-type" class="btn-group" style="display:none;">
+    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">Chart Type <span class="caret"></span></a>
+    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+      <li><a href="#line-chart">Line Chart</a></li>
+      <li><a href="#bar-chart">Bar Chart</a></li>
+      <li><a href="#area-chart">Area Chart</a></li>
+      <li><a href="#scatter-plot">Scatter Plot</a></li>
+    </ul>
+  </div>
+  <div class="pull-right">
+    <div class="btn-group inline" data-toggle="buttons-checkbox">
+      <button type="button" id="chart-toggle-interpolate-lines" class="btn btn-small"
+        title="Interpolate lines using B-splines">Smooth Lines</button>
+    </div>
+    <div class="btn-group inline" data-toggle="buttons-checkbox">
+      <button type="button" id="chart-toggle-hide-lines" class="btn btn-small"
+        >Hide Lines</button>
+    </div>
+
+    <div class="btn-group inline" data-toggle="buttons-checkbox">
+      <span class="btn btn-small disabled add-on">Origin</span>
+      <button type="button" id="chart-toggle-origin-y1" class="btn btn-small disabled">Y</button>
+      <button type="button" id="chart-toggle-origin-x"  class="btn btn-small disabled">X</button>
+      <button type="button" id="chart-toggle-origin-y2" class="btn btn-small disabled">Y<sub>2</sub></button>
+    </div>
+
+    <div class="btn-group inline" data-toggle="buttons-checkbox">
+      <span class="btn btn-small disabled add-on">Log Scale</span>
+      <button type="button" id="chart-toggle-log-scale-y1" class="btn btn-small disabled">Y</button>
+      <button type="button" id="chart-toggle-log-scale-x"  class="btn btn-small disabled">X</button>
+      <button type="button" id="chart-toggle-log-scale-y2" class="btn btn-small disabled">Y<sub>2</sub></button>
+    </div>
+
+    <div class="btn-group" data-toggle="buttons-radio" style="display:none;">
+      <button type="button" class="btn btn-small active" title="Single chart with multiple series overlaid"><i class="icon icon-sign-blank"></i> Single</button>
+      <button type="button" class="btn btn-small"        title="Small multiple of individual chart in series"><i class="icon icon-th"></i> Small Multiple</button>
+    </div>
+  </div>
+
+
+  <div id="chart-axis-controls" class="btn-group"></div>
+</form>
+
+<div id="chart-impossible" class="alert alert-block alert-error hide">
+  At least one of the input variable columns in the Results table must
+  be expanded to view a two-dimensional chart here.  Also, at least one
+  of them should be of numeric type.
+</div>
+
+<div id="chart-body" style="height: 500px;"></div>
+
+<!-- vim:set sw=2:sts=2:spell -->

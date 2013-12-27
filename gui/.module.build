@@ -55,11 +55,16 @@ clientDst=.build/files/resource
 clientSrc=../../../client
 externSrc=$clientSrc/../extern
 
-# compile client coffee scripts
+# compile client source code
 mkdir -p "$clientDst"
-coffee -c -o "$clientDst" client/*.coffee
+cd client
+for htmlSrc in *.html.in; do
+    html=${htmlSrc%.in}
+    compile-xdocs <"$htmlSrc" >../"$clientDst"/../"$html"
+done
+coffee -c -o ../"$clientDst" *.coffee
 
-cd "$clientDst"
+cd ../"$clientDst"
 
 # get jquery
 [ -s jquery.js ] ||

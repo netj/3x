@@ -1,0 +1,69 @@
+<h2><i class="icon-cogs icon"></i>Runs</h2>
+
+<div class="row-fluid">
+  <div class="span2">
+    <div class="span2 affix" style="height:90%;">
+      <section class="clearfix" style="height:60%;">
+        <h4 class="section-title pull-left"><i class="icon-tasks icon"></i>Queues</h4>
+        <div class="section-actions clearfix">
+          <button id="queue-sortby-name" class="btn btn-mini hide"
+            title="Sort queues by their names' alphanumeric order"
+            ><i class="icon icon-sort-by-alphabet"></i></button>
+          <button id="queue-sortby-time" class="btn btn-mini hide"
+            title="Sort queues by showing more recently active ones first"
+            ><span class="icon-stack" style="margin-top: 0px; width: 12px; height: 20px; line-height: 21px;"
+              ><i class="icon icon-time" style="margin-left: 2px;"></i
+              ><i class="icon icon-long-arrow-down" style="margin-left: -6px;"></i
+              ></span></button>
+          <button id="queue-toggle-absolute-progress" class="btn btn-mini hide" data-toggle="button"
+            title="Toggle between displaying the size of the queue for the progress bar or not"
+            ><i class="icon icon-resize-horizontal"></i></button>
+          <!-- TODO
+            <button id="queue-create" class="btn btn-mini"
+              title="Create a new queue"><i class="icon icon-plus"></i></button>
+            -->
+        </div>
+        <div id="queues" style="max-height:90%; overflow-y:auto;"></div>
+      </section>
+
+      <section class="clearfix" style="height:30%;">
+        <h4 class="section-title pull-left"><i class="icon-flag icon"></i>Targets</h4>
+        <div class="section-actions clearfix">
+          <!-- TODO
+            <button class="target-new btn btn-mini"
+              title="Create new target configuration"><i class="icon icon-plus"></i></button>
+            -->
+        </div>
+        <div id="targets" style="max-height:90%; overflow-y:auto;"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="span10">
+    <h4 class="section-title pull-left"><i
+        class="icon-list-ol icon"></i>Execution History of <span id="status-name">N/A</span></h3>
+    <div id="status-actions" class="section-actions clearfix">
+      <span id="status-selection-summary"></span>
+      <button class="btn btn-small btn-primary action action-duplicate for-PLANNED for-RUNNING for-ABORTED for-DONE for-FAILED" disabled
+        title="Add copies of selected runs to repeat execution"
+        ><i class="icon icon-copy"></i> Duplicate</button>
+      <button class="btn btn-small btn-info action action-prioritize for-PLANNED" disabled
+        title="Move selected PLANNED runs up so they are executed first"
+        ><i class="icon icon-level-up"></i> Prioritize</button>
+      <button class="btn btn-small btn-warning action action-postpone for-PLANNED" disabled
+        title="Move selected PLANNED runs down so they are executed later"
+        ><i class="icon icon-level-down"></i> Postpone</button>
+      <button class="btn btn-small btn-danger action action-cancel for-PLANNED" disabled
+        title="Remove selected PLANNED runs from queue"
+        ><i class="icon icon-trash"></i> Cancel</button> <!-- TODO support cancel for-ABORTED -->
+    </div>
+
+    <table id="status-table" class="table table-hover table-bordered table-striped"
+      cellpadding="0" cellspacing="0" border="0">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- vim:set sw=2:sts=2:spell -->

@@ -4,7 +4,7 @@
 .build/node_modules                                                                                 $GUIDIR/
 views                                                                                               $GUIDIR/
 
-client/index.html                                                                                   $GUIDIR/files/
+.build/files/3x.html                                                                                $GUIDIR/files/index.html
 .build/files/resource/3x.js                                                                         $GUIDIR/files/resource/
 .build/files/resource/3x.css                                                                        $GUIDIR/files/resource/
 
