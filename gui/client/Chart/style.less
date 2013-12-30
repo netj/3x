@@ -1,0 +1,29 @@
+overflow: hidden;
+
+.popover {
+  opacity: 0.75;
+}
+.popover-content {
+  table tr:first-child {
+    td, th { border-top-style: none; }
+  }
+  .run-details {
+    cursor: pointer;
+  }
+  .value {
+    max-width: 75px;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+  .popover-content {
+    padding: 0;
+    .chart-run-details {
+      margin: 0;
+      padding: .5em .25em .5em 2.75em;
+      max-height: 250px;
+      min-width: 100px;
+      overflow-y: auto;
+    }
+  }
+}

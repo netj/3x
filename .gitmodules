@@ -43,3 +43,9 @@
 [submodule "docs/markdown-diff"]
 	path = docs/markdown-diff
 	url = https://github.com/netj/markdown-diff.git
+[submodule "gui/extern/requirejs"]
+	path = gui/extern/requirejs
+	url = https://github.com/jrburke/requirejs.git
+[submodule "gui/extern/jquery"]
+	path = gui/extern/jquery
+	url = https://github.com/jquery/jquery.git

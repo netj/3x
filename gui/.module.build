@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
 set -eu
+shopt -s extglob nullglob
 
 Self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 
 mkdir -p .build/files
 cd .build
 
-cp -f ../package.json .
-echo >README.md
-npm install
+ln -sfn ../package.json .
+[ node_modules -nt package.json ] || {
+    echo >README.md
+    npm install
+    touch node_modules
+}
 
 #  server depends on some python packages, e.g., watchdog
 [ -d python-packages -a python-packages -nt "$Self" ] || {
+    echo >&2 "Bundling python packages..."
     dir_pypkgs="$PWD/python-packages"
     dir_easy_install="$PWD/python-packages.easy_install"
     export PYTHONPATH="$dir_pypkgs"
@@ -47,64 +52,95 @@ npm install
 }
 
 cd ..
-coffee -c -o .build *.coffee
+compile-coffee-to() {
+    local dest=$1; shift
+    for cs; do
+        js=${cs%.coffee}.js
+        js=${js##*/}
+        [[ "$cs" -nt "$dest"/"$js" ]] || continue
+        echo >&2 "Compiling $cs..."
+        coffee -c -o "$dest" "$cs" &
+    done
+    wait
+}
+compile-coffee-to .build  *.coffee
 
 
-# client
-clientDst=.build/files/resource
-clientSrc=../../../client
-externSrc=$clientSrc/../extern
+## client
+filesBuilt=.build/files
+resourcesBuilt=.build/files/resource
+mkdir -p "$resourcesBuilt"
 
 # compile client source code
-mkdir -p "$clientDst"
 cd client
-for htmlSrc in *.html.in; do
-    html=${htmlSrc%.in}
-    compile-xdocs <"$htmlSrc" >../"$clientDst"/../"$html"
+#  first generate executable sources
+for src in *.in; do
+    out=../"$filesBuilt"/${src%.in}
+    [[ "$src" -nt "$out" ]] || continue
+    echo >&2 "Compiling $src..."
+    compile-xdocs <"$src" >"$out"
 done
-coffee -c -o ../"$clientDst" *.coffee
-
-cd ../"$clientDst"
+#  and compile CoffeeScripts
+compile-coffee-to ../"$resourcesBuilt"  *.coffee */*.coffee ../"$filesBuilt"/*.coffee
+cd ..
 
 # get jquery
-[ -s jquery.js ] ||
-    curl -sRLo jquery.js  http://code.jquery.com/jquery-1.10.2.js
-
-# build bootstrap
-[ -s bootstrap.js ] || {
-    (
-    cd $externSrc/bootstrap
+( cd extern/jquery
+[ -s dist/jquery.js ] || {
+    echo >&2 "Building jquery..."
     npm install
-    make bootstrap
-    )
-    mkdir -p bootstrap/js
-    mv -f $externSrc/bootstrap/bootstrap/js/bootstrap.js .
-    rm -rf $externSrc/bootstrap/bootstrap
+    grunt dist
 }
+)
+
+( cd extern/jquery-ui
+[ -s dist/minified/jquery.ui.core.min.js ] || {
+    echo >&2 "Building jquery-ui..."
+    npm install
+    grunt min
+}
+)
 
 # build knockoutjs
-[ -s knockout.js ] || {
-    (
-    cd $externSrc/knockout
+( cd extern/knockout
+[ -s build/output/knockout-latest.debug.js ] || {
+    echo >&2 "Building knockout..."
     npm install
-    )
-    cp -f $externSrc/knockout/build/output/knockout-latest.debug.js  knockout.js
+    grunt build:debug
 }
+)
+
+# build bootstrap
+( cd extern/bootstrap
+[ -s bootstrap/js/bootstrap.js ] || {
+    echo >&2 "Building bootstrap..."
+    npm install
+    make bootstrap-js
+    git config core.excludesfile ../bootstrap.gitignore
+}
+)
+
+
+cd "$resourcesBuilt"
+clientFromResourcesBuilt=../../../client
+externRoot=../../../extern
 
 # prepare for stylesheet compilations
 [ -d bootstrap/less ] || {
     rm -rf bootstrap
     mkdir -p bootstrap/
-    cp -af $externSrc/bootstrap/less bootstrap/
+    cp -af "$externRoot"/bootstrap/less bootstrap/
     # remove sprites.less in favor of Font-Awesome
     rm -f bootstrap/less/sprites.less
     echo "//" >bootstrap/less/sprites.less
 }
-ln -sfn $externSrc/Font-Awesome
+ln -sfn "$externRoot"/Font-Awesome
 
-# compile LESS with bootstrap, DataTables
-for less in $clientSrc/*.less; do
-    css=${less%less}css
-    css=${css#$clientSrc/}
+# compile LESS
+for less in "$clientFromResourcesBuilt"/*.less "$clientFromResourcesBuilt"/../"$filesBuilt"/*.less; do
+    css=${less%.less}.css
+    css=${css##*/}
+    [[ "$less" -nt "$css" ]] || continue
+    echo >&2 "Compiling $resourcesBuilt/$less..."
     lessc "$less" "$css"
 done

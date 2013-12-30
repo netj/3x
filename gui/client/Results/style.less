@@ -1,0 +1,98 @@
+#measurements {
+  & > li > a {
+    color: @errorText;
+    .caret {
+      border-top-color: @errorText;
+      border-bottom-color: @errorText;
+    }
+  }
+  & > li.active > a {
+    &, &:hover {
+      color: @white;
+      background-color: @errorText;
+    }
+    .caret {
+      border-top-color: @white;
+      border-bottom-color: @white;
+    }
+  }
+}
+
+thead {
+  .muted {
+    color: @grayLight !important;
+  }
+  .condition {
+    color: darken(@linkColor, 5%);
+  }
+  .measurement {
+    color: darken(@errorText, 5%);
+  }
+  th {
+    &.sorting, &.sorting_asc, &.sorting_desc {
+      padding-right: 18px;
+      white-space: normal !important;
+    }
+  }
+}
+
+tbody {
+  word-wrap: break-word;
+  .aggregated             { font-weight: bold; }
+  .aggregated.enumeration { font-weight: lighter; word-wrap: break-word; }
+  .aggregated.count       { font-style: italic; }
+  .number-type,
+  .ordinal-type,
+  .interval-type,
+  .ratio-type             { text-align: right; }
+  .string-type,
+  .nominal-type           { text-align: inherit; }
+  .popover                { width: auto; }
+  .overlay-frame {
+    text-align: center;
+    display: block;
+    margin: 0px auto;
+    .overlay {
+      @imageOverlayHeight: 200px;
+      height: @imageOverlayHeight;
+    }
+  }
+
+  .brushing {
+    .box-shadow(inset 0px 0px 5px rgba(0,0,0,.125));
+    //color: lighten(@successText, 10%);
+    //text-decoration: underline;
+    .popover {
+      //color: initial;
+      //text-decoration: initial;
+    }
+  }
+}
+
+#results-table-progress {
+  display: none;
+}
+
+&.loading, &.displaying {
+  #results-table-progress {
+    display: block;
+    position: absolute;
+    left: 50%;
+    @width: 100% * (1-.618);
+    // TODO also define these with @gridRowWidth1200 and @gridRowWidth768
+    width: @width;
+    margin-left: -@width/2;
+    z-index: 10;
+    .box-shadow(0 5px 10px rgba(0,0,0,.2));
+  }
+  #results-table {
+    opacity: 0.5;
+  }
+}
+
+               .alert-block h4            { display: none; }
+&.loading    { .alert-block h4.loading    { display: block; } }
+&.displaying { .alert-block h4.displaying { display: block; } }
+
+
+// vim:ft=less

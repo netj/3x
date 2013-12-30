@@ -1,0 +1,234 @@
+/*!
+ * LESS for 3X GUI
+ * Author: Jaeho Shin <netj@cs.stanford.edu>
+ * Created: 2012-11-11
+ */
+
+// jQuery UI
+@import "jquery-ui/jquery.ui.all.css";
+
+// Bootstrap
+@import "bootstrap/less/bootstrap.less";
+@import "bootstrap/less/responsive.less";
+//@iconSpritePath:          "glyphicons-halflings.png";
+//@iconWhiteSpritePath:     "glyphicons-halflings-white.png";
+
+// Using Font-Awesome instead of bootstrap's default glyphicons
+// See: http://fortawesome.github.com/Font-Awesome/#integration
+@import "Font-Awesome/less/font-awesome.less";
+@FontAwesomePath: 'font';
+
+// DataTables CSS imports to remain after LESS compilation
+@import "DataTables/dataTables.bootstrap.css";
+@import "DataTables/css/ColReorder.css";
+@import "DataTables/css/dataTables.scroller.css";
+
+// responsive layout for the main structure
+@navbarHeight: 40px;
+@media screen and (min-width: 980px) {
+  @mainTopSpacing: 10px;
+  body {
+    padding-top: @navbarHeight + @mainTopSpacing;
+  }
+  .container-fluid {
+    padding: 0 @fluidGridGutterWidth;
+  }
+  #main {
+    padding-bottom: @navbarHeight;
+    &.tab-content { padding-bottom: 0px; }
+    // adjust margins/paddings to avoid occlusion of the URL-referenced parts by navbar
+    margin-top: -@navbarHeight;
+    & > :first-child, & > [id] { padding-top: @navbarHeight; }
+  }
+  .side-pane {
+    padding-top: 2*@mainTopSpacing !important;
+  }
+}
+@media screen and (max-width: 979px) {
+  .side-pane {
+    &.affix {
+      position: absolute;
+    }
+  }
+  // XXX fix Bootstrap artifacts
+  .navbar-fixed-top .navbar-inner {
+    padding: 0;
+  }
+}
+@media screen and (min-width: 768px) {
+  #main > .row-fluid {
+    h2 {
+      visibility: hidden;
+      height: 0px;
+      margin-bottom: 0px;
+    }
+  }
+  .side-pane {
+    &.affix {
+      //width: 2*@fluidGridColumnWidth + @fluidGridGutterWidth;
+      padding: 1px;
+      &.overflow {
+        // TODO with more stuffs on the side bar, the overflow problem will become important
+        //width: 100%; 2*(@fluidGridColumnWidth + @fluidGridGutterWidth);
+        padding-left: @fluidGridGutterWidth;
+        top: 40px;
+        left: 0px;
+        bottom: 0px;
+        overflow: auto;
+      }
+    }
+  }
+}
+@media screen and (max-width: 767px) {
+  #main {
+    & > .row-fluid {
+      margin-bottom: (5 * @navbarHeight);
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+  .side-pane {
+    padding-bottom: 5 * @navbarHeight;
+    &.affix {
+      position: initial;
+    }
+  }
+}
+
+
+body > .navbar .brand .icon {
+  height: 19px;
+}
+
+.icon {
+  h1 &, h2 &, h3 &, h4 &, h5 &, h6 &, .navbar & {
+    margin-right: .3em;
+  }
+}
+
+.alert-block {
+  padding-right: 14px;
+}
+
+.navbar .tooltip-inner {
+  white-space: pre-line;
+  word-wrap: break-word;
+}
+
+// for the lasso by jQuery UI Selectable
+@jQueryUISelectableHelperZIndex: 2000;
+.ui-selectable-helper {
+  z-index: @jQueryUISelectableHelperZIndex;
+}
+
+.side-pane {
+  h4 {
+    margin-bottom: 4px;
+  }
+}
+
+.menu-dropdown {
+  .dropdown-toggle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 14px;
+    .caret {
+      float: right;
+      margin-right: -7px;
+    }
+    .menu-label-items {
+      word-wrap: initial;
+      display: inline;
+    }
+  }
+  .dropdown-menu {
+    a {
+      z-index: @jQueryUISelectableHelperZIndex+1; // XXX to receive :hover events
+      padding-left: 4ex;
+      &.ui-selected:before, &.ui-selecting:before {
+        margin-left: -2ex;
+        content: "✓ ";
+      }
+    }
+    .filter {
+      margin: 5px 10px;
+    }
+  }
+  .menu-checkbox {
+    margin-left: -.3em;
+    margin-right: .3em;
+  }
+  .menu-label-items {
+    word-wrap: break-word;
+    display: inline-block;
+  }
+}
+
+.section-title {
+  &.pull-right, &.pull-left {
+    & + .section-actions {
+      margin: (@baseLineHeight / 2) 0;
+    }
+  }
+}
+
+.section-actions, .actions {
+  text-align: right;
+  opacity: 0;
+  .transition(opacity .15s linear);
+  *:hover > &, .active > & {
+    opacity: 1;
+  }
+}
+
+
+// popover in Plan and Results
+.popover {
+  display: block;
+  &.hide {
+    display: none;
+  }
+
+  &.provenance {
+    width: auto;
+    z-index: @zindexPopover + 1;
+  }
+
+  &.planner {
+    .box-shadow(0 5px 20px rgba(0, 0, 0, 0.8));
+    max-width: 2 * 100%/12;
+    .nav-list li { margin-bottom: 5px; }
+    .btn.add { text-align: left; }
+    .random-percent { width: 100%; }
+    .conditions {
+      .label {
+        opacity: 0.5;
+        white-space: normal;
+        word-wrap: break-word;
+        word-break: break-all;
+      }
+      .label.expanded {
+        opacity: initial;
+      }
+    }
+  }
+}
+
+
+// each section's style
+<$ for less in */style.less; do
+    s=${less%/style.less}
+    $>
+#<$= "$s" $> {
+
+<$ cat "$less" $>
+
+}
+<$ done $>
+
+
+<$ cat misc/run-overview.less $>
+
+// vim:sw=2:sts=2:ft=less

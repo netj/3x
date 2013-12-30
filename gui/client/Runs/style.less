@@ -1,0 +1,126 @@
+#queues {
+  & > ul {
+    .queue {
+      //margin: @fluidGridGutterWidth768 / 4;
+      cursor: pointer;
+      padding: (@baseLineHeight / 3) (@baseLineHeight / 2);
+      .queue-name { font-weight: bold; }
+      .queue-summary { opacity: 0.4; }
+      h5        { margin: (@baseLineHeight / 4) 0; }
+      .progress { margin-bottom: @baseLineHeight / 2; }
+      &.active {
+        background-color: @infoBackground;
+        border-color: @infoBorder;
+        .queue-summary { opacity: 1; }
+      }
+    }
+  }
+}
+
+#targets {
+  .nav-pills > li > a {
+    color: @infoText;
+  }
+  .nav-pills > .active > a {
+    color: @white;
+    background-color: @infoText;
+    border-color: @infoBorder;
+  }
+  .nav-pills > .current > a {
+    //font-weight: bold;
+    border-style: double;
+    border-width: 3px;
+    padding: 5px 9px;
+  }
+  .target {
+  }
+}
+
+& > h3 {
+  margin-top: 2em;
+  &:first-of-type {
+    margin-top: 0;
+  }
+}
+
+div.dataTables_scrollBody table.dataTable {
+  margin-bottom: (2*@baseLineHeight) !important;
+}
+
+// DataTables Scroller fixes
+.DTS div.dataTables_scrollBody {
+  // fix for auto rowHeight calculation
+  .table-bordered tbody:first-child tr:first-child {
+    th, td { border-top: 1px solid; }
+  }
+  // margin at the bottom of the table
+  table.dataTable + div {
+    border-bottom: (2*@baseLineHeight) solid transparent;
+    z-index: -1;
+  }
+}
+.dataTables_info, .dataTables_processing {
+  display: inline-block;
+}
+.dataTables_processing {
+  padding-top: 8px;
+}
+
+.DTS .dataTables_scroll {
+    .dataTables_scrollBody {
+      background-color: @bodyBackground;
+      z-index: 2;
+      table.dataTable { z-index: 3; }
+    }
+  &.loading {
+    .dataTables_scrollBody { background-color: transparent; }
+  }
+  .loading.alert-block {
+    position: absolute;
+    @width: 2*@fluidGridColumnWidth; @height: @fluidGridColumnWidth;
+    top: 38.2%; left: 50%;
+    width: @width; margin-left: -@width/2;
+    height: @height; margin-top: -@height*.382;
+    text-align: center;
+    padding-top: @height/2;
+    z-index: 1;
+  }
+}
+
+#status-table, #status-table_wrapper {
+  tbody {
+    > tr.ui-selected {
+      background-color: @infoBackground;
+      > td,
+      > th {
+        background-color: @infoBackground;
+      }
+      &:nth-child(odd) > td,
+      &:nth-child(odd) > th {
+        background-color: darken(@infoBackground, 5%);
+      }
+    }
+    > tr.ui-selecting, > tr.ui-selected:hover {
+      background-color: darken(@infoBackground, 10%);
+      > td,
+      > th {
+        background-color: darken(@infoBackground, 10%);
+      }
+    }
+  }
+  .serial {
+    max-width: (10*@baseFontSize);
+    text-align: right;
+  }
+  .state {
+    max-width: (10*@baseFontSize);
+    text-align: left;
+    font-weight: bold;
+    a {
+      color: inherit;
+      text-decoration: inherit;
+    }
+  }
+}
+
+// vim:ft=less

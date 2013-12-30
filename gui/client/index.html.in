@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html><$
+sectionOrder=(
+    Plan
+    Runs
+    Results
+    Chart
+)
+sectionActive=${sectionOrder[0]}
+$>
+  <head>
+    <meta charset="utf-8">
+    <title>3X for eXecuting eXploratory eXperiments</title>
+    <link rel="stylesheet" type="text/css" href="resource/3x.css">
+    <base target="_3X_Inspector">
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <div>
+            <a id="logo" class="brand" href="http://netj.github.com/3x/"><i
+                class="icon-beaker icon"></i>3X</a>
+          </div>
+          <div class="pull-right">
+            <span id="title" class="brand"></span>
+          </div>
+
+          <ul class="nav nav-tabs">
+            <$ for s in "${sectionOrder[@]}"; do
+              sectionBody="$s"/body.html
+              [ -r "$sectionBody" ] || continue
+              case $s in
+                $sectionActive) classAttr=' class="active"' ;;
+                             *) classAttr=
+              esac
+              $>
+              <li<$= "$classAttr" $>><a data-toggle="tab" href="#<$= "$s" $>"><$
+                sectionTab="$s"/tab.html
+                if [ -r "$sectionTab" ]; then
+                  cat "$sectionTab"
+                else
+                  echo "$s"
+                fi
+              $></a></li>
+            <$ done $>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="main" class="container-fluid tab-content" style="overflow-x: hidden;">
+
+    <$ for s in "${sectionOrder[@]}"; do
+      sectionBody="$s"/body.html
+      [ -r "$sectionBody" ] || continue
+      case $s in
+        $sectionActive) classAttr=' active' ;;
+                     *) classAttr=
+      esac
+      $>
+<!-- <$= "$s" $> section begins - - - - - - - - - - - - - - - - - - - -->
+<section id="<$= "$s" $>" class="tab-pane row-fluid<$= "$classAttr" $>">
+<$ cat "$sectionBody" $>
+</section>
+<!-- <$= "$s" $> section ends - - - - - - - - - - - - - - - - - - - - -->
+    <$ done $>
+
+    </div>
+
+    <script data-main="resource/main.js" src="resource/require.js"></script>
+
+  </body>
+</html>
+<!-- vim:set sw=2:sts=2:spell -->
