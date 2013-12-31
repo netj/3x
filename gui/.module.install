@@ -1,72 +1,10 @@
-3x-gui                                                                                              $TOOLSDIR/
+3x-gui                                  $TOOLSDIR/
 
-.build/server.js                                                                                    $GUIDIR/
-.build/node_modules                                                                                 $GUIDIR/
-views                                                                                               $GUIDIR/
+.build/server.js                        $GUIDIR/
+.build/node_modules                     $GUIDIR/
+views                                   $GUIDIR/
 
-.build/files/index.html                                                                             $GUIDIR/files/
-.build/files/resource.opt/require.js                                                                $GUIDIR/files/resource/
-.build/files/resource.opt/main.js                                                                   $GUIDIR/files/resource/
-.build/files/resource.opt/main.js.map                                                               $GUIDIR/files/resource/
-.build/files/resource.opt/3x.css                                                                    $GUIDIR/files/resource/
-#.build/files/resource/3x.css                                                                        $GUIDIR/files/resource/
-#.build/files/resource/main.js                                                                       $GUIDIR/files/resource/
-#.build/files/resource/utils.js                                                                      $GUIDIR/files/resource/
-#.build/files/resource/Aggregation.js                                                                $GUIDIR/files/resource/
-#.build/files/resource/ChartSection.js                                                               $GUIDIR/files/resource/
-#.build/files/resource/ChartView.js                                                                  $GUIDIR/files/resource/
-#.build/files/resource/ComplexDataTypes.js                                                           $GUIDIR/files/resource/
-#.build/files/resource/CompositeElement.js                                                           $GUIDIR/files/resource/
-#.build/files/resource/DataRenderer.js                                                               $GUIDIR/files/resource/
-#.build/files/resource/InputsView.js                                                                 $GUIDIR/files/resource/
-#.build/files/resource/MenuDropdownView.js                                                           $GUIDIR/files/resource/
-#.build/files/resource/OutputsView.js                                                                $GUIDIR/files/resource/
-#.build/files/resource/PlanSection.js                                                                $GUIDIR/files/resource/
-#.build/files/resource/PlanView.js                                                                   $GUIDIR/files/resource/
-#.build/files/resource/QueuesView.js                                                                 $GUIDIR/files/resource/
-#.build/files/resource/ResultsSection.js                                                             $GUIDIR/files/resource/
-#.build/files/resource/RunHistoryView.js                                                             $GUIDIR/files/resource/
-#.build/files/resource/RunsSection.js                                                                $GUIDIR/files/resource/
-#.build/files/resource/TableView.js                                                                  $GUIDIR/files/resource/
-#.build/files/resource/TargetsView.js                                                                $GUIDIR/files/resource/
+.build/client/index.html                $GUIDIR/files/
+.build/client/resource                  $GUIDIR/files/resource
 
-#extern/requirejs/require.js                                                                         $GUIDIR/files/resource/
-#extern/underscore/underscore.js                                                                     $GUIDIR/files/resource/
-#extern/Numeral-js/numeral.js                                                                        $GUIDIR/files/resource/
-
-#extern/jquery/dist/jquery.js                                                                        $GUIDIR/files/resource/
-#extern/jquery-ui/dist/jquery-ui-1.9.2/themes/base                                                   $GUIDIR/files/resource/jquery-ui
-extern/jquery-ui/dist/jquery-ui-1.9.2/themes/base/images                                             $GUIDIR/files/resource/jquery-ui/
-#extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.core.js                                          $GUIDIR/files/resource/
-#extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.widget.js                                        $GUIDIR/files/resource/
-#extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.mouse.js                                         $GUIDIR/files/resource/
-#extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.selectable.js                                    $GUIDIR/files/resource/
-#extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.sortable.js                                      $GUIDIR/files/resource/
-
-#extern/bootstrap/bootstrap/js/bootstrap.js                                                          $GUIDIR/files/resource/
-extern/Font-Awesome/font/fontawesome-webfont.{eot,ttf,woff}                                         $GUIDIR/files/resource/font/
-
-#extern/knockout/build/output/knockout-latest.debug.js                                               $GUIDIR/files/resource/knockout.js
-#extern/jsrender/jsrender.js                                                                         $GUIDIR/files/resource/
-
-#extern/DataTables/media/js/jquery.dataTables.js                                                     $GUIDIR/files/resource/jquery.dataTables.js
-#extern/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js                             $GUIDIR/files/resource/jquery.dataTables.bootstrap.js
-#extern/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css                            $GUIDIR/files/resource/DataTables/
-extern/DataTables.Plugins/integration/bootstrap/images/sort_{{asc,desc}{,_disabled},both}.png       $GUIDIR/files/resource/DataTables/images/
-#extern/DataTables.Plugins/type-detection/num-html.js                                                $GUIDIR/files/resource/jquery.dataTables.type-detection.num-html.js
-#extern/DataTables.Plugins/sorting/num-html.js                                                       $GUIDIR/files/resource/jquery.dataTables.sorting.num-html.js
-#extern/DataTables.ColReorder/media/js/ColReorder.js                                                 $GUIDIR/files/resource/jquery.dataTables.ColReorder.js
-#extern/DataTables.ColReorder/media/css/ColReorder.css                                               $GUIDIR/files/resource/DataTables/css/
-extern/DataTables.ColReorder/media/images/insert.png                                                $GUIDIR/files/resource/DataTables/images/
-#extern/DataTables.Scroller/media/js/dataTables.scroller.js                                          $GUIDIR/files/resource/jquery.dataTables.Scroller.js
-#extern/DataTables.Scroller/media/css/dataTables.scroller.css                                        $GUIDIR/files/resource/DataTables/css/
-extern/DataTables.Scroller/media/images/loading-background.png                                      $GUIDIR/files/resource/DataTables/images/
-
-#extern/jquery.appear/jquery.appear.js                                                               $GUIDIR/files/resource/
-
-#extern/d3/d3.js                                                                                     $GUIDIR/files/resource/
-
-.build/node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js                       $GUIDIR/files/resource/
-.build/node_modules/socket.io/node_modules/socket.io-client/dist/WebSocketMain.swf                  $GUIDIR/files/resource/
-.build/node_modules/socket.io/node_modules/socket.io-client/dist/WebSocketMainInsecure.swf          $GUIDIR/files/resource/
-
+# vim:ft=conf

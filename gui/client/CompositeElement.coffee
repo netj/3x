@@ -6,7 +6,7 @@ _ = require "underscore"
 {
     log
     error
-} = require "cs!utils"
+} = require "utils"
 
 # TODO find a cleaner way to do this, i.e., leveraging jQuery, Backbone
 class CompositeElement

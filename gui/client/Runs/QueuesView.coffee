@@ -5,15 +5,15 @@ _ = require "underscore"
 io = require "socket.io"
 require "jquery.ui.sortable"
 
-_3X_ = require "cs!3x"
+_3X_ = require "3x"
 {
     log
     error
     humanReadableNumber
 } =
-utils = require "cs!utils"
+utils = require "utils"
 
-CompositeElement = require "cs!CompositeElement"
+CompositeElement = require "CompositeElement"
 
 class QueuesUI extends CompositeElement
     constructor: (@baseElement, @status, @target, @optionElements) ->

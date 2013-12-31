@@ -3,14 +3,14 @@ define (require) -> (\
 $ = require "jquery"
 _ = require "underscore"
 
-_3X_ = require "cs!3x"
+_3X_ = require "3x"
 {
     log
     error
 } =
-utils = require "cs!utils"
+utils = require "utils"
 
-CompositeElement = require "cs!CompositeElement"
+CompositeElement = require "CompositeElement"
 
 class TargetsUI extends CompositeElement
     constructor: (@baseElement) ->

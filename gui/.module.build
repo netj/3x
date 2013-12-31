@@ -4,9 +4,37 @@ shopt -s extglob nullglob
 
 Self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 
-mkdir -p .build/files
-cd .build
+# how to compile CoffeeScripts
+compile-coffee-to() {
+    local dest=$1; shift
+    for cs; do
+        js=${cs%.coffee}.js
+        js=${js##*/}
+        [[ "$cs" -nt "$dest"/"$js" ]] || continue
+        echo >&2 "Compiling $cs..."
+        coffee -c -m -o "$dest" "$cs" &
+    done
+    wait
+}
+# how to convert legacy codes to AMD modules
+convertAMD() {
+    local src=$1 dst=$2
+    if [[ "$src" -nt "$dst" || -L "$dst" ]]; then
+        echo >&2 "Converting to AMD $dst..."
+        rm -f "$dst"
+        {
+            echo 'define(function(require, exports, module) {'
+            cat "$src"
+            echo '});'
+        } >"$dst"
+    fi
+}
 
+
+## build server code and dependencies
+compile-coffee-to .build  *.coffee
+
+cd .build
 ln -sfn ../package.json .
 [ node_modules -nt package.json ] || {
     echo >README.md
@@ -50,40 +78,28 @@ ln -sfn ../package.json .
         echo 'wq'
     } | ed "$dir_pypkgs"/watchmedo >/dev/null
 }
-
 cd ..
-compile-coffee-to() {
-    local dest=$1; shift
-    for cs; do
-        js=${cs%.coffee}.js
-        js=${js##*/}
-        [[ "$cs" -nt "$dest"/"$js" ]] || continue
-        echo >&2 "Compiling $cs..."
-        coffee -c -m -o "$dest" "$cs" &
-    done
-    wait
-}
-compile-coffee-to .build  *.coffee
 
-ln -sfn ../extern .build/extern
+## build client
+mkdir -p .build/client/{prototype,src}
 
-## client
-filesBuilt=.build/files
-resourcesBuilt=.build/files/resource
-mkdir -p "$resourcesBuilt"
-
-# compile client source code
 cd client
 #  first generate executable sources
 for src in *.in; do
-    out=../"$filesBuilt"/${src%.in}
+    out=../.build/client/${src%.in}
     [[ "$src" -nt "$out" ]] || continue
     echo >&2 "Compiling $src..."
     compile-xdocs <"$src" >"$out"
 done
 cd ..
 
-# get jquery
+# prepare some symlinks to simplify the rest of the build process
+find client/{{,*/}*.coffee,*.less} .build/client/*.{coffee,less} \
+    -exec relsymlink {} .build/client/src/ \;
+relsymlink extern .build/client/prototype/
+
+
+# build and symlink external libraries
 ( cd extern/jquery
 [ -s dist/jquery.js ] || {
     echo >&2 "Building jquery..."
@@ -100,7 +116,6 @@ cd ..
 }
 )
 
-# build knockoutjs
 ( cd extern/knockout
 [ -s build/output/knockout-latest.debug.js ] || {
     echo >&2 "Building knockout..."
@@ -109,7 +124,6 @@ cd ..
 }
 )
 
-# build bootstrap
 ( cd extern/bootstrap
 [ -s bootstrap/js/bootstrap.js ] || {
     echo >&2 "Building bootstrap..."
@@ -119,82 +133,75 @@ cd ..
 }
 )
 
+# symlink external dependencies
+cd .build/client/prototype
+mkdir -p DataTables/{css,images} Font-Awesome
+relsymlink extern/requirejs/require.js                                                               .
+relsymlink extern/underscore/underscore.js                                                           .
+relsymlink extern/Numeral-js/numeral.js                                                              .
+relsymlink extern/jquery/dist/jquery.js                                                              .
+relsymlink extern/bootstrap/bootstrap/js/bootstrap.js                                                .
+relsymlink extern/jquery-ui/dist/jquery-ui-*/themes/base                                             ./jquery-ui
+relsymlink extern/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.core.js                                    .
+relsymlink extern/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.mouse.js                                   .
+relsymlink extern/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.widget.js                                  .
+relsymlink extern/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.selectable.js                              .
+relsymlink extern/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.sortable.js                                .
+relsymlink extern/jsrender/jsrender.js                                                               .
+relsymlink extern/knockout/build/output/knockout-latest.debug.js                                     ./knockout.js
+relsymlink extern/d3/d3.js                                                                           .
+relsymlink extern/Font-Awesome/font                                                                  .
+relsymlink ../../node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js              .
+relsymlink ../../node_modules/socket.io/node_modules/socket.io-client/dist/WebSocketMain.swf         .
+relsymlink ../../node_modules/socket.io/node_modules/socket.io-client/dist/WebSocketMainInsecure.swf .
+relsymlink extern/DataTables/media/js/jquery.dataTables.js                                           .
+convertAMD extern/DataTables.Scroller/media/js/dataTables.scroller.js                                ./jquery.dataTables.Scroller.js
+relsymlink extern/DataTables.Scroller/media/css/dataTables.scroller.css                              DataTables/css/
+relsymlink extern/DataTables.Scroller/media/images/loading-background.png                            DataTables/css/
+convertAMD extern/DataTables.ColReorder/media/js/ColReorder.js                                       ./jquery.dataTables.ColReorder.js
+relsymlink extern/DataTables.ColReorder/media/css/ColReorder.css                                     DataTables/css/
+relsymlink extern/DataTables.ColReorder/media/images/insert.png                                      DataTables/images/
+convertAMD extern/DataTables.Plugins/sorting/num-html.js                                             ./jquery.dataTables.sorting.num-html.js
+convertAMD extern/DataTables.Plugins/type-detection/num-html.js                                      ./jquery.dataTables.type-detection.num-html.js
+convertAMD extern/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js                   ./jquery.dataTables.bootstrap.js
+relsymlink extern/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css                  DataTables/
+for i in sort_{{asc,desc}{,_disabled},both}.png; do
+relsymlink extern/DataTables.Plugins/integration/bootstrap/images/$i                                 DataTables/images/
+done
 
-cd "$resourcesBuilt"
-clientFromResourcesBuilt=../../../client
-externRoot=../../../extern
 
-# symlink CoffeeScript source codes
-find "$clientFromResourcesBuilt"/{,*/}*.coffee -exec ln -sfn {} . \;
+# compile CoffeeScript sources
+compile-coffee-to . ../src/!(app.build).coffee
 
-# as well as external codes
-# converting some legacy codes to AMD modules
-convertAMD() {
-    local src=$1 dst=$2
-    if [[ "$src" -nt "$dst" || -L "$dst" ]]; then
-        rm -f "$dst"
-        echo >&2 "Converting to AMD $src..."
-        {
-            echo 'define(function(require, exports, module) {'
-            cat "$src"
-            echo '});'
-        } >"$dst"
-    fi
-}
-mkdir -p DataTables/css Font-Awesome
-relsymlink "$externRoot"/requirejs/require.js                                              .
-relsymlink "$externRoot"/require-cs/cs.js                                                  .
-relsymlink "$externRoot"/coffee-script/extras/coffee-script.js                             .
-relsymlink "$externRoot"/underscore/underscore.js                                          .
-relsymlink "$externRoot"/Numeral-js/numeral.js                                             .
-relsymlink "$externRoot"/jquery/dist/jquery.js                                             .
-relsymlink "$externRoot"/bootstrap/bootstrap/js/bootstrap.js                               .
-relsymlink "$externRoot"/jquery-ui/dist/jquery-ui-*/themes/base                            ./jquery-ui
-relsymlink "$externRoot"/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.core.js                   .
-relsymlink "$externRoot"/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.mouse.js                  .
-relsymlink "$externRoot"/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.widget.js                 .
-relsymlink "$externRoot"/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.selectable.js             .
-relsymlink "$externRoot"/jquery-ui/dist/jquery-ui-*/ui/jquery.ui.sortable.js               .
-relsymlink "$externRoot"/jsrender/jsrender.js                                              .
-relsymlink "$externRoot"/knockout/build/output/knockout-latest.debug.js                    ./knockout.js
-relsymlink "$externRoot"/d3/d3.js                                                          .
-relsymlink "$externRoot"/Font-Awesome/less                                                 Font-Awesome/
-relsymlink ../../node_modules/socket.io/node_modules/socket.io-client/dist/socket.io.js    .
-relsymlink "$externRoot"/DataTables/media/js/jquery.dataTables.js                          .
-convertAMD "$externRoot"/DataTables.Plugins/sorting/num-html.js                            ./jquery.dataTables.sorting.num-html.js
-convertAMD "$externRoot"/DataTables.Plugins/type-detection/num-html.js                     ./jquery.dataTables.type-detection.num-html.js
-convertAMD "$externRoot"/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.js  ./jquery.dataTables.bootstrap.js
-relsymlink "$externRoot"/DataTables.Plugins/integration/bootstrap/dataTables.bootstrap.css DataTables/dataTables.bootstrap.css
-convertAMD "$externRoot"/DataTables.Scroller/media/js/dataTables.scroller.js               ./jquery.dataTables.Scroller.js
-relsymlink "$externRoot"/DataTables.Scroller/media/css/dataTables.scroller.css             DataTables/css/
-convertAMD "$externRoot"/DataTables.ColReorder/media/js/ColReorder.js                      ./jquery.dataTables.ColReorder.js
-relsymlink "$externRoot"/DataTables.ColReorder/media/css/ColReorder.css                    DataTables/css/
 
-#  and compile CoffeeScripts
-#compile-coffee-to ../"$resourcesBuilt"  *.coffee */*.coffee ../"$filesBuilt"/*.coffee
-
-# prepare for stylesheet compilations
-[ -d bootstrap/less ] || {
-    rm -rf bootstrap
-    mkdir -p bootstrap/
-    cp -af "$externRoot"/bootstrap/less bootstrap/
+# compile LESS source codes
+#  after preparing some files for stylesheet compilations
+[ -L bootstrap/less ] || {
+    rm -rf ../src/bootstrap
+    mkdir -p ../src/bootstrap/
+    cp -af extern/bootstrap/less ../src/bootstrap/
     # remove sprites.less in favor of Font-Awesome
-    rm -f bootstrap/less/sprites.less
-    echo "//" >bootstrap/less/sprites.less
+    rm -f ../src/bootstrap/less/sprites.less
+    echo "//" >../src/bootstrap/less/sprites.less
+    mkdir -p bootstrap
+    relsymlink ../src/bootstrap/less bootstrap/
 }
-
-# compile LESS
-for less in "$clientFromResourcesBuilt"/*.less "$clientFromResourcesBuilt"/../"$filesBuilt"/*.less; do
+[ -L Font-Awesome/less ] || {
+    rm -rf ../src/Font-Awesome
+    mkdir -p ../src/Font-Awesome
+    relsymlink extern/Font-Awesome/less ../src/Font-Awesome/
+    relsymlink ../src/Font-Awesome/less Font-Awesome/
+}
+for less in ../src/*.less; do
     css=${less%.less}.css
     css=${css##*/}
     [[ "$less" -nt "$css" ]] || continue
-    echo >&2 "Compiling $resourcesBuilt/$less..."
+    echo >&2 "Compiling $less..."
     lessc "$less" "$css"
 done
 
 
-#  requirejs optimization
-coffee -p -b app.build.coffee | sed '$s/;$//' >app.build.js
-rm -f app.build.coffee
-coffee -c -o . ../main.coffee
-r.js -o app.build.js
+# compile files that'll go into files/resource
+rsync -av --copy-links --omit-dir-times --delete-excluded \
+    --exclude={/extern,less,**.less} . ../resource
+

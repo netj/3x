@@ -5,17 +5,17 @@ _ = require "underscore"
 ko = require "knockout"
 require "bootstrap"
 
-_3X_ = require "cs!3x"
+_3X_ = require "3x"
 {
     log
     error
 } =
-utils = require "cs!utils"
+utils = require "utils"
 
-CompositeElement = require "cs!CompositeElement"
-StatusTable = require "cs!RunHistoryView"
+CompositeElement = require "CompositeElement"
+StatusTable = require "RunHistoryView"
 
-RunsSection = require "cs!RunsSection" # FIXME bad dependency
+RunsSection = require "RunsSection" # FIXME bad dependency
 
 class PlannerUI extends CompositeElement
     constructor: (@baseElement, @inputs, @optionElements = {}) ->

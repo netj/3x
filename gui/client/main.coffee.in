@@ -34,8 +34,8 @@ require.config {
 require [
     "jquery"
     "bootstrap"
-    "cs!3x"
-    <$ for s in "${sections[@]}"; do $>"<$= "cs!$s" $>"
+    "3x"
+    <$ for s in "${sections[@]}"; do $>"<$= "$s" $>"
     <$ done $>
 ], ($, ignore, _3X_
     <$ for s in "${sections[@]}"; do $>, <$= "$s" $>

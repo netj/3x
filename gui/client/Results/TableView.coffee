@@ -10,18 +10,18 @@ require "jquery.dataTables.bootstrap"
 require "jquery.dataTables.ColReorder"
 require "jquery.dataTables.Scroller"
 
-_3X_ = require "cs!3x"
+_3X_ = require "3x"
 {
     log
     error
 } =
-utils = require "cs!utils"
+utils = require "utils"
 
 
-CompositeElement = require "cs!CompositeElement"
-Aggregation      = require "cs!Aggregation"
-DataRenderer     = require "cs!DataRenderer"
-require "cs!ComplexDataTypes"
+CompositeElement = require "CompositeElement"
+Aggregation      = require "Aggregation"
+DataRenderer     = require "DataRenderer"
+require "ComplexDataTypes"
 
 # TODO rename to TableView
 class ResultsTable extends CompositeElement

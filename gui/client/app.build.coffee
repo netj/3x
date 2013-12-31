@@ -1,17 +1,14 @@
-appDir: "."
+appDir: "resource"
 baseUrl: "."
-dir: "../resource.opt"
-mainConfigFile: "main.js"
-stubModules: ["cs"]
+dir: "resource.opt"
+mainConfigFile: "resource/main.js"
 modules: [
   {
     name: "main"
-    exclude: ["coffee-script"]
   }
 ]
-optimize: "none"
-#optimize: "uglify2"
-preserveLicenseComments: false
+#optimize: "none", useSourceUrl: true
+optimize: "uglify2", preserveLicenseComments: false
 generateSourceMaps: true
-#useSourceUrl: true
+skipDirOptimize: true
 # vim:ft=coffee

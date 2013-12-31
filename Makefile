@@ -58,8 +58,28 @@ bundle-minimal:
 .PHONY: bundle-all bundle-minimal
 
 
+# optionally optmize GUI with requirejs
+ifdef PACKAGE_OPTIMIZED
+$(PACKAGE): optimized-gui
+endif
+optimized-gui: stage
+	coffee -pb gui/.build/client/src/app.build.coffee | \
+	    sed '$$s/;$$//' >$(STAGEDIR)/$(GUIDIR)/files/app.build.js
+	bash -O extglob -euc ' \
+	cd $(STAGEDIR)/gui/files; \
+	    r.js -o app.build.js; \
+	    rm -f resource.opt/{!(main|require).js,!(main.js).map,{,*/}*/*.css,build.txt}; \
+	    mv -f resource resource.orig; mv -f resource.opt resource; \
+	    rm -rf resource.orig'
+.PHONY: optimized-gui
+
+
 gui-test-loop:
-	while sleep .1; do _3X_ROOT="$(PWD)/test-exp"  3x -v gui; done
+	while sleep .1; do \
+    relsymlink gui/.build/client/src $(STAGEDIR)/$(GUIDIR)/files/; \
+    _3X_ROOT="$(PWD)/test-exp" \
+        $(STAGEDIR)/bin/3x -v gui; \
+done
 .PHONY: gui-test-loop
 
 

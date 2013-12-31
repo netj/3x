@@ -49,9 +49,3 @@
 [submodule "gui/extern/jquery"]
 	path = gui/extern/jquery
 	url = https://github.com/jquery/jquery.git
-[submodule "gui/extern/require-cs"]
-	path = gui/extern/require-cs
-	url = https://github.com/requirejs/require-cs.git
-[submodule "gui/extern/coffee-script"]
-	path = gui/extern/coffee-script
-	url = https://github.com/jashkenas/coffee-script.git

@@ -5,14 +5,14 @@ _ = require "underscore"
 d3 = require "d3"
 require "jsrender"
 
-_3X_ = require "cs!3x"
+_3X_ = require "3x"
 {
     log
     error
 } =
-utils = require "cs!utils"
+utils = require "utils"
 
-CompositeElement = require "cs!CompositeElement"
+CompositeElement = require "CompositeElement"
 
 class ResultsChart extends CompositeElement
     constructor: (@baseElement, @typeSelection, @axesControl, @table, @optionElements = {}) ->

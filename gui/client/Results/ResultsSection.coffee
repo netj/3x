@@ -2,9 +2,9 @@ define (require) -> (\
 
 $ = require "jquery"
 
-InputsView  = require "cs!InputsView"
-OutputsView = require "cs!OutputsView"
-TableView   = require "cs!TableView"
+InputsView  = require "InputsView"
+OutputsView = require "OutputsView"
+TableView   = require "TableView"
 
 class ResultsSection
     @inputs  : new InputsView  $("#conditions")

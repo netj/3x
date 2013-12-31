@@ -2,8 +2,8 @@ define (require) -> (\
 
 $ = require "jquery"
 
-InputsView = require "cs!InputsView"
-PlannerUI = require "cs!PlanView"
+InputsView = require "InputsView"
+PlannerUI = require "PlanView"
 
 class PlanSection
     @plannerInputs: new InputsView $("#planner-inputs")

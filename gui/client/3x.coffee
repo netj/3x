@@ -12,9 +12,9 @@ _ = require "underscore"
     log
     error
 } =
-utils = require "cs!utils"
+utils = require "utils"
 
-CompositeElement = require "cs!CompositeElement"
+CompositeElement = require "CompositeElement"
 
 class _3X_
     @BASE_URL: localStorage._3X_ServiceBaseURL ? ""
