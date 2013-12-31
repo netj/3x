@@ -74,13 +74,33 @@ optimized-gui: stage
 .PHONY: optimized-gui
 
 
-gui-test-loop:
+# keep launching GUI (to be used with keymap in gui/.lvimrc)
+gui-test-loop: test-exp
 	while sleep .1; do \
     relsymlink gui/.build/client/src $(STAGEDIR)/$(GUIDIR)/files/; \
     _3X_ROOT="$(PWD)/test-exp" \
         $(STAGEDIR)/bin/3x -v gui; \
 done
 .PHONY: gui-test-loop
+
+# set up a sample experiment for testing
+test-exp:
+	env $(STAGEDIR)/bin/3x setup $@ \
+	  --program \
+	    'python measure.py $$algo $$inputSize $$inputType' \
+	  --inputs \
+	    'inputSize'='10,11,12,13,14,15,16,17,18' \
+	    'inputType'='random,ordered,reversed' \
+	    'algo'='bubbleSort,selectionSort,insertionSort,quickSort,mergeSort' \
+	  --outputs \
+	    --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
+	    --extract 'number of compares: {{numCompare =~ .+}}' \
+	    --extract 'number of accesses: {{numAccess =~ .+}}' \
+	    --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
+	    --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
+	    --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
+	  # end of 3x setup
+	cp -f docs/examples/sorting-algos/program/*.py $@/program/
 
 
 count-loc:
