@@ -5,14 +5,14 @@ _ = require "underscore"
 require "bootstrap"
 require "jquery.ui.selectable"
 
-_3X_ = require "3x"
+_3X_ = require "cs!3x"
 {
     log
     error
 } =
-utils = require "utils"
+utils = require "cs!utils"
 
-CompositeElement = require "CompositeElement"
+CompositeElement = require "cs!CompositeElement"
 
 class StatusTable extends CompositeElement
     constructor: (@baseElement, @conditions, @optionElements) ->

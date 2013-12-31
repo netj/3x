@@ -2,15 +2,15 @@ define (require) -> (\
 
 $ = require "jquery"
 
-_3X_ = require "3x"
+_3X_ = require "cs!3x"
 {
     log
     error
 } =
-utils = require "utils"
+utils = require "cs!utils"
 
-Aggregation = require "Aggregation"
-MenuDropdown = require "MenuDropdownView"
+Aggregation = require "cs!Aggregation"
+MenuDropdown = require "cs!MenuDropdownView"
 
 # TODO encapsulate these in class
 FILTER_EXPR_REGEX = ///

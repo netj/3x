@@ -4,9 +4,9 @@ $ = require "jquery"
 require "jsrender"
 require "jquery.ui.selectable"
 
-utils = require "utils"
+utils = require "cs!utils"
 
-CompositeElement = require "CompositeElement"
+CompositeElement = require "cs!CompositeElement"
 
 # TODO rename to MenuDropdownView
 class MenuDropdown extends CompositeElement

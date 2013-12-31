@@ -1,14 +1,14 @@
 define (require) -> (\
 
-_3X_ = require "3x"
+_3X_ = require "cs!3x"
 {
     log
     error
 } =
-utils = require "utils"
+utils = require "cs!utils"
 
-Aggregation = require "Aggregation"
-DataRenderer = require "DataRenderer"
+Aggregation = require "cs!Aggregation"
+DataRenderer = require "cs!DataRenderer"
 
 # More complex types
 class ComplexDataTypes

@@ -7,7 +7,6 @@ for sectionModule in */*Section.coffee; do
 done
 $>
 require.config {
-    baseUrl: "resource"
     shim:
         underscore:
             exports: "_"
@@ -15,42 +14,28 @@ require.config {
         d3:
             exports: "d3"
             deps: ["jquery"]
-        bootstrap:
-            deps: ["jquery"]
-        knockout:
-            deps: ["jquery"]
-        jsrender:
-            deps: ["jquery"]
 
-        "jquery.ui.selectable":
-            deps: ["jquery.ui.mouse"]
-        "jquery.ui.sortable":
-            deps: ["jquery.ui.mouse"]
-        "jquery.ui.mouse":
-            deps: ["jquery.ui.widget"]
-        "jquery.ui.widget":
-            deps: ["jquery.ui.core"]
-        "jquery.ui.core":
-            deps: ["jquery"]
+        bootstrap : ["jquery"]
+        knockout  : ["jquery"]
+        jsrender  : ["jquery"]
 
-        "jquery.dataTables":
-            deps: ["jquery"]
-        "jquery.dataTables.sorting.num-html":
-            deps: ["jquery.dataTables"]
-        "jquery.dataTables.type-detection.num-html":
-            deps: ["jquery.dataTables"]
-        "jquery.dataTables.ColReorder":
-            deps: ["jquery.dataTables"]
-        "jquery.dataTables.Scroller":
-            deps: ["jquery.dataTables"]
-        "jquery.dataTables.bootstrap":
-            deps: ["jquery.dataTables", "bootstrap"]
+        "jquery.ui.selectable" : ["jquery.ui.mouse"]
+        "jquery.ui.sortable"   : ["jquery.ui.mouse"]
+        "jquery.ui.mouse"      : ["jquery.ui.widget"]
+        "jquery.ui.widget"     : ["jquery.ui.core"]
+        "jquery.ui.core"       : ["jquery"]
+
+        "jquery.dataTables.sorting.num-html"        : ["jquery.dataTables"]
+        "jquery.dataTables.type-detection.num-html" : ["jquery.dataTables"]
+        "jquery.dataTables.ColReorder"              : ["jquery.dataTables"]
+        "jquery.dataTables.Scroller"                : ["jquery.dataTables"]
+        "jquery.dataTables.bootstrap"               : ["jquery.dataTables", "bootstrap"]
 }
 require [
     "jquery"
     "bootstrap"
-    "3x"
-    <$ for s in "${sections[@]}"; do $>"<$= "$s" $>"
+    "cs!3x"
+    <$ for s in "${sections[@]}"; do $>"<$= "cs!$s" $>"
     <$ done $>
 ], ($, ignore, _3X_
     <$ for s in "${sections[@]}"; do $>, <$= "$s" $>

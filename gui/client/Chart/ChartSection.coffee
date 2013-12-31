@@ -2,9 +2,9 @@ define (require) -> (\
 
 $ = require "jquery"
 
-ChartView = require "ChartView"
+ChartView = require "cs!ChartView"
 
-ResultsSection = require "ResultsSection" # FIXME get rid of inter-section dependency
+ResultsSection = require "cs!ResultsSection" # FIXME get rid of inter-section dependency
 
 class ChartSection
     @chart: new ChartView $("#chart-body"),

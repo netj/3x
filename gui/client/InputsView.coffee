@@ -2,14 +2,14 @@ define (require) -> (\
 
 $ = require "jquery"
 
-_3X_ = require "3x"
+_3X_ = require "cs!3x"
 {
     log
     error
 } =
-utils = require "utils"
+utils = require "cs!utils"
 
-MenuDropdown = require "MenuDropdownView"
+MenuDropdown = require "cs!MenuDropdownView"
 
 # TODO rename to InputsView
 class ConditionsUI extends MenuDropdown

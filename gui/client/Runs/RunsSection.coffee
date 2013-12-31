@@ -2,11 +2,11 @@ define (require) -> (\
 
 $ = require "jquery"
 
-StatusTable = require "RunHistoryView"
-TargetsUI   = require "TargetsView"
-QueuesUI    = require "QueuesView"
+StatusTable = require "cs!RunHistoryView"
+TargetsUI   = require "cs!TargetsView"
+QueuesUI    = require "cs!QueuesView"
 
-ResultsSection = require "ResultsSection" # FIXME get rid of inter-section dependency
+ResultsSection = require "cs!ResultsSection" # FIXME get rid of inter-section dependency
 
 class RunsSection
     @status: new StatusTable $("#status-table"),
