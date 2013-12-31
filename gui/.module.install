@@ -32,12 +32,12 @@ extern/underscore/underscore.js                                                 
 extern/Numeral-js/numeral.js                                                                        $GUIDIR/files/resource/
 
 extern/jquery/dist/jquery.js                                                                        $GUIDIR/files/resource/
-extern/jquery-ui/themes/base                                                                        $GUIDIR/files/resource/jquery-ui
-extern/jquery-ui/ui/jquery.ui.core.js                                                               $GUIDIR/files/resource/
-extern/jquery-ui/ui/jquery.ui.widget.js                                                             $GUIDIR/files/resource/
-extern/jquery-ui/ui/jquery.ui.mouse.js                                                              $GUIDIR/files/resource/
-extern/jquery-ui/ui/jquery.ui.selectable.js                                                         $GUIDIR/files/resource/
-extern/jquery-ui/ui/jquery.ui.sortable.js                                                           $GUIDIR/files/resource/
+extern/jquery-ui/dist/jquery-ui-1.9.2/themes/base                                                   $GUIDIR/files/resource/jquery-ui
+extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.core.js                                          $GUIDIR/files/resource/
+extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.widget.js                                        $GUIDIR/files/resource/
+extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.mouse.js                                         $GUIDIR/files/resource/
+extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.selectable.js                                    $GUIDIR/files/resource/
+extern/jquery-ui/dist/jquery-ui-1.9.2/ui/jquery.ui.sortable.js                                      $GUIDIR/files/resource/
 
 extern/bootstrap/bootstrap/js/bootstrap.js                                                          $GUIDIR/files/resource/
 extern/Font-Awesome/font/fontawesome-webfont.{eot,ttf,woff}                                         $GUIDIR/files/resource/font/
