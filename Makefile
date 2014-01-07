@@ -96,7 +96,8 @@ test-exp:
 	    --extract 'sorting time \(s\): {{sortingTime(s) =~ .+}}' \
 	    --extract 'number of compares: {{numCompare =~ .+}}' \
 	    --extract 'number of accesses: {{numAccess =~ .+}}' \
-	    --extract 'ratio sorted: {{ratioSorted =~ .+}}' \
+	    --extract 'input sorted ratio: {{ratioSortedIn =~ .+}}' \
+	    --extract 'output sorted ratio: {{ratioSortedOut =~ .+}}' \
 	    --extract 'input generation time \(s\): {{inputTime(s) =~ .+}}' \
 	    --extract 'verification time \(s\): {{verificationTime(s) =~ .+}}' \
 	  # end of 3x setup

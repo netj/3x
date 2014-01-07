@@ -20,7 +20,6 @@
     "requirejs": "2.1.9",
     "recess": "1.1.6",
     "less": "1.4.0",
-    "eco": "1.0.3",
     "coffee-script": "1.6.3"
   }
 }

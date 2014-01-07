@@ -104,7 +104,7 @@ relsymlink extern .build/client/prototype/
 [ -s dist/jquery.js ] || {
     echo >&2 "Building jquery..."
     npm install
-    grunt dist
+    grunt
 }
 )
 
@@ -112,7 +112,7 @@ relsymlink extern .build/client/prototype/
 [ -s dist/minified/jquery.ui.core.min.js ] || {
     echo >&2 "Building jquery-ui..."
     npm install
-    grunt min
+    grunt release
 }
 )
 
@@ -189,7 +189,7 @@ compile-coffee-to . ../src/!(app.build).coffee
 [ -L Font-Awesome/less ] || {
     rm -rf ../src/Font-Awesome
     mkdir -p ../src/Font-Awesome
-    relsymlink extern/Font-Awesome/less ../src/Font-Awesome/
+    relsymlink ../../../extern/Font-Awesome/less ../src/Font-Awesome/
     relsymlink ../src/Font-Awesome/less Font-Awesome/
 }
 for less in ../src/*.less; do

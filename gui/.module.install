@@ -2,6 +2,7 @@
 
 .build/server.js                        $GUIDIR/
 .build/node_modules                     $GUIDIR/
+.build/python-packages                  $GUIDIR/
 views                                   $GUIDIR/
 
 .build/client/index.html                $GUIDIR/files/
