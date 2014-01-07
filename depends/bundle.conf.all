@@ -6,3 +6,4 @@ sqlite3
 nodejs
 GNU-parallel
 GNU-time
+GNU-netcat
