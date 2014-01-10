@@ -92,7 +92,7 @@ case $What in
         echo "$Type" >"$dir"/datatype
         # TODO decide what to do with the other ones not mentioned
         # record schema definition changes
-        echo "$Name=$1" >>.3x/define.changed-input
+        echo "$Name=${1:-}" >>.3x/define.changed-input
         ;;
 
     output)
