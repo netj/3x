@@ -12,6 +12,7 @@ DocumentUpOptions+=(
 common-links() {
     echo '<div class="extra"><a href="https://github.com/'"$GitHubRepo"'"><i class="fa fa-github-alt"></i> Source Code</a></div>'
     echo '<div class="extra"><a href="https://github.com/'"$GitHubRepo"'/issues"><i class="fa fa-bug"></i> Issues</a></div>'
+    echo '<div class="extra"><a href="https://groups.google.com/d/forum/3x-users"><i class="fa fa-comments-o"></i> User Forum</a></div>'
 }
 link() {
     local title=$1 path=$2

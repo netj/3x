@@ -21,6 +21,18 @@
                             .prepend('<i class="fa fa-bug"></i> ', document.createTextNode(" "))
                             .length == 0) return;
                         if (
+                            $("#github-issues").after(
+                                $("#github-issues").clone()
+                                    .attr({id: "google-groups"})
+                                    .find("a")
+                                        .text("User Forum")
+                                        .attr({href: "https://groups.google.com/d/forum/3x-users"})
+                                        .find(".fa").remove().end()
+                                        .prepend('<i class="fa fa-comments-o"></i> ', document.createTextNode(" "))
+                                    .end()
+                            )
+                            .length == 0) return;
+                        if (
                             $("#container")
                             .append(
                                 $('<nav class="footer"> </nav>')
