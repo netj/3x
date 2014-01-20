@@ -84,7 +84,17 @@ cd ..
 mkdir -p .build/client/{prototype,src}
 
 cd client
-#  first generate executable sources
+implicit-dependency() {
+    local f= t=$1; shift
+    for f; do
+        [[ "$f" -nt "$t" ]] || continue
+        touch -r "$f" "$t"
+    done
+}
+implicit-dependency index.html.in   */{body,tab}.html
+implicit-dependency main.coffee.in  */*Section.coffee
+implicit-dependency 3x.less.in      */*.less
+#  first generate from executable sources
 for src in *.in; do
     out=../.build/client/${src%.in}
     [[ "$src" -nt "$out" ]] || continue
