@@ -2,8 +2,6 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2012-10-30
 
-export PATH := $(PWD)/node_modules/.bin:$(PATH)
-
 export BINDIR         := bin
 export TOOLSDIR       := tools
 export LIBDIR         := lib
@@ -45,7 +43,7 @@ $(STAGEDIR)/.build-info.sh: stage
 	    echo 'build_machine=$(shell uname -m)'; \
 	    echo 'build_hostname=$(shell hostname -f)'; \
 	} >$@
-polish: $(STAGEDIR)/.build-info.sh
+$(POLISHED): $(STAGEDIR)/.build-info.sh
 
 # bundled dependencies
 $(BUILDDIR)/timestamp/depends.built: depends/bundle.conf
@@ -125,3 +123,6 @@ $(PACKAGENAME)-docs.diff.md:
 	    README.md docs/*/*.md
 	$(PAGER) $@
 .PHONY: diff-docs $(PACKAGENAME)-docs.diff.md
+
+
+include buildkit/test-with-bats.mk

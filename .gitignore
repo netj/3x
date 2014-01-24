@@ -13,6 +13,6 @@
 !/.depends/*.sh
 !/.depends/*.depends
 
-/test*
+/test-*
 /gh-pages
 /3x-docs.diff.md
