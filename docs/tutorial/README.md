@@ -41,18 +41,19 @@ To keep this tutorial simple, let's assume we already wrote Python code for expe
 To obtain a single measurement with this program, we would a run command such as:
 
 ```bash
-python measure.py quickSort 10 random
+python measure.py quickSort 2000 random
 ```
 
 which outputs, for instance:
 
 ```text
-ratio sorted: 1.0
-sorting time (s): 0.009179
-verification time (s): 0.000225
-input generation time (s): 0.000580
-number of compares: 11440
-number of accesses: 30735
+input sorted ratio: 0.5035
+output sorted ratio: 1.0
+sorting time (s): 0.019361
+verification time (s): 0.000435
+input generation time (s): 0.001514
+number of compares: 26211
+number of accesses: 68608
 ```
 
 
