@@ -55,14 +55,12 @@ dir_pypkgs=python-packages
     if ! $allExists; then
         echo >&2 "Bundling python packages..."
         mkdir -p -- "$dir_pypkgs"
-        if type pip &>/dev/null; then
-            pip install --target "$dir_pypkgs" "${pypkgs[@]}"
-        else
-            curl -sL https://raw.github.com/pypa/pip/master/contrib/get-pip.py |
-            python - --target "$dir_pypkgs" "${pypkgs[@]}"
-            PYTHONPATH="$dir_pypkgs" \
-                python -m pip uninstall -y pip
-        fi
+        [ -s get-pip.py ] ||
+            curl -sRLO https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+        python get-pip.py \
+            --target "$dir_pypkgs" --ignore-installed "${pypkgs[@]}"
+        PYTHONPATH="$dir_pypkgs" \
+            python -m pip uninstall -y pip || true
     fi
 }
 cd ..
