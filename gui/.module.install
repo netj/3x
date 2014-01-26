@@ -4,6 +4,7 @@
 .build/node_modules                     $GUIDIR/
 .build/python-packages                  $GUIDIR/
 views                                   $GUIDIR/
+watch-filesystem-events                 $TOOLSDIR/
 
 .build/client/index.html                $GUIDIR/files/
 .build/client/resource                  $GUIDIR/files/resource

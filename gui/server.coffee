@@ -662,11 +662,7 @@ fsMonitor = null
 do startFSMonitor = ->
     util.log "starting filesystem monitor"
     fsMonitor =
-    p = child_process.spawn "watchmedo", [
-        'shell-command'
-        '--recursive'
-        '--patterns=*'
-        '--command=echo ${watch_event_type} "${watch_src_path}"'
+    p = child_process.spawn "watch-filesystem-events", [
         queueRootDir
     ]
     splitter = p.stdout.pipe(StreamSplitter("\n"))
