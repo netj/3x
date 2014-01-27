@@ -21,5 +21,6 @@ class ChartSection
             toggleOriginY2          : $("#chart-toggle-origin-y2")
             alertChartImpossible    : $("#chart-impossible")
             chartOptions            : $("#chart-options")
+            chartTitle              : $("#chart-title")
 
 )

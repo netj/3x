@@ -1,3 +1,4 @@
+# Define just a necessary construct for all CoffeeScript files, with code between (\ ... ) ?
 define (require) -> (\
 
 $ = require "jquery"
@@ -177,6 +178,8 @@ class ResultsChart extends CompositeElement
         @varX      = @vars[ResultsChart.X_AXIS_ORDINAL]
         @varsPivot = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isNominal ax.type)
         @varsY     = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isRatio   ax.type)
+        # clear title
+        @optionElements.chartTitle?.text("")
         # check if there are more than two units for Y-axis, and discard any variables that violates it
         @varsYbyUnit = _.groupBy @varsY, (col) => col.unit
         if (_.size @varsYbyUnit) > 2
@@ -253,6 +256,9 @@ class ResultsChart extends CompositeElement
         # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
         #TODO @decideColors
         color = d3.scale.category10()
+
+        # f= null
+        # f(1)
 
         intervalContains = (lu, xs...) ->
             (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
@@ -334,7 +340,7 @@ class ResultsChart extends CompositeElement
             # X axis
             @axes.push
                 name: "X"
-                type: axisType @varX.type
+                type: axisType @varX.type # space?
                 unit: @varX.unit
                 columns: [@varX]
                 accessor: accessorFor(@varX)
@@ -421,6 +427,8 @@ class ResultsChart extends CompositeElement
                 y = axisY.scale
                     .range([@height, 0])
                 axisY.label = formatAxisLabel axisY
+                # set up title
+                @optionElements.chartTitle?.text(@varX.name + " v " + @varsY[0]?.name)
                 # draw axis
                 orientation = if i == 0 then "left" else "right"
                 axisY.axis.orient(orientation)
