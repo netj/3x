@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # 3x-import -- Setup a new experiment repository by importing data
 # 
-# > 3x import _3X_ROOT CSVFILE --inputs NAME... --outputs NAME...
+# > 3x import ROOT_PATH CSVFILE --inputs NAME... --outputs NAME...
+# This creates a new experiment repository at ROOT_PATH, importing data from
+# the given CSVFILE.  Column NAMEs in the CSV file must be specified in the
+# order of appearance.  And they must be annotated with --inputs or --outputs
+# to declare whether it's an input or output parameter.
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-01-28
@@ -16,6 +20,8 @@ _3X_ROOT=$1; shift
 3x-init "$_3X_ROOT"
 
 CSVFile=$1; shift
+[[ -e "$CSVFile" ]] ||
+    error "$CSVFile: No such file"
 CSVFile=$(readlink -f "$CSVFile")
 
 cd "$_3X_ROOT"
