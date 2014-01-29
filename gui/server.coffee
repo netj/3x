@@ -305,6 +305,17 @@ cliEnv =  (res, rest...) -> (next) ->
 respondJSON = (res) -> (err, result) ->
     res.json result unless err
 
+respondText = (res) -> (err, lines) ->
+    console.error (typeof lines), lines.length
+    unless err
+        isFirst = yes
+        for line in lines
+            if isFirst
+                isFirst = no
+            else
+                res.send "\n"
+            res.send line
+
 cliSimple = (cmd, args...) ->
     cliBare(cmd, args) (code, err, out) ->
         util.log err unless code is 0
@@ -373,7 +384,7 @@ getOutputs = (res, opts = "-ut") -> (next) ->
         next err, outputs
 
 app.get "/api/results", (req, res) ->
-    args = [] # TODO use a tab separated format directly from 3x-results
+    args = ["-j"] # using JSON format directly from 3x-results/3x-index
     # TODO runs/queue/
     inputs  = (try JSON.parse req.param("inputs") ) ? {}
     outputs = (try JSON.parse req.param("outputs")) ? {}
@@ -383,11 +394,9 @@ app.get "/api/results", (req, res) ->
     for name,exprs of outputs when _.isArray exprs
         for [rel, literal] in exprs
             args.push "#{name}#{rel}#{literal}"
+    res.type "application/json"
     cli(res, "3x-results", args
-        , normalizeNamedColumnLines (line) ->
-                [run, columns...] = line.split /\s+/
-                ["#{RUN_COLUMN_NAME}=#{run}", columns...] if run
-    ) (respondJSON res)
+    ) (respondText res)
 
 
 formatStatusTable = (lines, firstColumnName = "isCurrent", indexColumnName = null) ->

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 3x-results -- enumerate experiment outputs with inputs
 # 
-# > 3x results [-t] [RUN]... QUERY...
+# > 3x results [-j] [RUN]... QUERY...
 # 
 # You can specify from which RUNs you want to enumerate the results.
 # Otherwise, results from all runs will be filtered and listed.
@@ -24,6 +24,16 @@ set -eu
 
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
+
+indexCommand=query
+while getopts "j" o; do
+    case $o in
+        j)
+            indexCommand=query-json
+            ;;
+    esac
+done
+shift $(( $OPTIND - 1 ))
 
 verboseFiltering=
 verbosity-isnt +5 || verboseFiltering="bash -x"
@@ -56,7 +66,11 @@ args=($(normalize-inputs -p "$@" | grep -v '=$' || true))
 
 ## try index first
 set -o pipefail
-if ! 3x-index query "$@"; then
+if ! 3x-index $indexCommand "$@"; then
+
+    case $indexCommand in query) ;; *)
+        error "JSON output unsupported without 3x-index"
+    esac
 
 ## and fallback to scanning raw data
 msg +2 "Compiling filter $*"

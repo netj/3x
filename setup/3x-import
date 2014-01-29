@@ -64,12 +64,22 @@ set --
 # declare input values from the imported data
 tmp=$(mktemp "${TMPDIR:-/tmp}/3x-import.XXXXXX")
 trap 'rm -rf $tmp' EXIT
-3x-results run >"$tmp"
+3x-results -j run >"$tmp"
 for input in "${inputs[@]}"; do
     name=$input; name=${name%%:*}; name=${name%%(*)}
-    3x-define -f input "$input" $(
-        sed <"$tmp" 's/.*[[:space:]]'"$name"'=\([^[:space:]]*\).*/\1/g' |
-        sort -u
-    )
+    coffee -e '
+        [file, input, name] = process.argv[5..]
+        {execFile}  = require "child_process"
+        _ = require "underscore"
+        results = JSON.parse ((require "fs").readFileSync file)
+        i = results.names.indexOf name
+        values = _.uniq (row[i] for row in results.rows)
+        execFile "3x-define", ["-f", "input", input, values...],
+            (err, stdout, stderr) ->
+                console.log stdout
+                if err?
+                    console.error stderr
+                    process.exit 4
+    ' -- "$tmp" "$input" "$name"
 done
 3x-define sync

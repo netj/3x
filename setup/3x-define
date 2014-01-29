@@ -160,7 +160,7 @@ case $What in
             file)
                 [ $# -gt 0 ] || usage "$0" "Missing FILENAME"
                 [ $# -eq 1 ] || usage "$0" "Too many FILENAMEs"
-                [ -n "$Type" ] || usage "$0" "Missing MIMETYPE"
+                [ -n "$Type" ] || usage "$0" "Missing MIMETYPE after $Name"
                 checkIfMimeTypeIsValid "$Type" "$Type"
                 [ -z "$Unit" ] || usage "$0" "($Unit): file output variables cannot have UNIT defined"
                 mkdir -p "$dir"
