@@ -16,7 +16,7 @@
 # Created: 2013-03-08
 set -eu
 
-[ $# -gt 0 ] || usage "$0" "Specify what to do with the inex"
+[ $# -gt 0 ] || usage "$0" "Specify what to do with the index"
 
 BATCHSIZE=256
 # XXX only recent version (>= 3.7.11) of SQLite supports inserting multiple VALUES
@@ -146,6 +146,27 @@ case $Cmd in
         find-rundirs "$_3X_ROOT"/run |
         sed 's:/output$::' |
         xargs -- 3x-index update
+        ;;
+
+    import-csv)
+        CSVFile=$1; shift
+        # TODO figure out column names from CSV header
+        [[ $# -gt 0 ]] ||
+            error "Column NAMEs in the CSVFILE must be specified in the order of appearance"
+        types=()
+        for fieldName; do
+            types+=($(sql-type $fieldName))
+        done
+        {
+            csvId="run/imported/$(date +%Y%m%d%H%M%S)-$(basename "$CSVFile")"
+            mkdir -p "$(dirname "$csvId")"
+            cp -f "$CSVFile" "$csvId"
+            echo "BEGIN TRANSACTION;"
+            convert-csv-to-sql-inserts "$CSVFile" \
+                "INSERT OR REPLACE INTO run ($(printf "_%s,\t" "$@") id) VALUES " \
+                "$csvId-" "${types[@]}"
+            echo "COMMIT;"
+        } | sqlite
         ;;
 
     drop)

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# 3x-import -- Setup a new experiment repository by importing data
+# 
+# > 3x import _3X_ROOT CSVFILE --inputs NAME... --outputs NAME...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-01-28
+set -eu
+shopt -s extglob
+
+[ $# -gt 0 ] || usage "$0" "_3X_ROOT is missing"
+[ $# -gt 1 ] || usage "$0" "CSVFILE is missing"
+
+_3X_ROOT=$1; shift
+
+3x-init "$_3X_ROOT"
+
+CSVFile=$1; shift
+CSVFile=$(readlink -f "$CSVFile")
+
+cd "$_3X_ROOT"
+
+# define input and output parameters
+params=() inputs=()
+argType=output
+for arg; do
+    case $arg in 
+        --inputs|--outputs)
+            argType=${arg#--}
+            argType=${argType%s}
+            continue
+            ;;
+        --*)
+            error "$arg: unknown argument"
+            ;;
+    esac
+    # TODO datatype, unit
+    case $argType in
+        input)
+            3x-define input "$arg" .
+            inputs+=("$arg")
+            ;;
+
+        output)
+            3x-define output "$arg" extract '' '' ''
+            ;;
+    esac
+    name=$arg; name=${name%%:*}; name=${name%%(*)}
+    params+=("$name")
+done
+3x-define sync
+set --
+[[ ${#params[@]} -eq 0 ]] || set -- "$@" "${params[@]}"
+
+# import data from given CSV file
+3x-index import-csv "$CSVFile" "$@"
+
+# declare input values from the imported data
+tmp=$(mktemp "${TMPDIR:-/tmp}/3x-import.XXXXXX")
+trap 'rm -rf $tmp' EXIT
+3x-results run >"$tmp"
+for input in "${inputs[@]}"; do
+    name=$input; name=${name%%:*}; name=${name%%(*)}
+    3x-define -f input "$input" $(
+        sed <"$tmp" 's/.*[[:space:]]'"$name"'=\([^[:space:]]*\).*/\1/g' |
+        sort -u
+    )
+done
+3x-define sync

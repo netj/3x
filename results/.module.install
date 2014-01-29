@@ -4,6 +4,7 @@ compile-filter          $TOOLSDIR/
 3x-index                $TOOLSDIR/
 compile-where           $TOOLSDIR/
 sql-vocabs.sh           $TOOLSDIR/
+convert-csv-to-sql-inserts $TOOLSDIR/
 
 find-rundirs            $TOOLSDIR/
 find-run-archive.sh     $TOOLSDIR/

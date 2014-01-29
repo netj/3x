@@ -1,4 +1,5 @@
 3x-setup                $TOOLSDIR/
+3x-import               $TOOLSDIR/
 3x-define               $TOOLSDIR/
 
 3x-init                 $TOOLSDIR/

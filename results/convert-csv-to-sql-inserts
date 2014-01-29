@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+# convert-csv-to-sql-inserts -- SQL INSERT statement generator from CSV data
+# > convert-csv-to-sql-inserts  CVSFILE  INSERT_STMT  ID_PREFIX  SQL_TYPE...
+# where SQL_TYPE is either TEXT or NUM.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-01-28
+import sys, re
+import csv
+
+BATCH_SIZE = 256
+
+formatterByType = {
+    "TEXT": (lambda v: "'%s'" % re.sub(r"'", r"''", v) if v is not None else "NULL"),
+    "NUM" : (lambda v: str(v) if v is not None else "NULL"),
+}
+
+csvfile = sys.argv[1]
+sql_insert_stmt = sys.argv[2]
+row_id_prefix = sys.argv[3]
+formatter = [formatterByType[ty] for ty in sys.argv[4:] + ["TEXT"]]
+
+with open(csvfile, "rb") as csvfile:
+    # take a sample of the CSV file, and guess some things
+    sample = csvfile.read(1024)
+    csvfile.seek(0)
+    csvsniffer = csv.Sniffer()
+    dialect = csvsniffer.sniff(sample)
+    has_header = csvsniffer.has_header(sample)
+    # read each row of the CSV data
+    csvdata = csv.reader(csvfile, dialect)
+    first = True
+    row_num = 1
+    for row in csvdata:
+        if has_header:
+            has_header = False
+            continue
+        if first:
+            print sql_insert_stmt
+            first = False
+        else:
+            if row_num % BATCH_SIZE == 0:
+                print ";"
+                print sql_insert_stmt
+            else:
+                print ","
+        row += [row_id_prefix + str(row_num)]
+        formatted = (formatter[i](col) for i, col in enumerate(row))
+        print ("(%s)" % (", ".join(formatted))),
+        row_num += 1
+    print ";"
