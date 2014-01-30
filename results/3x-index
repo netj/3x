@@ -110,8 +110,8 @@ case $Cmd in
         # output query result in JSON format
         coffee -e '
 sqlite3 = require "sqlite3"
-[sql] = process.argv[5..]
-index = new sqlite3.Database "#{process.env._3X_ROOT}/.3x/index.db"
+[pathToIndex, sql] = process.argv[5..]
+index = new sqlite3.Database pathToIndex
 index.all sql, (err, rawRows) ->
     if err?
         console.error err
@@ -130,7 +130,8 @@ index.all sql, (err, rawRows) ->
                     row[nameIdx[name]] = value
                 row
     console.log JSON.stringify {names, rows}
-' -- "SELECT $cols FROM run $where"
+' -- "$_3X_ROOT/.3x/index.db" \
+    "SELECT $cols FROM run $where"
         ;;
 
     update)
@@ -152,6 +153,7 @@ index.all sql, (err, rawRows) ->
                 else
                     echo ","
                 fi
+                # TODO try to detect malformed input/output values
                 (
                     cd "$run"
                     id=$(pwd -P); id=${id#$_3X_ROOT/}

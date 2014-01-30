@@ -25,11 +25,11 @@ set -eu
 _3X_ROOT=$(3x-findroot)
 export _3X_ROOT
 
-indexCommand=query
+jsonOutput=false
 while getopts "j" o; do
     case $o in
         j)
-            indexCommand=query-json
+            jsonOutput=true
             ;;
     esac
 done
@@ -66,37 +66,34 @@ args=($(normalize-inputs -p "$@" | grep -v '=$' || true))
 
 ## try index first
 set -o pipefail
-if ! 3x-index $indexCommand "$@"; then
-
-    case $indexCommand in query) ;; *)
-        error "JSON output unsupported without 3x-index"
-    esac
-
-## and fallback to scanning raw data
-msg +2 "Compiling filter $*"
-filter=$(mktemp ${TMPDIR:-/tmp}/3x-results-filter.XXXXXX)
-trap "rm -f $filter" EXIT
-compile-filter "$@" >"$filter"
-chmod +x "$filter"
-if [ $# -gt 0 ]; then
-    findPredicate=(-exec $verboseFiltering "$filter" {} \;)
+if $jsonOutput; then
+    exec 3x-index query-json "$@"
 else
-    findPredicate=(-true)
+    if ! 3x-index query "$@"; then
+        ## and fallback to scanning raw data
+        msg +2 "Compiling filter $*"
+        filter=$(mktemp ${TMPDIR:-/tmp}/3x-results-filter.XXXXXX)
+        trap "rm -f $filter" EXIT
+        compile-filter "$@" >"$filter"
+        chmod +x "$filter"
+        if [ $# -gt 0 ]; then
+            findPredicate=(-exec $verboseFiltering "$filter" {} \;)
+        else
+            findPredicate=(-true)
+        fi
+        ## find matching inputs to get outputs
+        msg +1 "Filtering results with $*"
+        find-rundirs "${runs[@]}" -- "${findPredicate[@]}" |
+        {
+            cd "$_3X_ROOT"
+            while read -r run; do
+                output=$run/output
+                input=$run/input
+                [ -r "$output" ] || continue
+                # TODO support a plain tab separated format
+                echo "$run"$'\t'"$(tr '\n' '\t' <"$output")$((sort | tr '\n' '\t') <"$input")"
+            done
+        }
+    fi |
+    if [ -t 1 ]; then column -t; else cat; fi
 fi
-
-## find matching inputs to get outputs
-msg +1 "Filtering results with $*"
-find-rundirs "${runs[@]}" -- "${findPredicate[@]}" |
-{
-    cd "$_3X_ROOT"
-    while read -r run; do
-        output=$run/output
-        input=$run/input
-        [ -r "$output" ] || continue
-        # TODO support a plain tab separated format
-        echo "$run"$'\t'"$(tr '\n' '\t' <"$output")$((sort | tr '\n' '\t') <"$input")"
-    done
-}
-
-fi |
-if [ -t 1 ]; then column -t; else cat; fi
