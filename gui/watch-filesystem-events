@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -u
 # watch-filesystem-events -- Monitor filesystem events and log
 # Usage: watch-filesystem-events PATH [IGNORE_PATTERN]...
 #
