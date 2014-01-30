@@ -23,7 +23,7 @@ class StatusTable extends CompositeElement
 
         @initialized = no
         @conditions.on "initialized", (e) =>
-            @initialized = yes
+            @initialized = yes if @queueName?
             _.defer @display
 
         # intialize UI and hook events
@@ -78,6 +78,7 @@ class StatusTable extends CompositeElement
             log "status loading queue #{queueName}"
             @queueName = queueName
             @queueId = "run/queue/#{queueName}"
+            @initialized = yes
             do @display
         # initialize results table popover's target queue
         @resultsActionPopover?.find(".queue-name").text(@queueId)
