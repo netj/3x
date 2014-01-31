@@ -8,7 +8,7 @@ ResultsSection = require "ResultsSection" # FIXME get rid of inter-section depen
 
 class ChartSection
     @chart: new ChartView $("#chart-body"),
-        $("#chart-type"),
+        $("#chart-type .chart-types-list"),
         $("#chart-axis-controls"),
         ResultsSection.table,
             toggleInterpolateLines  : $("#chart-toggle-interpolate-lines")
