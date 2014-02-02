@@ -452,6 +452,26 @@ class ResultsChart extends CompositeElement
         do => ## Setup and draw X axis
             axisX = @axes[0]
             axisX.domain = entireRowIndexes.map(axisX.accessor)
+
+            getIndicesInGroup = (domain) =>
+                hashmap = {}
+                toReturn = []
+                for item in domain
+                    hashmap[item] ?= -1
+                    hashmap[item]++
+                    toReturn.push hashmap[item]
+                toReturn
+
+            getGroupSizes = (domain) =>
+                domainCounts = _.countBy(domain, (name) => _.identity name)
+                toReturn = []
+                for item in domain
+                    toReturn.push domainCounts[item]
+                toReturn
+
+            axisX.indicesInGroup = getIndicesInGroup axisX.domain
+            axisX.groupSizes = getGroupSizes axisX.domain
+
             # if duplicate domain names, add incremental index to them
             # domainCounts = _.countBy(axisX.domain, (name) => _.identity name)
             # for key, value of domainCounts
@@ -467,11 +487,12 @@ class ResultsChart extends CompositeElement
                     # axisX.domain = ((if domainCounts[name]? then name + ++domainCounts[name] else name) for name in axisX.domain)
                     # set up scale function
                     x = axisX.scale = d3.scale.ordinal()
-                        .domain([0..axisX.domain.length - 1])
+                        # .domain([0..axisX.domain.length - 1])
+                        .domain(axisX.domain)
                         .rangeRoundBands([0, @width], .5)
                     # xData = axisX.accessor
                     axisX.coord = (d) -> x(d)
-                    axisX.width = x.rangeBand() / @varsY.length
+                    axisX.barWidth = x.rangeBand() / @varsY.length
                 when "Line"
                     x = axisX.scale = d3.scale.ordinal()
                         .domain(axisX.domain)
@@ -490,7 +511,7 @@ class ResultsChart extends CompositeElement
             axisX.axis = d3.svg.axis()
                 .scale(axisX.scale)
                 .orient("bottom")
-                .tickFormat((ix) => if @chartType == "Bar" then axisX.domain[ix] else ix)
+                # .tickFormat((ix) => if @chartType == "Bar" then axisX.domain[ix] else ix)
             @svg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0,#{@height})")
@@ -528,7 +549,7 @@ class ResultsChart extends CompositeElement
         series = 0
         axisX = @axes[0]
         xCoord = axisX.coord
-        for yVar, ySeries in @varsY
+        for yVar in @varsY
             axisY = @axisByUnit[yVar.unit]
             y = axisY.scale; yData = accessorFor(yVar)
             yCoord = (d) -> y(yData(d))
@@ -542,9 +563,9 @@ class ResultsChart extends CompositeElement
                             .data(dataForCharting)
                           .enter().append("rect")
                             .attr("class", "databar series-#{series}")
-                            .attr("width", axisX.width)
-                            .attr("x", (d) => return xCoord(d) + axisX.width * ySeries)
-                            .attr("y", (d) => return yCoord(d))
+                            .attr("width", (d, ix) => axisX.barWidth / axisX.groupSizes[ix])
+                            .attr("x", (d, ix) => xCoord(d) + axisX.barWidth * axisX.indicesInGroup[ix] / axisX.groupSizes[ix])
+                            .attr("y", (d) => yCoord(d))
                             .attr("height", (d) => @height - yCoord(d))
                             .style("fill", seriesColor)
                             # popover
