@@ -480,26 +480,15 @@ class ResultsChart extends CompositeElement
             axisX.indicesInGroup = getIndicesInGroup axisX.domain
             axisX.groupSizes = getGroupSizes axisX.domain
 
-            # if duplicate domain names, add incremental index to them
-            # domainCounts = _.countBy(axisX.domain, (name) => _.identity name)
-            # for key, value of domainCounts
-            #     if value == 1 then delete domainCounts[key] else domainCounts[key] = 0
-            # axisX.domain = ((if domainCounts[name]? then name+domainCounts[name] else name) for name in axisX.domain)
-            # based on the X axis type, decide its scale
             switch @chartType
                 when "Bar"
-                    # if duplicate domain names, add incremental index to them
-                    # domainCounts = _.countBy(axisX.domain, (name) => _.identity name)
-                    # for key, value of domainCounts
-                    #     if value == 1 then delete domainCounts[key] else domainCounts[key] = 0
-                    # axisX.domain = ((if domainCounts[name]? then name + ++domainCounts[name] else name) for name in axisX.domain)
                     # set up scale function
                     x = axisX.scale = d3.scale.ordinal()
-                        # .domain([0..axisX.domain.length - 1])
                         .domain(axisX.domain)
                         .rangeRoundBands([0, @width], .5)
-                    # xData = axisX.accessor
-                    axisX.coord = (d) -> x(d)
+                    # d is really the index; xData grabs the value for that index
+                    axisX.coord = (d) -> x(xData(d))
+                    xData = axisX.accessor
                     axisX.barWidth = x.rangeBand() / @varsY.length
                 when "Line"
                     x = axisX.scale = d3.scale.ordinal()
@@ -512,7 +501,6 @@ class ResultsChart extends CompositeElement
                         .range([0, @width])
                     xData = axisX.accessor
                     axisX.coord = (d) -> x(xData(d))
-                    # @chartType = "Scatter"
                 else
                     error "Unsupported variable type (#{axis.type}) for X axis", axisX.column
             axisX.label = formatAxisLabel axisX
