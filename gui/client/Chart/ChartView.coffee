@@ -83,7 +83,7 @@ class ResultsChart extends CompositeElement
             $(forEachAxisOptionElement "toggleOrigin", "origin", installToggleHandler)
                 .toggleClass("disabled", true)
 
-    @AXIS_NAMES: "X Y1 Y2".trim().split(/\s+/)
+    @AXIS_NAMES: "X Y1".trim().split(/\s+/)
 
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axisNames
