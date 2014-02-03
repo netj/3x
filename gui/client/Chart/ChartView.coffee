@@ -186,6 +186,7 @@ class ResultsChart extends CompositeElement
             # below logic will add to the axis candidates any expanded input variable or any rendered measured output variable
             # columns are not rendered if they are unchecked in the left-hand panel
             (col for col in @table.columnsRendered when col.isExpanded or col.isMeasured)
+        axisCandidates[ord].unit = null for ax,ord in axisCandidates when not ax.unit? or not ax.unit.length? or ax.unit.length is 0
         nominalVariables =
             (axisCand for axisCand in axisCandidates when utils.isNominal axisCand.type)
         ratioVariables =
@@ -206,8 +207,7 @@ class ResultsChart extends CompositeElement
         defaultAxes[ResultsChart.Y_AXIS_ORDINAL] = ratioVariables[0]?.name
         if @axisNames?
             # find if all axisNames are valid, don't appear more than once, or make them default
-            for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or
-                    not axisCandidates.some (col) => col.name is name)
+            for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or not axisCandidates.some (col) => col.name is name)
                 @axisNames[ord] = defaultAxes[ord] ? null
             # discard any null/undefined elements
             @axisNames = @axisNames.filter (name) => name?
@@ -216,6 +216,9 @@ class ResultsChart extends CompositeElement
             @axisNames = defaultAxes
         # collect ResultsTable columns that corresponds to the @axisNames
         @vars = @axisNames.map (name) => @table.columns[name]
+        # standardize no-units so that "undefined", "null", and an empty string all have null unit
+        # TODO: don't set units to null in 2 different places
+        @vars[ord].unit = null for ax,ord in @vars when not ax.unit? or not ax.unit.length? or ax.unit.length is 0
         @varX      = @vars[ResultsChart.X_AXIS_ORDINAL]
         # pivot variables in an array if there are additional nominal variables
         @varsPivot = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isNominal ax.type)
@@ -244,15 +247,15 @@ class ResultsChart extends CompositeElement
         # clear title
         @optionElements.chartTitle?.text("")
         # TODO: this won't be necessary for now...
-        # check if there are more than two units for Y-axis, and discard any variables that violates it
+        # check if there is more than 1 unit for Y-axis, and discard any variables that violates it
         @varsYbyUnit = _.groupBy @varsY, (col) => col.unit
-        if (_.size @varsYbyUnit) > 2
+        if (_.size @varsYbyUnit) > 1
             @varsYbyUnit = {}
             for ax,ord in @varsY
                 u = ax.unit
                 (@varsYbyUnit[u] ?= []).push ax
                 # remove Y axis variable if it uses a third unit
-                if (_.size @varsYbyUnit) > 2
+                if (_.size @varsYbyUnit) > 1
                     delete @varsYbyUnit[u]
                     @varsY[ord] = null
                     ord2 = @vars.indexOf ax
@@ -262,7 +265,8 @@ class ResultsChart extends CompositeElement
         # TODO validation of each axis type with the chart type
         # find out remaining variables: all the axis candidates that haven't been used as in @axisNames yet
         remainingVariables = (
-                if @axisNames.length < 3 or (_.size @varsYbyUnit) < 2
+                # if @axisNames.length < 3 or (_.size @varsYbyUnit) < 2
+                if @axisNames.length < 2
                     axisCandidates
                 else # filter variables in a third unit when there're already two axes
                     ax for ax in axisCandidates when @varsYbyUnit[ax.unit]? or utils.isNominal ax.type
@@ -415,6 +419,7 @@ class ResultsChart extends CompositeElement
                 accessor: accessorFor(@varX)
             # Y axes: analyze the extent of Y axes data (single or dual unit)
             for vY in @varsY
+                # if this axis has the same unit as the first y-axis, then skip
                 continue if @axes.length > 1 and vY.unit is @axes[1].unit
                 i = @axes.length
                 @axes.push axisY =
