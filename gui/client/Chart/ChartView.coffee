@@ -146,7 +146,7 @@ class ResultsChart extends CompositeElement
     handleChartTypeChange: (name, $axisControl) =>
         $axisControl.find(".chart-name").text(name)
         @chartType = name.trim()
-        console.log("Action Fired")
+        @chartOptions.changedChartType = true
         do @persist
         do @initializeAxes
 
@@ -227,8 +227,16 @@ class ResultsChart extends CompositeElement
         if utils.isRatio @varX.type
             @chartType = "Scatter"
         else
-            @chartType = "Bar" if @chartType != "Line"
             chartTypes = "Line Bar".trim().split(/\s+/)
+            noSpecifiedChartType = not @chartType?
+            @chartType = "Bar" if @chartType != "Line"
+            # when local storage does not specify origin toggle value, or
+            # if just changed chart types, then insist first view of bar chart is grounded at 0
+            # and make sure that button is toggled down
+            if @chartOptions.changedChartType or (@chartType == "Bar" and noSpecifiedChartType)
+                @chartOptions["originY1"] = true
+                @optionElements.toggleOriginY1.toggleClass("active", true)
+        @chartOptions.changedChartType = false
         
         $axisControl = @typeSelection.closest("#chart-type")
         $axisControl.find(".chart-name").text(" " + @chartType)
@@ -320,6 +328,7 @@ class ResultsChart extends CompositeElement
         #TODO @decideColors
         color = d3.scale.category10()
 
+        # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
         intervalContains = (lu, xs...) ->
             (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
         axisType = (ty) -> if utils.isNominal ty then "nominal" else if utils.isRatio ty then "ratio"
@@ -379,7 +388,9 @@ class ResultsChart extends CompositeElement
                  .join("") + """</table>"""
         pickScale = (axis) =>
             dom = d3.extent(axis.domain)
+            # here is where you ground at 0 if origin selected - by adding it to the extent
             dom = d3.extent(dom.concat([0])) if @chartOptions["origin#{axis.name}"]
+            # if the extent min and max are the same, extend each by 1
             if dom[0] == dom[1] or Math.abs (dom[0] - dom[1]) == Number.MIN_VALUE
                 dom[0] -= 1
                 dom[1] += 1
@@ -416,9 +427,6 @@ class ResultsChart extends CompositeElement
                 for col in axisY.columns
                     extent = d3.extent(extent.concat(d3.extent(entireRowIndexes, accessorFor(col))))
                 axisY.domain = extent
-                # barchart requires grounding primary y axis at 0
-                if @axes[1]? then if @axes[1].domain[0] > 0 then @axes[1].domain[0] = 0
-                if @axes[1]? then if @axes[1].domain[1] < 0 then @axes[1].domain[1] = 0
         do => ## Determine the chart dimension and initialize the SVG root as @svg
             chartBody = d3.select(@baseElement[0])
             @baseElement.find("style").remove().end().append(ResultsChart.SVG_STYLE_SHEET)
