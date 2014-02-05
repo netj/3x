@@ -35,7 +35,8 @@ statlist="$tmp"/filestats
 find -H "$@" -type f >"$filelist" || true
 
 # remove any existing write-protection
-xargs chmod +w <"$filelist"
+tr '\n' '\0' <"$filelist" |
+xargs -0 chmod +w
 
 # see which files are executables to archive separately from normal files
 # (hardlink copies cannot have separate permission modes, so when two files
