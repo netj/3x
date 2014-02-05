@@ -13,7 +13,7 @@ exec "setlocal path+=".join(map(modules,'$SourceRoot."/".v:val'), ",")
 setlocal autowrite undofile
 
 " Build with Cmd-Enter
-nmap <buffer> <D-CR> :make -C $SourceRoot install PREFIX=~<CR>
+nmap <buffer> <D-CR> :make -C $SourceRoot polish<CR>
 imap <buffer> <D-CR> <C-\><C-N><D-CR><CR>gi
 
 " .module.* involves mostly local stuff
