@@ -192,10 +192,10 @@ index.all sql, (err, rawRows) ->
         for fieldName; do
             types+=($(sql-type $fieldName))
         done
+        csvId="run/imported/$(date +%Y%m%d%H%M%S)-$(basename "$CSVFile")"
+        mkdir -p "$(dirname "$csvId")"
+        cp -f "$CSVFile" "$csvId"
         {
-            csvId="run/imported/$(date +%Y%m%d%H%M%S)-$(basename "$CSVFile")"
-            mkdir -p "$(dirname "$csvId")"
-            cp -f "$CSVFile" "$csvId"
             echo "BEGIN TRANSACTION;"
             convert-csv-to-sql-inserts "$CSVFile" \
                 "INSERT OR REPLACE INTO run ($(printf "_%s,\t" "$@") id) VALUES " \
