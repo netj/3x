@@ -428,7 +428,32 @@ class ResultsChart extends CompositeElement
                     .range([@height, 0])
                 axisY.label = formatAxisLabel axisY
                 # set up title
-                @optionElements.chartTitle?.text(@varX.name + " v " + @varsY[0]?.name)
+                @optionElements.chartTitle?.html(
+                    # TODO move this code to a model class, e.g., ResultsQuery
+                    """
+                    <strong>#{@varsY[0]?.name}</strong>
+                    by <strong>#{@varX.name}</strong> #{
+                        if @varsPivot.length > 0
+                            "for each #{
+                                ("<strong>#{name}</strong>" for {name} in @varsPivot
+                                ).join ", "}"
+                        else ""
+                    } #{
+                        # XXX remove these hacks into ResultsSection, InputsView, OutputsView
+                        {inputs,outputs} = _3X_.ResultsSection
+                        filters = (
+                            for name,values of inputs.menuItemsSelected when values?.length > 0
+                                "<strong>#{name}=#{values.join(",")}</strong>"
+                        ).concat(
+                            for name,filter of outputs.menuFilter when filter?
+                                "<strong>#{name}#{outputs.constructor.serializeFilter filter}</strong>"
+                        )
+                        if filters.length > 0
+                            "<br>(#{filters.join(" and ")})"
+                        else ""
+                    }
+                    """
+                )
                 # draw axis
                 orientation = if i == 0 then "left" else "right"
                 axisY.axis.orient(orientation)

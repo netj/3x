@@ -58,6 +58,9 @@ class MeasurementsUI extends MenuDropdown
         super()
         localStorage["menuDropdownFilter_#{@menuName}"] = JSON.stringify @menuFilter
 
+    # XXX create class Filter instead of exposing through OutputsView
+    @serializeFilter: serializeFilter
+
     load: =>
         $.getJSON("#{_3X_.BASE_URL}/api/outputs")
             .success(@initialize)
