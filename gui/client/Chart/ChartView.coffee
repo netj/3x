@@ -69,7 +69,7 @@ class ResultsChart extends CompositeElement
         # vocabularies for axis options
         forEachAxisOptionElement = (prefix, chartOptionPrefix, job) =>
             for axisName in ResultsChart.AXIS_NAMES
-                optionKey = chartOptionPrefix+axisName
+                optionKey = chartOptionPrefix + axisName
                 job optionKey, @optionElements["#{prefix}#{axisName}"], axisName
 
         installToggleHandler "interpolateLines", @optionElements.toggleInterpolateLines
@@ -140,7 +140,7 @@ class ResultsChart extends CompositeElement
         e.preventDefault()
         $this = $(e.target)
         $axisControl = $this.closest("#chart-type")
-        name = $this.text()
+        name = $this.closest("a").text()
         action name, $axisControl, $this, e
 
     handleChartTypeChange: (name, $axisControl) =>
@@ -226,12 +226,17 @@ class ResultsChart extends CompositeElement
         # TODO: there should only be 1 y-axis variable for now
         @varsY     = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isRatio   ax.type)
         # establish which chart type we're using
-        chartTypes = ["Scatter"]
-        if utils.isRatio @varX.type
-            @chartType = "Scatter"
+        chartTypes = "Line Bar".trim().split(/\s+/)
+        noSpecifiedChartType = not @chartType?
+        # save original type because we might want to display x-axis either as nominal or as number/ratio depending on chart type chosen
+        @varX.originalType ?= @varX.type
+        if utils.isRatio @varX.originalType
+            chartTypes.push "Scatter"
+            # Keep it a scatterplot
+            @chartType = "Scatter" if noSpecifiedChartType
+            # If not a scatterplot, make the x variable nominal/string
+            @varX.type = if @chartType != "Scatter" then "nominal" else @varX.originalType
         else
-            chartTypes = "Line Bar".trim().split(/\s+/)
-            noSpecifiedChartType = not @chartType?
             @chartType = "Bar" if @chartType != "Line"
             # when local storage does not specify origin toggle value, or
             # if just changed chart types, then insist first view of bar chart is grounded at 0
@@ -495,6 +500,7 @@ class ResultsChart extends CompositeElement
                     axisX.coord = (d) -> x(xData(d))
                     xData = axisX.accessor
                     axisX.barWidth = x.rangeBand() / @varsY.length
+                    axisX.seriesOffset = axisX.barWidth / Object.keys(_this.dataBySeries).length
                 when "Line"
                     x = axisX.scale = d3.scale.ordinal()
                         .domain(axisX.domain)
@@ -502,6 +508,9 @@ class ResultsChart extends CompositeElement
                     xData = axisX.accessor
                     axisX.coord = (d) -> x(xData(d)) + x.rangeBand()/2
                 when "Scatter"
+                    # convert axisX.domain to ints if strings
+                    axisX.domain = axisX.domain.map((i) -> +i)
+                    # axisX.domain = _.map(axisX.domain, function(i){ return +i; });
                     x = axisX.scale = pickScale(axisX).nice()
                         .range([0, @width])
                     xData = axisX.accessor
@@ -565,7 +574,7 @@ class ResultsChart extends CompositeElement
                           .enter().append("rect")
                             .attr("class", "databar series-#{series}")
                             .attr("width", (d, ix) => axisX.barWidth / axisX.groupSizes[ix])
-                            .attr("x", (d, ix) => xCoord(d) + axisX.barWidth * axisX.indicesInGroup[ix] / axisX.groupSizes[ix])
+                            .attr("x", (d, ix) => xCoord(d) + (series * axisX.seriesOffset) + axisX.barWidth * axisX.indicesInGroup[ix] / axisX.groupSizes[ix])
                             .attr("y", (d) => yCoord(d))
                             .attr("height", (d) => @height - yCoord(d))
                             .style("fill", seriesColor)
@@ -657,5 +666,8 @@ class ResultsChart extends CompositeElement
            ?.toggleClass("disabled", isLineChartDisabled or @chartOptions.hideLines)
             .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
 
-
+        # Reset type property for variables
+        for ax, ord in @vars
+            @vars[ord].type = ax.originalType if ax.originalType?
+            @vars[ord].originalType = null if ax.originalType?
 )
