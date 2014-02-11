@@ -10,9 +10,19 @@ import csv
 
 BATCH_SIZE = 256
 
+def formatString(v):
+    if v is not None:
+        return "'%s'" % re.sub(r"'", r"''", v)
+    else:
+        return "NULL"
+def formatNumber(v):
+    try:
+        return str(float(str(v)))
+    except ValueError:
+        return "NULL"
 formatterByType = {
-    "TEXT": (lambda v: "'%s'" % re.sub(r"'", r"''", v) if v is not None else "NULL"),
-    "NUM" : (lambda v: str(v) if v is not None else "NULL"),
+    "TEXT": formatString,
+    "NUM" : formatNumber,
 }
 
 csvfile = sys.argv[1]
@@ -45,7 +55,8 @@ with open(csvfile, "rb") as csvfile:
             else:
                 print ","
         row += [row_id_prefix + str(row_num)]
-        formatted = (formatter[i](col) for i, col in enumerate(row))
+        formatted = (fmt(row[i]) if i < len(row) else "NULL"
+                for i, fmt in enumerate(formatter))
         print ("(%s)" % (", ".join(formatted))),
         row_num += 1
     print ";"
