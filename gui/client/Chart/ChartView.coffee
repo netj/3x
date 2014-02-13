@@ -19,21 +19,31 @@ class ResultsChart extends CompositeElement
     constructor: (@baseElement, @typeSelection, @axesControl, @table, @optionElements = {}) ->
         super @baseElement
 
+        # use local storage to remember previous axes
         @axisNames = try JSON.parse localStorage["chartAxes"]
+        @chartType = try JSON.parse localStorage["chartType"]
+
+        # axis-change are the currently used axis pickers; axis-add is the 1 that lets you add more (and has a ...)
         @axesControl
             .on("click", ".axis-add    .axis-var", @actionHandlerForAxisControl @handleAxisAddition)
             .on("click", ".axis-change .axis-var", @actionHandlerForAxisControl @handleAxisChange)
             .on("click", ".axis-change .axis-remove", @actionHandlerForAxisControl @handleAxisRemoval)
 
+        @typeSelection
+            .on("click", ".chart-type-li", @actionHandlerForChartTypeControl @handleChartTypeChange)
+
         @table.on "changed", @initializeAxes
         @table.on "updated", @display
 
+        # if user resizes window, call display at most once every 100 ms
         $(window).resize(_.throttle @display, 100)
 
         # hide all popover when not clicked on one
         $('html').on("click", (e) =>
             if $(e.target).closest(".dot, .popover").length == 0
                 @baseElement.find(".dot").popover("hide")
+            if $(e.target).closest(".databar, .popover").length == 0
+                @baseElement.find(".databar").popover("hide")
         )
         # enable nested popover on-demand
         @baseElement.on("click", ".popover [data-toggle='popover']", (e) =>
@@ -59,7 +69,7 @@ class ResultsChart extends CompositeElement
         # vocabularies for axis options
         forEachAxisOptionElement = (prefix, chartOptionPrefix, job) =>
             for axisName in ResultsChart.AXIS_NAMES
-                optionKey = chartOptionPrefix+axisName
+                optionKey = chartOptionPrefix + axisName
                 job optionKey, @optionElements["#{prefix}#{axisName}"], axisName
 
         installToggleHandler "interpolateLines", @optionElements.toggleInterpolateLines
@@ -73,11 +83,13 @@ class ResultsChart extends CompositeElement
             $(forEachAxisOptionElement "toggleOrigin", "origin", installToggleHandler)
                 .toggleClass("disabled", true)
 
-    @AXIS_NAMES: "X Y1 Y2".trim().split(/\s+/)
+    @AXIS_NAMES: "X Y1".trim().split(/\s+/)
 
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axisNames
+        localStorage["chartType"] = JSON.stringify @chartType
 
+    # axis change dropdown HTML skeleton
     @AXIS_PICK_CONTROL_SKELETON: $("""
         <script type="text/x-jsrender">
           <div data-order="{{>ord}}" class="axis-control axis-change btn-group">
@@ -98,6 +110,8 @@ class ResultsChart extends CompositeElement
           </div>
         </script>
         """)
+
+    # axis add dropdown HTML skeleton
     @AXIS_ADD_CONTROL_SKELETON: $("""
         <script type="text/x-jsrender">
           <div class="axis-control axis-add btn-group">
@@ -113,6 +127,28 @@ class ResultsChart extends CompositeElement
           </div>
         </script>
         """)
+
+    @CHART_PICK_CONTROL_SKELETON: $("""
+        <script type="text/x-jsrender">
+            {{for names}}
+                <li class="chart-type-li"><a href="#"><i class="icon icon-signal"></i> {{>#data}}</a></li>
+            {{/for}}
+        </script>
+        """)
+
+    actionHandlerForChartTypeControl: (action) => (e) =>
+        e.preventDefault()
+        $this = $(e.target)
+        $axisControl = $this.closest("#chart-type")
+        name = $this.closest("a").text()
+        action name, $axisControl, $this, e
+
+    handleChartTypeChange: (name, $axisControl) =>
+        $axisControl.find(".chart-name").text(name)
+        @chartType = name.trim()
+        @chartOptions.changedChartType = true
+        do @persist
+        do @initializeAxes
 
     actionHandlerForAxisControl: (action) => (e) =>
         e.preventDefault()
@@ -138,22 +174,28 @@ class ResultsChart extends CompositeElement
 
     @X_AXIS_ORDINAL: 1 # second variable is X
     @Y_AXIS_ORDINAL: 0 # first variable is Y
-    initializeAxes: => # initialize @axes from @axisNames
+    
+    # initialize @axes from @axisNames (which is saved in local storage)
+    initializeAxes: => 
         if @table.deferredDisplay?
             do @table.render # XXX charting heavily depends on the rendered table, so force rendering
         return unless @table.columnsRendered?.length
         # collect candidate variables for chart axes from ResultsTable
         axisCandidates =
-            # only the expanded input variables or output variables can be charted
+            # only the expanded input variables (usually a condition) or output variables (usually measurement) can be charted
+            # below logic will add to the axis candidates any expanded input variable or any rendered measured output variable
+            # columns are not rendered if they are unchecked in the left-hand panel
             (col for col in @table.columnsRendered when col.isExpanded or col.isMeasured)
+        axisCandidates[ord].unit = null for ax,ord in axisCandidates when not ax.unit? or not ax.unit.length? or ax.unit.length is 0
         nominalVariables =
             (axisCand for axisCand in axisCandidates when utils.isNominal axisCand.type)
         ratioVariables =
             (axisCand for axisCand in axisCandidates when utils.isRatio axisCand.type)
-        # check if there are enough variables to construct a two-dimensional chart
+        # check if there are enough variables to construct a two-dimensional chart: if so, add toggle buttons on RHS, if not, show a message
         canDrawChart = (possible) =>
             @baseElement.add(@optionElements.chartOptions).toggleClass("hide", not possible)
             @optionElements.alertChartImpossible?.toggleClass("hide", possible)
+        # we need at least 1 ratio variable and 2 variables total
         if ratioVariables.length >= 1 and nominalVariables.length + ratioVariables.length >= 2
             canDrawChart yes
         else
@@ -165,30 +207,60 @@ class ResultsChart extends CompositeElement
         defaultAxes[ResultsChart.Y_AXIS_ORDINAL] = ratioVariables[0]?.name
         if @axisNames?
             # find if all axisNames are valid, don't appear more than once, or make them default
-            for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or
-                    not axisCandidates.some (col) => col.name is name)
+            for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or not axisCandidates.some (col) => col.name is name)
                 @axisNames[ord] = defaultAxes[ord] ? null
             # discard any null/undefined elements
             @axisNames = @axisNames.filter (name) => name?
         else
-            # default axes
+            # default axes when axisNames are not in local storage
             @axisNames = defaultAxes
         # collect ResultsTable columns that corresponds to the @axisNames
         @vars = @axisNames.map (name) => @table.columns[name]
+        # standardize no-units so that "undefined", "null", and an empty string all have null unit
+        # TODO: don't set units to null in 2 different places
+        @vars[ord].unit = null for ax,ord in @vars when not ax.unit? or not ax.unit.length? or ax.unit.length is 0
         @varX      = @vars[ResultsChart.X_AXIS_ORDINAL]
+        # pivot variables in an array if there are additional nominal variables
         @varsPivot = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isNominal ax.type)
+        # y-axis variables in an array
+        # TODO: there should only be 1 y-axis variable for now
         @varsY     = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isRatio   ax.type)
+        # establish which chart type we're using
+        chartTypes = "Line Bar".trim().split(/\s+/)
+        noSpecifiedChartType = not @chartType?
+        # save original type because we might want to display x-axis either as nominal or as number/ratio depending on chart type chosen
+        @varX.originalType ?= @varX.type
+        if utils.isRatio @varX.originalType
+            chartTypes.push "Scatter"
+            # Keep it a scatterplot
+            @chartType = "Scatter" if noSpecifiedChartType
+            # If not a scatterplot, make the x variable nominal/string
+            @varX.type = if @chartType != "Scatter" then "nominal" else @varX.originalType
+        else
+            @chartType = "Bar" if @chartType != "Line"
+            # when local storage does not specify origin toggle value, or
+            # if just changed chart types, then insist first view of bar chart is grounded at 0
+            # and make sure that button is toggled down
+            if @chartOptions.changedChartType or (@chartType == "Bar" and noSpecifiedChartType)
+                @chartOptions["originY1"] = true
+                @optionElements.toggleOriginY1.toggleClass("active", true)
+        @chartOptions.changedChartType = false
+        
+        $axisControl = @typeSelection.closest("#chart-type")
+        $axisControl.find(".chart-name").text(" " + @chartType)
+
         # clear title
         @optionElements.chartTitle?.text("")
-        # check if there are more than two units for Y-axis, and discard any variables that violates it
+        # TODO: this won't be necessary for now...
+        # check if there is more than 1 unit for Y-axis, and discard any variables that violates it
         @varsYbyUnit = _.groupBy @varsY, (col) => col.unit
-        if (_.size @varsYbyUnit) > 2
+        if (_.size @varsYbyUnit) > 1
             @varsYbyUnit = {}
             for ax,ord in @varsY
                 u = ax.unit
                 (@varsYbyUnit[u] ?= []).push ax
                 # remove Y axis variable if it uses a third unit
-                if (_.size @varsYbyUnit) > 2
+                if (_.size @varsYbyUnit) > 1
                     delete @varsYbyUnit[u]
                     @varsY[ord] = null
                     ord2 = @vars.indexOf ax
@@ -196,9 +268,10 @@ class ResultsChart extends CompositeElement
                     @axisNames.splice ord2, 1
             @varsY = @varsY.filter (v) => v?
         # TODO validation of each axis type with the chart type
-        # find out remaining variables
+        # find out remaining variables: all the axis candidates that haven't been used as in @axisNames yet
         remainingVariables = (
-                if @axisNames.length < 3 or (_.size @varsYbyUnit) < 2
+                # if @axisNames.length < 3 or (_.size @varsYbyUnit) < 2
+                if @axisNames.length < 2
                     axisCandidates
                 else # filter variables in a third unit when there're already two axes
                     ax for ax in axisCandidates when @varsYbyUnit[ax.unit]? or utils.isNominal ax.type
@@ -221,6 +294,12 @@ class ResultsChart extends CompositeElement
             variables: remainingVariables
         )) if remainingVariables.length > 0
 
+        @typeSelection
+            .find("li.chart-type-li").remove().end()
+            .append(ResultsChart.CHART_PICK_CONTROL_SKELETON.render(
+                names: chartTypes
+            ))
+
         do @display
 
     @SVG_STYLE_SHEET: """
@@ -232,7 +311,7 @@ class ResultsChart extends CompositeElement
             shape-rendering: crispEdges;
           }
 
-          .dot {
+          .dot, .databar {
             opacity: 0.75;
             cursor: pointer;
           }
@@ -249,6 +328,7 @@ class ResultsChart extends CompositeElement
         entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
         resultsForRendering = @table.resultsForRendering
         return unless resultsForRendering?.length > 0
+        # functions to get numbers for plotting
         accessorFor = (v) -> (rowIdx) -> resultsForRendering[rowIdx][v.index].value
         originFor   = (v) -> (rowIdx) -> resultsForRendering[rowIdx][v.index].origin
         @dataBySeries = _.groupBy entireRowIndexes, (rowIdx) =>
@@ -257,13 +337,9 @@ class ResultsChart extends CompositeElement
         #TODO @decideColors
         color = d3.scale.category10()
 
-        # f= null
-        # f(1)
-
+        # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
         intervalContains = (lu, xs...) ->
             (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
-
-
         axisType = (ty) -> if utils.isNominal ty then "nominal" else if utils.isRatio ty then "ratio"
         formatAxisLabel = (axis) ->
             unit = axis.unit
@@ -321,7 +397,9 @@ class ResultsChart extends CompositeElement
                  .join("") + """</table>"""
         pickScale = (axis) =>
             dom = d3.extent(axis.domain)
+            # here is where you ground at 0 if origin selected - by adding it to the extent
             dom = d3.extent(dom.concat([0])) if @chartOptions["origin#{axis.name}"]
+            # if the extent min and max are the same, extend each by 1
             if dom[0] == dom[1] or Math.abs (dom[0] - dom[1]) == Number.MIN_VALUE
                 dom[0] -= 1
                 dom[1] += 1
@@ -346,6 +424,7 @@ class ResultsChart extends CompositeElement
                 accessor: accessorFor(@varX)
             # Y axes: analyze the extent of Y axes data (single or dual unit)
             for vY in @varsY
+                # if this axis has the same unit as the first y-axis, then skip
                 continue if @axes.length > 1 and vY.unit is @axes[1].unit
                 i = @axes.length
                 @axes.push axisY =
@@ -391,27 +470,58 @@ class ResultsChart extends CompositeElement
         do => ## Setup and draw X axis
             axisX = @axes[0]
             axisX.domain = entireRowIndexes.map(axisX.accessor)
-            # based on the X axis type, decide its scale
-            switch axisX.type
-                when "nominal"
+
+            getIndicesInGroup = (domain) =>
+                hashmap = {}
+                toReturn = []
+                for item in domain
+                    hashmap[item] ?= -1
+                    hashmap[item]++
+                    toReturn.push hashmap[item]
+                toReturn
+
+            getGroupSizes = (domain) =>
+                domainCounts = _.countBy(domain, (name) => _.identity name)
+                toReturn = []
+                for item in domain
+                    toReturn.push domainCounts[item]
+                toReturn
+
+            axisX.indicesInGroup = getIndicesInGroup axisX.domain
+            axisX.groupSizes = getGroupSizes axisX.domain
+
+            switch @chartType
+                when "Bar"
+                    # set up scale function
+                    x = axisX.scale = d3.scale.ordinal()
+                        .domain(axisX.domain)
+                        .rangeRoundBands([0, @width], .5)
+                    # d is really the index; xData grabs the value for that index
+                    axisX.coord = (d) -> x(xData(d))
+                    xData = axisX.accessor
+                    axisX.barWidth = x.rangeBand() / @varsY.length
+                    axisX.seriesOffset = axisX.barWidth / Object.keys(_this.dataBySeries).length
+                when "Line"
                     x = axisX.scale = d3.scale.ordinal()
                         .domain(axisX.domain)
                         .rangeRoundBands([0, @width], .1)
                     xData = axisX.accessor
                     axisX.coord = (d) -> x(xData(d)) + x.rangeBand()/2
-                    @chartType = "lineChart"
-                when "ratio"
+                when "Scatter"
+                    # convert axisX.domain to ints if strings
+                    axisX.domain = axisX.domain.map((i) -> +i)
+                    # axisX.domain = _.map(axisX.domain, function(i){ return +i; });
                     x = axisX.scale = pickScale(axisX).nice()
                         .range([0, @width])
                     xData = axisX.accessor
                     axisX.coord = (d) -> x(xData(d))
-                    @chartType = "scatterPlot"
                 else
                     error "Unsupported variable type (#{axis.type}) for X axis", axisX.column
             axisX.label = formatAxisLabel axisX
             axisX.axis = d3.svg.axis()
                 .scale(axisX.scale)
                 .orient("bottom")
+                # .tickFormat((ix) => if @chartType == "Bar" then axisX.domain[ix] else ix)
             @svg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0,#{@height})")
@@ -457,23 +567,41 @@ class ResultsChart extends CompositeElement
             for seriesLabel,dataForCharting of @dataBySeries
                 seriesColor = (d) -> color(series)
 
-                @svg.selectAll(".dot.series-#{series}")
-                    .data(dataForCharting)
-                  .enter().append("circle")
-                    .attr("class", "dot series-#{series}")
-                    .attr("r", 5)
-                    .attr("cx", xCoord)
-                    .attr("cy", yCoord)
-                    .style("fill", seriesColor)
-                    # popover
-                    .attr("title",        seriesLabel)
-                    .attr("data-content", formatDataPoint yVar)
-                    .attr("data-placement", (d) =>
-                        if xCoord(d) < @width/2 then "right" else "left"
-                    )
+                switch @chartType
+                    when "Bar"
+                        @svg.selectAll(".databar.series-#{series}")
+                            .data(dataForCharting)
+                          .enter().append("rect")
+                            .attr("class", "databar series-#{series}")
+                            .attr("width", (d, ix) => axisX.barWidth / axisX.groupSizes[ix])
+                            .attr("x", (d, ix) => xCoord(d) + (series * axisX.seriesOffset) + axisX.barWidth * axisX.indicesInGroup[ix] / axisX.groupSizes[ix])
+                            .attr("y", (d) => yCoord(d))
+                            .attr("height", (d) => @height - yCoord(d))
+                            .style("fill", seriesColor)
+                            # popover
+                            .attr("title",        seriesLabel)
+                            .attr("data-content", formatDataPoint yVar)
+                            .attr("data-placement", (d) =>
+                                if xCoord(d) < @width/2 then "right" else "left"
+                            )
+                    else
+                        @svg.selectAll(".dot.series-#{series}")
+                            .data(dataForCharting)
+                          .enter().append("circle")
+                            .attr("class", "dot series-#{series}")
+                            .attr("r", 5)
+                            .attr("cx", xCoord)
+                            .attr("cy", yCoord)
+                            .style("fill", seriesColor)
+                            # popover
+                            .attr("title",        seriesLabel)
+                            .attr("data-content", formatDataPoint yVar)
+                            .attr("data-placement", (d) =>
+                                if xCoord(d) < @width/2 then "right" else "left"
+                            )
 
                 switch @chartType
-                    when "lineChart"
+                    when "Line"
                         unless @chartOptions.hideLines
                             line = d3.svg.line().x(xCoord).y(yCoord)
                             line.interpolate("basis") if @chartOptions.interpolateLines
@@ -513,7 +641,7 @@ class ResultsChart extends CompositeElement
                 series++
 
         # popover
-        @baseElement.find(".dot").popover(
+        @baseElement.find(".dot, .databar").popover(
             trigger: "click"
             html: true
             container: @baseElement
@@ -530,7 +658,7 @@ class ResultsChart extends CompositeElement
             @optionElements["toggleOrigin#{axis.name}"]
                ?.toggleClass("disabled", axis.type isnt "ratio" or intervalContains axis.domain, 0)
 
-        isLineChartDisabled = @chartType isnt "lineChart"
+        isLineChartDisabled = @chartType isnt "Line"
         $(@optionElements.toggleHideLines)
            ?.toggleClass("disabled", isLineChartDisabled)
             .toggleClass("hide", isLineChartDisabled)
@@ -538,5 +666,8 @@ class ResultsChart extends CompositeElement
            ?.toggleClass("disabled", isLineChartDisabled or @chartOptions.hideLines)
             .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
 
-
+        # Reset type property for variables
+        for ax, ord in @vars
+            @vars[ord].type = ax.originalType if ax.originalType?
+            @vars[ord].originalType = null if ax.originalType?
 )

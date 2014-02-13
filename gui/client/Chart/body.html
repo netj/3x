@@ -1,16 +1,23 @@
 <h2><i class="icon-bar-chart icon"></i>Chart</h2>
 
 <form id="chart-options" class="form-inline clear-fix hide">
-  <div id="chart-type" class="btn-group" style="display:none;">
-    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">Chart Type <span class="caret"></span></a>
-    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-      <li><a href="#line-chart">Line Chart</a></li>
+  <div id="chart-type" class="btn-group">
+    <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="#">
+      <span class="chart-name">Chart Type</span>
+      <span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu chart-types-list" role="menu" aria-labelledby="dLabel">
+      <!-- <li><a href="#line-chart">Line Chart</a></li>
       <li><a href="#bar-chart">Bar Chart</a></li>
       <li><a href="#area-chart">Area Chart</a></li>
-      <li><a href="#scatter-plot">Scatter Plot</a></li>
+      <li><a href="#scatter-plot">Scatter Plot</a></li> -->
+      <!-- <li class="chart-type-li"><a href="#">Line Chart</a></li>
+      <li class="chart-type-li"><a href="#">Bar Chart</a></li>
+      <li class="chart-type-li"><a href="#">Area Chart</a></li>
+      <li class="chart-type-li"><a href="#">Scatter Plot</a></li> -->
     </ul>
   </div>
-  <div class="pull-right">
+  <div class="pull-right btn-toolbar">
     <div class="btn-group inline" data-toggle="buttons-checkbox">
       <button type="button" id="chart-toggle-interpolate-lines" class="btn btn-small"
         title="Interpolate lines using B-splines">Smooth Lines</button>
@@ -20,18 +27,18 @@
         >Hide Lines</button>
     </div>
 
-    <div class="btn-group inline" data-toggle="buttons-checkbox">
-      <span class="btn btn-small disabled add-on">Origin</span>
-      <button type="button" id="chart-toggle-origin-y1" class="btn btn-small disabled">Y</button>
-      <button type="button" id="chart-toggle-origin-x"  class="btn btn-small disabled">X</button>
-      <button type="button" id="chart-toggle-origin-y2" class="btn btn-small disabled">Y<sub>2</sub></button>
-    </div>
+    <span class="btn-group-title">Origin</span>
 
     <div class="btn-group inline" data-toggle="buttons-checkbox">
-      <span class="btn btn-small disabled add-on">Log Scale</span>
+      <button type="button" id="chart-toggle-origin-y1" class="btn btn-small disabled">Y</button>
+      <button type="button" id="chart-toggle-origin-x"  class="btn btn-small disabled">X</button>
+    </div>
+
+    <span class="btn-group-title">Log Scale</span>
+
+    <div class="btn-group inline" data-toggle="buttons-checkbox">
       <button type="button" id="chart-toggle-log-scale-y1" class="btn btn-small disabled">Y</button>
       <button type="button" id="chart-toggle-log-scale-x"  class="btn btn-small disabled">X</button>
-      <button type="button" id="chart-toggle-log-scale-y2" class="btn btn-small disabled">Y<sub>2</sub></button>
     </div>
 
     <div class="btn-group" data-toggle="buttons-radio" style="display:none;">
