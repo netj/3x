@@ -63,7 +63,7 @@ For example, to download the source code for version `v0.9`, and to build a <spa
 ```bash
 git clone https://github.com/netj/3x.git --branch v0.9
 cd 3x
-make
+make package
 ```
 
 ### Install from Source

@@ -24,6 +24,9 @@ APPICON := gui/app-icon.icns
 APPEXECUTES := for d; do (cd "$$d"; exec 3x gui start &) </dev/null >/dev/null 2>&1; done
 APPPATHDIR := bin
 
+.DEFAULT: polish
+polish:
+
 include buildkit/modules.mk
 
 buildkit/modules.mk:
