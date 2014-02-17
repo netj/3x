@@ -256,7 +256,7 @@ class ResultsChart extends CompositeElement
             for ax,ord in @varsY
                 u = ax.unit
                 (@varsYbyUnit[u] ?= []).push ax
-                # remove Y axis variable if it uses a third unit
+                # remove Y axis variable if it uses a second unit
                 if (_.size @varsYbyUnit) > 1
                     delete @varsYbyUnit[u]
                     @varsY[ord] = null
@@ -281,7 +281,7 @@ class ResultsChart extends CompositeElement
                     ResultsChart.AXIS_PICK_CONTROL_SKELETON.render({
                         ord: ord
                         axis: ax
-                        variables: (if ord == ResultsChart.Y_AXIS_ORDINAL then ratioVariables else axisCandidates)
+                        variables: (if ord == ResultsChart.Y_AXIS_ORDINAL then ratioVariables else if ord == ResultsChart.X_AXIS_ORDINAL then axisCandidates else remainingVariables)
                                     # the first axis (Y) must always be of ratio type
                             .filter((col) => col not in @vars[0..ord]) # and without the current one
                         isOptional: (ord > 1) # there always has to be at least two axes
