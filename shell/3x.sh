@@ -61,7 +61,7 @@ if [ -z "${_3X_HOME:-}" ]; then
         n=$(basename -- "$0")
         if [ -L "$n" ]; then
             L=$(readlink "$n")
-            if [ x"$L" = x"${L#/}" ]; then
+            if [ x"$L" != x"${L#/}" ]; then
                 echo "$L"; exit
             else
                 cd "$(dirname -- "$L")"
