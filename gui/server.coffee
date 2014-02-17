@@ -671,7 +671,9 @@ fsMonitor = null
 do startFSMonitor = ->
     util.log "starting filesystem monitor"
     fsMonitor =
-    p = child_process.spawn "watch-filesystem-events", [
+    p = child_process.spawn "env", [
+        "PYTHONUNBUFFERED=true"
+        "watch-filesystem-events"
         queueRootDir
     ]
     splitter = p.stdout.pipe(StreamSplitter("\n"))
