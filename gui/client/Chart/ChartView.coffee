@@ -146,7 +146,7 @@ class ResultsChart extends CompositeElement
     handleChartTypeChange: (name, $axisControl) =>
         $axisControl.find(".chart-name").text(name)
         @chartType = name.trim()
-        @chartOptions.changedChartType = true
+        @chartOptions.justChanged = "chartType"
         do @persist
         do @initializeAxes
 
@@ -160,6 +160,7 @@ class ResultsChart extends CompositeElement
     handleAxisChange: (ord, name, $axisControl) =>
         $axisControl.find(".axis-name").text(name)
         @axisNames[ord] = name
+        if ord == 1 then @chartOptions.justChanged = "axis"
         # TODO proceed only when something actually changes
         do @persist
         do @initializeAxes
@@ -232,16 +233,16 @@ class ResultsChart extends CompositeElement
         if utils.isRatio @varX.type
             chartTypes.push "Scatter"
             # Keep it a scatterplot
-            @chartType = "Scatter" if noSpecifiedChartType
+            @chartType = "Scatter" if noSpecifiedChartType or @chartOptions.justChanged is "axis"
         else
             @chartType = "Bar" if @chartType != "Line"
             # when local storage does not specify origin toggle value, or
             # if just changed chart types, then insist first view of bar chart is grounded at 0
             # and make sure that button is toggled down
-            if @chartOptions.changedChartType or (@chartType == "Bar" and noSpecifiedChartType)
+            if @chartOptions.justChanged is "chartType" or (@chartType == "Bar" and noSpecifiedChartType)
                 @chartOptions["originY1"] = true
                 @optionElements.toggleOriginY1.toggleClass("active", true)
-        @chartOptions.changedChartType = false
+        @chartOptions.justChanged = ""
         
         $axisControl = @typeSelection.closest("#chart-type")
         $axisControl.find(".chart-name").text(" " + @chartType)
