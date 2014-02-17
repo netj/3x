@@ -432,6 +432,7 @@ class ResultsChart extends CompositeElement
                     name: "Y#{i}"
                     unit: vY.unit
                     columns: @varsYbyUnit[vY.unit]
+                    isRatio: utils.isRatio vY
                 # figure out the extent for this axis
                 extent = []
                 for col in axisY.columns
@@ -453,6 +454,7 @@ class ResultsChart extends CompositeElement
                 y = axisY.scale = pickScale(axisY).nice()
                 axisY.axis = d3.svg.axis()
                     .scale(axisY.scale)
+                    .tickFormat(d3.format(".3s"))
                 numDigits = Math.max _.pluck(y.ticks(axisY.axis.ticks()).map(y.tickFormat()), "length")...
                 tickWidth = Math.ceil(numDigits * 6.5) #px per digit
                 if i == 0
@@ -498,7 +500,12 @@ class ResultsChart extends CompositeElement
             axisX.axis = d3.svg.axis()
                 .scale(axisX.scale)
                 .orient("bottom")
-                # .tickFormat((ix) => if @chartType == "Bar" then axisX.domain[ix] else ix)
+                .ticks(@width / 100)
+            if @chartType isnt "Scatter"
+                skipEvery = Math.ceil(x.domain().length / (@width / 55))
+                axisX.axis = axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
+            if utils.isRatio @varX.type
+                axisX.axis = axisX.axis.tickFormat(d3.format(".3s"))
             @svg.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0,#{@height})")
