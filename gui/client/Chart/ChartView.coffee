@@ -15,7 +15,442 @@ utils = require "utils"
 
 CompositeElement = require "CompositeElement"
 
-class ResultsChart extends CompositeElement
+
+
+class Chart
+    constructor: (@baseElement, @table, @optionElements, @chartOptions,
+            @varX, @varsY, @varsYbyUnit, @varsPivot) ->
+        @type = null # TODO instead of branching off with @type, override with subclasses
+
+    render: =>
+        ## Collect data to plot from @table
+        $trs = @table.baseElement.find("tbody tr")
+        @entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
+        @resultsForRendering = @table.resultsForRendering
+        return unless @resultsForRendering?.length > 0
+        @dataBySeries = _.groupBy @entireRowIndexes, (rowIdx) =>
+            @varsPivot.map((pvVar) => @accessorFor(pvVar)(rowIdx)).join(", ")
+
+        do @setupAxes
+        do @createSVG
+        do @renderXaxis
+        do @renderYaxis
+        do @renderData
+
+        ## update optional UI elements
+        @optionElements.toggleLogScale.toggleClass("disabled", true)
+        for axis in @axes
+            @optionElements["toggleLogScale#{axis.name}"]
+               ?.toggleClass("disabled", not axis.isLogScalePossible)
+
+        @optionElements.toggleOrigin.toggleClass("disabled", true)
+        @optionElements["toggleOriginY1"]?.toggleClass("disabled", @intervalContains axis.domain, 0)
+        if @type is "Scatter"
+            @optionElements["toggleOriginX"]?.toggleClass("disabled", @intervalContains axis.domain, 0)
+
+        isLineChartDisabled = @type isnt "Line" # TODO use: @ instanceof LineChart
+        $(@optionElements.toggleHideLines)
+           ?.toggleClass("disabled", isLineChartDisabled)
+            .toggleClass("hide", isLineChartDisabled)
+        $(@optionElements.toggleInterpolateLines)
+           ?.toggleClass("disabled", isLineChartDisabled or @chartOptions.hideLines)
+            .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
+
+
+    setupAxes: => ## Setup Axes
+        @axes = []
+        # X axis
+        @axes.push
+            name: "X"
+            unit: @varX.unit
+            columns: [@varX]
+            accessor: @accessorFor(@varX)
+        # Y axes: analyze the extent of Y axes data (single or dual unit)
+        for vY in @varsY
+            # if this axis has the same unit as the first y-axis, then skip
+            continue if @axes.length > 1 and vY.unit is @axes[1].unit
+            i = @axes.length
+            @axes.push axisY =
+                name: "Y#{i}"
+                unit: vY.unit
+                columns: @varsYbyUnit[vY.unit]
+                isRatio: utils.isRatio vY
+            # figure out the extent for this axis
+            extent = []
+            for col in axisY.columns
+                extent = d3.extent(extent.concat(d3.extent(@entireRowIndexes, @accessorFor(col))))
+            axisY.domain = extent
+    
+    @SVG_STYLE_SHEET: """
+        <style>
+          .axis path,
+          .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+          }
+
+          .dot, .databar {
+            opacity: 0.75;
+            cursor: pointer;
+          }
+
+          .line {
+            fill: none;
+            stroke-width: 1.5px;
+          }
+        </style>
+        """
+    createSVG: => ## Determine the chart dimension and initialize the SVG root as @svg
+            chartBody = d3.select(@baseElement[0])
+            @baseElement.find("style").remove().end().append(@constructor.SVG_STYLE_SHEET)
+            chartWidth  = window.innerWidth  - @baseElement.position().left * 2
+            chartHeight = window.innerHeight - @baseElement.position().top - 20
+            @baseElement.css
+                width:  "#{chartWidth }px"
+                height: "#{chartHeight}px"
+            @margin =
+                top: 20, bottom: 50
+                right: 40, left: 40
+            # adjust margins while we prepare the Y scales
+            for axisY,i in @axes[1..]
+                y = axisY.scale = @pickScale(axisY).nice()
+                axisY.axis = d3.svg.axis()
+                    .scale(axisY.scale)
+                    .tickFormat(d3.format(".3s"))
+                numDigits = Math.max _.pluck(y.ticks(axisY.axis.ticks()).map(y.tickFormat()), "length")...
+                tickWidth = Math.ceil(numDigits * 6.5) #px per digit
+                if i == 0
+                    @margin.left += tickWidth
+                else
+                    @margin.right += tickWidth
+            @width  = chartWidth  - @margin.left - @margin.right
+            @height = chartHeight - @margin.top  - @margin.bottom
+            chartBody.select("svg").remove()
+            @svg = chartBody.append("svg")
+                .attr("width",  chartWidth)
+                .attr("height", chartHeight)
+              .append("g")
+                .attr("transform", "translate(#{@margin.left},#{@margin.top})")
+
+
+    renderXaxis: => ## Setup and draw X axis
+        axisX = @axes[0]
+        axisX.domain = @entireRowIndexes.map(axisX.accessor)
+
+        switch @type
+            when "Bar"
+                # set up scale function
+                x = axisX.scale = d3.scale.ordinal()
+                    .domain(axisX.domain)
+                    .rangeRoundBands([0, @width], .5)
+                # d is really the index; xData grabs the value for that index
+                axisX.coord = (d) -> x(xData(d))
+                xData = axisX.accessor
+                axisX.barWidth = x.rangeBand() / @varsY.length / Object.keys(_this.dataBySeries).length
+            when "Line"
+                x = axisX.scale = d3.scale.ordinal()
+                    .domain(axisX.domain)
+                    .rangeRoundBands([0, @width], .1)
+                xData = axisX.accessor
+                axisX.coord = (d) -> x(xData(d)) + x.rangeBand()/2
+            when "Scatter"
+                x = axisX.scale = @pickScale(axisX).nice()
+                    .range([0, @width])
+                xData = axisX.accessor
+                axisX.coord = (d) -> x(xData(d))
+            else
+                error "Unsupported variable type for X axis", axisX.column
+        axisX.label = @formatAxisLabel axisX
+        axisX.axis = d3.svg.axis()
+            .scale(axisX.scale)
+            .orient("bottom")
+            .ticks(@width / 100)
+        if @type isnt "Scatter"
+            skipEvery = Math.ceil(x.domain().length / (@width / 55))
+            axisX.axis = axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
+        if utils.isRatio @varX.type
+            axisX.axis = axisX.axis.tickFormat(d3.format(".3s"))
+        @svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0,#{@height})")
+            .call(axisX.axis)
+          .append("text")
+            .attr("x", @width/2)
+            .attr("dy", "3em")
+            .style("text-anchor", "middle")
+            .text(axisX.label)
+
+    renderYaxis: => ## Setup and draw Y axis
+        @axisByUnit = {}
+        for axisY,i in @axes[1..]
+            y = axisY.scale
+                .range([@height, 0])
+            axisY.label = @formatAxisLabel axisY
+            # set up title
+            @optionElements.chartTitle?.html(
+                # TODO move this code to a model class, e.g., ResultsQuery
+                """
+                <strong>#{@varsY[0]?.name}</strong>
+                by <strong>#{@varX.name}</strong> #{
+                    if @varsPivot.length > 0
+                        "for each #{
+                            ("<strong>#{name}</strong>" for {name} in @varsPivot
+                            ).join ", "}"
+                    else ""
+                } #{
+                    # XXX remove these hacks into ResultsSection, InputsView, OutputsView
+                    {inputs,outputs} = _3X_.ResultsSection
+                    filters = (
+                        for name,values of inputs.menuItemsSelected when values?.length > 0
+                            "<strong>#{name}=#{values.join(",")}</strong>"
+                    ).concat(
+                        for name,filter of outputs.menuFilter when filter?
+                            "<strong>#{name}#{outputs.constructor.serializeFilter filter}</strong>"
+                    )
+                    if filters.length > 0
+                        "<br>(#{filters.join(" and ")})"
+                    else ""
+                }
+                """
+            )
+            # draw axis
+            orientation = if i == 0 then "left" else "right"
+            axisY.axis.orient(orientation)
+            @svg.append("g")
+                .attr("class", "y axis")
+                .attr("transform", if orientation isnt "left" then "translate(#{@width},0)")
+                .call(axisY.axis)
+              .append("text")
+                .attr("transform", "translate(#{
+                        if orientation is "left" then -@margin.left else @margin.right
+                    },#{@height/2}), rotate(-90)")
+                .attr("dy", if orientation is "left" then "1em" else "-.3em")
+                .style("text-anchor", "middle")
+                .text(axisY.label)
+            @axisByUnit[axisY.unit] = axisY
+
+    renderData: =>
+        # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
+        #TODO @decideColors
+        color = d3.scale.category10()
+
+        ## Finally, draw each varY and series
+        series = 0
+        axisX = @axes[0]
+        xCoord = axisX.coord
+        for yVar in @varsY
+            axisY = @axisByUnit[yVar.unit]
+            y = axisY.scale; yData = @accessorFor(yVar)
+            yCoord = (d) -> y(yData(d))
+
+            for seriesLabel,dataForCharting of @dataBySeries
+                seriesColor = (d) -> color(series)
+
+                # Splits bars if same x-value within a series; that's why it maintains a count and index
+                xMap = {}
+                for d in dataForCharting
+                    xVal = xCoord(d)
+                    if xMap[xVal]?
+                        xMap[xVal].count++
+                    else
+                        xMap[xVal] =
+                            count: 1
+                            index: 0
+
+                switch @type
+                    when "Bar"
+                        @svg.selectAll(".databar.series-#{series}")
+                            .data(dataForCharting)
+                          .enter().append("rect")
+                            .attr("class", "databar series-#{series}")
+                            .attr("width", (d, ix) => axisX.barWidth / xMap[xCoord(d)].count)
+                            .attr("x", (d, ix) => 
+                                xVal = xCoord(d)
+                                xIndex = xMap[xVal].index
+                                xMap[xVal].index++
+                                xVal + (series * axisX.barWidth) + axisX.barWidth * xIndex / xMap[xVal].count)
+                            .attr("y", (d) => yCoord(d))
+                            .attr("height", (d) => @height - yCoord(d))
+                            .style("fill", seriesColor)
+                            # popover
+                            .attr("title",        seriesLabel)
+                            .attr("data-content", @formatDataPoint yVar)
+                            .attr("data-placement", (d) =>
+                                if xCoord(d) < @width/2 then "right" else "left"
+                            )
+                    else
+                        @svg.selectAll(".dot.series-#{series}")
+                            .data(dataForCharting)
+                          .enter().append("circle")
+                            .attr("class", "dot series-#{series}")
+                            .attr("r", 5)
+                            .attr("cx", xCoord)
+                            .attr("cy", yCoord)
+                            .style("fill", seriesColor)
+                            # popover
+                            .attr("title",        seriesLabel)
+                            .attr("data-content", @formatDataPoint yVar)
+                            .attr("data-placement", (d) =>
+                                if xCoord(d) < @width/2 then "right" else "left"
+                            )
+
+                switch @type
+                    when "Line"
+                        unless @chartOptions.hideLines
+                            line = d3.svg.line().x(xCoord).y(yCoord)
+                            line.interpolate("basis") if @chartOptions.interpolateLines
+                            @svg.append("path")
+                                .datum(dataForCharting)
+                                .attr("class", "line")
+                                .attr("d", line)
+                                .style("stroke", seriesColor)
+
+                if _.size(@varsY) > 1
+                    if seriesLabel
+                        seriesLabel = "#{seriesLabel} (#{yVar.name})"
+                    else
+                        seriesLabel = yVar.name
+                else
+                    unless seriesLabel
+                        seriesLabel = yVar.name
+                if _.size(@varsY) == 1 and _.size(@dataBySeries) == 1
+                    seriesLabel = null
+
+                # legend
+                if seriesLabel?
+                    i = dataForCharting.length - 1
+                    #i = Math.round(Math.random() * i) # TODO find a better way to place labels
+                    d = dataForCharting[i]
+                    x = xCoord(d)
+                    leftHandSide = x < @width/2
+                    inTheMiddle = false # @width/4 < x < @width*3/4
+                    @svg.append("text")
+                        .datum(d)
+                        .attr("transform", "translate(#{xCoord(d)},#{yCoord(d)})")
+                        .attr("x", if leftHandSide then 5 else -5).attr("dy", "-.5em")
+                        .style("text-anchor", if inTheMiddle then "middle" else if leftHandSide then "start" else "end")
+                        .style("fill", seriesColor)
+                        .text(seriesLabel)
+
+                series++
+
+        # popover
+        @baseElement.find(".dot, .databar").popover(
+            trigger: "click"
+            html: true
+            container: @baseElement
+        )
+
+
+    # functions to get numbers for plotting
+    accessorFor: (v) => (rowIdx) => # TODO change back to single arrows?
+        toReturn = @resultsForRendering[rowIdx][v.index].value
+        return if isNaN(+toReturn) then toReturn else +toReturn
+
+    originFor:   (v) => (rowIdx) => # TODO change back to single arrows?
+        toReturn = @resultsForRendering[rowIdx][v.index].origin
+        return if isNaN(+toReturn) then toReturn else +toReturn
+
+    # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
+    intervalContains: (lu, xs...) ->
+        (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
+
+    # axisType = (ty) -> if utils.isNominal ty then "nominal" else if utils.isRatio ty then "ratio"
+    pickScale: (axis) =>
+        dom = d3.extent(axis.domain)
+        # here is where you ground at 0 if origin selected - by adding it to the extent
+        dom = d3.extent(dom.concat([0])) if @chartOptions["origin#{axis.name}"]
+        # if the extent min and max are the same, extend each by 1
+        if dom[0] == dom[1] or Math.abs (dom[0] - dom[1]) == Number.MIN_VALUE
+            dom[0] -= 1
+            dom[1] += 1
+        axis.isLogScalePossible = not @intervalContains dom, 0
+        axis.isLogScaleEnabled = @chartOptions["logScale#{axis.name}"]
+        if axis.isLogScaleEnabled and not axis.isLogScalePossible
+            error "log scale does not work for domains including zero", axis, dom
+            axis.isLogScaleEnabled = no
+        (
+            if axis.isLogScaleEnabled then d3.scale.log()
+            else d3.scale.linear()
+        ).domain(dom)
+
+
+    formatAxisLabel: (axis) ->
+        unit = axis.unit
+        unitStr = if unit then "(#{unit})" else ""
+        if axis.columns?.length == 1
+            "#{axis.columns[0].name}#{if unitStr then " " else ""}#{unitStr}"
+        else
+            unitStr
+
+    formatDataPoint: (varY) =>
+        vars = [varY, @varX]
+        varsImplied = vars.concat @varsPivot
+        vars = vars.concat (
+            col for col in @table.columnsRendered when \
+                col.isExpanded and col not in varsImplied
+        )
+        varsWithValueGetter = ([v, @accessorFor(v)] for v in vars)
+        getDataPointOrigin = @originFor(varY)
+        runColIdx = @table.results.names.indexOf _3X_.RUN_COLUMN_NAME
+        yIdx = varY.dataIndex
+        getRawData = (origin) =>
+            rows = @table.results.rows
+            for i in origin
+                [rows[i][yIdx], rows[i][runColIdx]]
+        (d) ->
+            origin = getDataPointOrigin(d)
+            return "" unless origin?
+            """<table class="table table-condensed">""" + [
+                (for [v,getValue] in varsWithValueGetter
+                    val = getValue(d)
+                    {
+                        name: v.name
+                        value: """<span class="value" title="#{val}">#{val}</span>#{
+                            unless v.unit then ""
+                            else "<small class='unit'> (#{v.unit})<small>"}"""
+                    }
+                )...
+                {
+                    name: "run#.count"
+                    value: """<span class="run-details"
+                        data-toggle="popover" data-html="true"
+                        title="#{origin?.length} runs" data-content="
+                        <small><ol class='chart-run-details'>#{
+                            getRawData(origin).map(([yValue,runId]) ->
+                                "<li><a href='#{runId}/overview'
+                                    target='run-details' title='#{runId}'>#{
+                                    # show value of varY for this particular run
+                                    yValue
+                                }</a></li>"
+                            ).join("")
+                        }</ol></small>"><span class="value">#{origin.length
+                            }</span><small class="unit"> (runs)</small></span>"""
+                }
+                # TODO links to runIds
+            ].map((row) -> "<tr><td>#{row.name}</td><th>#{row.value}</th></tr>")
+             .join("") + """</table>"""
+
+
+class BarChart extends Chart
+    constructor: (args...) ->
+        super args...
+        @type = "Bar"
+
+class ScatterPlot extends Chart
+    constructor: (args...) ->
+        super args...
+        @type = "Scatter"
+
+class LineChart extends Chart
+    constructor: (args...) ->
+        super args...
+        @type = "Line"
+
+
+
+class ChartView extends CompositeElement
     constructor: (@baseElement, @typeSelection, @axesControl, @table, @optionElements = {}) ->
         super @baseElement
 
@@ -68,7 +503,7 @@ class ResultsChart extends CompositeElement
                 .click(optionToggleHandler)
         # vocabularies for axis options
         forEachAxisOptionElement = (prefix, chartOptionPrefix, job) =>
-            for axisName in ResultsChart.AXIS_NAMES
+            for axisName in @constructor.AXIS_NAMES
                 optionKey = chartOptionPrefix + axisName
                 job optionKey, @optionElements["#{prefix}#{axisName}"], axisName
 
@@ -204,8 +639,8 @@ class ResultsChart extends CompositeElement
             return
         # validate the variables chosen for axes
         defaultAxes = []
-        defaultAxes[ResultsChart.X_AXIS_ORDINAL] = nominalVariables[0]?.name ? ratioVariables[1]?.name
-        defaultAxes[ResultsChart.Y_AXIS_ORDINAL] = ratioVariables[0]?.name
+        defaultAxes[@constructor.X_AXIS_ORDINAL] = nominalVariables[0]?.name ? ratioVariables[1]?.name
+        defaultAxes[@constructor.Y_AXIS_ORDINAL] = ratioVariables[0]?.name
         if @axisNames?
             # find if all axisNames are valid, don't appear more than once, or make them default
             for name,ord in @axisNames when (@axisNames.indexOf(name) isnt ord or not axisCandidates.some (col) => col.name is name)
@@ -220,12 +655,12 @@ class ResultsChart extends CompositeElement
         # standardize no-units so that "undefined", "null", and an empty string all have null unit
         # TODO: don't set units to null in 2 different places
         @vars[ord].unit = null for ax,ord in @vars when not ax.unit? or not ax.unit.length? or ax.unit.length is 0
-        @varX      = @vars[ResultsChart.X_AXIS_ORDINAL]
+        @varX      = @vars[@constructor.X_AXIS_ORDINAL]
         # pivot variables in an array if there are additional nominal variables
-        @varsPivot = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isNominal ax.type)
+        @varsPivot = (ax for ax,ord in @vars when ord isnt @constructor.X_AXIS_ORDINAL and utils.isNominal ax.type)
         # y-axis variables in an array
         # TODO: there should only be 1 y-axis variable for now
-        @varsY     = (ax for ax,ord in @vars when ord isnt ResultsChart.X_AXIS_ORDINAL and utils.isRatio   ax.type)
+        @varsY     = (ax for ax,ord in @vars when ord isnt @constructor.X_AXIS_ORDINAL and utils.isRatio   ax.type)
         # establish which chart type we're using
         chartTypes = "Line Bar".trim().split(/\s+/)
         noSpecifiedChartType = not @chartType?
@@ -279,415 +714,45 @@ class ResultsChart extends CompositeElement
             .find(".axis-control").remove().end()
             .append(
                 for ax,ord in @vars
-                    ResultsChart.AXIS_PICK_CONTROL_SKELETON.render({
+                    @constructor.AXIS_PICK_CONTROL_SKELETON.render({
                         ord: ord
                         axis: ax
-                        variables: (if ord == ResultsChart.Y_AXIS_ORDINAL then ratioVariables else if ord == ResultsChart.X_AXIS_ORDINAL then axisCandidates else remainingVariables)
+                        variables: (if ord == @constructor.Y_AXIS_ORDINAL then ratioVariables else if ord == @constructor.X_AXIS_ORDINAL then axisCandidates else remainingVariables)
                                     # the first axis (Y) must always be of ratio type
                             .filter((col) => col not in @vars[0..ord]) # and without the current one
                         isOptional: (ord > 1) # there always has to be at least two axes
                     })
             )
-        @axesControl.append(ResultsChart.AXIS_ADD_CONTROL_SKELETON.render(
+        @axesControl.append(@constructor.AXIS_ADD_CONTROL_SKELETON.render(
             variables: remainingVariables
         )) if remainingVariables.length > 0
 
         @typeSelection
             .find("li.chart-type-li").remove().end()
-            .append(ResultsChart.CHART_PICK_CONTROL_SKELETON.render(
+            .append(@constructor.CHART_PICK_CONTROL_SKELETON.render(
                 names: chartTypes
             ))
 
         do @display
 
-    @SVG_STYLE_SHEET: """
-        <style>
-          .axis path,
-          .axis line {
-            fill: none;
-            stroke: #000;
-            shape-rendering: crispEdges;
-          }
-
-          .dot, .databar {
-            opacity: 0.75;
-            cursor: pointer;
-          }
-
-          .line {
-            fill: none;
-            stroke-width: 1.5px;
-          }
-        </style>
-        """
     render: =>
-        ## Collect data to plot from @table
-        $trs = @table.baseElement.find("tbody tr")
-        entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
-        resultsForRendering = @table.resultsForRendering
-        return unless resultsForRendering?.length > 0
-        # functions to get numbers for plotting
-        accessorFor = (v) -> (rowIdx) -> 
-            toReturn = resultsForRendering[rowIdx][v.index].value
-            return if isNaN(+toReturn) then toReturn else +toReturn
-        originFor   = (v) -> (rowIdx) -> 
-            toReturn = resultsForRendering[rowIdx][v.index].origin
-            return if isNaN(+toReturn) then toReturn else +toReturn
-        @dataBySeries = _.groupBy entireRowIndexes, (rowIdx) =>
-            @varsPivot.map((pvVar) -> accessorFor(pvVar)(rowIdx)).join(", ")
-        # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
-        #TODO @decideColors
-        color = d3.scale.category10()
-
-        # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
-        intervalContains = (lu, xs...) ->
-            (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
-        # axisType = (ty) -> if utils.isNominal ty then "nominal" else if utils.isRatio ty then "ratio"
-        formatAxisLabel = (axis) ->
-            unit = axis.unit
-            unitStr = if unit then "(#{unit})" else ""
-            if axis.columns?.length == 1
-                "#{axis.columns[0].name}#{if unitStr then " " else ""}#{unitStr}"
-            else
-                unitStr
-        formatDataPoint = (varY) =>
-            vars = [varY, @varX]
-            varsImplied = vars.concat @varsPivot
-            vars = vars.concat (
-                col for col in @table.columnsRendered when \
-                    col.isExpanded and col not in varsImplied
-            )
-            varsWithValueGetter = ([v, accessorFor(v)] for v in vars)
-            getDataPointOrigin = originFor(varY)
-            runColIdx = @table.results.names.indexOf _3X_.RUN_COLUMN_NAME
-            yIdx = varY.dataIndex
-            getRawData = (origin) =>
-                rows = @table.results.rows
-                for i in origin
-                    [rows[i][yIdx], rows[i][runColIdx]]
-            (d) ->
-                origin = getDataPointOrigin(d)
-                return "" unless origin?
-                """<table class="table table-condensed">""" + [
-                    (for [v,getValue] in varsWithValueGetter
-                        val = getValue(d)
-                        {
-                            name: v.name
-                            value: """<span class="value" title="#{val}">#{val}</span>#{
-                                unless v.unit then ""
-                                else "<small class='unit'> (#{v.unit})<small>"}"""
-                        }
-                    )...
-                    {
-                        name: "run#.count"
-                        value: """<span class="run-details"
-                            data-toggle="popover" data-html="true"
-                            title="#{origin?.length} runs" data-content="
-                            <small><ol class='chart-run-details'>#{
-                                getRawData(origin).map(([yValue,runId]) ->
-                                    "<li><a href='#{runId}/overview'
-                                        target='run-details' title='#{runId}'>#{
-                                        # show value of varY for this particular run
-                                        yValue
-                                    }</a></li>"
-                                ).join("")
-                            }</ol></small>"><span class="value">#{origin.length
-                                }</span><small class="unit"> (runs)</small></span>"""
-                    }
-                    # TODO links to runIds
-                ].map((row) -> "<tr><td>#{row.name}</td><th>#{row.value}</th></tr>")
-                 .join("") + """</table>"""
-        pickScale = (axis) =>
-            dom = d3.extent(axis.domain)
-            # here is where you ground at 0 if origin selected - by adding it to the extent
-            dom = d3.extent(dom.concat([0])) if @chartOptions["origin#{axis.name}"]
-            # if the extent min and max are the same, extend each by 1
-            if dom[0] == dom[1] or Math.abs (dom[0] - dom[1]) == Number.MIN_VALUE
-                dom[0] -= 1
-                dom[1] += 1
-            axis.isLogScalePossible = not intervalContains dom, 0
-            axis.isLogScaleEnabled = @chartOptions["logScale#{axis.name}"]
-            if axis.isLogScaleEnabled and not axis.isLogScalePossible
-                error "log scale does not work for domains including zero", axis, dom
-                axis.isLogScaleEnabled = no
-            (
-                if axis.isLogScaleEnabled then d3.scale.log()
-                else d3.scale.linear()
-            ).domain(dom)
-
-        do => ## Setup Axes
-            @axes = []
-            # X axis
-            @axes.push
-                name: "X"
-                unit: @varX.unit
-                columns: [@varX]
-                accessor: accessorFor(@varX)
-            # Y axes: analyze the extent of Y axes data (single or dual unit)
-            for vY in @varsY
-                # if this axis has the same unit as the first y-axis, then skip
-                continue if @axes.length > 1 and vY.unit is @axes[1].unit
-                i = @axes.length
-                @axes.push axisY =
-                    name: "Y#{i}"
-                    unit: vY.unit
-                    columns: @varsYbyUnit[vY.unit]
-                    isRatio: utils.isRatio vY
-                # figure out the extent for this axis
-                extent = []
-                for col in axisY.columns
-                    extent = d3.extent(extent.concat(d3.extent(entireRowIndexes, accessorFor(col))))
-                axisY.domain = extent
-        do => ## Determine the chart dimension and initialize the SVG root as @svg
-            chartBody = d3.select(@baseElement[0])
-            @baseElement.find("style").remove().end().append(ResultsChart.SVG_STYLE_SHEET)
-            chartWidth  = window.innerWidth  - @baseElement.position().left * 2
-            chartHeight = window.innerHeight - @baseElement.position().top - 20
-            @baseElement.css
-                width:  "#{chartWidth }px"
-                height: "#{chartHeight}px"
-            @margin =
-                top: 20, bottom: 50
-                right: 40, left: 40
-            # adjust margins while we prepare the Y scales
-            for axisY,i in @axes[1..]
-                y = axisY.scale = pickScale(axisY).nice()
-                axisY.axis = d3.svg.axis()
-                    .scale(axisY.scale)
-                    .tickFormat(d3.format(".3s"))
-                numDigits = Math.max _.pluck(y.ticks(axisY.axis.ticks()).map(y.tickFormat()), "length")...
-                tickWidth = Math.ceil(numDigits * 6.5) #px per digit
-                if i == 0
-                    @margin.left += tickWidth
-                else
-                    @margin.right += tickWidth
-            @width  = chartWidth  - @margin.left - @margin.right
-            @height = chartHeight - @margin.top  - @margin.bottom
-            chartBody.select("svg").remove()
-            @svg = chartBody.append("svg")
-                .attr("width",  chartWidth)
-                .attr("height", chartHeight)
-              .append("g")
-                .attr("transform", "translate(#{@margin.left},#{@margin.top})")
-        do => ## Setup and draw X axis
-            axisX = @axes[0]
-            axisX.domain = entireRowIndexes.map(axisX.accessor)
-
+        chartClass =
+            # decide the actual Chart class here
             switch @chartType
-                when "Bar"
-                    # set up scale function
-                    x = axisX.scale = d3.scale.ordinal()
-                        .domain(axisX.domain)
-                        .rangeRoundBands([0, @width], .5)
-                    # d is really the index; xData grabs the value for that index
-                    axisX.coord = (d) -> x(xData(d))
-                    xData = axisX.accessor
-                    axisX.barWidth = x.rangeBand() / @varsY.length / Object.keys(_this.dataBySeries).length
-                when "Line"
-                    x = axisX.scale = d3.scale.ordinal()
-                        .domain(axisX.domain)
-                        .rangeRoundBands([0, @width], .1)
-                    xData = axisX.accessor
-                    axisX.coord = (d) -> x(xData(d)) + x.rangeBand()/2
                 when "Scatter"
-                    x = axisX.scale = pickScale(axisX).nice()
-                        .range([0, @width])
-                    xData = axisX.accessor
-                    axisX.coord = (d) -> x(xData(d))
+                    ScatterPlot
+                when "Bar"
+                    BarChart
+                when "Line"
+                    LineChart
                 else
-                    error "Unsupported variable type for X axis", axisX.column
-            axisX.label = formatAxisLabel axisX
-            axisX.axis = d3.svg.axis()
-                .scale(axisX.scale)
-                .orient("bottom")
-                .ticks(@width / 100)
-            if @chartType isnt "Scatter"
-                skipEvery = Math.ceil(x.domain().length / (@width / 55))
-                axisX.axis = axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
-            if utils.isRatio @varX.type
-                axisX.axis = axisX.axis.tickFormat(d3.format(".3s"))
-            @svg.append("g")
-                .attr("class", "x axis")
-                .attr("transform", "translate(0,#{@height})")
-                .call(axisX.axis)
-              .append("text")
-                .attr("x", @width/2)
-                .attr("dy", "3em")
-                .style("text-anchor", "middle")
-                .text(axisX.label)
-        do => ## Setup and draw Y axis
-            @axisByUnit = {}
-            for axisY,i in @axes[1..]
-                y = axisY.scale
-                    .range([@height, 0])
-                axisY.label = formatAxisLabel axisY
-                # set up title
-                @optionElements.chartTitle?.html(
-                    # TODO move this code to a model class, e.g., ResultsQuery
-                    """
-                    <strong>#{@varsY[0]?.name}</strong>
-                    by <strong>#{@varX.name}</strong> #{
-                        if @varsPivot.length > 0
-                            "for each #{
-                                ("<strong>#{name}</strong>" for {name} in @varsPivot
-                                ).join ", "}"
-                        else ""
-                    } #{
-                        # XXX remove these hacks into ResultsSection, InputsView, OutputsView
-                        {inputs,outputs} = _3X_.ResultsSection
-                        filters = (
-                            for name,values of inputs.menuItemsSelected when values?.length > 0
-                                "<strong>#{name}=#{values.join(",")}</strong>"
-                        ).concat(
-                            for name,filter of outputs.menuFilter when filter?
-                                "<strong>#{name}#{outputs.constructor.serializeFilter filter}</strong>"
-                        )
-                        if filters.length > 0
-                            "<br>(#{filters.join(" and ")})"
-                        else ""
-                    }
-                    """
-                )
-                # draw axis
-                orientation = if i == 0 then "left" else "right"
-                axisY.axis.orient(orientation)
-                @svg.append("g")
-                    .attr("class", "y axis")
-                    .attr("transform", if orientation isnt "left" then "translate(#{@width},0)")
-                    .call(axisY.axis)
-                  .append("text")
-                    .attr("transform", "translate(#{
-                            if orientation is "left" then -@margin.left else @margin.right
-                        },#{@height/2}), rotate(-90)")
-                    .attr("dy", if orientation is "left" then "1em" else "-.3em")
-                    .style("text-anchor", "middle")
-                    .text(axisY.label)
-                @axisByUnit[axisY.unit] = axisY
+                    throw new Error "#{@chartType}: unknown chart type"
 
-        ## Finally, draw each varY and series
-        series = 0
-        axisX = @axes[0]
-        xCoord = axisX.coord
-        for yVar in @varsY
-            axisY = @axisByUnit[yVar.unit]
-            y = axisY.scale; yData = accessorFor(yVar)
-            yCoord = (d) -> y(yData(d))
-
-            for seriesLabel,dataForCharting of @dataBySeries
-                seriesColor = (d) -> color(series)
-
-                # Splits bars if same x-value within a series; that's why it maintains a count and index
-                xMap = {}
-                for d in dataForCharting
-                    xVal = xCoord(d)
-                    if xMap[xVal]?
-                        xMap[xVal].count++
-                    else
-                        xMap[xVal] =
-                            count: 1
-                            index: 0
-
-                switch @chartType
-                    when "Bar"
-                        @svg.selectAll(".databar.series-#{series}")
-                            .data(dataForCharting)
-                          .enter().append("rect")
-                            .attr("class", "databar series-#{series}")
-                            .attr("width", (d, ix) => axisX.barWidth / xMap[xCoord(d)].count)
-                            .attr("x", (d, ix) => 
-                                xVal = xCoord(d)
-                                xIndex = xMap[xVal].index
-                                xMap[xVal].index++
-                                xVal + (series * axisX.barWidth) + axisX.barWidth * xIndex / xMap[xVal].count)
-                            .attr("y", (d) => yCoord(d))
-                            .attr("height", (d) => @height - yCoord(d))
-                            .style("fill", seriesColor)
-                            # popover
-                            .attr("title",        seriesLabel)
-                            .attr("data-content", formatDataPoint yVar)
-                            .attr("data-placement", (d) =>
-                                if xCoord(d) < @width/2 then "right" else "left"
-                            )
-                    else
-                        @svg.selectAll(".dot.series-#{series}")
-                            .data(dataForCharting)
-                          .enter().append("circle")
-                            .attr("class", "dot series-#{series}")
-                            .attr("r", 5)
-                            .attr("cx", xCoord)
-                            .attr("cy", yCoord)
-                            .style("fill", seriesColor)
-                            # popover
-                            .attr("title",        seriesLabel)
-                            .attr("data-content", formatDataPoint yVar)
-                            .attr("data-placement", (d) =>
-                                if xCoord(d) < @width/2 then "right" else "left"
-                            )
-
-                switch @chartType
-                    when "Line"
-                        unless @chartOptions.hideLines
-                            line = d3.svg.line().x(xCoord).y(yCoord)
-                            line.interpolate("basis") if @chartOptions.interpolateLines
-                            @svg.append("path")
-                                .datum(dataForCharting)
-                                .attr("class", "line")
-                                .attr("d", line)
-                                .style("stroke", seriesColor)
-
-                if _.size(@varsY) > 1
-                    if seriesLabel
-                        seriesLabel = "#{seriesLabel} (#{yVar.name})"
-                    else
-                        seriesLabel = yVar.name
-                else
-                    unless seriesLabel
-                        seriesLabel = yVar.name
-                if _.size(@varsY) == 1 and _.size(@dataBySeries) == 1
-                    seriesLabel = null
-
-                # legend
-                if seriesLabel?
-                    i = dataForCharting.length - 1
-                    #i = Math.round(Math.random() * i) # TODO find a better way to place labels
-                    d = dataForCharting[i]
-                    x = xCoord(d)
-                    leftHandSide = x < @width/2
-                    inTheMiddle = false # @width/4 < x < @width*3/4
-                    @svg.append("text")
-                        .datum(d)
-                        .attr("transform", "translate(#{xCoord(d)},#{yCoord(d)})")
-                        .attr("x", if leftHandSide then 5 else -5).attr("dy", "-.5em")
-                        .style("text-anchor", if inTheMiddle then "middle" else if leftHandSide then "start" else "end")
-                        .style("fill", seriesColor)
-                        .text(seriesLabel)
-
-                series++
-
-        # popover
-        @baseElement.find(".dot, .databar").popover(
-            trigger: "click"
-            html: true
-            container: @baseElement
-        )
-
-        ## update optional UI elements
-        @optionElements.toggleLogScale.toggleClass("disabled", true)
-        for axis in @axes
-            @optionElements["toggleLogScale#{axis.name}"]
-               ?.toggleClass("disabled", not axis.isLogScalePossible)
-
-        @optionElements.toggleOrigin.toggleClass("disabled", true)
-        @optionElements["toggleOriginY1"]?.toggleClass("disabled", intervalContains axis.domain, 0)
-        if @chartType is "Scatter"
-            @optionElements["toggleOriginX"]?.toggleClass("disabled", intervalContains axis.domain, 0)
-
-        isLineChartDisabled = @chartType isnt "Line"
-        $(@optionElements.toggleHideLines)
-           ?.toggleClass("disabled", isLineChartDisabled)
-            .toggleClass("hide", isLineChartDisabled)
-        $(@optionElements.toggleInterpolateLines)
-           ?.toggleClass("disabled", isLineChartDisabled or @chartOptions.hideLines)
-            .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
+        # create and render the chart
+        # TODO reuse the created chart?
+        @chart = new chartClass @baseElement, @table,
+            @optionElements, @chartOptions,
+            @varX, @varsY, @varsYbyUnit, @varsPivot
+        do @chart.render
 
 )
