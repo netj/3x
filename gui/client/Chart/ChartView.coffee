@@ -329,8 +329,12 @@ class ResultsChart extends CompositeElement
         resultsForRendering = @table.resultsForRendering
         return unless resultsForRendering?.length > 0
         # functions to get numbers for plotting
-        accessorFor = (v) -> (rowIdx) -> resultsForRendering[rowIdx][v.index].value
-        originFor   = (v) -> (rowIdx) -> resultsForRendering[rowIdx][v.index].origin
+        accessorFor = (v) -> (rowIdx) -> 
+            toReturn = resultsForRendering[rowIdx][v.index].value
+            return if isNaN(+toReturn) then toReturn else +toReturn
+        originFor   = (v) -> (rowIdx) -> 
+            toReturn = resultsForRendering[rowIdx][v.index].origin
+            return if isNaN(+toReturn) then toReturn else +toReturn
         @dataBySeries = _.groupBy entireRowIndexes, (rowIdx) =>
             @varsPivot.map((pvVar) -> accessorFor(pvVar)(rowIdx)).join(", ")
         # See: https://github.com/mbostock/d3/wiki/Ordinal-Scales#wiki-category10
@@ -471,25 +475,6 @@ class ResultsChart extends CompositeElement
             axisX = @axes[0]
             axisX.domain = entireRowIndexes.map(axisX.accessor)
 
-            getIndicesInGroup = (domain) =>
-                hashmap = {}
-                toReturn = []
-                for item in domain
-                    hashmap[item] ?= -1
-                    hashmap[item]++
-                    toReturn.push hashmap[item]
-                toReturn
-
-            getGroupSizes = (domain) =>
-                domainCounts = _.countBy(domain, (name) => _.identity name)
-                toReturn = []
-                for item in domain
-                    toReturn.push domainCounts[item]
-                toReturn
-
-            axisX.indicesInGroup = getIndicesInGroup axisX.domain
-            axisX.groupSizes = getGroupSizes axisX.domain
-
             switch @chartType
                 when "Bar"
                     # set up scale function
@@ -499,8 +484,7 @@ class ResultsChart extends CompositeElement
                     # d is really the index; xData grabs the value for that index
                     axisX.coord = (d) -> x(xData(d))
                     xData = axisX.accessor
-                    axisX.barWidth = x.rangeBand() / @varsY.length
-                    axisX.seriesOffset = axisX.barWidth / Object.keys(_this.dataBySeries).length
+                    axisX.barWidth = x.rangeBand() / @varsY.length / Object.keys(_this.dataBySeries).length
                 when "Line"
                     x = axisX.scale = d3.scale.ordinal()
                         .domain(axisX.domain)
@@ -508,9 +492,6 @@ class ResultsChart extends CompositeElement
                     xData = axisX.accessor
                     axisX.coord = (d) -> x(xData(d)) + x.rangeBand()/2
                 when "Scatter"
-                    # convert axisX.domain to ints if strings
-                    axisX.domain = axisX.domain.map((i) -> +i)
-                    # axisX.domain = _.map(axisX.domain, function(i){ return +i; });
                     x = axisX.scale = pickScale(axisX).nice()
                         .range([0, @width])
                     xData = axisX.accessor
@@ -567,14 +548,29 @@ class ResultsChart extends CompositeElement
             for seriesLabel,dataForCharting of @dataBySeries
                 seriesColor = (d) -> color(series)
 
+                # Splits bars if same x-value within a series; that's why it maintains a count and index
+                xMap = {}
+                for d in dataForCharting
+                    xVal = xCoord(d)
+                    if xMap[xVal]?
+                        xMap[xVal].count++
+                    else
+                        xMap[xVal] =
+                            count: 1
+                            index: 0
+
                 switch @chartType
                     when "Bar"
                         @svg.selectAll(".databar.series-#{series}")
                             .data(dataForCharting)
                           .enter().append("rect")
                             .attr("class", "databar series-#{series}")
-                            .attr("width", (d, ix) => axisX.barWidth / axisX.groupSizes[ix])
-                            .attr("x", (d, ix) => xCoord(d) + (series * axisX.seriesOffset) + axisX.barWidth * axisX.indicesInGroup[ix] / axisX.groupSizes[ix])
+                            .attr("width", (d, ix) => axisX.barWidth / xMap[xCoord(d)].count)
+                            .attr("x", (d, ix) => 
+                                xVal = xCoord(d)
+                                xIndex = xMap[xVal].index
+                                xMap[xVal].index++
+                                xVal + (series * axisX.barWidth) + axisX.barWidth * xIndex / xMap[xVal].count)
                             .attr("y", (d) => yCoord(d))
                             .attr("height", (d) => @height - yCoord(d))
                             .style("fill", seriesColor)
