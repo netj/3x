@@ -8,6 +8,9 @@
   },
   "private": true,
   "dependencies": {
-    "underscore": "1.4.2"
+    "sqlite3": "2.1.19",
+    "async": "0.2.9",
+    "underscore": "1.4.2",
+    "coffee-script": "1.6.3"
   }
 }
