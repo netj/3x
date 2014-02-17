@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# > 3x start
+# Starts a new worker for executing runs in current queue.  You can start
+# as many workers as you want to execute in parallel.
+#
+# queue-start -- starts a new worker for current queue
+# 
+# > . find-runner.sh -
+# > setsid queue-start
+#
+# Using base queue-stop, workers can be stopped entirely or individually.
+# The worker started by this base queue-start stays idle when the plan is
+# empty until it gets waken by base queue-changed, so arriving runs at the
+# queue can be processed instantly.
+# 
+# To extend the default behavior of this handler, create queue-start handler
+# in the extending runner's directory as follows:
+# > . runner.sh [PARENT_RUNNER...]
+# > ...             # things to do before
+# > super "$0" "$@" # the default behavior, if needed ($PWD MUST remain same)
+# > ...             # things to do after
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2013-01-17
+exec as-a-worker repeat-dequeue

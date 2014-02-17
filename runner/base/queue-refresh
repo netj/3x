@@ -1,20 +1,11 @@
 #!/usr/bin/env bash
-# queue-refresh -- refresh current queue records of its state
+# queue-refresh -- Poll the current state of the runner for current queue
 # 
 # > . find-runner.sh -
 # > setsid queue-refresh
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
-# Created: 2013-07-01
+# Created: 2014-02-16
 set -eu
-. runner.sh
 
-# check lock handles to see if there's anything alive
-for handle in $WORKER_LOCK_PREFIX*.lock $RUNDIR_PREFIX*/lock; do
-    [ -e "$handle" ] || continue
-    lockproc "$handle" alive || continue
-    exit
-done
-
-# otherwise, remove the flag
-rm -f $ACTIVE_FLAG
+error "$_3X_RUNNER/queue-refresh: Not implemented"

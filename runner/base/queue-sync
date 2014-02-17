@@ -1,41 +1,11 @@
 #!/usr/bin/env bash
-# queue-sync -- synchronize current queue records with reality
+# queue-sync -- Synchronize repository with what happened at the target
 # 
 # > . find-runner.sh -
 # > setsid queue-sync
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
-# Created: 2013-07-07
+# Created: 2014-02-16
 set -eu
-. runner.sh
 
-clean-stale-running-dirs() {
-    # TODO don't use $runDir/lock
-
-    # determine the stopped/stale ones
-    set --
-    for runDir in $RUNDIR_PREFIX*/; do
-        runDir=${runDir%/}
-        lockproc $runDir/lock alive || set -- "$@" $runDir
-    done
-
-    # clean up stale runDirs
-    for staleRunDir; do
-        [ -e "$staleRunDir" ] || continue
-
-        serial=${staleRunDir#$RUNDIR_PREFIX}
-        msg +2 "$_3X_QUEUE_ID: cleaning up ABORTED run #$serial"
-
-        # revert the state back to PLANNED
-        queue mark-as PLANNED $serial
-
-        # and remove
-        ! [ -e $staleRunDir/run/ ] || unarchive "$_3X_ARCHIVE" $staleRunDir/run/
-        rm -rf $staleRunDir/run/ $staleRunDir
-    done
-}
-synchronized running.lock  clean-stale-running-dirs
-# TODO don't use running.lock
-
-# then, reflect the queue state
-queue-refresh
+error "$_3X_RUNNER/queue-sync: Not implemented"

@@ -1,3 +1,5 @@
+parents                 $TOOLSDIR/runner/local/
+
 run.assemble            $TOOLSDIR/runner/local/
 
 run.execute             $TOOLSDIR/runner/local/

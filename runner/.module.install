@@ -20,7 +20,6 @@ base/queue-refresh              $TOOLSDIR/runner/.../
 base/queue-sync                 $TOOLSDIR/runner/.../
 
 base/runner.sh                  $TOOLSDIR/runner/.../
-base/as-a-worker                $TOOLSDIR/runner/.../
 base/repeat-dequeue             $TOOLSDIR/runner/.../
 base/dequeue                    $TOOLSDIR/runner/.../
 base/run                        $TOOLSDIR/runner/.../
@@ -29,6 +28,13 @@ base/run.execute                $TOOLSDIR/runner/.../
 base/run.store                  $TOOLSDIR/runner/.../
 base/judge-state-of-run         $TOOLSDIR/runner/.../
 base/environ                    $TOOLSDIR/runner/.../
+
+base/sync/as-a-worker           $TOOLSDIR/runner/base.sync/
+base/sync/queue-start           $TOOLSDIR/runner/base.sync/
+base/sync/queue-stop            $TOOLSDIR/runner/base.sync/
+base/sync/queue-changed         $TOOLSDIR/runner/base.sync/
+base/sync/queue-refresh         $TOOLSDIR/runner/base.sync/
+base/sync/queue-sync            $TOOLSDIR/runner/base.sync/
 
 base/remote/remote-runner.sh    $TOOLSDIR/runner/base.remote/
 

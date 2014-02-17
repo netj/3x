@@ -1,23 +1,11 @@
 #!/usr/bin/env bash
-# queue-changed -- handle the event of queue modification
+# queue-changed -- Handle the modification event of the current queue
 # 
 # > . find-runner.sh -
 # > setsid queue-changed
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
-# Created: 2013-01-17
+# Created: 2014-02-16
 set -eu
-. runner.sh
 
-queue-refresh
-
-. find-queue.sh
-if queue-is-active; then
-
-    for workerHandle in $WORKER_LOCK_PREFIX*.lock; do
-        [ -e "$workerHandle$WORKER_WAITING_SUFFIX" ] || continue
-        # wake up a waiting worker for the queue change
-        lockproc $workerHandle kill -$WORKER_WAITING_SIGNAL
-    done
-
-fi
+error "$_3X_RUNNER/queue-changed: Not implemented"
