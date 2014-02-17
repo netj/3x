@@ -228,14 +228,11 @@ class ResultsChart extends CompositeElement
         # establish which chart type we're using
         chartTypes = "Line Bar".trim().split(/\s+/)
         noSpecifiedChartType = not @chartType?
-        # save original type because we might want to display x-axis either as nominal or as number/ratio depending on chart type chosen
-        @varX.originalType ?= @varX.type
-        if utils.isRatio @varX.originalType
+        # specify which chart types are allowed
+        if utils.isRatio @varX.type
             chartTypes.push "Scatter"
             # Keep it a scatterplot
             @chartType = "Scatter" if noSpecifiedChartType
-            # If not a scatterplot, make the x variable nominal/string
-            @varX.type = if @chartType != "Scatter" then "nominal" else @varX.originalType
         else
             @chartType = "Bar" if @chartType != "Line"
             # when local storage does not specify origin toggle value, or
@@ -344,7 +341,7 @@ class ResultsChart extends CompositeElement
         # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
         intervalContains = (lu, xs...) ->
             (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
-        axisType = (ty) -> if utils.isNominal ty then "nominal" else if utils.isRatio ty then "ratio"
+        # axisType = (ty) -> if utils.isNominal ty then "nominal" else if utils.isRatio ty then "ratio"
         formatAxisLabel = (axis) ->
             unit = axis.unit
             unitStr = if unit then "(#{unit})" else ""
@@ -422,7 +419,6 @@ class ResultsChart extends CompositeElement
             # X axis
             @axes.push
                 name: "X"
-                type: axisType @varX.type # space?
                 unit: @varX.unit
                 columns: [@varX]
                 accessor: accessorFor(@varX)
@@ -433,7 +429,6 @@ class ResultsChart extends CompositeElement
                 i = @axes.length
                 @axes.push axisY =
                     name: "Y#{i}"
-                    type: axisType vY.type
                     unit: vY.unit
                     columns: @varsYbyUnit[vY.unit]
                 # figure out the extent for this axis
@@ -497,7 +492,7 @@ class ResultsChart extends CompositeElement
                     xData = axisX.accessor
                     axisX.coord = (d) -> x(xData(d))
                 else
-                    error "Unsupported variable type (#{axis.type}) for X axis", axisX.column
+                    error "Unsupported variable type for X axis", axisX.column
             axisX.label = formatAxisLabel axisX
             axisX.axis = d3.svg.axis()
                 .scale(axisX.scale)
@@ -650,9 +645,9 @@ class ResultsChart extends CompositeElement
                ?.toggleClass("disabled", not axis.isLogScalePossible)
 
         @optionElements.toggleOrigin.toggleClass("disabled", true)
-        for axis in @axes
-            @optionElements["toggleOrigin#{axis.name}"]
-               ?.toggleClass("disabled", axis.type isnt "ratio" or intervalContains axis.domain, 0)
+        @optionElements["toggleOriginY1"]?.toggleClass("disabled", intervalContains axis.domain, 0)
+        if @chartType is "Scatter"
+            @optionElements["toggleOriginX"]?.toggleClass("disabled", intervalContains axis.domain, 0)
 
         isLineChartDisabled = @chartType isnt "Line"
         $(@optionElements.toggleHideLines)
@@ -662,8 +657,4 @@ class ResultsChart extends CompositeElement
            ?.toggleClass("disabled", isLineChartDisabled or @chartOptions.hideLines)
             .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
 
-        # Reset type property for variables
-        for ax, ord in @vars
-            @vars[ord].type = ax.originalType if ax.originalType?
-            @vars[ord].originalType = null if ax.originalType?
 )
