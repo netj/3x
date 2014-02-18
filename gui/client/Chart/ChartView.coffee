@@ -17,9 +17,10 @@ CompositeElement = require "CompositeElement"
 class Chart
     constructor: (@baseElement, @table, @optionElements, @chartOptions,
             @varX, @varsY, @varsPivot) ->
-        @type = null # TODO instead of branching off with @type, override with subclasses
+        @type = null # TODO REFACTORING instead of branching off with @type, override with subclasses
 
     render: =>
+        # TODO REFACTORING move these into ChartData
         ## Collect data to plot from @table
         $trs = @table.baseElement.find("tbody tr")
         @entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
@@ -34,6 +35,8 @@ class Chart
         do @renderYaxis
         do @renderData
 
+        # TODO REFACTORING change the following code to modify ChartOptions
+        # TODO REFACTORING let ChartView listen to ChartOptions' change events and update @optionElements instead
         ## update optional UI elements
         @optionElements.toggleLogScale.toggleClass("disabled", true)
         for axis in @axes
@@ -45,7 +48,7 @@ class Chart
         if @type is "Scatter"
             @optionElements["toggleOriginX"]?.toggleClass("disabled", @intervalContains axis.domain, 0)
 
-        isLineChartDisabled = @type isnt "Line" # TODO use: @ instanceof LineChart
+        isLineChartDisabled = @type isnt "Line" # TODO REFACTORING use: @ instanceof LineChart
         $(@optionElements.toggleHideLines)
            ?.toggleClass("disabled", isLineChartDisabled)
             .toggleClass("hide", isLineChartDisabled)
@@ -311,6 +314,7 @@ class Chart
 
 
     # functions to get numbers for plotting
+    # TODO REFACTORING move these to ChartData
     accessorFor: (v) => (rowIdx) => # TODO change back to single arrows?
         toReturn = @resultsForRendering[rowIdx][v.index].value
         return if isNaN(+toReturn) then toReturn else +toReturn
@@ -319,6 +323,7 @@ class Chart
         toReturn = @resultsForRendering[rowIdx][v.index].origin
         return if isNaN(+toReturn) then toReturn else +toReturn
 
+    # TODO move to utils.coffee
     # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
     intervalContains: (lu, xs...) ->
         (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
@@ -352,6 +357,7 @@ class Chart
             unitStr
 
     formatDataPoint: (varY) =>
+        # TODO REFACTORING rewrite these in terms of ChartData
         vars = [varY, @varX]
         varsImplied = vars.concat @varsPivot
         vars = vars.concat (
