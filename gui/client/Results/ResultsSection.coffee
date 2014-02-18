@@ -12,6 +12,6 @@ class ResultsSection
             toggleIncludeEmpty          : $("#results-include-empty")
             toggleShowHiddenConditions  : $("#results-show-hidden-conditions")
             buttonResetColumnOrder      : $("#results-reset-column-order")
-            containerForStateDisplay    : $("#results")
+            containerForStateDisplay    : $("#Results")
             buttonRefresh               : $("#results-refresh")
             buttonExport                : $("#results-export")
