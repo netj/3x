@@ -220,7 +220,7 @@ class StatusTable extends CompositeElement
                             "data-toggle": "popover"
                             "data-trigger": "hover"
                             "data-placement": "left"
-                            "data-container": ".dataTables_wrapper"
+                            "data-container": ".run-history-container"
                         ).popover("hide")
             fnInitComplete: =>
                 @dataTable.find("tbody").removeClass("hide")
