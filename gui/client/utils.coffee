@@ -59,7 +59,13 @@ enumerate : (vs) -> vs.joinTextsWithShy ","
 isNominal : (type) -> type in ["string", "nominal"]
 isRatio   : (type) -> type in ["number","ratio"]
 
-isAllNumeric : (vs) -> not vs.some (v) -> isNaN parseFloat v
+isNumeric : isNumeric = (v) -> not isNaN +v
+tryConvertingToNumber : (v) ->
+    if isNumeric v
+        +v
+    else
+        v
+isAllNumeric : (vs) -> vs.every isNumeric
 tryConvertingToNumbers : (vs) ->
     if isAllNumeric vs
         vs.map (v) -> +v

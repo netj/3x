@@ -1,3 +1,5 @@
+utils = require "utils"
+
 class ChartData
     constructor: (@table, @varX, @varsY, @varsPivot) ->
         ## Collect data to plot from @table
@@ -8,12 +10,10 @@ class ChartData
 
     # functions to get numbers for plotting
     accessorFor: (v) => (rowIdx) => # TODO change back to single arrows?
-        toReturn = @table.resultsForRendering[rowIdx][v.index].value
-        return if isNaN(+toReturn) then toReturn else +toReturn
+        utils.tryConvertingToNumber @table.resultsForRendering[rowIdx][v.index].value
 
     originFor: (v) => (rowIdx) => # TODO change back to single arrows?
-        toReturn = @table.resultsForRendering[rowIdx][v.index].origin
-        return if isNaN(+toReturn) then toReturn else +toReturn
+        @table.resultsForRendering[rowIdx][v.index].origin
 
     provenanceAccessorFor: (vars) =>
         tableRows = @table.results.rows
@@ -23,8 +23,7 @@ class ChartData
         vars = [vars..., runIdVar]
         getProvenanceRows = @originFor(vars[0])
         (rowIdx) ->
-            originRows = getProvenanceRows(rowIdx) ? []
-            for i in originRows
+            for i in getProvenanceRows(rowIdx) ? []
                 row = {}
                 row[v.name] = tableRows[i][v.dataIndex] for v in vars
                 row
