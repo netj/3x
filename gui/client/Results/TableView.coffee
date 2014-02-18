@@ -564,7 +564,7 @@ class ResultsTable extends CompositeElement
                         $th = @dataTable.find("thead").eq(0).find("th").eq(i)
                         td.style.cssText += """;
                             width: #{$th.css("width")} !important;
-                            min-height: #{td.offsetHeight}px !important;
+                            height: #{$(td).height()}px !important;
                             word-break: break-all;
                             word-wrap: break-word;
                         """ # XXX .style.cssText is the only way to give !important :S
