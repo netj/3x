@@ -8,26 +8,51 @@ Self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
 compile-coffee-to() {
     local dest=$1; shift
     for cs; do
+        [[ -e "$cs" ]] || continue
         js=${cs%.coffee}.js
         js=${js##*/}
         [[ "$cs" -nt "$dest"/"$js" ]] || continue
-        echo >&2 "Compiling $cs..."
+        echo >&2 "Compiling $cs"
         coffee -c -m -o "$dest" "$cs" &
     done
     wait
 }
 # how to convert legacy codes to AMD modules
 convertAMD() {
-    local src=$1 dst=$2
+    local src=$1 dst=$2 prologue=${3:-} epilogue=${4:-}
     if [[ "$src" -nt "$dst" || -L "$dst" ]]; then
-        echo >&2 "Converting to AMD $dst..."
+        echo >&2 "Converting to AMD $dst"
         rm -f "$dst"
         {
-            echo 'define(function(require, exports, module) {'
+            echo -n 'define(function(require, exports, module) { '"$prologue"
             cat "$src"
-            echo '});'
+            echo "$epilogue"'});'
         } >"$dst"
     fi
+}
+compile-coffee-AMDs-to() {
+    local dest=$1; shift
+    for cs; do
+        [[ -e "$cs" ]] || continue
+        js=${cs%.coffee}.js
+        js=${js##*/}
+        [[ "$cs" -nt "$dest"/"$js" || "$Self" -nt "$dest"/"$js" ]] || continue
+        echo >&2 "Compiling as AMD $cs"
+        (
+        csname=${cs##*/} csdir=${cs%/*}
+        csAMD="$csdir"/amd/"$csname"
+        if [[ "$cs" -nt "$csAMD" ]]; then
+            mkdir -p "$csdir"/amd
+            {
+                echo -n 'define (require) -> ("use strict"; '
+                cat "$cs"
+                echo ')'
+            } >"$csAMD"
+        fi
+        coffee -c -m -o "$dest" "$csAMD"
+        ) &
+    done
+    wait
 }
 
 
@@ -53,7 +78,7 @@ dir_pypkgs=python-packages
         [ -d "$dir_pypkgs/$pkg" ] || allExists=false
     done
     if ! $allExists; then
-        echo >&2 "Bundling python packages..."
+        echo >&2 "Bundling python packages"
         mkdir -p -- "$dir_pypkgs"
         [ -s get-pip.py ] ||
             curl -sRLO https://raw.github.com/pypa/pip/master/contrib/get-pip.py
@@ -83,21 +108,21 @@ implicit-dependency 3x.less.in      */*.less
 for src in *.in; do
     out=../.build/client/${src%.in}
     [[ "$src" -nt "$out" ]] || continue
-    echo >&2 "Compiling $src..."
+    echo >&2 "Compiling $src"
     compile-xdocs <"$src" >"$out"
 done
 cd ..
 
 # prepare some symlinks to simplify the rest of the build process
-find client/{{,*/}*.coffee,*.less} .build/client/*.{coffee,less} \
-    -exec relsymlink {} .build/client/src/ \;
+rsync -av client/{{,*/}*.coffee,*.less} .build/client/*.{coffee,less} \
+    .build/client/src/
 relsymlink extern .build/client/prototype/
 
 
 # build and symlink external libraries
 ( cd extern/jquery
 [ -s dist/jquery.js ] || {
-    echo >&2 "Building jquery..."
+    echo >&2 "Building jquery"
     npm install
     grunt
 }
@@ -105,7 +130,7 @@ relsymlink extern .build/client/prototype/
 
 ( cd extern/jquery-ui
 [ -s dist/minified/jquery.ui.core.min.js ] || {
-    echo >&2 "Building jquery-ui..."
+    echo >&2 "Building jquery-ui"
     npm install
     grunt release
 }
@@ -113,7 +138,7 @@ relsymlink extern .build/client/prototype/
 
 ( cd extern/knockout
 [ -s build/output/knockout-latest.debug.js ] || {
-    echo >&2 "Building knockout..."
+    echo >&2 "Building knockout"
     npm install
     grunt build:debug
 }
@@ -121,7 +146,7 @@ relsymlink extern .build/client/prototype/
 
 ( cd extern/bootstrap
 [ -s bootstrap/js/bootstrap.js ] || {
-    echo >&2 "Building bootstrap..."
+    echo >&2 "Building bootstrap"
     npm install
     make bootstrap-js
     git config core.excludesfile ../bootstrap.gitignore
@@ -166,7 +191,8 @@ done
 
 
 # compile CoffeeScript sources
-compile-coffee-to . ../src/!(app.build).coffee
+compile-coffee-AMDs-to . ../src/!(main|app.build).coffee
+compile-coffee-to      . ../src/main.coffee
 
 
 # compile LESS source codes
@@ -191,7 +217,7 @@ for less in ../src/*.less; do
     css=${less%.less}.css
     css=${css##*/}
     [[ "$less" -nt "$css" ]] || continue
-    echo >&2 "Compiling $less..."
+    echo >&2 "Compiling $less"
     lessc "$less" "$css"
 done
 

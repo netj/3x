@@ -1,5 +1,3 @@
-define (require) -> (\
-
 # different aggregation methods depending on data type or level of measurement
 class Aggregation
     constructor: (@name, @type, @func, @transUnit = _.identity) ->
@@ -51,5 +49,3 @@ class Aggregation
         Aggregation.registerForType "ordinal"  , "median" , "mode"  , "min"       , "max"  , "count" , "enumeration"
         Aggregation.registerForType "interval" , "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
         Aggregation.registerForType "ratio"    , "mean"   , "stdev" , "median"    , "mode" , "min"   , "max"       , "enumeration"
-
-)

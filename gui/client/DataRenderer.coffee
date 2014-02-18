@@ -1,5 +1,3 @@
-define (require) -> (\
-
 # different rendering methods depending on data type
 class DataRenderer
     # HTML generator, or DOM manipulator, or both can be used
@@ -45,5 +43,3 @@ do ->
     DataRenderer.addAliases "number", "ratio", "interval", "ordinal"
     # TODO ordinals could be or not be numbers, how about trying to detect them first?
 DataRenderer
-
-)

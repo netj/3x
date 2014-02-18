@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 _ = require "underscore"
 require "jsrender"
@@ -631,5 +629,3 @@ class ResultsTable extends CompositeElement
         # open it using the data URI scheme to make it appear as plain text
         dataURI = "data:text/plain;charset=UTF-8,#{encodeURIComponent data}"
         popup = open dataURI, "data-export", "menubar=no"
-
-)

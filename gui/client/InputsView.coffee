@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 
 _3X_ = require "3x"
@@ -28,5 +26,3 @@ class ConditionsUI extends MenuDropdown
             @updateDisplay menuAnchor
             try log "initCondition #{name}:#{type}=#{values.join ","}"
         @trigger "initialized"
-
-)

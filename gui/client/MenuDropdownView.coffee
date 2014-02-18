@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 require "jsrender"
 require "jquery.ui.selectable"
@@ -175,5 +173,3 @@ class MenuDropdown extends CompositeElement
             @lastMenusInactive = thisMenusInactive
             _.defer => @trigger "activeMenusChanged"
 
-
-)

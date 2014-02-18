@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 _ = require "underscore"
 io = require "socket.io"
@@ -258,5 +256,3 @@ class QueuesUI extends CompositeElement
     doQueueAction: (queueName, action) =>
         $.getJSON("#{_3X_.BASE_URL}/api/run/queue/#{queueName}:#{action}")
             # TODO show feedback in case of failure
-
-)

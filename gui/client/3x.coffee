@@ -4,7 +4,6 @@
 # Created: 2012-11-11
 ###
 
-define (require) -> (\
 $ = require "jquery"
 _ = require "underscore"
 
@@ -72,7 +71,5 @@ class _3X_
             do _3X_.initTabs
             log "_3X_ initialized"
 
-
-)
 
 # vim:undofile

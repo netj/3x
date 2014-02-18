@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 
 InputsView  = require "InputsView"
@@ -17,5 +15,3 @@ class ResultsSection
             containerForStateDisplay    : $("#results")
             buttonRefresh               : $("#results-refresh")
             buttonExport                : $("#results-export")
-
-)

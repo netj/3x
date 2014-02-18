@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 _ = require "underscore"
 
@@ -48,5 +46,3 @@ class CompositeElement
     displayIfDeferred: => do @display if @deferredDisplay?
     render: =>
         error "CompositeElement::render() not implemented"
-
-)

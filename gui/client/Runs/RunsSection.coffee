@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 
 StatusTable = require "RunHistoryView"
@@ -26,5 +24,3 @@ class RunsSection
             toggleAbsoluteProgress: $("#queue-toggle-absolute-progress")
             activeCountDisplay: $("#active-count.label")
             remainingCountDisplay: $("#remaining-count.label")
-
-)

@@ -1,6 +1,3 @@
-# Define just a necessary construct for all CoffeeScript files, with code between (\ ... ) ?
-define (require) -> (\
-
 $ = require "jquery"
 _ = require "underscore"
 d3 = require "d3"
@@ -754,5 +751,3 @@ class ChartView extends CompositeElement
             @optionElements, @chartOptions,
             @varX, @varsY, @varsYbyUnit, @varsPivot
         do @chart.render
-
-)

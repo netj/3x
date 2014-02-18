@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 
 _3X_ = require "3x"
@@ -138,5 +136,3 @@ class MeasurementsUI extends MenuDropdown
         if @lastMenuFilter isnt thisMenuFilter
             @lastMenuFilter = thisMenuFilter
             _.defer => @trigger "filtersChanged"
-
-)

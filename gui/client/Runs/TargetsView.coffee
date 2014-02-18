@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 _ = require "underscore"
 
@@ -116,5 +114,3 @@ class TargetsUI extends CompositeElement
             t = @targetKnobs?.find("li.current a")
             t = @targetKnobs?.find("li a:first") unless t?.length > 0
             t?.tab("show")
-
-)

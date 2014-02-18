@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 
 ChartView = require "ChartView"
@@ -20,5 +18,3 @@ class ChartSection
             alertChartImpossible    : $("#chart-impossible")
             chartOptions            : $("#chart-options")
             chartTitle              : $("#chart-title")
-
-)

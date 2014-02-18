@@ -1,5 +1,3 @@
-define (require) -> (\
-
 numeral = require "numeral"
 
 # See: http://stackoverflow.com/questions/1470810/wrapping-long-text-in-css
@@ -73,5 +71,3 @@ humanReadableNumber : (num, fmt = "0,0") ->
 
 
 }
-
-)

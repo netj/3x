@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 _ = require "underscore"
 require "bootstrap"
@@ -519,5 +517,3 @@ class StatusTable extends CompositeElement
                     # toss a coin if there are more remaining than needed
                     addCombination comb
                     numToChoose--
-
-)

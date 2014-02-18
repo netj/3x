@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 _ = require "underscore"
 ko = require "knockout"
@@ -78,5 +76,3 @@ class PlannerUI extends CompositeElement
         moreRuns = []
         runGenerator valuesArray, (run) -> moreRuns.push run
         RunsSection.status.addPlan moreRuns # FIXME remove direct dependency, global variable
-
-)

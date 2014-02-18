@@ -1,5 +1,3 @@
-define (require) -> (\
-
 _3X_ = require "3x"
 {
     log
@@ -97,5 +95,3 @@ class ComplexDataTypes
                                 $canvas.remove()
         DataRenderer.addAliases "image", "image/png", "image/jpeg", "image/gif" #, TODO ...
 
-
-)

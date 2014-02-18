@@ -1,5 +1,3 @@
-define (require) -> (\
-
 $ = require "jquery"
 
 InputsView = require "InputsView"
@@ -10,5 +8,3 @@ class PlanSection
     @planner: new PlannerUI $("#Plan"),
         PlanSection.plannerInputs,
             buttonAddToQueue: $("#planner-add")
-
-)
