@@ -1,4 +1,5 @@
 numeral = require "numeral"
+d3 = require "d3"
 
 # See: http://stackoverflow.com/questions/1470810/wrapping-long-text-in-css
 # See: http://en.wikipedia.org/wiki/Soft_hyphen for &shy; or \u00AD
@@ -64,6 +65,9 @@ tryConvertingToNumbers : (vs) ->
         vs.map (v) -> +v
     else
         vs
+
+intervalContains: (lu, xs...) ->
+    (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
 
 # See: http://numeraljs.com
 humanReadableNumber : (num, fmt = "0,0") ->

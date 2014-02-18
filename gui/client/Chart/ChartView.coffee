@@ -35,9 +35,9 @@ class Chart
                ?.toggleClass("disabled", not axis.isLogScalePossible)
 
         @optionElements.toggleOrigin.toggleClass("disabled", true)
-        @optionElements["toggleOriginY1"]?.toggleClass("disabled", @intervalContains axis.domain, 0)
+        @optionElements["toggleOriginY1"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
         if @type is "Scatter"
-            @optionElements["toggleOriginX"]?.toggleClass("disabled", @intervalContains axis.domain, 0)
+            @optionElements["toggleOriginX"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
 
         isLineChartDisabled = @type isnt "Line" # TODO REFACTORING use: @ instanceof LineChart
         $(@optionElements.toggleHideLines)
@@ -304,12 +304,6 @@ class Chart
         )
 
 
-    # TODO move to utils.coffee
-    # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
-    intervalContains: (lu, xs...) ->
-        (JSON.stringify d3.extent(lu)) is (JSON.stringify d3.extent(lu.concat(xs)))
-
-    # axisType = (ty) -> if utils.isNominal ty then "nominal" else if utils.isRatio ty then "ratio"
     pickScale: (axis) =>
         dom = d3.extent(axis.domain)
         # here is where you ground at 0 if origin selected - by adding it to the extent
@@ -318,7 +312,7 @@ class Chart
         if dom[0] == dom[1] or Math.abs (dom[0] - dom[1]) == Number.MIN_VALUE
             dom[0] -= 1
             dom[1] += 1
-        axis.isLogScalePossible = not @intervalContains dom, 0
+        axis.isLogScalePossible = not utils.intervalContains dom, 0
         axis.isLogScaleEnabled = @chartOptions["logScale#{axis.name}"]
         if axis.isLogScaleEnabled and not axis.isLogScalePossible
             error "log scale does not work for domains including zero", axis, dom
