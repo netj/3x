@@ -438,7 +438,7 @@ class ResultsTable extends CompositeElement
         # TODO clean these popover code with https://github.com/jakesgordon/javascript-state-machine
         hideTimeout = null
         detachProvenancePopoverTimeout = null
-        attachProvenancePopover = ($td, e, cursorRelPos, runId) =>
+        attachProvenancePopover = ($td, e, cursorPosInTD, cursorRelPos, runId) =>
             detachProvenancePopoverTimeout = clearTimeout detachProvenancePopoverTimeout if detachProvenancePopoverTimeout?
             hideTimeout = clearTimeout hideTimeout if hideTimeout?
             pos = $td.position()
@@ -447,8 +447,8 @@ class ResultsTable extends CompositeElement
                     .attr(href:"#{_3X_.BASE_URL}/#{runId}/overview", target: "run-details").end()
                 .removeClass("hide")
                 .css
-                    top:  "#{pos.top              - (provenancePopover.height())}px"
-                    left: "#{pos.left + e.offsetX - (provenancePopover.width()/2)}px"
+                    top:  "#{pos.top                  - (provenancePopover.height())}px"
+                    left: "#{pos.left + cursorPosInTD - (provenancePopover.width()/2)}px"
             _.defer => provenancePopover.addClass("in")
         endBrushingTimeout = null
         detachProvenancePopover = =>
@@ -489,11 +489,13 @@ class ResultsTable extends CompositeElement
             brushingCell = brushingRowProcessed[colIdxProcessed]
             return unless brushingCell?.origin?.length > 0
             # find out the relative position we're brushing
-            cursorRelPos = e.offsetX / $td[0].offsetWidth
+            cursorPosInTD = e.offsetX
+            cursorPosInTD ?= e.clientX - $td.position().left # XXX workaround for Firefox, having no Event.offsetX
+            cursorRelPos = cursorPosInTD / $td[0].offsetWidth
             n = brushingCell.origin.length - 1
             brushingPos = Math.max(0, Math.min(n, Math.round(n * cursorRelPos)))
             rowIdxData  = brushingCell.origin[brushingPos]
-            attachProvenancePopover $td, e, brushingPos, @results.rows[rowIdxData][@resultsRunIdIndex]
+            attachProvenancePopover $td, e, cursorPosInTD, brushingPos, @results.rows[rowIdxData][@resultsRunIdIndex]
             return if brushingLastRowIdx == rowIdxData # update only when there's change, o.w. flickering happens
             brushingLastRowIdx = rowIdxData
             #log "updating", brushingLastRowIdx
