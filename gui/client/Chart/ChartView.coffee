@@ -16,7 +16,7 @@ CompositeElement = require "CompositeElement"
 
 class Chart
     constructor: (@baseElement, @table, @optionElements, @chartOptions,
-            @varX, @varsY, @varsYbyUnit, @varsPivot) ->
+            @varX, @varsY, @varsPivot) ->
         @type = null # TODO instead of branching off with @type, override with subclasses
 
     render: =>
@@ -57,26 +57,23 @@ class Chart
     setupAxes: => ## Setup Axes
         @axes = []
         # X axis
-        @axes.push
+        @axes.push axisX =
             name: "X"
             unit: @varX.unit
             columns: [@varX]
             accessor: @accessorFor(@varX)
-        # Y axes: analyze the extent of Y axes data (single or dual unit)
-        for vY in @varsY
-            # if this axis has the same unit as the first y-axis, then skip
-            continue if @axes.length > 1 and vY.unit is @axes[1].unit
-            i = @axes.length
-            @axes.push axisY =
-                name: "Y#{i}"
-                unit: vY.unit
-                columns: @varsYbyUnit[vY.unit]
-                isRatio: utils.isRatio vY
-            # figure out the extent for this axis
-            extent = []
-            for col in axisY.columns
-                extent = d3.extent(extent.concat(d3.extent(@entireRowIndexes, @accessorFor(col))))
-            axisY.domain = extent
+        # Y axis: analyze the extent of Y axes data (single or dual unit)
+        vY = @varsY[0]
+        @axes.push axisY =
+            name: "Y"
+            unit: vY.unit
+            columns: @varsY
+            isRatio: utils.isRatio vY
+        # figure out the extent for the Y axis
+        extent = []
+        for col in axisY.columns
+            extent = d3.extent(extent.concat(d3.extent(@entireRowIndexes, @accessorFor(col))))
+        axisY.domain = extent
     
     @SVG_STYLE_SHEET: """
         <style>
@@ -724,7 +721,7 @@ class ChartView extends CompositeElement
         # TODO reuse the created chart?
         @chart = new chartClass @baseElement, @table,
             @optionElements, @chartOptions,
-            @varX, @varsY, @varsYbyUnit, @varsPivot
+            @varX, @varsY, @varsPivot
         do @chart.render
 
 
