@@ -34,7 +34,6 @@ class Chart
             name: "X"
             unit: @data.varX.unit
             vars: [@data.varX]
-            accessor: @data.accessorFor(@data.varX)
         # Y axis: analyze the extent of Y axes data
         vY = @data.varsY[0]
         @axes.push axisY =
@@ -45,7 +44,7 @@ class Chart
         # figure out the extent for the Y axis
         extent = []
         for col in @data.varsY
-            extent = d3.extent(extent.concat(d3.extent(@data.entireRowIndexes, @data.accessorFor(col))))
+            extent = d3.extent(extent.concat(d3.extent(@data.ids, (@data.accessorFor col))))
         axisY.domain = extent
     
     @SVG_STYLE_SHEET: """
@@ -103,7 +102,8 @@ class Chart
 
     renderXaxis: => ## Setup and draw X axis
         axisX = @axes[0]
-        axisX.domain = @data.entireRowIndexes.map(axisX.accessor)
+        xData = @data.accessorFor @data.varX
+        axisX.domain = @data.ids.map(xData)
 
         switch @type
             when "Bar"
@@ -113,18 +113,15 @@ class Chart
                     .rangeRoundBands([0, @width], .5)
                 # d is really the index; xData grabs the value for that index
                 axisX.coord = (d) -> x(xData(d))
-                xData = axisX.accessor
-                axisX.barWidth = x.rangeBand() / @data.varsY.length / Object.keys(@data.dataBySeries).length
+                axisX.barWidth = x.rangeBand() / @data.varsY.length / Object.keys(@data.idsBySeries).length
             when "Line"
                 x = axisX.scale = d3.scale.ordinal()
                     .domain(axisX.domain)
                     .rangeRoundBands([0, @width], .1)
-                xData = axisX.accessor
                 axisX.coord = (d) -> x(xData(d)) + x.rangeBand()/2
             when "Scatter"
                 x = axisX.scale = @pickScale(axisX).nice()
                     .range([0, @width])
-                xData = axisX.accessor
                 axisX.coord = (d) -> x(xData(d))
             else
                 error "Unsupported variable type for X axis", axisX.column
@@ -181,15 +178,15 @@ class Chart
         xCoord = axisX.coord
         for yVar in @data.varsY
             axisY = @axisByUnit[yVar.unit]
-            yData = @data.accessorFor(yVar)
+            yData = @data.accessorFor yVar
             yCoord = (d) -> axisY.scale(yData(d))
 
-            for seriesLabel,dataForCharting of @data.dataBySeries
+            for seriesLabel,seriesDataIds of @data.idsBySeries
                 seriesColor = (d) -> color(series)
 
                 # Splits bars if same x-value within a series; that's why it maintains a count and index
                 xMap = {}
-                for d in dataForCharting
+                for d in seriesDataIds
                     xVal = xCoord(d)
                     if xMap[xVal]?
                         xMap[xVal].count++
@@ -201,7 +198,7 @@ class Chart
                 switch @type
                     when "Bar"
                         @svg.selectAll(".databar.series-#{series}")
-                            .data(dataForCharting)
+                            .data(seriesDataIds)
                           .enter().append("rect")
                             .attr("class", "databar series-#{series}")
                             .attr("width", (d, ix) => axisX.barWidth / xMap[xCoord(d)].count)
@@ -221,7 +218,7 @@ class Chart
                             )
                     else
                         @svg.selectAll(".dot.series-#{series}")
-                            .data(dataForCharting)
+                            .data(seriesDataIds)
                           .enter().append("circle")
                             .attr("class", "dot series-#{series}")
                             .attr("r", 5)
@@ -241,7 +238,7 @@ class Chart
                             line = d3.svg.line().x(xCoord).y(yCoord)
                             line.interpolate("basis") if @chartOptions.interpolateLines
                             @svg.append("path")
-                                .datum(dataForCharting)
+                                .datum(seriesDataIds)
                                 .attr("class", "line")
                                 .attr("d", line)
                                 .style("stroke", seriesColor)
@@ -254,14 +251,14 @@ class Chart
                 else
                     unless seriesLabel
                         seriesLabel = yVar.name
-                if _.size(@data.varsY) == 1 and _.size(@data.dataBySeries) == 1
+                if _.size(@data.varsY) == 1 and _.size(@data.idsBySeries) == 1
                     seriesLabel = null
 
                 # legend
                 if seriesLabel?
-                    i = dataForCharting.length - 1
+                    i = seriesDataIds.length - 1
                     #i = Math.round(Math.random() * i) # TODO find a better way to place labels
-                    d = dataForCharting[i]
+                    d = seriesDataIds[i]
                     x = xCoord(d)
                     leftHandSide = x < @width/2
                     inTheMiddle = false # @width/4 < x < @width*3/4
@@ -335,7 +332,7 @@ class Chart
 
     formatDataPoint: (varY) =>
         vars = @data.relatedVarsFor(varY)
-        varAccessors = ([v, @data.accessorFor(v)] for v in vars)
+        varAccessors = ([v, (@data.accessorFor v)] for v in vars)
         provenanceFor = @data.provenanceAccessorFor(vars)
         (d) ->
             provenance = provenanceFor(d)
