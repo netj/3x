@@ -5,6 +5,7 @@
 ###
 
 $ = require "jquery"
+require "bootstrap"
 _ = require "underscore"
 
 {
@@ -45,7 +46,10 @@ class _3X_
                         }#{descr.fileSystemPath
                             .split("/").joinTextsWithShy("/")}"
                         )
-                    .tooltip(container: ".navbar")
+                    .tooltip(
+                        container: ".navbar"
+                        placement: "bottom"
+                    )
             )
 
 
