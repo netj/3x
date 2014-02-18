@@ -12,23 +12,14 @@ utils = require "utils"
 
 CompositeElement = require "CompositeElement"
 
+ChartData = require "ChartData"
 
 
 class Chart
-    constructor: (@baseElement, @table, @optionElements, @chartOptions,
-            @varX, @varsY, @varsPivot) ->
+    constructor: (@baseElement, @data, @chartOptions, @optionElements) ->
         @type = null # TODO REFACTORING instead of branching off with @type, override with subclasses
 
     render: =>
-        # TODO REFACTORING move these into ChartData
-        ## Collect data to plot from @table
-        $trs = @table.baseElement.find("tbody tr")
-        @entireRowIndexes = $trs.map((i, tr) -> +tr.dataset.ordinal).get()
-        @resultsForRendering = @table.resultsForRendering
-        return unless @resultsForRendering?.length > 0
-        @dataBySeries = _.groupBy @entireRowIndexes, (rowIdx) =>
-            @varsPivot.map((pvVar) => @accessorFor(pvVar)(rowIdx)).join(", ")
-
         do @setupAxes
         do @createSVG
         do @renderXaxis
@@ -62,20 +53,20 @@ class Chart
         # X axis
         @axes.push axisX =
             name: "X"
-            unit: @varX.unit
-            columns: [@varX]
-            accessor: @accessorFor(@varX)
-        # Y axis: analyze the extent of Y axes data (single or dual unit)
-        vY = @varsY[0]
+            unit: @data.varX.unit
+            vars: [@data.varX]
+            accessor: @data.accessorFor(@data.varX)
+        # Y axis: analyze the extent of Y axes data
+        vY = @data.varsY[0]
         @axes.push axisY =
             name: "Y"
             unit: vY.unit
-            columns: @varsY
+            vars: @data.varsY
             isRatio: utils.isRatio vY
         # figure out the extent for the Y axis
         extent = []
-        for col in axisY.columns
-            extent = d3.extent(extent.concat(d3.extent(@entireRowIndexes, @accessorFor(col))))
+        for col in @data.varsY
+            extent = d3.extent(extent.concat(d3.extent(@data.entireRowIndexes, @data.accessorFor(col))))
         axisY.domain = extent
     
     @SVG_STYLE_SHEET: """
@@ -133,7 +124,7 @@ class Chart
 
     renderXaxis: => ## Setup and draw X axis
         axisX = @axes[0]
-        axisX.domain = @entireRowIndexes.map(axisX.accessor)
+        axisX.domain = @data.entireRowIndexes.map(axisX.accessor)
 
         switch @type
             when "Bar"
@@ -144,7 +135,7 @@ class Chart
                 # d is really the index; xData grabs the value for that index
                 axisX.coord = (d) -> x(xData(d))
                 xData = axisX.accessor
-                axisX.barWidth = x.rangeBand() / @varsY.length / Object.keys(_this.dataBySeries).length
+                axisX.barWidth = x.rangeBand() / @data.varsY.length / Object.keys(@data.dataBySeries).length
             when "Line"
                 x = axisX.scale = d3.scale.ordinal()
                     .domain(axisX.domain)
@@ -166,7 +157,7 @@ class Chart
         if @type isnt "Scatter"
             skipEvery = Math.ceil(x.domain().length / (@width / 55))
             axisX.axis = axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
-        if utils.isRatio @varX.type
+        if utils.isRatio @data.varX.type
             axisX.axis = axisX.axis.tickFormat(d3.format(".3s"))
         @svg.append("g")
             .attr("class", "x axis")
@@ -209,12 +200,12 @@ class Chart
         series = 0
         axisX = @axes[0]
         xCoord = axisX.coord
-        for yVar in @varsY
+        for yVar in @data.varsY
             axisY = @axisByUnit[yVar.unit]
-            y = axisY.scale; yData = @accessorFor(yVar)
-            yCoord = (d) -> y(yData(d))
+            yData = @data.accessorFor(yVar)
+            yCoord = (d) -> axisY.scale(yData(d))
 
-            for seriesLabel,dataForCharting of @dataBySeries
+            for seriesLabel,dataForCharting of @data.dataBySeries
                 seriesColor = (d) -> color(series)
 
                 # Splits bars if same x-value within a series; that's why it maintains a count and index
@@ -276,7 +267,7 @@ class Chart
                                 .attr("d", line)
                                 .style("stroke", seriesColor)
 
-                if _.size(@varsY) > 1
+                if _.size(@data.varsY) > 1
                     if seriesLabel
                         seriesLabel = "#{seriesLabel} (#{yVar.name})"
                     else
@@ -284,7 +275,7 @@ class Chart
                 else
                     unless seriesLabel
                         seriesLabel = yVar.name
-                if _.size(@varsY) == 1 and _.size(@dataBySeries) == 1
+                if _.size(@data.varsY) == 1 and _.size(@data.dataBySeries) == 1
                     seriesLabel = null
 
                 # legend
@@ -312,16 +303,6 @@ class Chart
             container: @baseElement
         )
 
-
-    # functions to get numbers for plotting
-    # TODO REFACTORING move these to ChartData
-    accessorFor: (v) => (rowIdx) => # TODO change back to single arrows?
-        toReturn = @resultsForRendering[rowIdx][v.index].value
-        return if isNaN(+toReturn) then toReturn else +toReturn
-
-    originFor:   (v) => (rowIdx) => # TODO change back to single arrows?
-        toReturn = @resultsForRendering[rowIdx][v.index].origin
-        return if isNaN(+toReturn) then toReturn else +toReturn
 
     # TODO move to utils.coffee
     # If we include xs in the extent, are they the same? If so, then the interval contains, inclusively, the xs
@@ -351,33 +332,21 @@ class Chart
     formatAxisLabel: (axis) ->
         unit = axis.unit
         unitStr = if unit then "(#{unit})" else ""
-        if axis.columns?.length == 1
-            "#{axis.columns[0].name}#{if unitStr then " " else ""}#{unitStr}"
+        if axis.vars?.length == 1
+            "#{axis.vars[0].name}#{if unitStr then " " else ""}#{unitStr}"
         else
             unitStr
 
     formatDataPoint: (varY) =>
-        # TODO REFACTORING rewrite these in terms of ChartData
-        vars = [varY, @varX]
-        varsImplied = vars.concat @varsPivot
-        vars = vars.concat (
-            col for col in @table.columnsRendered when \
-                col.isExpanded and col not in varsImplied
-        )
-        varsWithValueGetter = ([v, @accessorFor(v)] for v in vars)
-        getDataPointOrigin = @originFor(varY)
-        runColIdx = @table.results.names.indexOf _3X_.RUN_COLUMN_NAME
-        yIdx = varY.dataIndex
-        getRawData = (origin) =>
-            rows = @table.results.rows
-            for i in origin
-                [rows[i][yIdx], rows[i][runColIdx]]
+        vars = @data.relatedVarsFor(varY)
+        varAccessors = ([v, @data.accessorFor(v)] for v in vars)
+        provenanceFor = @data.provenanceAccessorFor(vars)
         (d) ->
-            origin = getDataPointOrigin(d)
-            return "" unless origin?
+            provenance = provenanceFor(d)
+            return "" unless provenance?
             """<table class="table table-condensed">""" + [
-                (for [v,getValue] in varsWithValueGetter
-                    val = getValue(d)
+                (for [v,vAccessor] in varAccessors
+                    val = vAccessor(d)
                     {
                         name: v.name
                         value: """<span class="value" title="#{val}">#{val}</span>#{
@@ -389,16 +358,19 @@ class Chart
                     name: "run#.count"
                     value: """<span class="run-details"
                         data-toggle="popover" data-html="true"
-                        title="#{origin?.length} runs" data-content="
+                        title="#{provenance?.length} runs" data-content="
                         <small><ol class='chart-run-details'>#{
-                            getRawData(origin).map(([yValue,runId]) ->
+                            provenance.map((row) ->
+                                # TODO show more variables
+                                yValue = row[varY.name]
+                                runId = row[_3X_.RUN_COLUMN_NAME]
                                 "<li><a href='#{runId}/overview'
                                     target='run-details' title='#{runId}'>#{
                                     # show value of varY for this particular run
-                                    yValue
+                                    row[varY.name]
                                 }</a></li>"
                             ).join("")
-                        }</ol></small>"><span class="value">#{origin.length
+                        }</ol></small>"><span class="value">#{provenance.length
                             }</span><small class="unit"> (runs)</small></span>"""
                 }
                 # TODO links to runIds
@@ -709,6 +681,9 @@ class ChartView extends CompositeElement
         do @display
 
     render: =>
+        # create a visualizable data from the table data and current axes/series configuration
+        @chartData = new ChartData @table, @varX, @varsY, @varsPivot
+
         do @renderTitle
 
         chartClass =
@@ -725,9 +700,8 @@ class ChartView extends CompositeElement
 
         # create and render the chart
         # TODO reuse the created chart?
-        @chart = new chartClass @baseElement, @table,
-            @optionElements, @chartOptions,
-            @varX, @varsY, @varsPivot
+        @chart = new chartClass @baseElement, @chartData, @chartOptions,
+            @optionElements # TODO don't pass optionElements, but listen to change events from @chartOptions
         do @chart.render
 
 
