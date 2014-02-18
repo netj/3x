@@ -16,7 +16,7 @@ ChartData = require "ChartData"
 
 
 class Chart
-    constructor: (@baseElement, @data, @chartOptions, @optionElements) ->
+    constructor: (@baseElement, @data, @chartOptions,  @optionElements) ->
         @type = null # TODO REFACTORING instead of branching off with @type, override with subclasses
 
     render: =>
@@ -25,28 +25,7 @@ class Chart
         do @renderXaxis
         do @renderYaxis
         do @renderData
-
-        # TODO REFACTORING change the following code to modify ChartOptions
-        # TODO REFACTORING let ChartView listen to ChartOptions' change events and update @optionElements instead
-        ## update optional UI elements
-        @optionElements.toggleLogScale.toggleClass("disabled", true)
-        for axis in @axes
-            @optionElements["toggleLogScale#{axis.name}"]
-               ?.toggleClass("disabled", not axis.isLogScalePossible)
-
-        @optionElements.toggleOrigin.toggleClass("disabled", true)
-        @optionElements["toggleOriginY"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
-        if @type is "Scatter"
-            @optionElements["toggleOriginX"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
-
-        isLineChartDisabled = @type isnt "Line" # TODO REFACTORING use: @ instanceof LineChart
-        $(@optionElements.toggleHideLines)
-           ?.toggleClass("disabled", isLineChartDisabled)
-            .toggleClass("hide", isLineChartDisabled)
-        $(@optionElements.toggleInterpolateLines)
-           ?.toggleClass("disabled", isLineChartDisabled or @chartOptions.hideLines)
-            .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
-
+        do @updateOptionsFromData
 
     setupAxes: => ## Setup Axes
         @axes = []
@@ -302,6 +281,29 @@ class Chart
             html: true
             container: @baseElement
         )
+
+    updateOptionsFromData: =>
+        # TODO REFACTORING change the following code to modify ChartOptions
+        # TODO REFACTORING let ChartView listen to ChartOptions' change events and update @optionElements instead
+        ## update optional UI elements
+        @optionElements.toggleLogScale.toggleClass("disabled", true)
+        for axis in @axes
+            @optionElements["toggleLogScale#{axis.name}"]
+               ?.toggleClass("disabled", not axis.isLogScalePossible)
+
+        @optionElements.toggleOrigin.toggleClass("disabled", true)
+        @optionElements["toggleOriginY"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
+        if @type is "Scatter"
+            @optionElements["toggleOriginX"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
+
+        isLineChartDisabled = @type isnt "Line" # TODO REFACTORING use: @ instanceof LineChart
+        $(@optionElements.toggleHideLines)
+           ?.toggleClass("disabled", isLineChartDisabled)
+            .toggleClass("hide", isLineChartDisabled)
+        $(@optionElements.toggleInterpolateLines)
+           ?.toggleClass("disabled", isLineChartDisabled or @chartOptions.hideLines)
+            .toggleClass("hide", isLineChartDisabled or @chartOptions.hideLines)
+
 
 
     pickScale: (axis) =>
