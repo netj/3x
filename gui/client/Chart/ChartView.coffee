@@ -35,7 +35,7 @@ class Chart
                ?.toggleClass("disabled", not axis.isLogScalePossible)
 
         @optionElements.toggleOrigin.toggleClass("disabled", true)
-        @optionElements["toggleOriginY1"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
+        @optionElements["toggleOriginY"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
         if @type is "Scatter"
             @optionElements["toggleOriginX"]?.toggleClass("disabled", utils.intervalContains axis.domain, 0)
 
@@ -457,7 +457,7 @@ class ChartView extends CompositeElement
             $(forEachAxisOptionElement "toggleOrigin", "origin", installToggleHandler)
                 .toggleClass("disabled", true)
 
-    @AXIS_NAMES: "X Y1".trim().split(/\s+/)
+    @AXIS_NAMES: "X Y".trim().split(/\s+/)
 
     persist: =>
         localStorage["chartAxes"] = JSON.stringify @axisNames
@@ -614,8 +614,8 @@ class ChartView extends CompositeElement
             # if just changed chart types, then insist first view of bar chart is grounded at 0
             # and make sure that button is toggled down
             if @chartOptions.justChanged is "chartType" or (@chartType == "Bar" and noSpecifiedChartType)
-                @chartOptions["originY1"] = true
-                @optionElements.toggleOriginY1.toggleClass("active", true)
+                @chartOptions["originY"] = true
+                @optionElements.toggleOriginY.toggleClass("active", true)
         @chartOptions.justChanged = ""
         
         $axisControl = @typeSelection.closest("#chart-type")
