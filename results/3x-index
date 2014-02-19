@@ -190,7 +190,12 @@ index.all sql, (err, rawRows) ->
             error "Column NAMEs in the CSVFILE must be specified in the order of appearance"
         types=()
         for fieldName; do
-            types+=($(sql-type $fieldName))
+            types+=($(sql-type $fieldName)$(
+                    # sanitize CSV data for input fields
+                    if [[ -d "$_3X_ROOT"/input/"$fieldName"=/ ]]; then
+                        echo ".SANITIZED"
+                    fi
+                ))
         done
         csvId="run/imported/$(date +%Y%m%d%H%M%S)-$(basename "$CSVFile")"
         mkdir -p "$(dirname "$csvId")"
