@@ -108,30 +108,8 @@ case $Cmd in
         # compile selection expression from arguments
         where=$(compile-where "$@")
         # output query result in JSON format
-        coffee -e '
-sqlite3 = require "sqlite3"
-[pathToIndex, sql] = process.argv[5..]
-index = new sqlite3.Database pathToIndex
-index.all sql, (err, rawRows) ->
-    if err?
-        console.error err
-        process.exit 2
-    rows = []
-    names = []
-    if rawRows.length > 0
-        nameIdx = {}
-        names = (name for name of rawRows[0])
-        for name,i in names
-            nameIdx[name] = i
-        rows =
-            for rawRow in rawRows
-                row = []
-                for name,value of rawRow
-                    row[nameIdx[name]] = value
-                row
-    console.log JSON.stringify {names, rows}
-' -- "$_3X_ROOT/.3x/index.db" \
-    "SELECT $cols FROM run $where"
+        sqlite-json "$_3X_ROOT/.3x/index.db" \
+            "SELECT $cols FROM run $where"
         ;;
 
     update)
