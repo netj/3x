@@ -117,7 +117,7 @@ index.all sql, (err, rawRows) ->
         console.error err
         process.exit 2
     rows = []
-    names = null
+    names = []
     if rawRows.length > 0
         nameIdx = {}
         names = (name for name of rawRows[0])
