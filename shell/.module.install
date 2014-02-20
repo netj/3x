@@ -41,4 +41,3 @@ setsid                      $TOOLSDIR/
 .build/sqlite-json          $TOOLSDIR/
 
 .build/node_modules         $LIBDIR/
-#.build/node_modules/.bin    $LIBDIR/node_modules/

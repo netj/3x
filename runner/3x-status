@@ -2,15 +2,37 @@
 # 3x-status -- display status of current queue
 # 
 # > 3x status
+# 
+# To get a JSON output, use the -j option:
+# > 3x status -j
+# 
+# To get a partial output, set the LIMIT and OFFSET environment variable:
+# > LIMIT=10 OFFSET=21  3x status -j
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2013-01-14
 set -eu
+
+# process options
+format=tabs
+while getopts "j" o; do
+    case $o in
+        j)
+            format=json
+            ;;
+    esac
+done
+shift $((OPTIND - 1))
 
 . find-queue.sh
 
 # TODO add CLI switch to selectively show DONE/RUNNING/PLANNED
 
 cd "$_3X_QUEUE_DIR"
-queue list |
-column -t
+case $format in
+    json)
+        queue list.json
+        ;;
+    *)
+        queue list | column -t
+esac

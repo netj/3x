@@ -199,32 +199,54 @@ case $Cmd in
         ;;
 
 
+    list.json|list-only.json|\
     list|list-only)
         prepare-full-query
         case $Cmd in
             list)
-                cols="state"             #header="state#"
+                cols="state"
                 for varName in $inputs; do
-                    cols+=", '$varName=' || _$varName"  #header+="\t$varName"
+                    cols+=", '$varName=' || _$varName"
                 done
-                cols+=", '#' || serial"  #header+="\tserial#"
-                cols+=", target"         #header+="\ttarget#"
-                cols+=", runId"          #header+="\trun#"
+                cols+=", '#' || serial"
+                cols+=", target"
+                cols+=", runId"
                 ;;
-            list-only)
+            list.json)
+                cols="state AS 'state#'"
+                for varName in $inputs; do
+                    cols+=", _$varName AS $varName"
+                done
+                cols+=", serial AS 'serial#'"
+                cols+=", target AS 'target#'"
+                cols+=", runId AS 'run#'"
+                ;;
+            list-only|list-only.json)
                 [ $# -gt 0 ] || usage "$0" "One or more COLUMNs must be specifieid"
                 cols=$1; shift
                 ;;
         esac
+        # determine format (tab-separated or JSON)
+        format=tabs; case $Cmd in *.json) format=json; esac
         # compile selection expression from arguments
         where=$(compile-where "$@")
         #echo -e "$header"
-        sqlite <<-EOF
-	.header OFF
-	.mode tabs
-	.nullvalue ""
-	SELECT $cols FROM queue $where ORDER BY ordinal;
-	EOF
+        sql="SELECT $cols FROM queue $where ORDER BY ordinal"
+        sql+=${LIMIT:+ LIMIT $LIMIT}
+        sql+=${OFFSET:+ OFFSET $OFFSET}
+        case $format in
+            json)
+                msg +5 "$sql"
+                sqlite-json "$DB" "$sql"
+                ;;
+            *)
+                sqlite <<-EOF
+		.header OFF
+		.mode tabs
+		.nullvalue ""
+		$sql;
+		EOF
+	esac
         ;;
 
     count)
