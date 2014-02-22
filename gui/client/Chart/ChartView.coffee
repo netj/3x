@@ -83,7 +83,12 @@ class Chart
                 y = axisY.scale = @pickScale(axisY).nice()
                 axisY.axis = d3.svg.axis()
                     .scale(axisY.scale)
-                    .tickFormat(d3.format(".3s"))
+                if axisY.isLogScaleEnabled
+                    axisY.axis = axisY.axis.tickFormat((d, ix) => 
+                        formatter = d3.format(".3s")
+                        if ix % 2 == 0 then formatter d else "")
+                else
+                    axisY.axis = axisY.axis.tickFormat d3.format(".3s")
                 numDigits = Math.max _.pluck(y.ticks(axisY.axis.ticks()).map(y.tickFormat()), "length")...
                 tickWidth = Math.ceil(numDigits * 6.5) #px per digit
                 if i == 0
@@ -111,14 +116,8 @@ class Chart
         axisX.axis = d3.svg.axis()
             .scale(axisX.scale)
             .orient("bottom")
-            .ticks(@width / 100)
-        # TODO: place this in subclasses
-        if @type isnt "Scatter"
-            x = axisX.scale
-            skipEvery = Math.ceil(x.domain().length / (@width / 55))
-            axisX.axis = axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
-        if utils.isRatio @data.varX.type
-            axisX.axis = axisX.axis.tickFormat(d3.format(".3s"))
+            .ticks(@width / 100) # allow 100 pixels per tick
+        axisX.axis = @specifyTickValuesAndFormat axisX
         @svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0,#{@height})")
@@ -347,6 +346,11 @@ class BarChart extends Chart
                 if xCoord(d) < @width/2 then "right" else "left"
             )
 
+    specifyTickValuesAndFormat: (axisX) =>
+        x = axisX.scale
+        skipEvery = Math.ceil(x.domain().length / (@width / 55)) # allow 55 pixels per axis label
+        return axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
+
 class ScatterPlot extends Chart
     constructor: (args...) ->
         super args...
@@ -378,6 +382,14 @@ class ScatterPlot extends Chart
             .attr("data-placement", (d) =>
                 if xCoord(d) < @width/2 then "right" else "left"
             )
+
+    specifyTickValuesAndFormat: (axisX) =>
+        if axisX.isLogScaleEnabled
+            axisX.axis.tickFormat((d, ix) => 
+                formatter = d3.format(".3s")
+                if ix % 2 == 0 then formatter d else "")
+        else
+            axisX.axis.tickFormat d3.format(".3s")
 
 class LineChart extends Chart
     constructor: (args...) ->
@@ -420,6 +432,11 @@ class LineChart extends Chart
                 .attr("class", "line")
                 .attr("d", line)
                 .style("stroke", seriesColor)
+
+    specifyTickValuesAndFormat: (axisX) =>
+        x = axisX.scale
+        skipEvery = Math.ceil(x.domain().length / (@width / 55)) # allow 55 pixels per axis label
+        return axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
 
 class ChartView extends CompositeElement
     constructor: (@baseElement, @typeSelection, @axesControl, @table, @optionElements = {}) ->
