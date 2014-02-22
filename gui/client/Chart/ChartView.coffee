@@ -99,38 +99,22 @@ class Chart
               .append("g")
                 .attr("transform", "translate(#{@margin.left},#{@margin.top})")
 
+    setXAxisDomain: (supposedType) =>
+        axisX = @axes[0]
+        if @type isnt supposedType
+            error "Unsupported variable type for X axis", axisX.column
+        axisX.domain = @data.ids.map(@data.accessorFor @data.varX)
 
     renderXaxis: => ## Setup and draw X axis
         axisX = @axes[0]
-        xData = @data.accessorFor @data.varX
-        axisX.domain = @data.ids.map(xData)
-
-        switch @type
-            when "Bar"
-                # set up scale function
-                x = axisX.scale = d3.scale.ordinal()
-                    .domain(axisX.domain)
-                    .rangeRoundBands([0, @width], .5)
-                # d is really the index; xData grabs the value for that index
-                axisX.coord = (d) -> x(xData(d))
-                axisX.barWidth = x.rangeBand() / @data.varsY.length / Object.keys(@data.idsBySeries).length
-            when "Line"
-                x = axisX.scale = d3.scale.ordinal()
-                    .domain(axisX.domain)
-                    .rangeRoundBands([0, @width], .1)
-                axisX.coord = (d) -> x(xData(d)) + x.rangeBand()/2
-            when "Scatter"
-                x = axisX.scale = @pickScale(axisX).nice()
-                    .range([0, @width])
-                axisX.coord = (d) -> x(xData(d))
-            else
-                error "Unsupported variable type for X axis", axisX.column
         axisX.label = @formatAxisLabel axisX
         axisX.axis = d3.svg.axis()
             .scale(axisX.scale)
             .orient("bottom")
             .ticks(@width / 100)
+        # TODO: place this in subclasses
         if @type isnt "Scatter"
+            x = axisX.scale
             skipEvery = Math.ceil(x.domain().length / (@width / 55))
             axisX.axis = axisX.axis.tickValues(x.domain().filter((d, ix) => !(ix % skipEvery)))
         if utils.isRatio @data.varX.type
@@ -195,53 +179,7 @@ class Chart
                             count: 1
                             index: 0
 
-                switch @type
-                    when "Bar"
-                        @svg.selectAll(".databar.series-#{series}")
-                            .data(seriesDataIds)
-                          .enter().append("rect")
-                            .attr("class", "databar series-#{series}")
-                            .attr("width", (d, ix) => axisX.barWidth / xMap[xCoord(d)].count)
-                            .attr("x", (d, ix) => 
-                                xVal = xCoord(d)
-                                xIndex = xMap[xVal].index
-                                xMap[xVal].index++
-                                xVal + (series * axisX.barWidth) + axisX.barWidth * xIndex / xMap[xVal].count)
-                            .attr("y", (d) => yCoord(d))
-                            .attr("height", (d) => @height - yCoord(d))
-                            .style("fill", seriesColor)
-                            # popover
-                            .attr("title",        seriesLabel)
-                            .attr("data-content", @formatDataPoint yVar)
-                            .attr("data-placement", (d) =>
-                                if xCoord(d) < @width/2 then "right" else "left"
-                            )
-                    else
-                        @svg.selectAll(".dot.series-#{series}")
-                            .data(seriesDataIds)
-                          .enter().append("circle")
-                            .attr("class", "dot series-#{series}")
-                            .attr("r", 5)
-                            .attr("cx", xCoord)
-                            .attr("cy", yCoord)
-                            .style("fill", seriesColor)
-                            # popover
-                            .attr("title",        seriesLabel)
-                            .attr("data-content", @formatDataPoint yVar)
-                            .attr("data-placement", (d) =>
-                                if xCoord(d) < @width/2 then "right" else "left"
-                            )
-
-                switch @type
-                    when "Line"
-                        unless @chartOptions.hideLines
-                            line = d3.svg.line().x(xCoord).y(yCoord)
-                            line.interpolate("basis") if @chartOptions.interpolateLines
-                            @svg.append("path")
-                                .datum(seriesDataIds)
-                                .attr("class", "line")
-                                .attr("d", line)
-                                .style("stroke", seriesColor)
+                @renderDataShapes series, seriesLabel, seriesDataIds, seriesColor, yCoord, yVar, xMap
 
                 if _.size(@data.varsY) > 1
                     if seriesLabel
@@ -370,23 +308,118 @@ class Chart
             ].map((row) -> "<tr><td>#{row.name}</td><th>#{row.value}</th></tr>")
              .join("") + """</table>"""
 
-
 class BarChart extends Chart
     constructor: (args...) ->
         super args...
         @type = "Bar"
+
+    renderXaxis: => ## Setup and draw X axis
+        @setXAxisDomain "Bar"
+        axisX = @axes[0]
+        xData = @data.accessorFor @data.varX
+        x = axisX.scale = d3.scale.ordinal()
+            .domain(axisX.domain)
+            .rangeRoundBands([0, @width], .5)
+        axisX.coord = (d) -> x(xData(d)) # d is really the index; xData grabs the value for that index
+        axisX.barWidth = x.rangeBand() / @data.varsY.length / Object.keys(@data.idsBySeries).length
+        super
+
+    renderDataShapes: (series, seriesLabel, seriesDataIds, seriesColor, yCoord, yVar, xMap) =>
+        axisX = @axes[0]
+        xCoord = axisX.coord
+        @svg.selectAll(".databar.series-#{series}")
+            .data(seriesDataIds)
+          .enter().append("rect")
+            .attr("class", "databar series-#{series}")
+            .attr("width", (d, ix) => axisX.barWidth / xMap[xCoord(d)].count)
+            .attr("x", (d, ix) => 
+                xVal = xCoord(d)
+                xIndex = xMap[xVal].index
+                xMap[xVal].index++
+                xVal + (series * axisX.barWidth) + axisX.barWidth * xIndex / xMap[xVal].count)
+            .attr("y", (d) => yCoord(d))
+            .attr("height", (d) => @height - yCoord(d))
+            .style("fill", seriesColor)
+            # popover
+            .attr("title",        seriesLabel)
+            .attr("data-content", @formatDataPoint yVar)
+            .attr("data-placement", (d) =>
+                if xCoord(d) < @width/2 then "right" else "left"
+            )
 
 class ScatterPlot extends Chart
     constructor: (args...) ->
         super args...
         @type = "Scatter"
 
+    renderXaxis: => ## Setup and draw X axis
+        @setXAxisDomain "Scatter"
+        axisX = @axes[0]
+        xData = @data.accessorFor @data.varX
+        x = axisX.scale = @pickScale(axisX).nice()
+            .range([0, @width])
+        axisX.coord = (d) -> x(xData(d))
+        super
+
+    renderDataShapes: (series, seriesLabel, seriesDataIds, seriesColor, yCoord, yVar, xMap) =>
+        axisX = @axes[0]
+        xCoord = axisX.coord
+        @svg.selectAll(".dot.series-#{series}")
+            .data(seriesDataIds)
+          .enter().append("circle")
+            .attr("class", "dot series-#{series}")
+            .attr("r", 5)
+            .attr("cx", xCoord)
+            .attr("cy", yCoord)
+            .style("fill", seriesColor)
+            # popover
+            .attr("title",        seriesLabel)
+            .attr("data-content", @formatDataPoint yVar)
+            .attr("data-placement", (d) =>
+                if xCoord(d) < @width/2 then "right" else "left"
+            )
+
 class LineChart extends Chart
     constructor: (args...) ->
         super args...
         @type = "Line"
 
+    renderXaxis: => ## Setup and draw X axis
+        @setXAxisDomain "Line"
+        axisX = @axes[0]
+        xData = @data.accessorFor @data.varX
+        x = axisX.scale = d3.scale.ordinal()
+            .domain(axisX.domain)
+            .rangeRoundBands([0, @width], .1)
+        axisX.coord = (d) -> x(xData(d)) + x.rangeBand() / 2
+        super
 
+    renderDataShapes: (series, seriesLabel, seriesDataIds, seriesColor, yCoord, yVar, xMap) =>
+        axisX = @axes[0]
+        xCoord = axisX.coord
+        @svg.selectAll(".dot.series-#{series}")
+            .data(seriesDataIds)
+          .enter().append("circle")
+            .attr("class", "dot series-#{series}")
+            .attr("r", 5)
+            .attr("cx", xCoord)
+            .attr("cy", yCoord)
+            .style("fill", seriesColor)
+            # popover
+            .attr("title",        seriesLabel)
+            .attr("data-content", @formatDataPoint yVar)
+            .attr("data-placement", (d) =>
+                if xCoord(d) < @width/2 then "right" else "left"
+            )
+
+        unless @chartOptions.hideLines
+            line = d3.svg.line().x(xCoord).y(yCoord)
+            line.interpolate("basis") if @chartOptions.interpolateLines
+            @svg.append("path")
+                .datum(seriesDataIds)
+                .attr("class", "line")
+                .attr("d", line)
+                .style("stroke", seriesColor)
 
 class ChartView extends CompositeElement
     constructor: (@baseElement, @typeSelection, @axesControl, @table, @optionElements = {}) ->
