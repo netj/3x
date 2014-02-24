@@ -67,7 +67,7 @@ args=($(normalize-inputs -p "$@" | grep -v '=$' || true))
 ## try index first
 set -o pipefail
 if $jsonOutput; then
-    exec 3x-index query-json "$@"
+    exec 3x-index query.json "$@"
 else
     if ! 3x-index query "$@"; then
         ## and fallback to scanning raw data

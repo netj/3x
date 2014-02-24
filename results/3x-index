@@ -9,6 +9,16 @@
 # > 3x index query QUERY...
 # See compile-where(1) for QUERY.
 # 
+# > 3x index query.json QUERY...
+# Returns result in JSON format.
+# 
+# Setting LIMIT and OFFSET env variable for query or query.json will limit the
+# number of runs in the output.
+# 
+# > 3x index import-csv CSVFILE PARAM...
+# Imports data into the index from given CSVFILE whose fields correspond to
+# PARAMs in the given order.
+# 
 # Index resides at $_3X_ROOT/.3x/index.db, and it is an SQLite database
 # mirroring the input and output values for each run.
 #
@@ -100,38 +110,18 @@ case $Cmd in
 	EOF
         ;;
 
-    query-json)
+    query.json)
         cols="id AS 'run#'"                            #header="run#"
         for varName in $columns; do
             cols+=", _$varName AS $varName"  #header+="\t$varName"
         done
         # compile selection expression from arguments
         where=$(compile-where "$@")
+        sql="SELECT $cols FROM run $where"
+        sql+=${LIMIT:+ LIMIT $LIMIT}
+        sql+=${OFFSET:+ OFFSET $OFFSET}
         # output query result in JSON format
-        coffee -e '
-sqlite3 = require "sqlite3"
-[pathToIndex, sql] = process.argv[5..]
-index = new sqlite3.Database pathToIndex
-index.all sql, (err, rawRows) ->
-    if err?
-        console.error err
-        process.exit 2
-    rows = []
-    names = null
-    if rawRows.length > 0
-        nameIdx = {}
-        names = (name for name of rawRows[0])
-        for name,i in names
-            nameIdx[name] = i
-        rows =
-            for rawRow in rawRows
-                row = []
-                for name,value of rawRow
-                    row[nameIdx[name]] = value
-                row
-    console.log JSON.stringify {names, rows}
-' -- "$_3X_ROOT/.3x/index.db" \
-    "SELECT $cols FROM run $where"
+        sqlite-json "$_3X_ROOT/.3x/index.db" "$sql"
         ;;
 
     update)
@@ -190,7 +180,12 @@ index.all sql, (err, rawRows) ->
             error "Column NAMEs in the CSVFILE must be specified in the order of appearance"
         types=()
         for fieldName; do
-            types+=($(sql-type $fieldName))
+            types+=($(sql-type $fieldName)$(
+                    # sanitize CSV data for input fields
+                    if [[ -d "$_3X_ROOT"/input/"$fieldName"=/ ]]; then
+                        echo ".SANITIZED"
+                    fi
+                ))
         done
         csvId="run/imported/$(date +%Y%m%d%H%M%S)-$(basename "$CSVFile")"
         mkdir -p "$(dirname "$csvId")"

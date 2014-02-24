@@ -465,34 +465,6 @@ app.get "/api/run/target/:name", (req, res) ->
     ) (respondJSON res)
 
 
-parseStatusOutput = (columnOrder) ->
-    normalizeNamedColumnLines (line) ->
-                    [state, columns...] = line.split /\s+/
-                    for column,i in columns when column.indexOf("=") == -1 and column[0] is '#'
-                        # found #serial, the beginning of meta-columns
-                        rest = columns.splice(i)
-                        break
-                    switch state
-                        when "PLANNED"
-                            [serial] = rest
-                            target = runId = null
-                        else
-                            [serial, target, runId] = rest
-                    serial = (serial?.replace /^#/, "")
-                    runId = "" if runId is "?"
-                    if state
-                        formatValue = (name, v) ->
-                            "#{name}#{if v? then "=#{v}" else "!"}"
-                        [
-                            (formatValue  STATE_COLUMN_NAME, state)
-                            (formatValue SERIAL_COLUMN_NAME, serial)
-                            (formatValue TARGET_COLUMN_NAME, target)
-                            (formatValue    RUN_COLUMN_NAME, runId)
-                            # TODO order columns by 3x-condition
-                            columns...
-                        ]
-                , columnOrder
-
 app.get "/api/run/queue/*.DataTables", (req, res) ->
     [queueName] = req.params
     query = req.param("sSearch") ? null
@@ -509,16 +481,23 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
                 OFFSET: req.param("iDisplayStart") ? 0
             }, cmd, args, next
     async.parallel [
-            getHistory "limitOffset", ["3x-status"]
-                , parseStatusOutput columnOrder
+            getHistory "3x-status", ["-j"]
         ,
             getHistory "sh", ["-c", "3x-status | wc -l"]
                 , (lazyLines, next) ->
                     lazyLines
                         .take(1)
                         .join ([line]) -> next (+line?.trim())
-        ], (err, [table, totalCount, filteredCount]) ->
+        ], (err, [tableJSON, totalCount, filteredCount]) ->
             unless err
+                # reorder columns according to columnOrder
+                tableOrig = JSON.parse tableJSON
+                reorder = ((tableOrig.names.indexOf name) for name in columnOrder)
+                table =
+                    names: columnOrder
+                    rows:
+                        for row in tableOrig.rows
+                            row[i] for i in reorder
                 # attach details for erroneous runs
                 runIdColumn = table.names.indexOf RUN_COLUMN_NAME
                 stateColumn = table.names.indexOf STATE_COLUMN_NAME
@@ -596,11 +575,11 @@ app.get "/api/run/queue/*", (req, res) ->
     queueId = "run/queue/#{queueName}"
     fs.stat "#{_3X_ROOT}/#{queueId}", (err, stat) ->
         return res.send 404, "Not found: #{queueId}" if err?
+        res.type "application/json"
         cliEnv(res, {
             _3X_QUEUE: queueName
-        }, "3x-status", [queueId]
-            , parseStatusOutput null
-        ) (respondJSON res)
+        }, "3x-status", ["-j", queueId]
+        ) (respondText res)
 
 app.post /// /api/run/queue/([^:]+):(replace|add) ///, (req, res) ->
     [queueName, action] = req.params

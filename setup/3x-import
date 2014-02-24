@@ -76,7 +76,7 @@ for input in "${inputs[@]}"; do
         values = _.uniq (row[i] for row in results.rows)
         execFile "3x-define", ["-f", "input", input, values...],
             (err, stdout, stderr) ->
-                console.log stdout
+                console.log stdout if stdout
                 if err?
                     console.error stderr
                     process.exit 4
