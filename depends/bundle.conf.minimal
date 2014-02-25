@@ -4,3 +4,4 @@ sqlite3
 GNU-parallel
 GNU-time
 GNU-netcat
+liblockfile-bin

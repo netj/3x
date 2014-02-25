@@ -2,8 +2,9 @@
 
 bash
 GNU-coreutils
-sqlite3
 nodejs
+sqlite3
 GNU-parallel
 GNU-time
 GNU-netcat
+liblockfile-bin
