@@ -28,9 +28,6 @@ if [ -s exitstatus -a -e execute.sh -a ! -x execute.sh ]; then
     echo "$_3X_TARGET" >target.name
     rsync -aH --link-dest="$_3X_WORKER_DIR/target/" "$_3X_WORKER_DIR/target/" target/
 
-    # write-protect workdir/ prior to extracting outputs
-    find workdir ! -type d -exec chmod a-w {} +
-
     # run output extractors
     SHLVL=$(( $SHLVL - 1 )) \
     extract-output "$_3X_RUN" ||

@@ -20,6 +20,9 @@ _3X_RUN=$1; shift
 . find-run-archive.sh
 cd "$_3X_ROOT/$_3X_RUN"
 
+# write-protect workdir/ prior to extracting outputs
+find workdir ! -type d -exec chmod a-w {} +
+
 # clean previous records only unless we're extracting selectively
 [[ -n "$_3X_EXTRACT_ONLY" ]] ||
     rm -f output outputs.failed
