@@ -29,7 +29,7 @@ shift $(($OPTIND - 1))
 3x-stop
 
 # then synchronize queue records with whats actually there
-for-every-runner setsid queue-sync
+for-every-runner queue-sync
 
 # revert any remaining ABORTED runs to PLANNED
 cd "$_3X_ROOT"

@@ -67,8 +67,5 @@ firstSerial=$(head -1 <"$_3X_WORKER_DIR"/runSerials)
 runner-msg "Executing #$firstSerial through #$lastSerial ($count runs)"
 
 _3X_LOGERROR="$_3X_WORKER_DIR"/error \
-run-all \
-    "$_3X_WORKER_DIR"/runSerials \
-    "$_3X_WORKER_DIR"/runIds \
-    "$_3X_WORKER_DIR"/runArgs \
+run-all "$_3X_WORKER_DIR" ||
     || exit-after-marking-as-aborted

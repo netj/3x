@@ -9,6 +9,7 @@
 # Created: 2013-06-24
 
 . find-run-archive.sh
+shopt -s extglob
 
 # some predefined paths
 export _3X_RUNNER_HOME="$TOOLSDIR"/runner
@@ -46,18 +47,32 @@ queue-is-active() {
 }
 
 for-each-active-runner() {
-    local activeFlag=
-    for activeFlag in "$_3X_QUEUE_DIR"/.is-active.*; do
-        (
-        runner=${activeFlag##*/.is-active.}
-        . find-runner.sh "$runner"
-        setsid "$@"
-        )
+    local runners=; runners=()
+    local f=
+    for f in "$_3X_QUEUE_DIR"/.is-active.*; do
+        [[ -e "$f" ]] || continue
+        runners+=(${f##*/.is-active.})
     done
+    for f in "$_3X_QUEUE_DIR"/.worker.*; do
+        [[ -d "$f" ]] || continue
+        f=${f##*/.worker.}
+        f=${f%%.*}
+        [[ -e "$_3X_QUEUE_DIR"/.is-active.$f ]] ||
+            runners+=("$f")
+    done
+    if [[ ${#runners[@]} -gt 0 ]]; then
+        local runner=
+        for runner in "${runners[@]}"; do
+            (
+            . find-runner.sh "$runner"
+            setsid "$@"
+            )
+        done
+    fi
 }
 
 for-every-runner() {
-    for runnerDir in "$_3X_RUNNER_HOME"/*/; do
+    for runnerDir in "$_3X_RUNNER_HOME"/!(base.*)/; do
         runner=${runnerDir#$_3X_RUNNER_HOME/}
         runner=${runner%/}
         (

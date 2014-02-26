@@ -9,9 +9,10 @@ set -eu
 . multi-runner.sh
 . remote-runner.sh
 
-FileSerials=$(readlink -f "$1"); shift
-FileRunIds=$(readlink -f "$1"); shift
-FileRunArgs=$(readlink -f "$1"); shift
+_3X_WORKER_DIR=$(readlink -f "$1"); shift
+FileSerials=$_3X_WORKER_DIR/runSerials
+FileRunIds=$_3X_WORKER_DIR/runIds
+FileRunArgs=$_3X_WORKER_DIR/runArgs
 
 # some sanity checks
 [ -s "$FileSerials" -a -s "$FileRunIds" -a -s "$FileRunArgs" ] ||

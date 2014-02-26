@@ -25,9 +25,9 @@ marked = require "marked"
 
 _3X_ROOT                   = process.env._3X_ROOT
 _3X_GUIPORT                = parseInt process.argv[2] ? 0
-process.env.SHLVL          = "0"
-process.env._3X_LOGLVL  = "1"
-process.env._3X_LOGMSGS = "true"
+process.env.SHLVL             = "0"
+process.env._3X_LOGLVL        = "2"
+process.env._3X_LOG_TO_NONTTY = "true"
 
 
 RUN_COLUMN_NAME = "run#"
@@ -526,12 +526,12 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
                         aColumnNames: table.names
                         aaData: table.rows
 
-app.get /// /api/run/queue/([^:]+):(start|stop|reset) ///, (req, res) ->
+app.get /// /api/run/queue/([^:]+):(start|stop|reset|sync) ///, (req, res) ->
     [queueName, action] = req.params
     # TODO sanitize queueName
     cliEnv(res, {
         _3X_QUEUE: queueName
-    }, "sh", ["-c", "SHLVL=0 3x-#{action} </dev/null >>.3x/gui/log.runs 2>&1 &"]
+    }, "sh", ["-c", "SHLVL=0 _3X_LOGLVL=4 3x-#{action} </dev/null >>.3x/gui/log.runs 2>&1 &"]
         , (lazyLines, next) ->
             lazyLines
                 .join -> next (true)

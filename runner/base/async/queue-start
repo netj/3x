@@ -10,5 +10,35 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-02-16
 set -eu
+. multi-runner.sh
 
-error "$_3X_RUNNER/queue-start: Not implemented"
+_3X_WORKER_DIR=$(mktemp -d "$WORKER_DIR_PREFIX"XXXXXX)
+_3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
+trap 'rm -rf "$_3X_WORKER_DIR"' EXIT
+
+: ${_3X_BATCH_SIZE:=}
+
+# keep a copy of the target execution environment configuration while for this session
+cp -a "$_3X_TARGET_DIR"/. "$_3X_WORKER_DIR"/target
+echo "$_3X_TARGET" >"$_3X_WORKER_DIR"/target.name
+
+# dequeue runs
+queue pick "$_3X_BATCH_SIZE" RUNNING >>"$_3X_WORKER_DIR"/runSerials
+
+[ -s "$_3X_WORKER_DIR"/runSerials ] ||
+    runner-error "No PLANNED runs in queue"
+
+# keep a full listing of the runs to be executed
+for-picked-runs list |
+sed 's/^[^[:space:]]*[[:space:]]//; s/[[:space:]]*#.*$//' >"$_3X_WORKER_DIR"/runArgs
+for-picked-runs list-only runId >"$_3X_WORKER_DIR"/runIds
+
+      count=$(wc -l   <"$_3X_WORKER_DIR"/runSerials)
+firstSerial=$(head -1 <"$_3X_WORKER_DIR"/runSerials)
+ lastSerial=$(tail -1 <"$_3X_WORKER_DIR"/runSerials)
+runner-msg "Executing #$firstSerial through #$lastSerial ($count runs)"
+
+# start running asynchronously
+trap - EXIT
+_3X_LOGERROR="$_3X_WORKER_DIR"/error \
+start-all "$_3X_WORKER_DIR"

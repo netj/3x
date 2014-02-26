@@ -86,7 +86,8 @@ if $ListDetails; then
         # XXX modifying _3X_QUEUE_DIR is fragile
         (
         _3X_QUEUE=$queue _3X_QUEUE_DIR="$PWD/$queue"
-        for-each-active-runner queue-refresh
+        # XXX no queue-refresh here: 3x-queue simply displays the current queue status
+        #     3x-sync is for invoking queue-refresh
         {
             state=INACTIVE
             ! queue-is-active || state=ACTIVE

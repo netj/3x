@@ -1,0 +1,9 @@
+parents                 $TOOLSDIR/runner/ssh-cluster/
+
+start-all               $TOOLSDIR/runner/ssh-cluster/
+stop-all                $TOOLSDIR/runner/ssh-cluster/
+refresh-all             $TOOLSDIR/runner/ssh-cluster/
+sync-all                $TOOLSDIR/runner/ssh-cluster/
+
+target-info             $TOOLSDIR/runner/ssh-cluster/
+target-define           $TOOLSDIR/runner/ssh-cluster/

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+#
+# ssh-cluster/target-info -- display ssh cluster target info
+# > target-info TARGET
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-23
+set -eu
+. remote-runner.sh
+
+code=0
+
+super "$0" "$@" || code=$?
+echo
+
+Target=$1
+cd "$_3X_ROOT"/run/target/"$Target"
+
+echo "# remotes (remote URLs):"
+cat remotes 2>/dev/null || code=2
+echo
+
+echo "# shared-path (shared path):"
+sharedPath=$(cat shared-path 2>/dev/null) || code=4
+echo "$sharedPath"
+echo
+
+echo "# environ (environment for execution):"
+cat environ 2>/dev/null || true
+echo
+
+if remote=$(head -1 <remotes 2>/dev/null); then
+    parseRemote $remote
+    echo "# description:"
+    echo "Execute runs at a cluster of $(wc -l <remotes) machines via"
+    echo "ssh, e.g., at \`${remoteUser:+$remoteUser@}$remoteHost\`, using "
+    echo "directory \`$remoteRoot\` for temporary storage, and"
+    echo "directory \`$sharedPath\` for shared storage, under"
+    diff-environ
+fi
+
+exit $code

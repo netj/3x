@@ -24,9 +24,9 @@ WORKER_WAITING_TIMEOUT=600 #secs
 
 runner-msg()   {
     local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
-    msg $level "$_3X_QUEUE_ID $_3X_TARGET${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"
+    msg $level "$_3X_QUEUE_ID ${_3X_TARGET:-}${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"
 }
-runner-error() { error "$_3X_QUEUE_ID $_3X_TARGET${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"; }
+runner-error() { error "$_3X_QUEUE_ID ${_3X_TARGET:-}${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"; }
 
 synchronized() {
     local Lock=$1; shift
@@ -72,9 +72,9 @@ findOneInTargetOrRunners() {
     local f
     for f; do
         if [ -n "${_3X_WORKER_DIR:-}" ] && \
-                [ -e "$_3X_WORKER_DIR/target/$f" ]; then
-            echo "$_3X_WORKER_DIR/target/$f"
-        elif [ -e "$_3X_TARGET_DIR/$f" ]; then
+                [ -e "$_3X_QUEUE_DIR/$_3X_WORKER_DIR/target/$f" ]; then
+            echo "$_3X_QUEUE_DIR/$_3X_WORKER_DIR/target/$f"
+        elif [ -n "${_3X_TARGET_DIR:-}" ] && [ -e "$_3X_TARGET_DIR/$f" ]; then
             echo "$_3X_TARGET_DIR/$f"
         else
             ls-super "$_3X_RUNNER_HOME" "$_3X_RUNNER" "$f"
@@ -84,8 +84,12 @@ findOneInTargetOrRunners() {
 useTargetOrRunnerConfig() {
     local name=$1 msg=$2
     set -- $(findOneInTargetOrRunners "$name")
-    runner-msg-withTargetOrRunnerPaths +1 "$msg" "$@"
-    cat "$@"
+    if [[ $# -gt 0 ]]; then
+        runner-msg-withTargetOrRunnerPaths "$msg" "$@"
+        cat "$@"
+    else
+        runner-error "$name: Not found"
+    fi
 }
 runner-msg-withTargetOrRunnerPaths() {
     local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac

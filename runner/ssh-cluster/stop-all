@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# ssh-cluster/stop-all -- stop all running runs on the cluster via ssh
+# 
+# > . find-runner.sh -
+# > stop-all _3X_WORKER_DIR
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-24
+set -eu
+. runner.sh
+. remote-runner.sh
+
+_3X_WORKER_DIR=$1; shift
+_3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
+
+_3x=$(useTargetOrRunnerConfig 3x-path +3 "3X installation path at remote hosts:")
+sharedPath=$(useTargetOrRunnerConfig shared-path +2 "shared path at remote hosts:")
+set -- $(cat "$_3X_WORKER_DIR"/remotes 2>/dev/null || true)
+
+# stop runs at each remote
+for remote; do
+    parseRemote $remote
+    runner-msg " stopping runs at $remote"
+    sshRemote "$_3x" remote stop \
+        "$sharedPath" "$_3X_WORKER_ID" "$remoteRoot" \
+        #
+done
+
+rm -rf "$_3X_WORKER_DIR"

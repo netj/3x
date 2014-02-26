@@ -3,6 +3,7 @@
 
 3x-status                       $TOOLSDIR/
 3x-start                        $TOOLSDIR/
+3x-sync                         $TOOLSDIR/
 3x-stop                         $TOOLSDIR/
 3x-reset                        $TOOLSDIR/
 
@@ -26,8 +27,8 @@ base/run                        $TOOLSDIR/runner/.../
 base/run.assemble               $TOOLSDIR/runner/.../
 base/run.execute                $TOOLSDIR/runner/.../
 base/run.store                  $TOOLSDIR/runner/.../
-base/judge-state-of-run         $TOOLSDIR/runner/.../
 base/environ                    $TOOLSDIR/runner/.../
+base/judge-state-of-run         $TOOLSDIR/
 
 base/sync/as-a-worker           $TOOLSDIR/runner/base.sync/
 base/sync/queue-start           $TOOLSDIR/runner/base.sync/
@@ -36,7 +37,17 @@ base/sync/queue-changed         $TOOLSDIR/runner/base.sync/
 base/sync/queue-refresh         $TOOLSDIR/runner/base.sync/
 base/sync/queue-sync            $TOOLSDIR/runner/base.sync/
 
+base/async/parents              $TOOLSDIR/runner/base.async/
+base/async/queue-start          $TOOLSDIR/runner/base.async/
+base/async/queue-stop           $TOOLSDIR/runner/base.async/
+base/async/queue-refresh        $TOOLSDIR/runner/base.async/
+base/async/queue-sync           $TOOLSDIR/runner/base.async/
+
+base/remote/3x-remote           $TOOLSDIR/
+base/remote/remote-run          $TOOLSDIR/
 base/remote/remote-runner.sh    $TOOLSDIR/runner/base.remote/
+base/remote/setup-remote-repo   $TOOLSDIR/runner/base.remote/
+base/remote/3x-path             $TOOLSDIR/runner/base.remote/
 
 base/multi/queue-start          $TOOLSDIR/runner/base.multi/
 base/multi/queue-sync           $TOOLSDIR/runner/base.multi/

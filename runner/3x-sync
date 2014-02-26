@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# 3x-sync -- reflect what's happening at the target to the repository
+# 
+# > 3x sync
+# Fetches
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-25
+set -eu
+
+. find-queue.sh
+
+# first refresh
+for-each-active-runner queue-refresh || true
+
+# synchronize queue records with what's actually there
+for-every-runner queue-sync

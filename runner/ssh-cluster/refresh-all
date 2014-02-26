@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# ssh-cluster/refresh-all -- reflect cluster status to queue
+# 
+# > . find-runner.sh -
+# > refresh-all _3X_WORKER_DIR
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-25
+set -eu
+. runner.sh
+. remote-runner.sh
+
+_3X_WORKER_DIR=$1; shift
+_3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
+
+_3x=$(useTargetOrRunnerConfig 3x-path +3 "3X installation path at remote hosts:")
+sharedPath=$(useTargetOrRunnerConfig shared-path +2 "shared path at remote hosts:")
+set -- $(cat "$_3X_WORKER_DIR"/remotes 2>/dev/null || true)
+
+# fetch which runs have finished
+pids=()
+for remote; do
+    parseRemote $remote
+    runner-msg " checking runs at $remote"
+    sshRemote "$_3x" remote is-finished \
+        "$sharedPath" "$_3X_WORKER_ID" "$remoteRoot" &
+    pids+=($!)
+done
+
+# wait
+allRunsFinished=true
+for pid in "${pids[@]}"; do
+    wait $pid || allRunsFinished=false
+done
+$allRunsFinished

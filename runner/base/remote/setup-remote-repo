@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# remote/setup-remote-repo -- set up a remote repository
+# 
+# > . find-runner.sh -
+# > cd "$_3X_WORKER_DIR"
+# > setup-remote-repo REMOTE_URL _3X_WORKER_ID
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-24
+set -eu
+. runner.sh
+. remote-runner.sh
+
+[[ $# -eq 2 ]] || usage "$0" "Both REMOTE_URL and _3X_WORKER_ID are necessary"
+
+remote=$1; shift
+_3X_WORKER_ID=$1; shift
+
+parseRemote $remote
+
+runner-msg "setting up remote repository at $remote/$_3X_WORKER_ID"
+
+mkdir -p remote-root/.3x
+ln  -fn "$_3X_ASSEMBLE"                remote-root/.3x/
+ln  -fn "$_3X_ROOT"/.3x/description    remote-root/.3x/
+ln -sfn "$_3X_ROOT"/input              remote-root/
+ln -sfn "$_3X_ROOT"/program            remote-root/
+ln -sfn "$_3X_ROOT"/output             remote-root/
+
+sshRemote mkdir -p "$remoteRoot/$_3X_WORKER_ID"
+
+cd remote-root
+# TODO first hash files in remote-root
+# TODO transfer hashed files first to meta repo at $remoteRoot
+# TODO reconstruct the repo at $_3X_WORKER_ID from meta repo
+
+rsyncToRemote "$_3X_WORKER_ID"/ \
+    --archive --delete-after --copy-unsafe-links --relative \
+    .3x/{assemble.sh,description} \
+    input/ program/ output/
+

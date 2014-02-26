@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# > 3x stop
+# Stops executing runs in current queue.
+#
+# queue-stop -- stop execution of runs in current queue
+# 
+# > . find-runner.sh -
+# > setsid queue-stop
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-22
+set -eu
+. runner.sh
+
+let ++_3X_LOGLVL
+# stop all asynchronously running runs
+for _3X_WORKER_DIR in "$WORKER_DIR_PREFIX"*; do
+    [[ -s "$_3X_WORKER_DIR"/target.name && -d "$_3X_WORKER_DIR"/target ]] || {
+        rm -rf "$_3X_WORKER_DIR"
+        continue
+    }
+    export _3X_TARGET=$(cat "$_3X_WORKER_DIR"/target.name)
+    export _3X_TARGET_DIR="$_3X_WORKER_DIR"/target
+    runner-msg "Stopping $(wc -l <$_3X_WORKER_DIR/runIds) scheduled runs"
+    stop-all "$_3X_WORKER_DIR"
+done
+
+rm -f "$ACTIVE_FLAG"

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# > 3x sync
+# Synchronize repository with the runs at target.
+#
+# queue-sync -- Synchronize repository with the runs at target.
+# 
+# > . find-runner.sh -
+# > setsid queue-sync
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-23
+set -eu
+. runner.sh
+
+# stop all asynchronously running runs
+for _3X_WORKER_DIR in "$WORKER_DIR_PREFIX"*; do
+    [[ -s "$_3X_WORKER_DIR"/target.name && -d "$_3X_WORKER_DIR"/target ]] || {
+        rm -rf "$_3X_WORKER_DIR"
+        continue
+    }
+    export _3X_TARGET=$(cat "$_3X_WORKER_DIR"/target.name)
+    export _3X_TARGET_DIR="$_3X_WORKER_DIR"/target
+    runner-msg "Synchronizing $(wc -l <$_3X_WORKER_DIR/runIds) runs"
+    sync-all "$_3X_WORKER_DIR"
+done

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# remote-run -- execute a single run, remotely requested
+# 
+# > . find-run-archive.sh
+# > remote-run SERIALNO _3X_RUN NAME=VALUE...
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-24
+set -eu
+
+Serial=$1; shift
+export _3X_RUN=$1; shift
+tmproot=$PWD
+export _3X_LOGERROR="$tmproot/$_3X_RUN/target.aborted"
+
+# load environment spec
+eval envSpec=($(cat "$tmproot"/runs.environ))
+[[ ${#envSpec[@]} -eq 0 ]] ||
+    set -- "$@" -- "${envSpec[@]}"
+
+# assemble a runnable for this run
+"$_3X_ASSEMBLE" "$_3X_RUN" "$@"
+
+# execute the assembled runnable
+cd "$_3X_RUN"
+if ./execute.sh; then
+    # extract output if successfully finished
+    _3X_ROOT=$tmproot \
+    extract-output "$_3X_RUN" ||
+    true
+fi
+
+# store under the repository
+tmprun=$PWD
+run="$_3X_ROOT/$_3X_RUN"
+mkdir -p "$run"
+export _3X_LOGERROR="$run"/target.aborted
+cp --archive --link . "$run"/  2>/dev/null ||
+    rsync --archive --hard-links . "$run"/
+
+# archive for de-duplication
+archive "$_3X_ARCHIVE" "$run"
+
+# record this run as finished
+state=$(judge-state-of-run || true)
+[[ -n "$state" ]] || state=FAILED
+echo "$state $Serial $_3X_RUN" >&3
+
+# clean up
+cd "$run"
+rm -rf "$tmprun"
+rmdir -p "$tmprun" 2>/dev/null

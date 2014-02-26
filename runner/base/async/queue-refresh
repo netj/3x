@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# > 3x status
+# Refresh the current queue to reflect the status of runs at the target.
+#
+# queue-refresh -- Reflect the status of runs at the target to the queue.
+# 
+# > . find-runner.sh -
+# > setsid queue-refresh
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-25
+set -eu
+. runner.sh
+
+# refresh all asynchronously running runs
+allSessionsDone=true
+for _3X_WORKER_DIR in "$WORKER_DIR_PREFIX"*; do
+    [[ -s "$_3X_WORKER_DIR"/target.name && -d "$_3X_WORKER_DIR"/target ]] || {
+        rm -rf "$_3X_WORKER_DIR"
+        continue
+    }
+    export _3X_TARGET=$(cat "$_3X_WORKER_DIR"/target.name)
+    export _3X_TARGET_DIR="$_3X_WORKER_DIR"/target
+    runner-msg "Refreshing $(wc -l <$_3X_WORKER_DIR/runIds) scheduled runs"
+    refresh-all "$_3X_WORKER_DIR" || allSessionsDone=false
+done
+
+! $allSessionsDone || rm -f $ACTIVE_FLAG

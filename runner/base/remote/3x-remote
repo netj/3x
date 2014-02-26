@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# 3x-remote -- start/stop runs from remote
+# 
+# > 3x remote start ROOT_PATH SESSION_ID WORKDIR <RUNS
+# > 3x remote stop  ROOT_PATH SESSION_ID WORKDIR
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-02-24
+set -eu
+
+[[ $# -eq 4 ]] || usage "$0" "Invalid invocation"
+
+# find the experiment repository clone
+Cmd=$1; shift
+_3X_META_ROOT=$1; shift
+_3X_SESSION_ID=$1; shift
+_3X_ROOT="$_3X_META_ROOT/$_3X_SESSION_ID"
+export _3X_ROOT=$(readlink -f "$_3X_ROOT")
+
+WorkDirRoot=$1; shift
+WorkDir="$WorkDirRoot/$_3X_SESSION_ID"
+
+case $Cmd in
+    start)
+        # set up a working directory
+        mkdir -p "$WorkDir"
+        cd "$WorkDir"
+        # that resembles the repository clone
+        for f in .3x input program output; do
+            ! [[ "$_3X_ROOT"/$f -ef $f ]] || continue
+            ln -sfn "$_3X_ROOT"/$f  .
+        done
+
+        # record PGID for easy stopping later
+        ps -o pgid= -p $$ >runs.pgid
+
+        # keep a copy of runs passed over stdin
+        cat >runs
+
+        # TODO determine degree of parallelism if not given
+        NumProcs=1
+
+        . find-run-archive.sh
+
+        # prepare environment
+        record-environ.sh $(cat "$_3X_ROOT"/.3x/environ) >runs.environ
+
+        # run each with xargs
+        xargs <runs -P $NumProcs -L 1 remote-run \
+            >runs.stdout 2>runs.stderr 3>runs.finished &
+        ;;
+
+    stop|cleanup)
+        if cd "$WorkDir" 2>/dev/null; then
+            if [[ -s runs.pgid ]]; then
+                pgid=$(cat runs.pgid 2>/dev/null)
+                isnt-running() { ! ps -o pid= -g "$pgid" &>/dev/null; }
+                isnt-running || kill -TERM -"$pgid" ||
+                isnt-running || kill -KILL -"$pgid" ||
+                true
+            fi
+            cd - >/dev/null
+        fi
+        rm -rf "$WorkDir" "$_3X_ROOT"
+        ;;
+
+    is-finished)
+        pgid=$(cat "$WorkDir"/runs.pgid 2>/dev/null)
+        ! ps -o pid= -g "$pgid" &>/dev/null
+        {
+            totalScheduled=$(wc -l <"$WorkDir"/runs || echo 0)
+            totalFinished=$(wc -l <"$WorkDir"/runs.finished || echo 0)
+            [[ $totalScheduled -eq $totalFinished ]]
+        } 2>/dev/null
+        ;;
+
+esac

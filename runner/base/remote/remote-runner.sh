@@ -48,6 +48,25 @@ parseRemote() {
     error "$remote: malformed REMOTE_URL"
 }
 
+getParsedRemoteURL() {
+    local url=
+    if [[ -n "$remotePort" ]]; then
+        url="ssh://${remoteUser:+$remoteUser@}$remoteHost:$remotePort"
+        case $remoteRoot in
+            "~"*) url+=/ ;;
+            *) # $remoteRoot is already prefixed by /
+        esac
+        url+=$remoteRoot
+    else
+        url="${remoteUser:+$remoteUser@}$remoteHost:"
+        case $remoteRoot in
+            .) ;;
+            *) url+=$remoteRoot
+        esac
+    fi
+    echo "$url"
+}
+
 # TODO see if ssh supports Control{Master,Persist}
 requiresSSHCommand() {
     remoteSSHCommand=${remoteSSHCommand:-$(escape-args-for-shell \

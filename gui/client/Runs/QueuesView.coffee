@@ -39,7 +39,7 @@ class QueuesUI extends CompositeElement
             .on("click", ".queue-start"  , @handleQueueAction   @startQueue)
             .on("click", ".queue-stop"   , @handleQueueAction    @stopQueue)
             .on("click", ".queue-reset"  , @handleQueueAction   @resetQueue)
-            .on("click", ".queue-refresh", @handleQueueAction @refreshQueue)
+            .on("click", ".queue-sync"   , @handleQueueAction    @syncQueue)
             .on("click", ".queue"        , @handleQueueAction   @focusQueue)
 
         # TODO @optionElements.addNewQueue?. ...
@@ -141,7 +141,7 @@ class QueuesUI extends CompositeElement
                     <div class="pull-left">
                         <button class="queue-reset btn btn-small btn-danger"><i class="icon icon-undo"></i></button>
                     </div>
-                    <button class="queue-refresh btn btn-small" disabled title="Refresh queue"><i class="icon icon-refresh"></i></button>
+                    <button class="queue-sync btn btn-small" title="Synchronize queue"><i class="icon icon-refresh"></i></button>
                     <button class="queue-stop btn btn-small btn-primary" title="Turn this queue off"><i class="icon icon-pause"></i></button>
                     <button class="queue-start btn btn-small btn-primary" title="Turn this queue on"><i class="icon icon-play"></i></button>
                 </div>
@@ -252,7 +252,7 @@ class QueuesUI extends CompositeElement
     startQueue:    (queueName) => @doQueueAction queueName, "start"
     stopQueue:     (queueName) => @doQueueAction queueName, "stop"
     resetQueue:    (queueName) => @doQueueAction queueName, "reset"
-    refreshQueue:  (queueName) => @doQueueAction queueName, "refresh"
+    syncQueue:     (queueName) => @doQueueAction queueName, "sync"
     doQueueAction: (queueName, action) =>
         $.getJSON("#{_3X_.BASE_URL}/api/run/queue/#{queueName}:#{action}")
             # TODO show feedback in case of failure
