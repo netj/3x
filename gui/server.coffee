@@ -474,16 +474,16 @@ app.get "/api/run/queue/*.DataTables", (req, res) ->
             for name,i in columns when j = req.param("mDataProp_#{i}")
                 columnOrder[+j] = name
             columnOrder
-    getHistory = (cmd, args, next) ->
-        cliEnv res, {
+    async.parallel [
+            cliEnv res, {
                 _3X_QUEUE: queueName
                 LIMIT:  req.param("iDisplayLength") ? -1
                 OFFSET: req.param("iDisplayStart") ? 0
-            }, cmd, args, next
-    async.parallel [
-            getHistory "3x-status", ["-j"]
+            }, "3x-status", ["-j"]
         ,
-            getHistory "sh", ["-c", "3x-status | wc -l"]
+            cliEnv res, {
+                _3X_QUEUE: queueName
+            }, "sh", ["-c", "3x-status | wc -l"]
                 , (lazyLines, next) ->
                     lazyLines
                         .take(1)
