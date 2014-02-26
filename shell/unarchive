@@ -53,7 +53,7 @@ while (my $filename = <>) {
 	    local archivedDir=\${archived%/*}
 	    local file=
 	    for file; do
-	        [ "\$archived" -ef "\$file" ] || return 2
+	        [ "\$archived" -ef "\$file" ] || return 0
 	    done
 	    if chmod +w "\$archivedDir"; then
 	        rm -f "\$archived"
