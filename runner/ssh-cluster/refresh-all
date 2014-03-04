@@ -22,10 +22,12 @@ pids=()
 for remote; do
     parseRemote $remote
     runner-msg " checking runs at $remote"
-    sshRemote "$_3x" remote is-finished \
-        "$sharedPath" "$_3X_WORKER_ID" "$remoteRoot" &
+    sshRemote "$_3x" remote "$sharedPath" "$_3X_WORKER_ID" \
+        is-finished "$remoteRoot" &
     pids+=($!)
 done
+
+# TODO trap INT QUIT TERM to forward to "${pids[@]}"
 
 # wait
 allRunsFinished=true

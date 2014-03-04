@@ -44,9 +44,8 @@ for remote in "${remotes[@]}"; do
     echo $remote >$split.remote
     echo $remote >>remotes
     touch "$_3X_QUEUE_DIR"/$ACTIVE_FLAG
-    sshRemote "$_3x" remote start \
-        "$sharedPath" "$_3X_WORKER_ID" "$remoteRoot" \
-        <$split &
+    sshRemote "$_3x" remote "$sharedPath" "$_3X_WORKER_ID" \
+        start "$remoteRoot" <$split &
     pids+=($!)
 done
 

@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+# nodups -- File de-duplication with some tricks using the shared copies
+# 
+# > nodups archive REPO FILE...
+# De-duplicates given FILEs with the hardlink copies in REPO.
+# 
+# If there's a file already in the REPO with the same hash, FILE will be
+# replaced as a hardlink to it.  Otherwise, a new hardlink of FILE will be
+# created in the REPO, named after its hash in the REPO, e.g.,
+# REPO/9a/da/8506c0746cb36bb250449c5322590748a924.  The SHA1 hash for each FILE
+# is computed with `git hash-object`.
+# 
+# All the hardlinked files will be marked read-only, i.e., have writable
+# permission cleared after they are archived.
+# 
+# When a directory is archived, all the files within that directory will be
+# archived first, then the directories will be marked read-only.
+# 
+# 
+# > nodups unarchive REPO FILE...
+# Removes hardlink copies of given FILEs from the REPO.
+# 
+# Any hardlink copies that may solely remain in the REPO if `rm -f FILE...`
+# would be run will be removed.  Note that the given FILEs are not removed by
+# this command.
+# 
+# The SHA1 hash for each FILE is computed with `git hash-object` as done in
+# `archive`.
+# 
+# When a directory is unarchived, all its subdirectories marked read-only will
+# become read-writable.
+# 
+# 
+# > nodups mktree REPO DEST FILE...
+# Creates a file hierarchy with with the hardlink copies in REPO.
+# 
+# Create a file hierarchy at DEST by placing identical copies of FILEs that
+# already exists in REPO at the same path under DEST.  Any FILEs whose copies
+# do not exist in REPO will be simply omitted from DEST.  Such FILEs can be
+# rsync'ed later to DEST.  In order to hardlink the shared copies in REPO, DEST
+# and REPO must be on the same file system.  REPO must be created by the
+# `archive` command.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-03-03
+set -eu
+
+# process options
+DryRun=false
+while getopts "n" o; do
+    case $o in
+        n)
+            DryRun=true
+            ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+# process arguments
+[[ $# -gt 0 ]] || usage "$0" "Missing COMMAND"
+[[ $# -gt 1 ]] || usage "$0" "Missing REPO"
+
+origArgs=("$@")
+Command=$1; shift
+REPO=$1; shift
+case $Command in
+    mktree)
+        [[ $# -gt 0 ]] || usage "$0" "Missing DEST"
+        DEST=$1; shift
+        ;;
+
+    archive|unarchive)
+        # exit early if no file given
+        [[ $# -gt 0 ]] || exit 0
+        ;;
+esac
+
+
+# prepare some dirs for script generation
+tmp=$(mktemp -d "${TMPDIR:-/tmp}"/dedup.XXXXXX)
+trap "rm -rf $tmp" EXIT
+
+## generate a list of files with its SHA-1 hash, executable flag, #links
+hashlist="$tmp"/hashpath
+if [[ $# -gt 0 ]]; then
+    # find all files first
+    find -L "$@" -type f >"$tmp"/paths || true
+    # see which files are executables to archive separately from normal files
+    # (hardlink copies cannot have separate permission modes, so when two files
+    #  share the content but one is an executable and the other isn't, we'll
+    #  have to keep another copy with +x separately in a different name)
+    perl <"$tmp"/paths -Mstrict -MFile::stat -e '
+    while (my $filename = <>) {
+        chomp $filename;
+        my $sb = stat($filename);
+        printf "%s\n", join "\t", ($sb->mode & 0111 ? "x" : ""), $sb->nlink;
+    }
+    ' >"$tmp"/stats
+    # use git hash-object to compute SHA1 sum of each file
+    # and paste everything together as a script that will do the job
+    git hash-object --stdin-paths <"$tmp"/paths |
+    sed 's:^....:&/:; s:^..:&/:' |
+    paste - "$tmp"/stats "$tmp"/paths >"$hashlist"
+else
+    : >"$hashlist"
+fi
+
+
+## generate a shell script that unifies all the files with the ones in the archive
+{
+    echo "set -- $(escape-args-for-shell "${origArgs[@]}")"
+    REPO_escaped=$(escape-args-for-shell "$REPO")
+    case $Command in
+        archive)
+            cat <<-PROLOGUE
+		mkdir -p -- $REPO_escaped
+		set -u
+		u() {
+		    local archived=$REPO_escaped/"\$1"
+		    local file=\$2
+		    if [[ -e "\$archived" ]]; then
+		        if ! [[ "\$file" -ef "\$archived" ]]; then
+		            touch -r "\$file" "\$archived"
+		            local dir=.
+		            case \$file in
+		                */*) dir=\${file%/*} ;;
+		            esac
+		            # remove any existing write-protection
+		            chmod +w "\$dir" "\$file"
+		            ln -fn "\$archived" "\$file"
+		        fi
+		    else
+		        local archivedDir=\${archived%/*}
+		        mkdir -p "\$archivedDir"
+		        ln -fn "\$file" "\$archived"
+		    fi
+		    #XXX chmod a-w "\$archived"
+		}
+		PROLOGUE
+            perl <"$hashlist" -Mstrict -e '
+            sub esc { my $f = shift; $f =~ s/'\''/'\''\\'\'\''/g; $f }
+            while (my $line = <>) {
+                chomp $line;
+                my ($sha1file, $executableFlag, $nlinks, $path) = split /\t/, $line, 4;
+                my $key = $sha1file.$executableFlag;
+                printf "u %s '\''%s'\''\n", $key, esc($path);
+            }
+            '
+            # finally, make all involved directories read-only
+            echo
+            #XXX echo 'find "$@" -type d -exec chmod a-w {} +'
+            ;;
+
+        unarchive)
+            cat <<-PROLOGUE
+		set -u
+		u() {
+		    local archived=$REPO_escaped/"\$1"; shift
+		    local archivedDir=\${archived%/*}
+		    local file=
+		    for file; do
+		        [[ "\$archived" -ef "\$file" ]] || return 0
+		    done
+		    if chmod +w "\$archivedDir"; then
+		        rm -f "\$archived"
+		        rmdir -p "\$archivedDir" 2>/dev/null
+		    fi
+		}
+		PROLOGUE
+            perl <"$hashlist" -Mstrict -MCwd -e '
+            my %pathsBySHA1; my %occursByPath;
+            sub esc { my $f = shift; $f =~ s/'\''/'\''\\'\'\''/g; $f }
+            while (my $line = <>) {
+                chomp $line;
+                my ($sha1file, $executableFlag, $nlinks, $path) = split /\t/, $line, 4;
+                my $key = $sha1file.$executableFlag;
+                my $realpath = Cwd::realpath $path;
+                my $paths = $pathsBySHA1{$key};
+                $pathsBySHA1{$key} = $paths = [] unless defined $paths;
+                $occursByPath{$realpath}++;
+                push @$paths, $path if $occursByPath{$realpath} eq 1;
+                next if $nlinks - @$paths > 1;
+                printf "u %s %s\n", $key,
+                    (join " ", map { sprintf "'\''%s'\''", esc($_); } @$paths);
+            }
+            '
+            # finally, make all involved read-only directories to read-writable
+            #XXX echo 'find "$@" -type d ! -perm +a=w -exec chmod +w {} +'
+            ;;
+
+        mktree)
+            DEST_escaped=$(escape-args-for-shell "$DEST")
+            cat <<-PROLOGUE
+		mkdir -p -- $DEST_escaped
+		set -u
+		u() {
+		    local archived=$REPO_escaped/"\$1"
+		    if [[ -e "\$archived" ]]; then
+		        local file=$DEST_escaped/\$2
+		        if ! [[ "\$file" -ef "\$archived" ]]; then
+		            local dir=\${file%/*}
+		            mkdir -p "\$dir"
+		            chmod +w "\$dir" "\$file" 2>/dev/null
+		            ln -fn "\$archived" "\$file"
+		        fi
+		    fi
+		}
+		PROLOGUE
+            perl <"$hashlist" -Mstrict -e '
+            sub esc { my $f = shift; $f =~ s/'\''/'\''\\'\'\''/g; $f }
+            while (my $line = <>) {
+                chomp $line;
+                my ($sha1file, $executableFlag, $nlinks, $path) = split /\t/, $line, 4;
+                my $key = $sha1file.$executableFlag;
+                printf "u %s '\''%s'\''\n", $key, esc($path);
+            }
+            '
+            ;;
+
+esac
+} >"$tmp"/script.sh
+
+if $DryRun; then
+    # just output the script, instead of also running it
+    cat "$tmp"/script.sh
+else
+    be-quiet +4 || {
+        cat "$tmp"/script.sh
+    } >&2
+
+    run=bash
+    be-quiet +5 || run="bash -x"
+
+    # and run it
+    $run "$tmp"/script.sh -- "$@"
+fi

@@ -21,9 +21,10 @@ set -- $(cat "$_3X_WORKER_DIR"/remotes 2>/dev/null || true)
 for remote; do
     parseRemote $remote
     runner-msg " stopping runs at $remote"
-    sshRemote "$_3x" remote stop \
-        "$sharedPath" "$_3X_WORKER_ID" "$remoteRoot" \
-        #
+    sshRemote "$_3x" remote "$sharedPath" "$_3X_WORKER_ID" \
+        stop "$remoteRoot"
 done
+
+# TODO parallelize
 
 rm -rf "$_3X_WORKER_DIR"

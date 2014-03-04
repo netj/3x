@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# mktree-from-archive -- Create a file hierarchy with with the hardlink copies in REPO
+# 
+# > mktree-from-archive REPO DEST FILE...
+# 
+# Create a file hierarchy at DEST by placing identical copies of FILEs that
+# already exists in REPO at the same path under DEST.  Any FILEs whose copies
+# do not exist in REPO will be simply omitted from DEST.  Such FILEs can be
+# rsync'ed later to DEST.  In order to hardlink the shared copies in REPO, DEST
+# and REPO must be on the same file system.  REPO must be created by the
+# `archive` command.
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-03-03
+exec nodups mktree "$@"

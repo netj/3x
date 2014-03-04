@@ -1,24 +1,32 @@
 #!/usr/bin/env bash
 # 3x-remote -- start/stop runs from remote
 # 
-# > 3x remote start ROOT_PATH SESSION_ID WORKDIR <RUNS
-# > 3x remote stop  ROOT_PATH SESSION_ID WORKDIR
+# > 3x remote SHARED_PATH SESSION_ID start       WORKDIR <RUNS
+# > 3x remote SHARED_PATH SESSION_ID stop        WORKDIR
+# > 3x remote SHARED_PATH SESSION_ID cleanup     WORKDIR
+# > 3x remote SHARED_PATH SESSION_ID is-finished WORKDIR
+# > 3x remote SHARED_PATH SESSION_ID run COMMAND [ARG]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-02-24
 set -eu
 
-[[ $# -eq 4 ]] || usage "$0" "Invalid invocation"
+[[ $# -ge 4 ]] || usage "$0" "Missing ROOT_PATH SESSION_ID WORKDIR"
 
 # find the experiment repository clone
-Cmd=$1; shift
-_3X_META_ROOT=$1; shift
+RemoteSharedPath=$1; shift
 _3X_SESSION_ID=$1; shift
-_3X_ROOT="$_3X_META_ROOT/$_3X_SESSION_ID"
+Cmd=$1; shift
+
+_3X_ROOT="$RemoteSharedPath/$_3X_SESSION_ID"
 export _3X_ROOT=$(readlink -f "$_3X_ROOT")
 
-WorkDirRoot=$1; shift
-WorkDir="$WorkDirRoot/$_3X_SESSION_ID"
+case $Cmd in
+    start|stop|cleanup|is-finished)
+        WorkDirRoot=$1; shift
+        WorkDir="$WorkDirRoot/$_3X_SESSION_ID"
+        ;;
+esac
 
 case $Cmd in
     start)
@@ -74,4 +82,8 @@ case $Cmd in
         } 2>/dev/null
         ;;
 
+    run)
+        # run given command inside 3X environment
+        "$@"
+        ;;
 esac

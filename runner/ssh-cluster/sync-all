@@ -15,7 +15,7 @@ _3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
 
 cd "$_3X_WORKER_DIR"
 
-_3x=$(useTargetOrRunnerConfig 3x-path +3 "3X installation path at remote hosts:")
+export _3x=$(useTargetOrRunnerConfig 3x-path +3 "3X installation path at remote hosts:")
 sharedPath=$(useTargetOrRunnerConfig shared-path +2 "shared path at remote hosts:")
 set -- $(cat remotes 2>/dev/null || true)
 
@@ -64,9 +64,8 @@ if [[ $(cat runSerials.* | wc -l) -eq $(wc -l <runSerials) ]]; then
     for remote; do
         parseRemote $remote
         runner-msg +1 "cleaning up $remote"
-        sshRemote "$_3x" remote cleanup \
-            "$sharedPath" "$_3X_WORKER_ID" "$remoteRoot" \
-            #
+        sshRemote "$_3x" remote "$sharedPath" "$_3X_WORKER_ID" \
+            cleanup "$remoteRoot"
     done
     cd - >/dev/null
     rm -rf "$_3X_WORKER_DIR"

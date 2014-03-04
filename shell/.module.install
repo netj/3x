@@ -31,6 +31,7 @@ lockproc                    $TOOLSDIR/
 synchronized                $TOOLSDIR/
 
 # deduplication
+nodups                      $TOOLSDIR/
 archive                     $TOOLSDIR/
 unarchive                   $TOOLSDIR/
 
