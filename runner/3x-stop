@@ -33,5 +33,6 @@ if [ $# -eq 0 ]; then
     for-each-active-runner queue-stop
 else # if there are given arguments, just stop the current target
     . find-runner.sh -
+    let ++_3X_LOGLVL
     setsid queue-stop "$@"
 fi

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # 3x-remote -- start/stop runs from remote
 # 
-# > 3x remote SHARED_PATH SESSION_ID start       WORKDIR <RUNS
-# > 3x remote SHARED_PATH SESSION_ID stop        WORKDIR
-# > 3x remote SHARED_PATH SESSION_ID cleanup     WORKDIR
-# > 3x remote SHARED_PATH SESSION_ID is-finished WORKDIR
-# > 3x remote SHARED_PATH SESSION_ID run COMMAND [ARG]...
+# > 3x remote SHARED_PATH SESSION_ID WORKDIR  start <RUNS
+# > 3x remote SHARED_PATH SESSION_ID WORKDIR  stop       
+# > 3x remote SHARED_PATH SESSION_ID WORKDIR  is-finished
+# > 3x remote SHARED_PATH SESSION_ID WORKDIR  cleanup
+# > 3x remote SHARED_PATH SESSION_ID WORKDIR  run COMMAND [ARG]...
 #
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-02-24
@@ -16,23 +16,20 @@ set -eu
 # find the experiment repository clone
 RemoteSharedPath=$1; shift
 _3X_SESSION_ID=$1; shift
+WorkDirRoot=$1; shift
 Cmd=$1; shift
 
 _3X_ROOT="$RemoteSharedPath/$_3X_SESSION_ID"
 export _3X_ROOT=$(readlink -f "$_3X_ROOT")
 
-case $Cmd in
-    start|stop|cleanup|is-finished)
-        WorkDirRoot=$1; shift
-        WorkDir="$WorkDirRoot/$_3X_SESSION_ID"
-        ;;
-esac
+WorkDir="$WorkDirRoot/$_3X_SESSION_ID"
 
 case $Cmd in
     start)
         # set up a working directory
         mkdir -p "$WorkDir"
         cd "$WorkDir"
+        chmod u=rwx,go= ..
         # that resembles the repository clone
         for f in .3x input program output; do
             ! [[ "$_3X_ROOT"/$f -ef $f ]] || continue
@@ -58,7 +55,7 @@ case $Cmd in
             >runs.stdout 2>runs.stderr 3>runs.finished &
         ;;
 
-    stop|cleanup)
+    stop)
         if cd "$WorkDir" 2>/dev/null; then
             if [[ -s runs.pgid ]]; then
                 pgid=$(cat runs.pgid 2>/dev/null)
@@ -69,7 +66,17 @@ case $Cmd in
             fi
             cd - >/dev/null
         fi
-        rm -rf "$WorkDir" "$_3X_ROOT"
+        rm -rf "$WorkDir"
+        ;;
+
+    cleanup)
+        if [[ -d "$_3X_ROOT" && ! -e "$_3X_ROOT".deleting ]]; then
+            touch "$_3X_ROOT".deleting
+            trap 'rm -f "$_3X_ROOT".deleting' EXIT
+            rm -rf "$_3X_ROOT"
+        else
+            false
+        fi
         ;;
 
     is-finished)
@@ -84,6 +91,8 @@ case $Cmd in
 
     run)
         # run given command inside 3X environment
+        mkdir -p "$WorkDir"
+        cd "$WorkDir"
         "$@"
         ;;
 esac

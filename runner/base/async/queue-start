@@ -40,5 +40,6 @@ runner-msg "Executing #$firstSerial through #$lastSerial ($count runs)"
 
 # start running asynchronously
 trap - EXIT
+let ++_3X_LOGLVL
 _3X_LOGERROR="$_3X_WORKER_DIR"/error \
 start-all "$_3X_WORKER_DIR"

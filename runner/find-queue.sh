@@ -65,6 +65,7 @@ for-each-active-runner() {
         for runner in "${runners[@]}"; do
             (
             . find-runner.sh "$runner"
+            let ++_3X_LOGLVL
             setsid "$@"
             )
         done
@@ -77,6 +78,7 @@ for-every-runner() {
         runner=${runner%/}
         (
         . find-runner.sh "$runner"
+        let ++_3X_LOGLVL
         setsid "$@"
         )
     done

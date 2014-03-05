@@ -7,49 +7,48 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-02-24
 set -eu
-. runner.sh
-. remote-runner.sh
 
 _3X_WORKER_DIR=$1; shift
-_3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
+
+. ssh-cluster-runner.sh
 
 cd "$_3X_WORKER_DIR"
 
-_3x=$(useTargetOrRunnerConfig 3x-path +3 "3X installation path at remote hosts:")
-sharedPath=$(useTargetOrRunnerConfig shared-path +2 "shared path at remote hosts:")
 envSpecPath=$(findOneInTargetOrRunners environ)
-remotes=($(useTargetOrRunnerConfig remotes +2 "remote hosts:"))
+remotes=(
+$(useTargetOrRunnerConfig remotes +2 "remote hosts:" | no-comments)
+)
 
 # TODO filter out unresponsive remotes first
+numRemotes=${#remotes[@]}
 
 # set up a repository clone at remote shared-path
-remote=${remotes[0]} # XXX arbitrarily picking the first one
+remote=${remotes[$(($RANDOM % $numRemotes))]} # randomly picking one
 parseRemote $remote; remoteRoot=$sharedPath
-setup-remote-repo $(getParsedRemoteURL) "$_3X_WORKER_ID"
+sharedRemote=$(getParsedRemoteURL)
+_3X_LOGLVL=$((_3X_LOGLVL + 1)) \
+setup-remote-repo $sharedRemote "$_3X_WORKER_ID"
 rsyncToRemote "$_3X_WORKER_ID"/.3x/environ "$envSpecPath"
 
 # split runIds and runArgs for each remote
-numRemotes=${#remotes[@]}
+[[ $numRemotes -gt 0 ]] || runner-error "No remote hosts are available"
 paste run{Serial,Id,Arg}s |
 split --number=r/$numRemotes - runSplit.
 
 # start runs at each remote
-pids=()
-splits=($(ls runSplit.*)) i=0
-for remote in "${remotes[@]}"; do
-    split=${splits[i]}; let ++i
+splits=($(ls runSplit.*))
+scheduleRuns() {
+    local remote=$1 i=$2
+    local split=${splits[i]}
+    local numScheduled=$(wc -l <$split)
+    [[ $numScheduled -gt 0 ]] || return 0
     parseRemote $remote
-    runner-msg " starting $(wc -l <$split) runs at $remote"
+    runner-msg "scheduling $numScheduled runs at $remote"
     # record which remote host is running which runs
     echo $remote >$split.remote
     echo $remote >>remotes
     touch "$_3X_QUEUE_DIR"/$ACTIVE_FLAG
-    sshRemote "$_3x" remote "$sharedPath" "$_3X_WORKER_ID" \
-        start "$remoteRoot" <$split &
-    pids+=($!)
-done
-
-# wait
-s=0
-for pid in "${pids[@]}"; do wait $pid || s=$?; done
-exit $s
+    ssh-3x-remote $remote start <$split
+}
+eachInParallel scheduleRuns "${remotes[@]}"
+waitAll

@@ -35,9 +35,14 @@ remoteRootPaths=(
 cd remote-root
 
 # first, construct a remote repo by sharing already available copies
-nodups -n mktree "$remoteRoot"/objects \
-    "$remoteRoot/$_3X_WORKER_ID" \
-    "${remoteRootPaths[@]}" |
+{
+    sharedPath_escaped=$(escape-args-for-shell "$sharedPath")
+    echo "mkdir -p $sharedPath_escaped/tmp"
+    echo "chmod u=rwx,go= $sharedPath_escaped"
+    nodups -n mktree "$sharedPath"/objects \
+        "$sharedPath/$_3X_WORKER_ID" \
+        "${remoteRootPaths[@]}"
+} |
 sshRemote bash -s
 
 # then, transfer any missing files
@@ -46,6 +51,6 @@ rsyncToRemote "$_3X_WORKER_ID"/ \
     "${remoteRootPaths[@]}"
 
 # finally, augment shared path with the new files
-sshRemote "${_3x:-3x}" remote "$sharedPath" "$_3X_WORKER_ID" \
-    run nodups archive "$remoteRoot"/objects \
-        "$remoteRoot/$_3X_WORKER_ID"
+sshRemote "${_3x:-3x}" remote "$sharedPath" "$_3X_WORKER_ID" "$sharedPath/$_3X_WORKER_ID" \
+    run nodups archive "$sharedPath"/objects \
+        "$sharedPath/$_3X_WORKER_ID"

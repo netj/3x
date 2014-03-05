@@ -13,15 +13,17 @@ set -eu
 . runner.sh
 
 # refresh all asynchronously running runs
+let ++_3X_LOGLVL
 allSessionsDone=true
 for _3X_WORKER_DIR in "$WORKER_DIR_PREFIX"*; do
+    _3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
     [[ -s "$_3X_WORKER_DIR"/target.name && -d "$_3X_WORKER_DIR"/target ]] || {
         rm -rf "$_3X_WORKER_DIR"
         continue
     }
     export _3X_TARGET=$(cat "$_3X_WORKER_DIR"/target.name)
     export _3X_TARGET_DIR="$_3X_WORKER_DIR"/target
-    runner-msg "Refreshing $(wc -l <$_3X_WORKER_DIR/runIds) scheduled runs"
+    #runner-msg "Refreshing $(wc -l <$_3X_WORKER_DIR/runIds) scheduled runs"
     refresh-all "$_3X_WORKER_DIR" || allSessionsDone=false
 done
 

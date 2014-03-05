@@ -17,7 +17,7 @@ Target=$1
 cd "$_3X_ROOT"/run/target/"$Target"
 
 echo "# remotes (remote URLs):"
-cat remotes 2>/dev/null || code=2
+no-comments remotes 2>/dev/null || code=2
 echo
 
 echo "# shared-path (shared path):"
@@ -26,7 +26,7 @@ echo "$sharedPath"
 echo
 
 echo "# environ (environment for execution):"
-cat environ 2>/dev/null || true
+no-comments environ 2>/dev/null || true
 echo
 
 if remote=$(head -1 <remotes 2>/dev/null); then

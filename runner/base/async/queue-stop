@@ -15,13 +15,14 @@ set -eu
 let ++_3X_LOGLVL
 # stop all asynchronously running runs
 for _3X_WORKER_DIR in "$WORKER_DIR_PREFIX"*; do
+    _3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
     [[ -s "$_3X_WORKER_DIR"/target.name && -d "$_3X_WORKER_DIR"/target ]] || {
         rm -rf "$_3X_WORKER_DIR"
         continue
     }
     export _3X_TARGET=$(cat "$_3X_WORKER_DIR"/target.name)
     export _3X_TARGET_DIR="$_3X_WORKER_DIR"/target
-    runner-msg "Stopping $(wc -l <$_3X_WORKER_DIR/runIds) scheduled runs"
+    #runner-msg "Stopping $(wc -l <$_3X_WORKER_DIR/runIds) scheduled runs"
     stop-all "$_3X_WORKER_DIR"
 done
 

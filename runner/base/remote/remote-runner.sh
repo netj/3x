@@ -81,22 +81,22 @@ requiresSSHCommand() {
 sshRemote() {
     parseRemote
     requiresSSHCommand
-    eval $remoteSSHCommand ${remotePort:+-p $remotePort} \
+    eval "$remoteSSHCommand ${remotePort:+-p $remotePort} \
         ${remoteUser:+$remoteUser@}$remoteHost \
-        "$@"
+        $(escape-args-for-shell "$(escape-args-for-shell "$@")")"
 }
 
 rsyncToRemote() {
     local remotePath=$1; shift
     parseRemote
     requiresSSHCommand
-    local verboseOpt=; be-quiet +2 || verboseOpt=-v
+    local verboseOpt=; be-quiet +3 || verboseOpt=-v
     set -- \
     rsync --rsh="$remoteSSHCommand ${remotePort:+-p $remotePort}" $verboseOpt \
         "$@" \
         "${remoteUser:+$remoteUser@}$remoteHost":"$(escape-args-for-shell "$remoteRoot/$remotePath")" \
         #
-    msg +2 " $*"
+    msg +3 "$*"
     "$@"
 }
 
@@ -104,12 +104,12 @@ rsyncFromRemote() {
     local remotePath=$1; shift
     parseRemote
     requiresSSHCommand
-    local verboseOpt=; be-quiet +2 || verboseOpt=-v
+    local verboseOpt=; be-quiet +3 || verboseOpt=-v
     set -- \
     rsync --rsh="$remoteSSHCommand ${remotePort:+-p $remotePort}" $verboseOpt \
         "${remoteUser:+$remoteUser@}$remoteHost":"$(escape-args-for-shell "$remoteRoot/$remotePath")" \
         "$@" \
         #
-    msg +2 " $*"
+    msg +3 "$*"
     "$@"
 }

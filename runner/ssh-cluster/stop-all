@@ -7,24 +7,31 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-02-24
 set -eu
-. runner.sh
-. remote-runner.sh
 
 _3X_WORKER_DIR=$1; shift
-_3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
 
-_3x=$(useTargetOrRunnerConfig 3x-path +3 "3X installation path at remote hosts:")
-sharedPath=$(useTargetOrRunnerConfig shared-path +2 "shared path at remote hosts:")
-set -- $(cat "$_3X_WORKER_DIR"/remotes 2>/dev/null || true)
+. ssh-cluster-runner.sh
+
+cd "$_3X_WORKER_DIR"
 
 # stop runs at each remote
-for remote; do
-    parseRemote $remote
-    runner-msg " stopping runs at $remote"
-    sshRemote "$_3x" remote "$sharedPath" "$_3X_WORKER_ID" \
-        stop "$remoteRoot"
-done
+stopRuns() {
+    local splitRemote=$1
+    [[ -e "$splitRemote" ]] || return 0
+    local split=${splitRemote%.remote}
+    local remote=$(cat $splitRemote)
+    runner-msg "stopping runs at $remote"
+    ssh-3x-remote $remote stop
+    lsUnfinishedRunsIn serial $split |
+    xargs queue mark-as PLANNED
+    mv -f $splitRemote $splitRemote.clean
+}
+eachInParallel stopRuns  runSplit.*.remote
+waitAll
 
-# TODO parallelize
+runner-msg "cleaning up remote repository"
+: ${sharedRemote:=$(getSharedRemoteURL)}
+ssh-3x-remote $sharedRemote cleanup
 
+cd - >/dev/null
 rm -rf "$_3X_WORKER_DIR"

@@ -1,4 +1,5 @@
 parents                 $TOOLSDIR/runner/ssh-cluster/
+ssh-cluster-runner.sh   $TOOLSDIR/runner/ssh-cluster/
 
 start-all               $TOOLSDIR/runner/ssh-cluster/
 stop-all                $TOOLSDIR/runner/ssh-cluster/

@@ -36,7 +36,8 @@ run="$_3X_ROOT/$_3X_RUN"
 mkdir -p "$run"
 export _3X_LOGERROR="$run"/target.aborted
 cp --archive --link . "$run"/  2>/dev/null ||
-    rsync --archive --hard-links . "$run"/
+    rsync --archive --hard-links . "$run"/ \
+        --temp-dir="$_3X_ROOT"/../tmp
 
 # archive for de-duplication
 archive "$_3X_ARCHIVE" "$run"

@@ -7,68 +7,113 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-02-24
 set -eu
-. runner.sh
-. remote-runner.sh
 
 _3X_WORKER_DIR=$1; shift
-_3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
+
+. ssh-cluster-runner.sh
 
 cd "$_3X_WORKER_DIR"
-
-export _3x=$(useTargetOrRunnerConfig 3x-path +3 "3X installation path at remote hosts:")
-sharedPath=$(useTargetOrRunnerConfig shared-path +2 "shared path at remote hosts:")
-set -- $(cat remotes 2>/dev/null || true)
+numRuns=$(wc -l <runSerials)
+numRemaining=$(lsUnfinishedRunsIn serial | wc -l)
+numRemotes=$(ls runSplit.*.remote | wc -l)
 
 # rsync working dir as well as runs.finished
-for splitRemote in runSplit.*.remote; do
-    split=${splitRemote%.remote}
-    remote=$(cat $splitRemote)
+runner-msg "Fetching intermediate records of $numRemaining/$numRuns RUNNING runs"
+fetchRemote() {
+    local splitRemote=$1
+    [[ -e "$splitRemote" ]] || return 0
+    local split=${splitRemote%.remote}
+    {
+    local numRemainingInSplit=$(($(wc -l <$split || echo 0)
+            - $(wc -l <${split}.finished || echo 0)))
+    [[ $numRemainingInSplit -gt 0 ]] || return 0
+    } 2>/dev/null
+    local remote=$(cat $splitRemote)
+    runner-msg +1 "fetching $numRemainingInSplit RUNNING runs from $remote"
+    # to avoid transfering files that exist in the repo, first create a partial
+    # tree from identical copies in _3X_ARCHIVE
     parseRemote $remote
-    runner-msg "fetching RUNNING runs from $remote"
+    ssh-3x-remote $remote run \
+        nodups -n mktree "$_3X_ARCHIVE" "$_3X_ROOT" run | bash -s
+    # then use rsync to fill the rest
     rsyncFromRemote "$_3X_WORKER_ID"/run/ \
-        --archive --hard-links --copy-unsafe-links --omit-dir-times \
-        "$_3X_ROOT"/run/ &
+        --archive --no-perms --copy-unsafe-links --omit-dir-times \
+        "$_3X_ROOT"/run/ 2>/dev/null || true
     # also get runs.finished
-    rsyncFromRemote "$_3X_WORKER_ID"/runs.finished ${split}.finished &
-done
-wait
+    rsyncFromRemote "$_3X_WORKER_ID"/runs.finished ${split}.finished || true
+}
+eachInParallel fetchRemote runSplit.*.remote
+waitAll
 
-# rsync from remote-repository
-remote=$1 # XXX arbitrarily picking first remote
-parseRemote $remote
-remoteRoot="$sharedPath/$_3X_WORKER_ID"
-remote=$(getParsedRemoteURL)
-runner-msg "fetching finished runs from $remote"
-rsyncFromRemote . --include=/{.3x{,/files},run} --exclude=/{,.3x/}* \
-    --archive --hard-links --copy-unsafe-links --omit-dir-times \
-    "$_3X_ROOT"/
+# find out which runs finished since last sync
+runsFinished=runs.finished
+touch $runsFinished
+cat runSplit.*.finished 2>/dev/null | sort |
+comm -13 $runsFinished - >$runsFinished.$$
+trap "rm -f $runsFinished.$$*" EXIT
+numFinishedNew=$(wc -l <$runsFinished.$$)
 
-# mark finished runs in the queue
-runner-msg "marking finished runs"
-rm -f runSerials.*
-cat runSplit.*.finished |
-awk '{ file="runSerials."$1; print $2 >>file }'
-for state in DONE FAILED; do
-    [[ -s "runSerials.$state" ]] || continue
-    xargs queue mark-as "$state" <"runSerials.$state"
-done
+if [[ $numFinishedNew -gt 0 ]]; then
+    # rsync from remote-repository
+    remote=$(getSharedRemoteURL)
+    sharedRemote=$remote
+    parseRemote $remote
+    runner-msg "$numFinishedNew/$numRemaining runs finished, fetching their final records"
+    runner-msg +1 " from $remote"
+    rsyncFromRemote . --include=/{.3x{,/files},run} --exclude=/{,.3x/}* \
+        --archive --hard-links --copy-unsafe-links --omit-dir-times \
+        "$_3X_ROOT"/ || true
 
-# index finished runs
-runner-msg "indexing finished runs"
-cat runSplit.*.finished | awk '{print $3}' |
-(cd "$_3X_ROOT" && xargs 3x-index update)
-
-# if all splits are finished, clean up
-if [[ $(cat runSerials.* | wc -l) -eq $(wc -l <runSerials) ]]; then
-    runner-msg "all runs finished, cleaning up $# remote hosts"
-    for remote; do
-        parseRemote $remote
-        runner-msg +1 "cleaning up $remote"
-        sshRemote "$_3x" remote "$sharedPath" "$_3X_WORKER_ID" \
-            cleanup "$remoteRoot"
+    # mark finished runs in the queue
+    runner-msg +1 "marking $numFinishedNew finished runs"
+    serialsByState=$runsFinished.$$.serials.
+    rm -f "$serialsByState"*
+    cat $runsFinished.$$ |
+    awk '{ file="'"$serialsByState"'"$1; print $2 >>file }
+         { print $3": "$1 }'
+    for state in DONE FAILED; do
+        f="$serialsByState"$state
+        [[ -s "$f" ]] || continue
+        xargs queue mark-as "$state" <"$f"
+        runner-msg +1 "marked $(wc -l <"$f") runs as $state"
     done
+    # index finished runs
+    cat $runsFinished.$$ |
+    awk '{print $3}' >$runsFinished.$$.ids
+    runner-msg +1 "indexing $numFinishedNew finished runs"
+    (cd "$_3X_ROOT" && xargs 3x-index update) <$runsFinished.$$.ids
+    runner-msg +1 "archiving $numFinishedNew finished runs"
+    (cd "$_3X_ROOT" && xargs nodups archive "$_3X_ARCHIVE") <$runsFinished.$$.ids
+fi
+
+# update the list of runs synchronized so far
+cat $runsFinished $runsFinished.$$ | sort >$runsFinished.$$.new
+mv -f $runsFinished.$$.new $runsFinished
+numFinished=$(wc -l <$runsFinished)
+
+# if all scheduled runs are finished, clean up
+if [[ $numFinished -eq $numRuns ]]; then
+    runner-msg "Finished all runs, cleaning up $numRemotes remote hosts"
+    cleanup-remote() {
+        local splitRemote=$1
+        [[ -e "$splitRemote" ]] || return 0
+        local split=${splitRemote%.remote}
+        local remote=$(cat $splitRemote)
+        runner-msg +2 "cleaning up $remote"
+        ssh-3x-remote $remote stop
+        mv -f $splitRemote $splitRemote.clean
+    }
+    eachInParallel cleanup-remote runSplit.*.remote
+    waitAll
+
+    runner-msg "cleaning up remote repository"
+    : ${sharedRemote:=$(getSharedRemoteURL)}
+    ssh-3x-remote $sharedRemote cleanup
+
     cd - >/dev/null
     rm -rf "$_3X_WORKER_DIR"
 
     queue-refresh
+else
+    runner-msg "$((numRuns - numFinished))/$numRuns runs remain unfinished"
 fi

@@ -22,6 +22,9 @@ WORKER_WAITING_SUFFIX=.waiting
 WORKER_WAITING_SIGNAL=USR1
 WORKER_WAITING_TIMEOUT=600 #secs
 
+# set derivable variables
+: ${_3X_WORKER_ID:=${_3X_WORKER_DIR:+${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}}}
+
 runner-msg()   {
     local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
     msg $level "$_3X_QUEUE_ID ${_3X_TARGET:-}${_3X_WORKER_ID:+[$_3X_WORKER_ID]}: $*"
@@ -68,6 +71,26 @@ super() {
     esac
 }
 
+# TODO trap INT QUIT TERM to forward to "${eachInParallelPIDs[@]}"
+eachInParallelPIDs=()
+eachInParallel() {
+    local cmd=$1; shift
+    local arg= i=0
+    for arg; do
+        "$cmd" "$arg" $i &
+        eachInParallelPIDs+=($!)
+        let ++i
+    done
+}
+waitAll() {
+    local pid= s=0
+    for pid in ${eachInParallelPIDs[@]}; do
+        wait $pid || s=$?
+    done
+    eachInParallelPIDs=()
+    return $s
+}
+
 findOneInTargetOrRunners() {
     local f
     for f; do
@@ -82,10 +105,12 @@ findOneInTargetOrRunners() {
     done
 }
 useTargetOrRunnerConfig() {
-    local name=$1 msg=$2
+    local name=$1; shift
+    local msg; msg=("$@")
+    [[ ${#msg[@]} -gt 0 ]] || msg=("$name")
     set -- $(findOneInTargetOrRunners "$name")
     if [[ $# -gt 0 ]]; then
-        runner-msg-withTargetOrRunnerPaths "$msg" "$@"
+        runner-msg-withTargetOrRunnerPaths "${msg[*]}" "$@"
         cat "$@"
     else
         runner-error "$name: Not found"
@@ -111,7 +136,7 @@ runner-msg-withTargetOrRunnerPaths() {
             esac
             msg+=" $path"
         done
-        runner-msg $level "$msg"
+        runner-msg $level " using $msg"
     }
 }
 
