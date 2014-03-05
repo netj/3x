@@ -21,11 +21,10 @@ numRemotes=$(ls runSplit.*.remote | wc -l)
 runner-msg "Fetching intermediate records of $numRemaining/$numRuns RUNNING runs"
 fetchRemote() {
     local splitRemote=$1
-    [[ -e "$splitRemote" ]] || return 0
+    [[ -e "$splitRemote" && ! -e "$splitRemote".finished ]] || return 0
     local split=${splitRemote%.remote}
     {
-    local numRemainingInSplit=$(($(wc -l <$split || echo 0)
-            - $(wc -l <${split}.finished || echo 0)))
+    local numRemainingInSplit=$(($(wc -l <$split || echo 0) - $(wc -l <${split}.finished || echo 0)))
     [[ $numRemainingInSplit -gt 0 ]] || return 0
     } 2>/dev/null
     local remote=$(cat $splitRemote)
@@ -41,6 +40,11 @@ fetchRemote() {
         "$_3X_ROOT"/run/ 2>/dev/null || true
     # also get runs.finished
     rsyncFromRemote "$_3X_WORKER_ID"/runs.finished ${split}.finished || true
+    # mark remote as finished if all scheduled runs are finished
+    {
+        numRemainingInSplit=$(($(wc -l <$split || echo 0) - $(wc -l <${split}.finished || echo 0)))
+        [[ $numRemainingInSplit -gt 0 ]] || touch "$splitRemote".finished
+    } 2>/dev/null
 }
 eachInParallel fetchRemote runSplit.*.remote
 waitAll

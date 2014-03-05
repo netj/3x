@@ -265,6 +265,7 @@ case $Cmd in
         ;;
 
     plan)
+        # FIXME prevent non-PLANNED rows from being reverted to PLANNED
         prepare-full-query
         dedup-serials | {
             echo "BEGIN TRANSACTION;"

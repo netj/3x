@@ -17,13 +17,8 @@ cd "$_3X_WORKER_DIR"
 # fetch which runs have finished
 isRemoteFinished() {
     local splitRemote=$1
-    [[ -e "$splitRemote" ]] || return 0
+    [[ -e "$splitRemote" && ! -e "$splitRemote".finished ]] || return 0
     local split=${splitRemote%.remote}
-    {
-    local numRemainingInSplit=$(($(wc -l <$split || echo 0)
-            - $(wc -l <${split}.finished || echo 0)))
-    [[ $numRemainingInSplit -gt 0 ]] || return 0
-    } 2>/dev/null
     local remote=$(cat $splitRemote)
     runner-msg +1 "checking runs at $remote"
     ssh-3x-remote $remote is-finished

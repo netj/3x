@@ -20,7 +20,7 @@ stopRuns() {
     [[ -e "$splitRemote" ]] || return 0
     local split=${splitRemote%.remote}
     local remote=$(cat $splitRemote)
-    runner-msg "stopping runs at $remote"
+    runner-msg "stopping and cleaning up runs at $remote"
     ssh-3x-remote $remote stop
     lsUnfinishedRunsIn serial $split |
     xargs queue mark-as PLANNED
