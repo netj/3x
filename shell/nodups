@@ -84,7 +84,7 @@ trap "rm -rf $tmp" EXIT
 hashlist="$tmp"/hashpath
 if [[ $# -gt 0 ]]; then
     # find all files first
-    find -L "$@" -type f >"$tmp"/paths || true
+    find -L "$@" -type f -exec chmod +r {} + -print >"$tmp"/paths || true
     # see which files are executables to archive separately from normal files
     # (hardlink copies cannot have separate permission modes, so when two files
     #  share the content but one is an executable and the other isn't, we'll
@@ -93,12 +93,13 @@ if [[ $# -gt 0 ]]; then
     while (my $filename = <>) {
         chomp $filename;
         my $sb = stat($filename);
+        next unless defined $sb;
         printf "%s\n", join "\t", ($sb->mode & 0111 ? "x" : ""), $sb->nlink;
     }
     ' >"$tmp"/stats
     # use git hash-object to compute SHA1 sum of each file
     # and paste everything together as a script that will do the job
-    git hash-object --stdin-paths <"$tmp"/paths |
+    HOME=$PWD git hash-object --stdin-paths <"$tmp"/paths |
     sed 's:^....:&/:; s:^..:&/:' |
     paste - "$tmp"/stats "$tmp"/paths >"$hashlist"
 else
