@@ -12,6 +12,8 @@
 set -eu
 . multi-runner.sh
 
+# TODO find any existing _3X_WORKER_DIR that hasn't been properly started
+
 _3X_WORKER_DIR=$(mktemp -d "$WORKER_DIR_PREFIX"XXXXXX)
 _3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
 trap 'rm -rf "$_3X_WORKER_DIR"' EXIT

@@ -18,9 +18,27 @@ envSpecPath=$(findOneInTargetOrRunners environ)
 remotes=(
 $(useTargetOrRunnerConfig remotes +2 "remote hosts:" | no-comments)
 )
+numRuns=$(wc -l <runSerials)
 
-# TODO filter out unresponsive remotes first
+# filter out unresponsive remotes first
+runner-msg "finding availability of ${#remotes[@]} remote hosts"
+touch remotes.alive
+requiresSSHCommand
+pollRemote() {
+    local remote=$1
+    remoteSSHCommand="$remoteSSHCommand -o ConnectTimeout=10"
+    numParallel=
+    eval "$(ssh-3x-remote $remote ping)"
+    if [[ -n "$numParallel" ]]; then
+        echo "$remote $numParallel" >>remotes.alive
+    fi
+}
+eachInParallel pollRemote "${remotes[@]}"
+waitAll || true
+remotes=($(awk '{print $1}' <remotes.alive))
 numRemotes=${#remotes[@]}
+[[ $numRemotes -gt 0 ]] || runner-error "No remote hosts are available"
+runner-msg "Scheduling $numRuns runs at ${#remotes[@]} remote hosts"
 
 # set up a repository clone at remote shared-path
 remote=${remotes[$(($RANDOM % $numRemotes))]} # randomly picking one
@@ -31,7 +49,7 @@ setup-remote-repo $sharedRemote "$_3X_WORKER_ID"
 rsyncToRemote "$_3X_WORKER_ID"/.3x/environ "$envSpecPath"
 
 # split runIds and runArgs for each remote
-[[ $numRemotes -gt 0 ]] || runner-error "No remote hosts are available"
+# TODO split according to numParallel
 paste run{Serial,Id,Arg}s |
 split --number=r/$numRemotes - runSplit.
 

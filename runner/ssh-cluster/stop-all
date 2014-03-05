@@ -29,9 +29,10 @@ stopRuns() {
 eachInParallel stopRuns  runSplit.*.remote
 waitAll
 
-runner-msg "cleaning up remote repository"
-: ${sharedRemote:=$(getSharedRemoteURL)}
-ssh-3x-remote $sharedRemote cleanup
+if sharedRemote=$(getSharedRemoteURL); then
+    runner-msg "cleaning up remote repository"
+    ssh-3x-remote $sharedRemote cleanup
+fi
 
 cd - >/dev/null
 rm -rf "$_3X_WORKER_DIR"

@@ -24,6 +24,15 @@ export _3X_ROOT=$(readlink -f "$_3X_ROOT")
 
 WorkDir="$WorkDirRoot/$_3X_SESSION_ID"
 
+determine-availability() {
+    numCPUs=$(node -e 'console.log(require("os").cpus().length);')
+    loadAVG15=$(bc <<<"($(uptime | sed 's/.*, //; q')+0.5)*10/10")
+    numParallel=$((numCPUs - loadAVG15))
+    [[ $numParallel -gt 0 ]] || numParallel=1
+}
+
+3x-remote() {
+local Cmd=$1; shift
 case $Cmd in
     start)
         # set up a working directory
@@ -42,8 +51,8 @@ case $Cmd in
         # keep a copy of runs passed over stdin
         cat >runs
 
-        # TODO determine degree of parallelism if not given
-        NumProcs=1
+        # determine degree of parallelism if not given
+        determine-availability
 
         . find-run-archive.sh
 
@@ -51,7 +60,7 @@ case $Cmd in
         record-environ.sh $(cat "$_3X_ROOT"/.3x/environ) >runs.environ
 
         # run each with xargs
-        xargs <runs -P $NumProcs -L 1 remote-run \
+        xargs <runs -P $numParallel -L 1 remote-run \
             >runs.stdout 2>runs.stderr 3>runs.finished &
         ;;
 
@@ -89,10 +98,22 @@ case $Cmd in
         } 2>/dev/null
         ;;
 
+    ping)
+        mkdir -p "$_3X_ROOT"
+        determine-availability
+        echo numParallel=$numParallel numCPUs=$numCPUs loadAVG15=$loadAVG15
+        ;;
+
     run)
         # run given command inside 3X environment
         mkdir -p "$WorkDir"
         cd "$WorkDir"
         "$@"
         ;;
+
+    *)
+        error "$Cmd: Unknown command"
+        ;;
 esac
+}
+3x-remote "$Cmd"

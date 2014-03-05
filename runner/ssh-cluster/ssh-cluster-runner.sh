@@ -9,16 +9,27 @@ export _3x=$(useTargetOrRunnerConfig 3x-path +4 "3X installation path at remote 
 sharedPath=$(useTargetOrRunnerConfig shared-path +3 "shared path at remote hosts:")
 
 pickOneRandomRemote() {
+    local remote=$(
     { cat "$_3X_QUEUE_DIR/$_3X_WORKER_DIR"/runSplit.*.remote{,.clean} ||
         "$_3X_QUEUE_DIR/$_3X_WORKER_DIR"/remotes; } 2>/dev/null |
     shuf | head -1
+    )
+    if [[ -n "$remote" ]]; then
+        echo $remote
+    else
+        false
+    fi
 }
 
 getSharedRemoteURL() {
-    remote=$(pickOneRandomRemote) # picking a random remote
-    parseRemote $remote
-    remoteRoot="$sharedPath/$_3X_WORKER_ID"
-    getParsedRemoteURL
+    # picking a random remote
+    if remote=$(pickOneRandomRemote); then
+        parseRemote $remote
+        remoteRoot="$sharedPath/$_3X_WORKER_ID"
+        getParsedRemoteURL
+    else
+        false
+    fi
 }
 
 ssh-3x-remote() {
@@ -40,6 +51,5 @@ lsUnfinishedRunsIn() {
     cat "$@" | awk "{print \$$fieldNoInSplits}" | sort |
     comm -13 <(cat "$_3X_QUEUE_DIR/$_3X_WORKER_DIR"/runs.finished 2>/dev/null |
                awk "{print \$$fieldNoInFinished}" | sort) -    
-    set +x
 }
 
