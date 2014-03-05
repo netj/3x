@@ -30,11 +30,14 @@ pollRemote() {
     numParallel=
     eval "$(ssh-3x-remote $remote ping)"
     if [[ -n "$numParallel" ]]; then
-        echo "$remote $numParallel" >>remotes.alive
+        weight=$(bc <<<"scale=3; $numParallel * $speedSumCPUs/$numCPUs")
+        echo "$remote $weight" >>remotes.alive
     fi
 }
 eachInParallel pollRemote "${remotes[@]}"
 waitAll || true
+sort -k2,2nr <remotes.alive >remotes.alive.$$
+mv -f remotes.alive.$$ remotes.alive
 remotes=($(awk '{print $1}' <remotes.alive))
 numRemotes=${#remotes[@]}
 [[ $numRemotes -gt 0 ]] || runner-error "No remote hosts are available"
@@ -48,10 +51,48 @@ _3X_LOGLVL=$((_3X_LOGLVL + 1)) \
 setup-remote-repo $sharedRemote "$_3X_WORKER_ID"
 rsyncToRemote "$_3X_WORKER_ID"/.3x/environ "$envSpecPath"
 
-# split runIds and runArgs for each remote
-# TODO split according to numParallel
+# split runIds and runArgs for each remote according to its numParallel
 paste run{Serial,Id,Arg}s |
-split --number=r/$numRemotes - runSplit.
+perl -Mstrict -e '
+	my $splitPrefix = shift @ARGV;
+	my @numParallels = @ARGV;
+	my $numSplits = @numParallels;
+	my $fmt = $splitPrefix."\%0".length("$numSplits")."d";
+	# normalize weights
+	my $min = $numParallels[0];
+	for my $w (@numParallels) { $min = $w if $w < $min; }
+	for my $i (0..($numSplits-1)) {
+	    $numParallels[$i] = int($numParallels[$i] / $min + 0.5);
+	}
+	# prepare split files
+	my @splits;
+	for my $i (0..($numSplits-1)) {
+	    open $splits[$i], ">", (sprintf $fmt, $i);
+	}
+	# split each input line (round-robin)
+	my @numRemaining;
+	my @splitsRemaining;
+	my $i = 0;
+	while (my $line = <STDIN>) {
+	    #print STDERR join(" ", @numRemaining), "\n";
+	    if (0 == @numRemaining) {
+	        @numRemaining = @numParallels;
+	        @splitsRemaining = @splits;
+	        $i = 0;
+	    }
+	    print { $splitsRemaining[$i] } $line;
+	    $numRemaining[$i]--;
+	    if ($numRemaining[$i] <= 0) {
+	        splice @numRemaining, $i, 1;
+	        splice @splitsRemaining, $i, 1;
+	    } else {
+	        $i++;
+	    }
+	    $i %= @numRemaining if @numRemaining > 0;
+	}
+	close for @splits;
+	' runSplit. $(awk '{print $2}' <remotes.alive)
+#split --number=r/$numRemotes - runSplit.
 
 # start runs at each remote
 splits=($(ls runSplit.*))

@@ -25,9 +25,11 @@ export _3X_ROOT=$(readlink -f "$_3X_ROOT")
 WorkDir="$WorkDirRoot/$_3X_SESSION_ID"
 
 determine-availability() {
-    numCPUs=$(node -e 'console.log(require("os").cpus().length);')
-    loadAVG15=$(bc <<<"($(uptime | sed 's/.*, //; q')+0.5)*10/10")
-    numParallel=$((numCPUs - loadAVG15))
+    numCPUs=$(node -e 'var cpus = require("os").cpus(); console.log(cpus.length);')
+    speedSumCPUs=$(coffee -e 'sum=0; sum+=speed for {speed} in require("os").cpus(); console.log sum')
+    loadAVG15=$(uptime | sed 's/.*, //; q')
+    loadAVG15rounded=$(bc <<<"($loadAVG15+0.5)*10/10")
+    numParallel=$((numCPUs - loadAVG15rounded))
     [[ $numParallel -gt 0 ]] || numParallel=1
 }
 
@@ -101,7 +103,12 @@ case $Cmd in
     ping)
         mkdir -p "$_3X_ROOT"
         determine-availability
-        echo numParallel=$numParallel numCPUs=$numCPUs loadAVG15=$loadAVG15
+        echo numParallel=$numParallel \
+            numCPUs=$numCPUs \
+            loadAVG15=$loadAVG15 \
+            loadAVG15rounded=$loadAVG15rounded \
+            speedSumCPUs=$speedSumCPUs \
+            #
         ;;
 
     run)
