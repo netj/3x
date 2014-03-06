@@ -22,8 +22,13 @@ WORKER_WAITING_SUFFIX=.waiting
 WORKER_WAITING_SIGNAL=USR1
 WORKER_WAITING_TIMEOUT=600 #secs
 
+# normalize _3X_WORKER_DIR
+case "${_3X_WORKER_DIR:-}" in
+    ""|/*) ;;
+    *) _3X_WORKER_DIR=$(cd "$_3X_WORKER_DIR" && pwd -P)
+esac
 # set derivable variables
-: ${_3X_WORKER_ID:=${_3X_WORKER_DIR:+${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}}}
+: ${_3X_WORKER_ID:=${_3X_WORKER_DIR:+${_3X_WORKER_DIR##*$WORKER_DIR_PREFIX}}}
 
 runner-msg()   {
     local level=; case "${1:-}" in [-+][0-9]*) level=$1; shift ;; esac
@@ -95,8 +100,8 @@ findOneInTargetOrRunners() {
     local f
     for f; do
         if [ -n "${_3X_WORKER_DIR:-}" ] && \
-                [ -e "$_3X_QUEUE_DIR/$_3X_WORKER_DIR/target/$f" ]; then
-            echo "$_3X_QUEUE_DIR/$_3X_WORKER_DIR/target/$f"
+                [ -e "$_3X_WORKER_DIR/target/$f" ]; then
+            echo "$_3X_WORKER_DIR/target/$f"
         elif [ -n "${_3X_TARGET_DIR:-}" ] && [ -e "$_3X_TARGET_DIR/$f" ]; then
             echo "$_3X_TARGET_DIR/$f"
         else

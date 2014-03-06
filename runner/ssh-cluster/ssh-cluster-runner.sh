@@ -10,8 +10,8 @@ sharedPath=$(useTargetOrRunnerConfig shared-path +3 "shared path at remote hosts
 
 pickOneRandomRemote() {
     local remote=$(
-    { cat "$_3X_QUEUE_DIR/$_3X_WORKER_DIR"/runSplit.*.remote{,.clean} ||
-        "$_3X_QUEUE_DIR/$_3X_WORKER_DIR"/remotes; } 2>/dev/null |
+    { cat "$_3X_WORKER_DIR"/runSplit.*.remote{,.clean} ||
+        "$_3X_WORKER_DIR"/remotes; } 2>/dev/null |
     shuf | head -1
     )
     if [[ -n "$remote" ]]; then
@@ -47,9 +47,9 @@ lsUnfinishedRunsIn() {
         runId)  fieldNoInSplits=2 fieldNoInFinished=3 ;;
         *) error "$field: unknown field"
     esac
-    [[ $# -gt 0 ]] || set -- "$_3X_QUEUE_DIR/$_3X_WORKER_DIR"/runSplit.+([^.])
+    [[ $# -gt 0 ]] || set -- "$_3X_WORKER_DIR"/runSplit.+([^.])
     cat "$@" | awk "{print \$$fieldNoInSplits}" | sort |
-    comm -13 <(cat "$_3X_QUEUE_DIR/$_3X_WORKER_DIR"/runs.finished 2>/dev/null |
+    comm -13 <(cat "$_3X_WORKER_DIR"/runs.finished 2>/dev/null |
                awk "{print \$$fieldNoInFinished}" | sort) -    
 }
 
