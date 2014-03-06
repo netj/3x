@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# base.async/sync-all -- fetch all records of runs that are running or have
+#                        finished, and clean up when all runs have finished
+# > sync-all _3X_WORKER_DIR
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-03-05
+error "$_3X_RUNNER/sync-all: Not implemented"

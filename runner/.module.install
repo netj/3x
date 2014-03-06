@@ -43,6 +43,10 @@ base/async/queue-stop           $TOOLSDIR/runner/base.async/
 base/async/queue-refresh        $TOOLSDIR/runner/base.async/
 base/async/queue-sync           $TOOLSDIR/runner/base.async/
 base/async/run-all              $TOOLSDIR/runner/base.async/
+base/async/start-all            $TOOLSDIR/runner/base.async/
+base/async/refresh-all          $TOOLSDIR/runner/base.async/
+base/async/sync-all             $TOOLSDIR/runner/base.async/
+base/async/stop-all             $TOOLSDIR/runner/base.async/
 
 base/remote/3x-remote           $TOOLSDIR/
 base/remote/remote-run          $TOOLSDIR/
