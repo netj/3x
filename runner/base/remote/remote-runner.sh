@@ -69,11 +69,14 @@ getParsedRemoteURL() {
 
 # TODO see if ssh supports Control{Master,Persist}
 requiresSSHCommand() {
+    ControlPathRoot=/tmp/3x-${LOGNAME:-$USER}/ssh-master
+    mkdir -p "$ControlPathRoot"
+    chmod u=rwx,go= "$ControlPathRoot"
     remoteSSHCommand=${remoteSSHCommand:-$(escape-args-for-shell \
         ssh \
         -o BatchMode=yes \
         -o ControlMaster=auto  -o ControlPersist=60 \
-        -o ControlPath="${TMPDIR:-/tmp}/3x-ssh-master.%h-%p" \
+        -o ControlPath="$ControlPathRoot/%h-%p" \
         #
     )}
 }
