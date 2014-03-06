@@ -22,7 +22,7 @@ numRuns=$(wc -l <runSerials)
 
 # filter out unresponsive remotes first
 runner-msg "finding availability of ${#remotes[@]} remote hosts"
-touch remotes.alive
+: >remotes.alive
 requiresSSHCommand
 pollRemote() {
     local remote=$1
@@ -106,8 +106,10 @@ scheduleRuns() {
     # record which remote host is running which runs
     echo $remote >$split.remote
     echo $remote >>remotes
-    touch "$_3X_QUEUE_DIR"/$ACTIVE_FLAG
+    touch scheduled "$_3X_QUEUE_DIR"/$ACTIVE_FLAG
     ssh-3x-remote $remote start <$split
 }
-eachInParallel scheduleRuns "${remotes[@]}"
-waitAll
+# once runs are scheduled at at least one remote, we should not fail
+trap 'exit 0' INT QUIT TERM
+eachInParallel scheduleRuns "${remotes[@]}" || true
+waitAll || true

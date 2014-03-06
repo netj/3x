@@ -12,10 +12,21 @@
 set -eu
 . runner.sh
 
+# TODO split the RUNNING state: RUNNING -> SCHEDULED/RUNNING/FINISHED
+# It seems a new state (SCHEDULED?) for runs is necessary to indicate the
+# run has been scheduled but not yet RUNNING.  `refresh-all` can quickly
+# poll how many are actually RUNNING and still waiting at SCHEDULED.
+# Then, `refresh-all` would probably also need to mark runs that have been
+# found finished but whose records were not fetched/synchronized to the
+# repository yet (as FINISHED?).  Ideally, it should be possible to change
+# the order of SCHEDULED runs, but not the ones in the other two: RUNNING
+# or FINISHED.
+
 # refresh all asynchronously running runs
 let ++_3X_LOGLVL
 allSessionsDone=true
 for _3X_WORKER_DIR in "$WORKER_DIR_PREFIX"*; do
+    [[ -e "$_3X_WORKER_DIR"/scheduled ]] || continue
     _3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
     [[ -s "$_3X_WORKER_DIR"/target.name && -d "$_3X_WORKER_DIR"/target ]] || {
         rm -rf "$_3X_WORKER_DIR"

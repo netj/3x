@@ -15,6 +15,10 @@ set -eu
 let ++_3X_LOGLVL
 # stop all asynchronously running runs
 for _3X_WORKER_DIR in "$WORKER_DIR_PREFIX"*; do
+    [[ -e "$_3X_WORKER_DIR"/scheduled ]] || {
+        rm -rf "$_3X_WORKER_DIR"
+        continue
+    }
     _3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
     [[ -s "$_3X_WORKER_DIR"/target.name && -d "$_3X_WORKER_DIR"/target ]] || {
         rm -rf "$_3X_WORKER_DIR"

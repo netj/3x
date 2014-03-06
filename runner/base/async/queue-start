@@ -10,38 +10,41 @@
 # Author: Jaeho Shin <netj@cs.stanford.edu>
 # Created: 2014-02-16
 set -eu
-. multi-runner.sh
+. runner.sh
 
-# TODO find any existing _3X_WORKER_DIR that hasn't been properly started
+_3X_WORKER_DIR=
+onexit() {
+    c=$?
+    [[ $c -ne 0 ]] || touch "$_3X_WORKER_DIR"/scheduled
+    [[ -z "$_3X_WORKER_DIR" ]] ||
+        lockproc "$_3X_WORKER_DIR"/scheduling release
+    return $c
+}
+trap onexit EXIT
 
-_3X_WORKER_DIR=$(mktemp -d "$WORKER_DIR_PREFIX"XXXXXX)
-_3X_WORKER_ID=${_3X_WORKER_DIR#$WORKER_DIR_PREFIX}
-trap 'rm -rf "$_3X_WORKER_DIR"' EXIT
-
-: ${_3X_BATCH_SIZE:=}
+# find existing _3X_WORKER_DIR that hasn't been properly scheduled
+for dir in "$WORKER_DIR_PREFIX"*; do
+    [[ -d "$dir" ]] || continue
+    ! [[ -e "$dir"/scheduled ]] || continue
+    ! lockproc "$dir"/scheduling alive || continue
+    lockproc "$dir"/scheduling grab || continue
+    _3X_WORKER_DIR=$dir
+    break
+done
+# or simply create a new one
+if ! [[ -d "$_3X_WORKER_DIR" ]]; then
+    until [[ -d "$_3X_WORKER_DIR" ]] &&
+            lockproc "$_3X_WORKER_DIR"/scheduling grab; do
+        _3X_WORKER_DIR=$(mktemp -d "$WORKER_DIR_PREFIX"XXXXXX)
+    done
+fi
+_3X_WORKER_DIR=$(cd "$_3X_WORKER_DIR" && pwd -P)
+_3X_WORKER_ID=${_3X_WORKER_DIR##*$WORKER_DIR_PREFIX}
 
 # keep a copy of the target execution environment configuration while for this session
 cp -a "$_3X_TARGET_DIR"/. "$_3X_WORKER_DIR"/target
 echo "$_3X_TARGET" >"$_3X_WORKER_DIR"/target.name
 
-# dequeue runs
-queue pick "$_3X_BATCH_SIZE" RUNNING >>"$_3X_WORKER_DIR"/runSerials
-
-[ -s "$_3X_WORKER_DIR"/runSerials ] ||
-    runner-error "No PLANNED runs in queue"
-
-# keep a full listing of the runs to be executed
-for-picked-runs list |
-sed 's/^[^[:space:]]*[[:space:]]//; s/[[:space:]]*#.*$//' >"$_3X_WORKER_DIR"/runArgs
-for-picked-runs list-only runId >"$_3X_WORKER_DIR"/runIds
-
-      count=$(wc -l   <"$_3X_WORKER_DIR"/runSerials)
-firstSerial=$(head -1 <"$_3X_WORKER_DIR"/runSerials)
- lastSerial=$(tail -1 <"$_3X_WORKER_DIR"/runSerials)
-runner-msg "Executing #$firstSerial through #$lastSerial ($count runs)"
-
-# start running asynchronously
-trap - EXIT
-let ++_3X_LOGLVL
-_3X_LOGERROR="$_3X_WORKER_DIR"/error \
-start-all "$_3X_WORKER_DIR"
+export _3X_WORKER_DIR
+_3X_LOGLVL=$((_3X_LOGLVL+1)) \
+dequeue

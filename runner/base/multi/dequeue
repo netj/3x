@@ -35,13 +35,14 @@ for-picked-runs list-only runId >"$_3X_WORKER_DIR"/runIds
 # mark as ABORTED upon queue-stop or interrupt
 exit-after-marking-as-aborted() {
     c=$?
+    [[ $# -gt 0 ]] || set -- "$(cat "$_3X_WORKER_DIR"/target.aborted.cause)"
     runner-error "${*:-Execution aborted due to error}" || true
     # mark all unfinished runs as ABORTED
     drop-finished-runs
     xargs <"$_3X_WORKER_DIR"/runSerials         queue mark-as ABORTED
     # create target.aborted in each run dir
     {
-        echo "$*"
+        [[ $# -eq 0 ]] || echo "$*"
         cat "$_3X_WORKER_DIR"/error 2>/dev/null || true
     } >"$_3X_WORKER_DIR"/target.aborted
     cd "$_3X_ROOT"
@@ -52,12 +53,13 @@ exit-after-marking-as-aborted() {
     #XXX xargs <"$_3X_WORKER_DIR"/runIds         chmod -w
     exit $c
 }
+rm -f "$_3X_WORKER_DIR"/target.aborted.cause
 for sig in INT QUIT TERM; do
     case $sig in
         TERM) msg="Execution stopped" ;;
         *) msg="Execution interrupted" ;;
     esac
-    trap 'exit-after-marking-as-aborted "'"$msg"'"' $sig
+    trap 'echo "'"$msg"'" >>"$_3X_WORKER_DIR"/target.aborted.cause' $sig
 done
 
 
@@ -68,4 +70,4 @@ runner-msg "Executing #$firstSerial through #$lastSerial ($count runs)"
 
 _3X_LOGERROR="$_3X_WORKER_DIR"/error \
 run-all "$_3X_WORKER_DIR" ||
-    || exit-after-marking-as-aborted
+    exit-after-marking-as-aborted

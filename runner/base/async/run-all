@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# base.async/run-all -- async multi-runners
+#
+# Author: Jaeho Shin <netj@cs.stanford.edu>
+# Created: 2014-03-05
+_3X_LOGLVL=$((_3X_LOGLVL + 1)) \
+exec start-all "$@"
