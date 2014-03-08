@@ -8,7 +8,7 @@
 set -eu
 
 # become a process group leader
-[ x"`ps -o pgid= -p $$`" = x"$$" ] || exec setsid "$@"
+[ x"`ps -o pgid= -p $$`" = x"$$" ] || exec setsid "$0" "$@"
 
 Lock=$1; shift
 
