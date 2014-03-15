@@ -27,7 +27,7 @@ cat "$ToolPath" |
 sed -n "
 2,/^#$/ {
     ${USAGE_TOOL_COMMAND:+$(printf \
-        's#^\(\# [$>] \)%s #\1%s #' \
+        's#^\(\# [$>] \)%s #\\1%s #' \
         "${USAGE_TOOL_COMMAND//\#/\\\#}" \
         "${USAGE_TOOL_PATH//\#/\\\#}"
     )}
