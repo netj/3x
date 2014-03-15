@@ -123,4 +123,4 @@ case $Cmd in
         ;;
 esac
 }
-3x-remote "$Cmd"
+3x-remote "$Cmd" "$@"
