@@ -81,7 +81,9 @@ case $Cmd in
         ;;
 
     cleanup)
-        if [[ -d "$_3X_ROOT" && ! -e "$_3X_ROOT".deleting ]]; then
+        if [[ ! -d "$_3X_ROOT" ]]; then
+            true
+        elif [[ -d "$_3X_ROOT" && ! -e "$_3X_ROOT".deleting ]]; then
             touch "$_3X_ROOT".deleting
             trap 'rm -f "$_3X_ROOT".deleting' EXIT
             rm -rf "$_3X_ROOT"
