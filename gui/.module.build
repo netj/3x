@@ -69,7 +69,7 @@ ln -sfn ../package.json .
 
 #  server depends on some python packages, e.g., watchdog
 dir_pypkgs=python-packages
-[ -d "$dir_pypkgs" -a "$dir_pypkgs" -nt "$Self" ] || {
+[ -d "$dir_pypkgs" -a "$dir_pypkgs" -nt "$Self" ] || (
     pypkgs=(
         watchdog
     )
@@ -82,12 +82,20 @@ dir_pypkgs=python-packages
         mkdir -p -- "$dir_pypkgs"
         [ -s get-pip.py ] ||
             curl -sRLO https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+        case $(uname) in
+            Darwin)
+                # XXX workaround for incompatibility introduced by Xcode 5.1
+                # See: http://stackoverflow.com/a/22372751/390044
+                [[ "$(xcodebuild -version | head -1)" < "Xcode 5.1" ]] ||
+                    export ARCHFLAGS="${ARCHFLAGS:-} -Wno-error=unused-command-line-argument-hard-error-in-future"
+                ;;
+        esac
         python get-pip.py \
             --target "$dir_pypkgs" --ignore-installed "${pypkgs[@]}"
         PYTHONPATH="$dir_pypkgs" \
             python -m pip uninstall -y pip || true
     fi
-}
+)
 cd ..
 
 ## build client
