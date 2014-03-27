@@ -54,7 +54,7 @@ load-target() {
 
 # decide what to do based on the number of given arguments
 if [ $# -eq 0 ]; then
-    Target=$(readlink "$_3X_QUEUE_DIR"/target)
+    Target=$(readlink "$_3X_QUEUE_DIR"/target || echo '?')
     Target=${Target##*/}
 elif [ $# -eq 1 ]; then
     # set given target for the current queue

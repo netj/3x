@@ -401,10 +401,11 @@ app.get "/api/results", (req, res) ->
 
 formatStatusTable = (lines, firstColumnName = "isCurrent", indexColumnName = null) ->
     # format 3x-{queue,target}-like output
-    names = lines.shift().map (s) ->
+    names = lines.shift()?.map (s) ->
         if s is "#" then firstColumnName
         else s.toLowerCase().replace(/^#(.)/,
             (__, m) -> "num#{m.toUpperCase()}")
+    names ?= []
     lines.forEach (cols) ->
         cols[0] = (cols[0] is "*")
     rows = {}
