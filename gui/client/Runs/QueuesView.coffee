@@ -43,6 +43,23 @@ class QueuesUI extends CompositeElement
             .on("click", ".queue"        , @handleQueueAction   @focusQueue)
 
         # TODO @optionElements.addNewQueue?. ...
+        # called when 'create queue' is clicked in form
+        $nameField=$('#queue-name')
+        $nameField.blur ->
+            log "moved from field"
+            if $(@).val().length is 0
+                $(@)
+                    .addClass('error')
+                    .after('<span class="error">This field must not be empty! </span>')
+        $nameField.focus ->
+            $(this)
+                .removeClass('error')
+                .next('span')
+                .remove()
+        @optionElements.addNewQueue?.click (e) =>
+            log "addNewQueue pressed..."
+            log "name is: " + $nameField.val()
+            $('#queue-create-form').modal('hide')
         @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
         @optionElements.toggleAbsoluteProgress
             ?.toggleClass("active", @showAbsoluteProgress)
