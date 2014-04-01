@@ -105,6 +105,8 @@ if [ -z "${_3X_HOME:-}" ]; then
     PATH="$TOOLSDIR:$PATH"
     export PATH
     unset CDPATH
+
+    # for logging done by msg
     export SHLVL=0 _3X_LOGLVL=${_3X_LOGLVL:-1}
     # export _3X_LOG_TO_NONTTY=
 fi
@@ -112,6 +114,8 @@ fi
 # make sure everything we need is available
 "$LIBEXECDIR"/depends/check-runtime-depends-once
 
+
+# Process options
 while getopts "vtq" opt; do
     case $opt in
         v)
