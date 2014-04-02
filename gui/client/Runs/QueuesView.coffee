@@ -59,6 +59,12 @@ class QueuesUI extends CompositeElement
         @optionElements.addNewQueue?.click (e) =>
             log "addNewQueue pressed..."
             log "name is: " + $nameField.val()
+            $.post("#{_3X_.BASE_URL}/api/run/queue/create}",{name: $nameField.val()
+            })
+            ###
+            $.post("#{_3X_.BASE_URL}/api/run/queue/#{$nameField.val()}",{
+            })
+            ###
             $('#queue-create-form').modal('hide')
         @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
         @optionElements.toggleAbsoluteProgress
