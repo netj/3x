@@ -41,8 +41,21 @@ class QueuesUI extends CompositeElement
             .on("click", ".queue-reset"  , @handleQueueAction   @resetQueue)
             .on("click", ".queue-sync"   , @handleQueueAction    @syncQueue)
             .on("click", ".queue"        , @handleQueueAction   @focusQueue)
-
-        # TODO @optionElements.addNewQueue?. ...
+        # DOM objects for creating queue
+        $nameField=$('#queue-name')
+        $('#queue-create-form').on "hidden.bs.modal", ->
+            $nameField.val("")
+        $nameField.on "keyup", ->
+            if $nameField.val().length is 0 then $('#queue-create').attr "disabled", "disabled"
+            else $('#queue-create').removeAttr "disabled"
+        # called when 'create queue' is clicked in form
+        @optionElements.addNewQueue?.click (e) =>
+            #if $(@).attr "disabled" is "disabled" return
+            log "addNewQueue pressed..."
+            log "name is: " + $nameField.val()
+            $.post("#{_3X_.BASE_URL}/api/run/queue/#{$nameField.val()}:create}",{name: $nameField.val()
+            })
+            $('#queue-create-form').modal('hide')
         @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
         @optionElements.toggleAbsoluteProgress
             ?.toggleClass("active", @showAbsoluteProgress)

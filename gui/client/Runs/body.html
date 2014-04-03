@@ -1,4 +1,27 @@
 <h2><i class="icon-cogs icon"></i>Runs</h2>
+<div class="modal fade" id="queue-create-form" tabindex="-1" role="dialog" position=fixed
+  aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">New Queue</h4>
+      </div>
+      <div class="modal-body">
+        <form role="form">
+          <div class="form-group">
+            <label for="queue-name">Name</label>
+            <input type="text" class="form-control" id="queue-name" placeholder="Enter Name" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="queue-create" disabled=disabled>Create Queue</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="row-fluid">
   <div class="span2">
@@ -18,10 +41,13 @@
           <button id="queue-toggle-absolute-progress" class="btn btn-mini hide" data-toggle="button"
             title="Toggle between displaying the size of the queue for the progress bar or not"
             ><i class="icon icon-resize-horizontal"></i></button>
-          <!-- TODO
-            <button id="queue-create" class="btn btn-mini"
-              title="Create a new queue"><i class="icon icon-plus"></i></button>
-            -->
+          <!--
+          <button id="queue-create" class="btn btn-mini"
+            title="Create a new queue"><i class="icon icon-plus"></i></button>
+          -->
+          <button id="queue-create-open" class="btn btn-mini" data-toggle="modal" data-target="#queue-create-form"
+            title="Create a new queue"><i class="icon icon-plus"></i></button>
+
         </div>
         <div id="queues" style="max-height:90%; overflow-y:auto;"></div>
       </section>

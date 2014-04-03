@@ -549,6 +549,16 @@ app.post /// /api/run/queue/([^:]+):(target) ///, (req, res) ->
             lazyLines.join -> next (true)
     ) (respondJSON res)
 
+# Attempt to create queue
+app.post /// /api/run/queue/([^:]+):(create) ///, (req, res) ->
+    [queueName, action] = req.params
+    #queueName = req.body.name
+    console.log "jens cli called with name: " + queueName
+    cliEnv(res, {
+        _3X_QUEUE: queueName
+    }, "3x-queue", [queueName]
+    ) (respondJSON res)
+
 app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, (req, res) ->
     [queueName, action] = req.params
     # TODO sanitize queueName
@@ -569,6 +579,7 @@ app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, 
     for serial in runs
         stdin.write "#{serial}\n"
     stdin.end()
+
 
 app.get "/api/run/queue/*", (req, res) ->
     [queueName] = req.params
