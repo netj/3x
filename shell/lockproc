@@ -31,24 +31,7 @@ Lock=$(readlink -f "$LockArg")
 
 # look for existing file locking primitives
 has() { type "$@" &>/dev/null; }
-if has lockfile-create && has lockfile-remove; then
-    # lockfile-create(1) and others in lockfile-progs Debian package
-    lockfile-acquire() {
-        lockfile-create --lock-name --retry 3 "$1"
-        # XXX We won't bother touching the timestamp, since we check the owner process anyway
-        #lockfile-touch "$1" &
-        #echo $! >"$1".keeper.pid
-    }
-    lockfile-release() {
-        # XXX no timestamp keeper
-        #local pidf="$1".keeper.pid
-        #local pid=$(cat "$pidf" 2>/dev/null || echo)
-        #[ -z "$pid" ] || kill -TERM $pid || true
-        #rm -f "$pidf"
-        lockfile-remove --lock-name "$1"
-    }
-
-elif has dotlockfile; then
+if has dotlockfile; then
     # dotlockfile(1) in liblockfile
     lockfile-acquire() {
         dotlockfile -l -r3 "$1"
@@ -65,6 +48,23 @@ elif has dotlockfile; then
         #[ -z "$pid" ] || kill -TERM $pid || true
         #rm -f "$pidf"
         dotlockfile -u "$1"
+    }
+
+elif has lockfile-create && has lockfile-remove; then
+    # lockfile-create(1) and others in lockfile-progs Debian package
+    lockfile-acquire() {
+        lockfile-create --lock-name --retry 3 "$1"
+        # XXX We won't bother touching the timestamp, since we check the owner process anyway
+        #lockfile-touch "$1" &
+        #echo $! >"$1".keeper.pid
+    }
+    lockfile-release() {
+        # XXX no timestamp keeper
+        #local pidf="$1".keeper.pid
+        #local pid=$(cat "$pidf" 2>/dev/null || echo)
+        #[ -z "$pid" ] || kill -TERM $pid || true
+        #rm -f "$pidf"
+        lockfile-remove --lock-name "$1"
     }
 
 elif has lockfile; then
