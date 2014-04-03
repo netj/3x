@@ -550,22 +550,14 @@ app.post /// /api/run/queue/([^:]+):(target) ///, (req, res) ->
     ) (respondJSON res)
 
 # Attempt to create queue
-app.post /// /api/run/queue/create ///, (req, res) ->
-    queueName = req.body.name
+app.post /// /api/run/queue/([^:]+):(create) ///, (req, res) ->
+    [queueName, action] = req.params
+    #queueName = req.body.name
     console.log "jens cli called with name: " + queueName
     cliEnv(res, {
         _3X_QUEUE: queueName
     }, "3x-queue", [queueName]
     ) (respondJSON res)
-
-### TODO: remove this later - Jen
-spawn = require('child_process').spawn
-
-app.get '/foobar', (req, res) ->
-  ls = spawn('ls', ['-ls', '/usr'])
-  ls.stdout.on 'data', (data) ->
-    res.end(data)
-###
 
 app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, (req, res) ->
     [queueName, action] = req.params

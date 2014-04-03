@@ -41,30 +41,20 @@ class QueuesUI extends CompositeElement
             .on("click", ".queue-reset"  , @handleQueueAction   @resetQueue)
             .on("click", ".queue-sync"   , @handleQueueAction    @syncQueue)
             .on("click", ".queue"        , @handleQueueAction   @focusQueue)
-
-        # TODO @optionElements.addNewQueue?. ...
-        # called when 'create queue' is clicked in form
+        # DOM objects for creating queue
         $nameField=$('#queue-name')
-        $nameField.blur ->
-            log "moved from field"
-            if $(@).val().length is 0
-                $(@)
-                    .addClass('error')
-                    .after('<span class="error">This field must not be empty! </span>')
-        $nameField.focus ->
-            $(this)
-                .removeClass('error')
-                .next('span')
-                .remove()
+        $('#queue-create-form').on "hidden.bs.modal", ->
+            $nameField.val("")
+        $nameField.on "keyup", ->
+            if $nameField.val().length is 0 then $('#queue-create').attr "disabled", "disabled"
+            else $('#queue-create').removeAttr "disabled"
+        # called when 'create queue' is clicked in form
         @optionElements.addNewQueue?.click (e) =>
+            #if $(@).attr "disabled" is "disabled" return
             log "addNewQueue pressed..."
             log "name is: " + $nameField.val()
-            $.post("#{_3X_.BASE_URL}/api/run/queue/create}",{name: $nameField.val()
+            $.post("#{_3X_.BASE_URL}/api/run/queue/#{$nameField.val()}:create}",{name: $nameField.val()
             })
-            ###
-            $.post("#{_3X_.BASE_URL}/api/run/queue/#{$nameField.val()}",{
-            })
-            ###
             $('#queue-create-form').modal('hide')
         @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
         @optionElements.toggleAbsoluteProgress
