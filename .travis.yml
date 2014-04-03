@@ -1,0 +1,9 @@
+before_install:
+      - git submodule update --init --recursive
+
+script: make test
+
+branches:
+    only:
+        - master
+        - /^release-.*$/
