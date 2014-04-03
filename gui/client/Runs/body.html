@@ -18,10 +18,9 @@
           <button id="queue-toggle-absolute-progress" class="btn btn-mini hide" data-toggle="button"
             title="Toggle between displaying the size of the queue for the progress bar or not"
             ><i class="icon icon-resize-horizontal"></i></button>
-          <!-- TODO
-            <button id="queue-create" class="btn btn-mini"
-              title="Create a new queue"><i class="icon icon-plus"></i></button>
-            -->
+          <button id="queue-create-open" class="btn btn-mini" data-toggle="modal" data-target="#queue-create-form"
+            title="Create a new queue"><i class="icon icon-plus"></i></button>
+
         </div>
         <div id="queues" style="max-height:90%; overflow-y:auto;"></div>
       </section>
@@ -66,4 +65,26 @@
   </div>
 </div>
 
+<div class="modal fade" id="queue-create-form" tabindex="-1" role="dialog" aria-labelledby="queue-create-form-label" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <form role="form">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title" id="queue-create-form-label">New Queue</h4>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="queue-name">Name</label>
+            <input type="text" class="form-control" id="queue-name" placeholder="Enter Name" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary" id="queue-create" disabled>Create Queue</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 <!-- vim:set sw=2:sts=2:spell -->
