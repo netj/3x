@@ -18,7 +18,7 @@ class RunsSection
     @queues: new QueuesUI $("#queues"),
         RunsSection.status,
         RunsSection.targets,
-            addNewQueue: $("#queue-create")
+            addNewQueueForm: $("#queue-create-form")
             sortByName: $("#queue-sortby-name")
             sortByTime: $("#queue-sortby-time")
             toggleAbsoluteProgress: $("#queue-toggle-absolute-progress")

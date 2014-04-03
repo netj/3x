@@ -41,29 +41,31 @@ class QueuesUI extends CompositeElement
             .on("click", ".queue-reset"  , @handleQueueAction   @resetQueue)
             .on("click", ".queue-sync"   , @handleQueueAction    @syncQueue)
             .on("click", ".queue"        , @handleQueueAction   @focusQueue)
+
         # DOM objects for creating queue
-        $form = $("#queue-create-form")
-        $nameField = $form.find("#queue-name")
-        $createButton = $form.find("#queue-create")
-        enableButton = ->
-            if $nameField.val().length is 0 then $createButton.attr "disabled", "disabled"
-            else $createButton.removeAttr "disabled"
-        $form.on "show.bs.modal", ->
-            do enableButton
-        $form.on "shown.bs.modal", ->
-            $nameField.focus()
-        $nameField.on "keyup", ->
-            # TODO give user feedback when the name is already taken (based on @queues) using http://getbootstrap.com/2.3.2/base-css.html#forms "Validation states"
-            do enableButton
-        # call API called when 'create queue' is clicked in form
-        $createButton.click (e) =>
-            do e.preventDefault
-            $.post("#{_3X_.BASE_URL}/api/run/queue/#{$nameField.val()}:create",
-                name: $nameField.val()
-            )
-            # TODO tell user when queue create fails
-            $nameField.val("")
-            $form.modal("hide")
+        $form = @optionElements.addNewQueueForm
+        if $form?
+            $nameField = $form.find("#queue-name")
+            $createButton = $form.find("#queue-create")
+            enableButton = ->
+                if $nameField.val().length is 0 then $createButton.attr "disabled", "disabled"
+                else $createButton.removeAttr "disabled"
+            $form.on "show.bs.modal", ->
+                do enableButton
+            $form.on "shown.bs.modal", ->
+                $nameField.focus()
+            $nameField.on "keyup", ->
+                # TODO give user feedback when the name is already taken (based on @queues) using http://getbootstrap.com/2.3.2/base-css.html#forms "Validation states"
+                do enableButton
+            # call API called when 'create queue' is clicked in form
+            $createButton.click (e) =>
+                do e.preventDefault
+                $.post("#{_3X_.BASE_URL}/api/run/queue/#{$nameField.val()}:create",
+                    name: $nameField.val()
+                )
+                # TODO tell user when queue create fails
+                $nameField.val("")
+                $form.modal("hide")
         @showAbsoluteProgress = localStorage.queuesShowAbsoluteProgress is "true"
         @optionElements.toggleAbsoluteProgress
             ?.toggleClass("active", @showAbsoluteProgress)
