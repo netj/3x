@@ -57,6 +57,7 @@ class QueuesUI extends CompositeElement
             do enableButton
         # call API called when 'create queue' is clicked in form
         $createButton.click (e) =>
+            do e.preventDefault
             $.post("#{_3X_.BASE_URL}/api/run/queue/#{$nameField.val()}:create",
                 name: $nameField.val()
             )
