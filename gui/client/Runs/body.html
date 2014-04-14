@@ -32,11 +32,14 @@
             <button class="target-new btn btn-mini"
               title="Create new target configuration"><i class="icon icon-plus"></i></button>
             -->
+          <button class="target-new btn btn-mini" data-toggle="modal" data-target="#target-create-form"
+            title="Create new target configuration"><i class="icon icon-plus"></i></button>
         </div>
         <div id="targets" style="max-height:90%; overflow-y:auto;"></div>
       </section>
     </div>
   </div>
+
 
   <div class="span10 run-history-container">
     <h4 class="section-title pull-left"><i
@@ -65,6 +68,7 @@
   </div>
 </div>
 
+<!-- Modal form for queue create -->
 <div class="modal fade" id="queue-create-form" tabindex="-1" role="dialog" aria-labelledby="queue-create-form-label" aria-hidden="true">
   <div class="modal-dialog modal-sm">
     <form role="form">
@@ -85,6 +89,68 @@
         </div>
       </div>
     </form>
+  </div>
+</div>
+<!-- Modal form for target create -->
+<div class="modal fade" id="target-create-form" tabindex="-1" role="dialog" position=fixed
+  aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">New Target</h4>
+      </div>
+      <div class="modal-body">
+        <form role="form">
+          <div class="form-group">
+            <label for="target-name">Name</label>
+            <input type="text" class="form-control" id="target-name" placeholder="Enter Name" required>
+              <div class="row-fluid">
+    	        <div class="btn-group btn-input clearfix">
+    	          <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
+    	            <span data-bind="label">Select One</span> <span class="caret"></span>
+    	          </button>
+    	          <ul class="dropdown-menu" role="menu">
+    	            <li><a href="#">local</a></li>
+    	            <li><a href="#">ssh</a></li>
+    	            <li><a href="#">ssh-cluster</a></li>
+                  </ul>
+              </div>
+                <div class="row-fluid">
+                  <table class="hide" id="target-env-table" position="relative" >
+                    <thead>
+                      <tr>
+                        <th>Env Variable Name</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="env-pair">
+                        <td class="env-name"><input type="text" class="form-control" placeholder="NAME"</td>
+                        <td class="env-value"><input type="text" class="form-control" placeholder="VALUE"</td>
+                      </tr>
+
+                      <tr>
+                        <td></td>
+                        <td style="vertical-align:middle;">
+                          <a href="#" class="btn btn-primary" id="env-pair-add">
+                            <i class="icon icon-plus">Add Row</i></a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+            </div>
+          </div>
+
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="target-create" disabled=disabled>Create Target</button>
+      </div>
+    </div>
   </div>
 </div>
 <!-- vim:set sw=2:sts=2:spell -->

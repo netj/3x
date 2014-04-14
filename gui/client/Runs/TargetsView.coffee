@@ -114,3 +114,54 @@ class TargetsUI extends CompositeElement
             t = @targetKnobs?.find("li.current a")
             t = @targetKnobs?.find("li a:first") unless t?.length > 0
             t?.tab("show")
+
+    # DOM objects for creating target
+    # $targetForm = @optionElements.addNewTargetForm
+    $targetForm = $('#target-create-form')
+    $createButton = $targetForm.find('#target-create')
+    $nameField= $targetForm.find('#target-name')
+    $targetEnvTable = $targetForm.find('#target-env-table')
+    # button to add rows to table
+    $targetEnvTableAdd = $targetEnvTable.find('#env-pair-add')
+
+    # Drop-down menu
+    $targetTypeDropdown = $targetForm.find(".dropdown-menu")
+    $targetTypeDropdown.click (e) =>
+        # q: why put "do"?
+        do e.preventDefault
+        do enableButton
+        # add the form
+        $targetEnvTable.removeClass('hide')
+        $targetEnvTable.addClass('table table-striped')
+        
+        # addition form elements depending on target type
+        switch $(e.target).text()
+            when "local" then log "local"
+            when "ssh" then log "ssh"
+            when "ssh-cluster" then log "ssh-cluster"
+
+    enableButton = ->
+        if $nameField.val().length is 0 then $createButton.attr "disabled", "disabled"
+        else $createButton.removeAttr "disabled"
+        log "enable button ccalled"
+    $nameField.on "keyup", ->
+        do enableButton
+    $createButton.click (e) =>
+        do e.preventDefault
+        log "createbutton clicked"
+        $.post("#{_3X_.BASE_URL}/api/run/target/define/#{$nameField.val()}:create",
+            name: $nameField.val()
+        )
+        $targetForm.modal("hide")
+        $targetForm.modal("hide")
+
+    
+
+    $targetEnvTableAdd.click (e) ->
+        do e.preventDefault
+        $targetEnvTable
+            .find('.env-pair').first()
+            .clone()
+            .insertBefore($(@).closest('tr'))
+        log "should've added a new row"
+    
