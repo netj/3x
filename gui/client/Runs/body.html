@@ -108,14 +108,23 @@
               <div class="row-fluid">
     	        <div class="btn-group btn-input clearfix">
     	          <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
-    	            <span data-bind="label">Select One</span> <span class="caret"></span>
+                    <!--span data-bind="label">Select One</span--!> 
+                    Select type
     	          </button>
     	          <ul class="dropdown-menu" role="menu">
     	            <li><a href="#">local</a></li>
     	            <li><a href="#">ssh</a></li>
     	            <li><a href="#">ssh-cluster</a></li>
                   </ul>
-              </div>
+                </div>
+                <div class="row-fluid hide">
+                  <span class="span4">Remote url</span>
+                  <input type="text" class="form-control" id="target-remote-url" placeholder="Remote url" required>
+                </div>
+                <div class="row-fluid hide">
+                  <span class="span4">Shared path</span>
+                  <input type="text" class="form-control" id="target-shared-path" placeholder="Shared path" required>
+                </div>
                 <div class="row-fluid">
                   <table class="hide" id="target-env-table" position="relative" >
                     <thead>

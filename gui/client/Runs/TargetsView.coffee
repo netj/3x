@@ -117,13 +117,17 @@ class TargetsUI extends CompositeElement
 
     # DOM objects for creating target
     # $targetForm = @optionElements.addNewTargetForm
-    $targetForm = $('#target-create-form')
-    $createButton = $targetForm.find('#target-create')
-    $nameField= $targetForm.find('#target-name')
-    $targetEnvTable = $targetForm.find('#target-env-table')
+    $targetForm = $("#target-create-form")
+    $createButton = $targetForm.find("#target-create")
+    $nameField= $targetForm.find("#target-name")
+    $targetEnvTable = $targetForm.find("#target-env-table")
+    $targetRemoteUrl = $targetForm.find("#target-remote-url")
+    $targetSharedPath = $targetForm.find("#target-shared-path")
     # button to add rows to table
-    $targetEnvTableAdd = $targetEnvTable.find('#env-pair-add')
+    $targetEnvTableAdd = $targetEnvTable.find("#env-pair-add")
 
+    # TODO: clear form entries when closed or keep values entered? 
+    
     # Drop-down menu
     $targetTypeDropdown = $targetForm.find(".dropdown-menu")
     $targetTypeDropdown.click (e) =>
@@ -131,14 +135,25 @@ class TargetsUI extends CompositeElement
         do e.preventDefault
         do enableButton
         # add the form
-        $targetEnvTable.removeClass('hide')
-        $targetEnvTable.addClass('table table-striped')
+        $targetEnvTable.removeClass("hide")
+        $targetEnvTable.addClass("table table-striped")
         
         # addition form elements depending on target type
-        switch $(e.target).text()
-            when "local" then log "local"
-            when "ssh" then log "ssh"
-            when "ssh-cluster" then log "ssh-cluster"
+        @newTargetType = $(e.target).text()
+        $targetTypeDropdown.siblings("button").text(@newTargetType)
+        switch @newTargetType
+            when "local"
+                $targetRemoteUrl.parent("div").addClass("hide")
+                $targetRemoteUrl.val("")
+                $targetSharedPath.parent("div").addClass("hide")
+                $targetSharedPath.val("")
+            when "ssh"
+                $targetRemoteUrl.parent("div").removeClass("hide")
+                $targetSharedPath.parent("div").addClass("hide")
+                $targetSharedPath.val("")
+            when "ssh-cluster" 
+                $targetRemoteUrl.parent("div").removeClass("hide")
+                $targetSharedPath.parent("div").removeClass("hide")
 
     enableButton = ->
         if $nameField.val().length is 0 then $createButton.attr "disabled", "disabled"
@@ -146,22 +161,40 @@ class TargetsUI extends CompositeElement
         log "enable button ccalled"
     $nameField.on "keyup", ->
         do enableButton
+
+    # Create target
     $createButton.click (e) =>
         do e.preventDefault
-        log "createbutton clicked"
-        $.post("#{_3X_.BASE_URL}/api/run/target/define/#{$nameField.val()}:create",
-            name: $nameField.val()
-        )
-        $targetForm.modal("hide")
+        log "createbutton clicked, targetype: " + @newTargetType 
+
+        # get all env values and pairs
+        env = ""
+        for pair in $targetForm.find(".env-pair")
+            envName = $(pair).find(".env-name").find("input").val()
+            envVal= $(pair).find(".env-value").find("input").val()
+            env += envName + "=" + envVal + " "
+            log envName + "=" + envVal
+        # get remote url value 
+        url = $targetRemoteUrl.val()
+        sharedPath = $targetSharedPath.val()
+
+        # Make API call
+        $.post("#{_3X_.BASE_URL}/api/run/target/#{$nameField.val()}:create",{
+            env: env,
+            type: @newTargetType,
+            url: url,
+            sharedPath: sharedPath
+        })
         $targetForm.modal("hide")
 
     
-
+    # Add row in table
     $targetEnvTableAdd.click (e) ->
         do e.preventDefault
         $targetEnvTable
-            .find('.env-pair').first()
+            .find(".env-pair").first()
             .clone()
-            .insertBefore($(@).closest('tr'))
-        log "should've added a new row"
+            .insertBefore($(@).closest("tr"))
+            .find("input")
+            .val("")
     

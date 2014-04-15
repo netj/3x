@@ -558,15 +558,30 @@ app.post /// /api/run/queue/([^:]+):(create) ///, (req, res) ->
     ) (respondJSON res)
 
 # Call to create target
-app.post /// /api/run/target/define/([^:]+):(create) ///, (req, res) ->
-    util.log "create target api called ....."
+app.post /// /api/run/target/([^:]+):(create) ///, (req, res) ->
     [targetName, action] = req.params
-    #envVariables = req.body.env
-    #targetType = req.body.type
-    cli(res, "3x-target", [targetName, "define", "local"]
+    envVar = req.body.env
+    targetType = req.body.type
+    url = req.body.url
+    sharedPath = req.body.sharedPath
+    util.log "url: " + url
+    util.log "env not split: " + envVar
+    util.log "env split: " + envVar.split(/\s*\n\s*/)
+    {stdin} =
+    cli(res, "xargs", ["3x-target", targetName, "define", targetType, url, sharedPath]
         , (lazyLines, next) ->
             lazyLines.join -> next (true)
     ) (respondJSON res)
+    for pair in envVar.split(/\s*\n\s*/)
+        stdin.write "#{pair}\n"
+    stdin.end()
+   
+    ###
+    cliEnv(res, {
+        _3X_QUEUE: queueName
+    }, "xargs", ["3x-plan", action]
+    ) (respondJSON res)
+    ###
 
 app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, (req, res) ->
     [queueName, action] = req.params
