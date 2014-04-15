@@ -116,17 +116,14 @@ class TargetsUI extends CompositeElement
             t?.tab("show")
 
     # DOM objects for creating target
-    # $targetForm = @optionElements.addNewTargetForm
     $targetForm = $("#target-create-form")
     $createButton = $targetForm.find("#target-create")
     $nameField= $targetForm.find("#target-name")
     $targetEnvTable = $targetForm.find("#target-env-table")
     $targetRemoteUrl = $targetForm.find("#target-remote-url")
     $targetSharedPath = $targetForm.find("#target-shared-path")
-    # button to add rows to table
-    $targetEnvTableAdd = $targetEnvTable.find("#env-pair-add")
+    $targetEnvTableAdd = $targetEnvTable.find("#env-pair-add") # buttons to add rows
 
-    # TODO: clear form entries when closed or keep values entered? 
     
     # Drop-down menu
     $targetTypeDropdown = $targetForm.find(".dropdown-menu")
@@ -135,8 +132,7 @@ class TargetsUI extends CompositeElement
         do e.preventDefault
         do enableButton
         # add the form
-        $targetEnvTable.removeClass("hide")
-        $targetEnvTable.addClass("table table-striped")
+        $targetEnvTable.parent("div").removeClass("hide")
         
         # addition form elements depending on target type
         @newTargetType = $(e.target).text()
@@ -151,7 +147,7 @@ class TargetsUI extends CompositeElement
                 $targetRemoteUrl.parent("div").removeClass("hide")
                 $targetSharedPath.parent("div").addClass("hide")
                 $targetSharedPath.val("")
-            when "ssh-cluster" 
+            when "ssh-cluster"
                 $targetRemoteUrl.parent("div").removeClass("hide")
                 $targetSharedPath.parent("div").removeClass("hide")
 
@@ -165,14 +161,13 @@ class TargetsUI extends CompositeElement
     # Create target
     $createButton.click (e) =>
         do e.preventDefault
-        log "createbutton clicked, targetype: " + @newTargetType 
 
         # get all env values and pairs
-        env = ""
+        env = []
         for pair in $targetForm.find(".env-pair")
             envName = $(pair).find(".env-name").find("input").val()
             envVal= $(pair).find(".env-value").find("input").val()
-            env += envName + "=" + envVal + " "
+            env.push envName + "=" + envVal
             log envName + "=" + envVal
         # get remote url value 
         url = $targetRemoteUrl.val()
@@ -198,3 +193,7 @@ class TargetsUI extends CompositeElement
             .find("input")
             .val("")
     
+    # TODO: other things to add:
+    # 1. tooltip to show expected format of url
+    # 2. remove rows from table
+    # 3. reset form when closed

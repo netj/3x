@@ -562,26 +562,17 @@ app.post /// /api/run/target/([^:]+):(create) ///, (req, res) ->
     [targetName, action] = req.params
     envVar = req.body.env
     targetType = req.body.type
-    url = req.body.url
-    sharedPath = req.body.sharedPath
-    util.log "url: " + url
-    util.log "env not split: " + envVar
-    util.log "env split: " + envVar.split(/\s*\n\s*/)
+    url = req.body.url # empty string if targetType is local
+    sharedPath = req.body.sharedPath # empty string if targetType is local or ssh
     {stdin} =
     cli(res, "xargs", ["3x-target", targetName, "define", targetType, url, sharedPath]
         , (lazyLines, next) ->
             lazyLines.join -> next (true)
     ) (respondJSON res)
-    for pair in envVar.split(/\s*\n\s*/)
+
+    for pair in envVar
         stdin.write "#{pair}\n"
     stdin.end()
-   
-    ###
-    cliEnv(res, {
-        _3X_QUEUE: queueName
-    }, "xargs", ["3x-plan", action]
-    ) (respondJSON res)
-    ###
 
 app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, (req, res) ->
     [queueName, action] = req.params
