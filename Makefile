@@ -29,6 +29,7 @@ polish:
 
 include buildkit/modules.mk
 
+buildkit/test-with-bats.mk \
 buildkit/modules.mk:
 	git submodule update --init
 
