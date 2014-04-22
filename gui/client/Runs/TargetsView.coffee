@@ -118,7 +118,7 @@ class TargetsUI extends CompositeElement
     # DOM objects for creating target
     $targetForm = $("#target-create-form")
     $createButton = $targetForm.find("#target-create")
-    $nameField= $targetForm.find("#target-name")
+    $nameField = $targetForm.find("#target-name")
     $targetEnvTable = $targetForm.find("#target-env-table")
     $targetRemoteUrl = $targetForm.find("#target-remote-url")
     $targetSharedPath = $targetForm.find("#target-shared-path")
@@ -154,9 +154,14 @@ class TargetsUI extends CompositeElement
     enableButton = ->
         if $nameField.val().length is 0 then $createButton.attr "disabled", "disabled"
         else $createButton.removeAttr "disabled"
-        log "enable button ccalled"
+
     $nameField.on "keyup", ->
         do enableButton
+
+        ###
+    $(".env-pair-remove").on "click", ->
+        log "remove button clicked"
+        ###
 
     # Create target
     $createButton.click (e) =>
@@ -192,8 +197,13 @@ class TargetsUI extends CompositeElement
             .insertBefore($(@).closest("tr"))
             .find("input")
             .val("")
+
+        $targetEnvTable
+            .find(".env-pair-remove").on "click", (e) ->
+                do e.preventDefault
+                $rowToRemove = $(@).closest("tr")
+                $rowToRemove.remove() unless $rowToRemove.is(":first-child")
     
     # TODO: other things to add:
     # 1. tooltip to show expected format of url
-    # 2. remove rows from table
     # 3. reset form when closed
