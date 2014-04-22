@@ -158,11 +158,6 @@ class TargetsUI extends CompositeElement
     $nameField.on "keyup", ->
         do enableButton
 
-        ###
-    $(".env-pair-remove").on "click", ->
-        log "remove button clicked"
-        ###
-
     # Create target
     $createButton.click (e) =>
         do e.preventDefault
