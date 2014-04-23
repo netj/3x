@@ -28,10 +28,6 @@
       <section class="clearfix" style="height:30%;">
         <h4 class="section-title pull-left"><i class="icon-flag icon"></i>Targets</h4>
         <div class="section-actions clearfix">
-          <!-- TODO
-            <button class="target-new btn btn-mini"
-              title="Create new target configuration"><i class="icon icon-plus"></i></button>
-            -->
           <button class="target-new btn btn-mini" data-toggle="modal" data-target="#target-create-form"
             title="Create new target configuration"><i class="icon icon-plus"></i></button>
         </div>
@@ -104,10 +100,9 @@
         <form class="form-horizontal" role="form">
           <div class="form-group">
             <label for="target-name" class="control-label">Name</label>
-            <input type="text" class="form-control" id="target-name" placeholder="Enter Name">
+            <input type="text" class="form-control" id="target-name" placeholder="Enter Name" required>
     	        <div class="btn-group btn-input clearfix">
     	          <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
-                    <!--span data-bind="label">Select One</span--!> 
                     Select type
     	          </button>
     	          <ul class="dropdown-menu" role="menu">
@@ -118,11 +113,17 @@
                 </div>
                 <div class="form-group hide">
                   <label for="#target-remote-url" class="control-label">Remote url</label>
-                  <input type="text" class="form-control" id="target-remote-url" placeholder="Remote url">
+                  <input type="text" class="form-control" id="target-remote-url" placeholder="Remote url" required
+                    data-toggle="tooltip" data-placement="bottom" 
+                    title="Example:
+                    USER@HOSTNAME:WORKING_DIR or 
+                    ssh://USER@HOSTNAME:PORT/WORKING_DIR">
                 </div>
                 <div class="form-group hide">
                   <label for="#target-shared-path" class="control-label">Shared path</label>
-                  <input type="text" class="form-control" id="target-shared-path" placeholder="Shared path">
+                  <input type="text" class="form-control" id="target-shared-path" placeholder="Shared path" required
+                    data-toggle="tooltip" data-placement="bottom" 
+                    title="A shared file system accessible by this path across all machines">
                 </div>
                 <div class="row-fluid hide">
                   <table class="table table-striped" id="target-env-table" position="relative" >

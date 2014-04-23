@@ -118,17 +118,19 @@ class TargetsUI extends CompositeElement
     # DOM objects for creating target
     $targetForm = $("#target-create-form")
     $createButton = $targetForm.find("#target-create")
-    $nameField = $targetForm.find("#target-name")
+    $targetName = $targetForm.find("#target-name")
     $targetEnvTable = $targetForm.find("#target-env-table")
     $targetRemoteUrl = $targetForm.find("#target-remote-url")
     $targetSharedPath = $targetForm.find("#target-shared-path")
     $targetEnvTableAdd = $targetEnvTable.find("#env-pair-add") # buttons to add rows
 
-    
+    # Initialize tooltips
+    $targetRemoteUrl.tooltip()
+    $targetSharedPath.tooltip()
+
     # Drop-down menu
     $targetTypeDropdown = $targetForm.find(".dropdown-menu")
     $targetTypeDropdown.click (e) =>
-        # q: why put "do"?
         do e.preventDefault
         do enableButton
         # add the form
@@ -152,10 +154,10 @@ class TargetsUI extends CompositeElement
                 $targetSharedPath.parent("div").removeClass("hide")
 
     enableButton = ->
-        if $nameField.val().length is 0 then $createButton.attr "disabled", "disabled"
+        if $targetName.val().length is 0 then $createButton.attr "disabled", "disabled"
         else $createButton.removeAttr "disabled"
 
-    $nameField.on "keyup", ->
+    $targetName.on "keyup", ->
         do enableButton
 
     # Create target
@@ -168,13 +170,12 @@ class TargetsUI extends CompositeElement
             envName = $(pair).find(".env-name").find("input").val()
             envVal= $(pair).find(".env-value").find("input").val()
             env.push envName + "=" + envVal
-            log envName + "=" + envVal
         # get remote url value 
         url = $targetRemoteUrl.val()
         sharedPath = $targetSharedPath.val()
 
         # Make API call
-        $.post("#{_3X_.BASE_URL}/api/run/target/#{$nameField.val()}:create",{
+        $.post("#{_3X_.BASE_URL}/api/run/target/#{$targetName.val()}:create",{
             env: env,
             type: @newTargetType,
             url: url,
@@ -199,6 +200,3 @@ class TargetsUI extends CompositeElement
                 $rowToRemove = $(@).closest("tr")
                 $rowToRemove.remove() unless $rowToRemove.is(":first-child")
     
-    # TODO: other things to add:
-    # 1. tooltip to show expected format of url
-    # 3. reset form when closed
