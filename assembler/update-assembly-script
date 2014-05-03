@@ -22,6 +22,7 @@ update-assembly-script() {
         local tmp=$(mktemp "$scpt".XXXXXX)
         trap "rm -f $tmp" EXIT
         generate-assembly-script "$@" >"$tmp"
+        chmod --reference="$_3X_ROOT" "$tmp" # TODO copy ACL from _3X_ROOT?
         chmod +x "$tmp"
         mv -f "$tmp" "$scpt"
         trap - EXIT

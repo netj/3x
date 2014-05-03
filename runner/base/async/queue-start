@@ -36,6 +36,7 @@ if ! [[ -d "$_3X_WORKER_DIR" ]]; then
     until [[ -d "$_3X_WORKER_DIR" ]] &&
             lockproc "$_3X_WORKER_DIR"/scheduling grab; do
         _3X_WORKER_DIR=$(mktemp -d "$WORKER_DIR_PREFIX"XXXXXX)
+        chmod --reference="$_3X_ROOT" "$_3X_WORKER_DIR" # TODO copy ACL from _3X_ROOT?
     done
 fi
 _3X_WORKER_DIR=$(cd "$_3X_WORKER_DIR" && pwd -P)

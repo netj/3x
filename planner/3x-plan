@@ -259,6 +259,7 @@ elif edit "$tmp"/new "$tmp"/timestamp; then
         # in case there's error, keep the erroneous one for later retries
         savedPlan=$(mktemp "$_3X_ROOT"/.3x/plan.editing.XXXXXX)
         cp -pf "$tmp"/new $savedPlan
+        chmod --reference="$_3X_ROOT" "$savedPlan" # TODO copy ACL from _3X_ROOT?
         msg "Edit the file and retry with the following command:"
         msg "  3x plan with ${savedPlan#$_3X_ROOT/}"
         false
