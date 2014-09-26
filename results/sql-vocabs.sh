@@ -64,9 +64,12 @@ sql-csv() {
 
 sql-values-expr() {
     local fmtMore=$1; shift
-    local esc= vars= fmt= varName=
+    local handleNaN= esc= vars= fmt= varName=
     for varName; do
         case $(sql-type $varName) in
+            NUM|INT|REAL)
+                handleNaN+=" case \${$varName:-} in NaN) $varName=; esac;"
+                ;;
             TEXT)
                 esc+=" $varName=\${$varName:+\"'\"\${$varName//\"'\"/\"''\"}\"'\"}"
                 ;;
@@ -74,5 +77,5 @@ sql-values-expr() {
         vars+="\"\${$varName:-NULL}\"" fmt+="%s"
         vars+=' ' fmt+=', '
     done
-    echo "$esc; printf \"(${fmt%, }${fmtMore:+, $fmtMore})\" $vars"
+    echo "$handleNaN ${esc:-:}; printf \"(${fmt%, }${fmtMore:+, $fmtMore})\" $vars"
 }
