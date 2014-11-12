@@ -102,6 +102,7 @@ rescan1() {
     # update files right beneath outputs/
     for newF in "$newRunDir"/outputs/*; do
         ! [ -d "$newF" ] || continue # skip any directories
+        [ -e "$newF" ] || continue # skip any non-existent ones
         f=outputs/"${newF##*/}"
         # skip backup if identical
         if ! [ -e "$f" ] || [ x"$(git hash-object "$newF")" != x"$(git hash-object "$f")" ]; then
