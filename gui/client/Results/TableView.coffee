@@ -625,9 +625,9 @@ class ResultsTable extends CompositeElement
             s = ""+value
             if ///^\S+$///.test s then s
             else "\"#{s.replace /"/g, "\"\""}\""
-        data = (textRow (textEsc c.name for c in @columnsRendered)) + "\n"
+        data = (textRow (textEsc @columnNames[i] for i in @columnsRenderedToProcessed)) + "\n"
         for row in @resultsForRendering
-            data += (textRow (textEsc c.value for c in row)) + "\n"
+            data += (textRow (textEsc row[i].value for i in @columnsRenderedToProcessed)) + "\n"
         # open it using the data URI scheme to make it appear as plain text
         dataURI = "data:text/plain;charset=UTF-8,#{encodeURIComponent data}"
         popup = open dataURI, "data-export", "menubar=no"
