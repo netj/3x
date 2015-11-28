@@ -81,7 +81,7 @@ dir_pypkgs=python-packages
         echo >&2 "Bundling python packages"
         mkdir -p -- "$dir_pypkgs"
         [ -s get-pip.py ] ||
-            curl -sRLO https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+            curl -sRLO https://github.com/pypa/pip/raw/master/contrib/get-pip.py
         case $(uname) in
             Darwin)
                 # XXX workaround for incompatibility introduced by Xcode 5.1
@@ -90,7 +90,7 @@ dir_pypkgs=python-packages
                     export ARCHFLAGS="${ARCHFLAGS:-} -Wno-error=unused-command-line-argument-hard-error-in-future"
                 ;;
         esac
-        python get-pip.py \
+        /usr/bin/python get-pip.py \
             --target "$dir_pypkgs" --ignore-installed "${pypkgs[@]}"
         PYTHONPATH="$dir_pypkgs" \
             python -m pip uninstall -y pip || true
