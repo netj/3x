@@ -215,7 +215,7 @@ case $Cmd in
             list.json)
                 cols="state AS 'state#'"
                 for varName in $inputs; do
-                    cols+=", _$varName AS $varName"
+                    cols+=", _$varName AS \"$varName\""
                 done
                 cols+=", serial AS 'serial#'"
                 cols+=", target AS 'target#'"
