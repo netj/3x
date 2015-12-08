@@ -67,7 +67,7 @@ SQLITE_BATCHSIZE=256
 . find-queue.sh
 
 DB="$_3X_QUEUE_DIR"/queue.db
-sqlite3() { command sqlite3 -bail -cmd '.timeout 10000' "$DB" "$@"; }
+sqlite3() { command sqlite3 -init /dev/null -bail -cmd '.timeout 10000' "$DB" "$@"; }
                sqlite() {                   sqlite3 "$@"; }
 be-quiet +5 || sqlite() { tee /dev/stderr | sqlite3 "$@"; }
 
