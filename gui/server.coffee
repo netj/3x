@@ -549,15 +549,30 @@ app.post /// /api/run/queue/([^:]+):(target) ///, (req, res) ->
             lazyLines.join -> next (true)
     ) (respondJSON res)
 
-# Attempt to create queue
+# Call to create queue
 app.post /// /api/run/queue/([^:]+):(create) ///, (req, res) ->
     [queueName, action] = req.params
-    #queueName = req.body.name
-    console.log "jens cli called with name: " + queueName
     cliEnv(res, {
         _3X_QUEUE: queueName
     }, "3x-queue", [queueName]
     ) (respondJSON res)
+
+# Call to create target
+app.post /// /api/run/target/([^:]+):(create) ///, (req, res) ->
+    [targetName, action] = req.params
+    envVar = req.body.env
+    targetType = req.body.type
+    url = req.body.url # empty string if targetType is local
+    sharedPath = req.body.sharedPath # empty string if targetType is local or ssh
+    {stdin} =
+    cli(res, "xargs", ["3x-target", targetName, "define", targetType, url, sharedPath]
+        , (lazyLines, next) ->
+            lazyLines.join -> next (true)
+    ) (respondJSON res)
+
+    for pair in envVar
+        stdin.write "#{pair}\n"
+    stdin.end()
 
 app.post /// /api/run/queue/([^:]+):(duplicate|prioritize|postpone|cancel) ///, (req, res) ->
     [queueName, action] = req.params

@@ -114,3 +114,89 @@ class TargetsUI extends CompositeElement
             t = @targetKnobs?.find("li.current a")
             t = @targetKnobs?.find("li a:first") unless t?.length > 0
             t?.tab("show")
+
+    # DOM objects for creating target
+    $targetForm = $("#target-create-form")
+    $createButton = $targetForm.find("#target-create")
+    $targetName = $targetForm.find("#target-name")
+    $targetEnvTable = $targetForm.find("#target-env-table")
+    $targetRemoteUrl = $targetForm.find("#target-remote-url")
+    $targetSharedPath = $targetForm.find("#target-shared-path")
+    $targetEnvTableAdd = $targetEnvTable.find("#env-pair-add") # buttons to add rows
+
+    # Initialize tooltips
+    $targetRemoteUrl.tooltip()
+    $targetSharedPath.tooltip()
+
+    # Drop-down menu
+    $targetTypeDropdown = $targetForm.find(".dropdown-menu")
+    $targetTypeDropdown.click (e) =>
+        do e.preventDefault
+        do enableButton
+        # add the form
+        $targetEnvTable.parent("div").removeClass("hide")
+        
+        # addition form elements depending on target type
+        @newTargetType = $(e.target).text()
+        $targetTypeDropdown.siblings("button").text(@newTargetType)
+        switch @newTargetType
+            when "local"
+                $targetRemoteUrl.parent("div").addClass("hide")
+                $targetRemoteUrl.val("")
+                $targetSharedPath.parent("div").addClass("hide")
+                $targetSharedPath.val("")
+            when "ssh"
+                $targetRemoteUrl.parent("div").removeClass("hide")
+                $targetSharedPath.parent("div").addClass("hide")
+                $targetSharedPath.val("")
+            when "ssh-cluster"
+                $targetRemoteUrl.parent("div").removeClass("hide")
+                $targetSharedPath.parent("div").removeClass("hide")
+
+    enableButton = ->
+        if $targetName.val().length is 0 then $createButton.attr "disabled", "disabled"
+        else $createButton.removeAttr "disabled"
+
+    $targetName.on "keyup", ->
+        do enableButton
+
+    # Create target
+    $createButton.click (e) =>
+        do e.preventDefault
+
+        # get all env values and pairs
+        env = []
+        for pair in $targetForm.find(".env-pair")
+            envName = $(pair).find(".env-name").find("input").val()
+            envVal= $(pair).find(".env-value").find("input").val()
+            env.push envName + "=" + envVal
+        # get remote url value 
+        url = $targetRemoteUrl.val()
+        sharedPath = $targetSharedPath.val()
+
+        # Make API call
+        $.post("#{_3X_.BASE_URL}/api/run/target/#{$targetName.val()}:create",{
+            env: env,
+            type: @newTargetType,
+            url: url,
+            sharedPath: sharedPath
+        })
+        $targetForm.modal("hide")
+
+    
+    # Add row in table
+    $targetEnvTableAdd.click (e) ->
+        do e.preventDefault
+        $targetEnvTable
+            .find(".env-pair").first()
+            .clone()
+            .insertBefore($(@).closest("tr"))
+            .find("input")
+            .val("")
+
+        $targetEnvTable
+            .find(".env-pair-remove").on "click", (e) ->
+                do e.preventDefault
+                $rowToRemove = $(@).closest("tr")
+                $rowToRemove.remove() unless $rowToRemove.is(":first-child")
+    
